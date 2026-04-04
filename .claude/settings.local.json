@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(find /c/Users/ttquy/next-shadcn-dashboard-starter -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec grep -l \"@clerk\\\\|from 'clerk\\\\|from \\\\\"clerk\" {} \\\\;)",
+      "Bash(xargs grep:*)",
+      "Bash(bun remove:*)",
+      "Bash(bun run:*)"
+    ]
+  }
+}
