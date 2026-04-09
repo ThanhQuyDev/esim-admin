@@ -23,19 +23,15 @@ export function UsersTable() {
   const filters = {
     page: params.page,
     limit: params.perPage,
-    ...(params.name && { search: params.name }),
-    ...(params.role && { roles: params.role }),
     ...(params.sort.length > 0 && { sort: JSON.stringify(params.sort) })
   };
 
   const { data } = useSuspenseQuery(usersQueryOptions(filters));
 
-  const pageCount = Math.ceil(data.total_users / params.perPage);
-
   const { table } = useDataTable({
-    data: data.users,
+    data: data.data,
     columns,
-    pageCount,
+    pageCount: -1,
     shallow: true,
     debounceMs: 500,
     initialState: {

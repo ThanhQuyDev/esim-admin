@@ -87,7 +87,9 @@ import {
   IconUsers,
   IconVideo,
   IconCrown,
-  IconX
+  IconX,
+  IconWorld,
+  IconWorldMap
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -112,6 +114,8 @@ export const Icons = {
   search: IconSearch,
   settings: IconSettings,
   trash: IconTrash,
+  global: IconWorld,
+  worldMap: IconWorldMap,
 
   // Navigation / Chevrons
   chevronDown: IconChevronDown,

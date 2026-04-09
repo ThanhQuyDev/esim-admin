@@ -15,6 +15,14 @@ const baseConfig: NextConfig = {
         protocol: 'https',
         hostname: 'localhost',
         port: '3001'
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn-revamp.airalo.com'
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com'
       }
     ]
   },

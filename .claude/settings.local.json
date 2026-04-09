@@ -5,7 +5,12 @@
       "Bash(find /c/Users/ttquy/next-shadcn-dashboard-starter -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec grep -l \"@clerk\\\\|from 'clerk\\\\|from \\\\\"clerk\" {} \\\\;)",
       "Bash(xargs grep:*)",
       "Bash(bun remove:*)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl -s http://localhost:3001/docs-json)",
+      "Bash(node -e ':*)"
     ]
   }
 }

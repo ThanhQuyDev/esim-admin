@@ -1,47 +1,53 @@
 // ============================================================
 // User Service — Data Access Layer
 // ============================================================
-// This is the ONLY file you modify when connecting to your backend.
-// Queries (queries.ts) and components import from here — they never change.
+// All endpoints proxy through Next.js route handlers (BFF pattern)
+// to the NestJS backend at API_URL/api/v1/users.
 //
-// Pick your pattern and replace the function bodies below:
-//
-// 1. Server Actions + ORM (Prisma / Drizzle / Supabase)
-//    → Add 'use server' at the top of this file
-//    → Call your ORM directly in each function
-//
-// 2. Route Handlers + ORM
-//    → import { apiClient } from '@/lib/api-client'
-//    → return apiClient<UsersResponse>('/users?...')
-//    → Replace mock calls in route handlers (src/app/api/users/) with ORM
-//
-// 3. BFF — Route Handlers proxy to external backend (Laravel, Go, etc.)
-//    → import { apiClient } from '@/lib/api-client'
-//    → return apiClient<UsersResponse>('/users?...')
-//    → Route handlers proxy requests to your external backend service
-//
-// 4. Direct external API (frontend-only, no Next.js backend)
-//    → const res = await fetch('https://your-api.com/users?...')
-//    → return res.json()
-//
-// Current: Mock (in-memory fake data for demo/prototyping)
+// Route handlers: src/app/api/users/route.ts (list + create)
+//                 src/app/api/users/[id]/route.ts (get + update + delete)
 // ============================================================
 
-import { fakeUsers } from '@/constants/mock-api-users';
-import type { UserFilters, UsersResponse, UserMutationPayload } from './types';
+import { apiClient } from '@/lib/api-client';
+import type {
+  User,
+  UserFilters,
+  UsersResponse,
+  CreateUserPayload,
+  UpdateUserPayload
+} from './types';
 
 export async function getUsers(filters: UserFilters): Promise<UsersResponse> {
-  return fakeUsers.getUsers(filters);
+  const params = new URLSearchParams();
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.filters) params.set('filters', filters.filters);
+  if (filters.sort) params.set('sort', filters.sort);
+
+  const query = params.toString();
+  return apiClient<UsersResponse>(`/users${query ? `?${query}` : ''}`);
 }
 
-export async function createUser(data: UserMutationPayload) {
-  return fakeUsers.createUser(data);
+export async function getUser(id: number): Promise<User> {
+  return apiClient<User>(`/users/${id}`);
 }
 
-export async function updateUser(id: number, data: UserMutationPayload) {
-  return fakeUsers.updateUser(id, data);
+export async function createUser(data: CreateUserPayload): Promise<User> {
+  return apiClient<User>('/users', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
 }
 
-export async function deleteUser(id: number) {
-  return fakeUsers.deleteUser(id);
+export async function updateUser(id: number, data: UpdateUserPayload): Promise<User> {
+  return apiClient<User>(`/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  await apiClient(`/users/${id}`, {
+    method: 'DELETE'
+  });
 }

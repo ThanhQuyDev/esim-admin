@@ -1,21 +1,54 @@
-// ============================================================
-// Route Handler — Single User (update + delete)
-// ============================================================
-// See src/app/api/users/route.ts for pattern documentation.
-// ============================================================
-
-import { fakeUsers } from '@/constants/mock-api-users';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+
+const API_URL = process.env.API_URL || 'http://localhost:3001';
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function PUT(request: NextRequest, { params }: Params) {
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
+export async function GET(request: NextRequest, { params }: Params) {
+  const { id } = await params;
+  const headers = await getAuthHeaders();
+
+  const res = await fetch(`${API_URL}/api/v1/users/${id}`, { headers });
+  const data = await res.json();
+
+  if (!res.ok) {
+    return NextResponse.json(
+      { message: data.message || 'User not found', errors: data.errors },
+      { status: res.status }
+    );
+  }
+
+  return NextResponse.json(data);
+}
+
+export async function PATCH(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const body = await request.json();
-  const data = await fakeUsers.updateUser(Number(id), body);
+  const headers = await getAuthHeaders();
 
-  if (!data.success) {
-    return NextResponse.json(data, { status: 404 });
+  const res = await fetch(`${API_URL}/api/v1/users/${id}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return NextResponse.json(
+      { message: data.message || 'Failed to update user', errors: data.errors },
+      { status: res.status }
+    );
   }
 
   return NextResponse.json(data);
@@ -23,11 +56,20 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   const { id } = await params;
-  const data = await fakeUsers.deleteUser(Number(id));
+  const headers = await getAuthHeaders();
 
-  if (!data.success) {
-    return NextResponse.json(data, { status: 404 });
+  const res = await fetch(`${API_URL}/api/v1/users/${id}`, {
+    method: 'DELETE',
+    headers
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    return NextResponse.json(
+      { message: data.message || 'Failed to delete user', errors: data.errors },
+      { status: res.status }
+    );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({ success: true });
 }

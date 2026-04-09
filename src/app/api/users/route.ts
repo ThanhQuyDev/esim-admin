@@ -1,45 +1,63 @@
-// ============================================================
-// Route Handler — Users (list + create)
-// ============================================================
-// Used with Pattern 2 (Route Handlers + ORM) or Pattern 3 (BFF).
-//
-// Fullstack (ORM): Replace fakeUsers calls with your ORM
-//   const users = await db.query.users.findMany({ ... })
-//
-// BFF (proxy): Replace with fetch to your external backend
-//   const res = await fetch(`${BACKEND_URL}/users?${searchParams}`, {
-//     headers: { Authorization: `Bearer ${token}` }
-//   })
-//   return NextResponse.json(await res.json())
-//
-// Current: Mock (in-memory fake data for demo/prototyping)
-// ============================================================
-
-import { fakeUsers } from '@/constants/mock-api-users';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+
+const API_URL = process.env.API_URL || 'http://localhost:3001';
+
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
+  const headers = await getAuthHeaders();
 
-  const page = Number(searchParams.get('page') ?? 1);
-  const limit = Number(searchParams.get('limit') ?? 10);
-  const roles = searchParams.get('roles') ?? undefined;
-  const search = searchParams.get('search') ?? undefined;
-  const sort = searchParams.get('sort') ?? undefined;
+  const params = new URLSearchParams();
+  const page = searchParams.get('page');
+  const limit = searchParams.get('limit');
+  const filters = searchParams.get('filters');
+  const sort = searchParams.get('sort');
 
-  const data = await fakeUsers.getUsers({
-    page,
-    limit,
-    roles,
-    search,
-    sort
-  });
+  if (page) params.set('page', page);
+  if (limit) params.set('limit', limit);
+  if (filters) params.set('filters', filters);
+  if (sort) params.set('sort', sort);
+
+  const res = await fetch(`${API_URL}/api/v1/users?${params}`, { headers });
+  const data = await res.json();
+
+  if (!res.ok) {
+    return NextResponse.json(
+      { message: data.message || 'Failed to fetch users', errors: data.errors },
+      { status: res.status }
+    );
+  }
 
   return NextResponse.json(data);
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const data = await fakeUsers.createUser(body);
+  const headers = await getAuthHeaders();
+
+  const res = await fetch(`${API_URL}/api/v1/users`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return NextResponse.json(
+      { message: data.message || 'Failed to create user', errors: data.errors },
+      { status: res.status }
+    );
+  }
+
   return NextResponse.json(data, { status: 201 });
 }

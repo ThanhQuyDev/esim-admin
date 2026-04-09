@@ -10,14 +10,14 @@ import { ROLE_OPTIONS } from './options';
 export const columns: ColumnDef<User>[] = [
   {
     id: 'name',
-    accessorFn: (row) => `${row.first_name} ${row.last_name}`,
+    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
     header: ({ column }: { column: Column<User, unknown> }) => (
       <DataTableColumnHeader column={column} title='Name' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
         <span className='font-medium'>
-          {row.original.first_name} {row.original.last_name}
+          {row.original.firstName} {row.original.lastName}
         </span>
         <span className='text-muted-foreground text-xs'>{row.original.email}</span>
       </div>
@@ -31,20 +31,16 @@ export const columns: ColumnDef<User>[] = [
     enableColumnFilter: true
   },
   {
-    accessorKey: 'phone',
-    header: 'PHONE'
-  },
-  {
     id: 'role',
-    accessorKey: 'role',
+    accessorFn: (row) => String(row.role?.id),
     enableSorting: false,
     header: ({ column }: { column: Column<User, unknown> }) => (
       <DataTableColumnHeader column={column} title='Role' />
     ),
-    cell: ({ cell }) => {
+    cell: ({ row }) => {
       return (
         <Badge variant='outline' className='capitalize'>
-          {cell.getValue<User['role']>()}
+          {row.original.role?.name}
         </Badge>
       );
     },
@@ -56,13 +52,14 @@ export const columns: ColumnDef<User>[] = [
     }
   },
   {
-    accessorKey: 'status',
+    id: 'status',
+    accessorFn: (row) => String(row.status?.id),
     header: 'STATUS',
-    cell: ({ cell }) => {
-      const status = cell.getValue<User['status']>();
+    cell: ({ row }) => {
+      const statusName = row.original.status?.name?.toLowerCase();
       const variant =
-        status === 'Active' ? 'default' : status === 'Inactive' ? 'secondary' : 'outline';
-      return <Badge variant={variant}>{status}</Badge>;
+        statusName === 'active' ? 'default' : statusName === 'inactive' ? 'secondary' : 'outline';
+      return <Badge variant={variant}>{row.original.status?.name}</Badge>;
     }
   },
   {

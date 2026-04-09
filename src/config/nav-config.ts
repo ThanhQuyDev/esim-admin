@@ -13,8 +13,24 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Product',
-        url: '/dashboard/product',
+        title: 'Destination',
+        url: '/dashboard/destinations',
+        icon: 'global',
+        shortcut: ['p', 'p'],
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Region',
+        url: '/dashboard/region',
+        icon: 'worldMap',
+        shortcut: ['r', 'r'],
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Esim Plan',
+        url: '/dashboard/esim-plan',
         icon: 'product',
         shortcut: ['p', 'p'],
         isActive: false,
@@ -29,66 +45,10 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Kanban',
-        url: '/dashboard/kanban',
-        icon: 'kanban',
-        shortcut: ['k', 'k'],
-        isActive: false,
-        items: []
-      },
-      {
         title: 'Chat',
         url: '/dashboard/chat',
         icon: 'chat',
         shortcut: ['c', 'c'],
-        isActive: false,
-        items: []
-      }
-    ]
-  },
-  {
-    label: 'Elements',
-    items: [
-      {
-        title: 'Forms',
-        url: '#',
-        icon: 'forms',
-        isActive: true,
-        items: [
-          {
-            title: 'Basic Form',
-            url: '/dashboard/forms/basic',
-            icon: 'forms',
-            shortcut: ['f', 'f']
-          },
-          {
-            title: 'Multi-Step Form',
-            url: '/dashboard/forms/multi-step',
-            icon: 'forms'
-          },
-          {
-            title: 'Sheet & Dialog',
-            url: '/dashboard/forms/sheet-form',
-            icon: 'forms'
-          },
-          {
-            title: 'Advanced Patterns',
-            url: '/dashboard/forms/advanced',
-            icon: 'forms'
-          }
-        ]
-      },
-      {
-        title: 'React Query',
-        url: '/dashboard/react-query',
-        icon: 'code',
-        isActive: false,
-        items: []
-      },
-      {
-        title: 'Icons',
-        url: '/dashboard/elements/icons',
-        icon: 'palette',
         isActive: false,
         items: []
       }
