@@ -45,6 +45,28 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Blogs',
+        url: '/dashboard/blogs',
+        icon: 'blog',
+        shortcut: ['b', 'b'],
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Why Choose Us',
+        url: '/dashboard/why-choose-us',
+        icon: 'award',
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'FAQs',
+        url: '/dashboard/faqs',
+        icon: 'question',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Chat',
         url: '/dashboard/chat',
         icon: 'chat',

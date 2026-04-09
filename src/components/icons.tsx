@@ -89,7 +89,10 @@ import {
   IconCrown,
   IconX,
   IconWorld,
-  IconWorldMap
+  IconWorldMap,
+  IconArticle,
+  IconAward,
+  IconQuestionMark
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -216,5 +219,10 @@ export const Icons = {
   slash: IconSlash,
   calendar: IconCalendar,
   galleryVerticalEnd: IconStack2,
-  moreHorizontal: IconDots
+  moreHorizontal: IconDots,
+
+  // Content
+  blog: IconArticle,
+  award: IconAward,
+  question: IconQuestionMark
 };
