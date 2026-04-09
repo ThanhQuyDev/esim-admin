@@ -11,10 +11,20 @@ import {
   SheetHeader,
   SheetTitle
 } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command';
 import { Icons } from '@/components/icons';
-import { useMutation } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createDestinationMutation, updateDestinationMutation } from '../api/mutations';
-import { uploadToCloudinary } from '../api/service';
+import { uploadToCloudinary, getDestinations } from '../api/service';
 import type { Destination, CreateDestinationPayload, UpdateDestinationPayload } from '../api/types';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -98,6 +108,97 @@ function ImageUploadField({
   );
 }
 
+function useDestinationOptions() {
+  const { data } = useQuery({
+    queryKey: ['destinations', 'countries-for-select'],
+    queryFn: () =>
+      getDestinations({
+        page: 1,
+        limit: 1000,
+        filters: JSON.stringify({ parentId: null })
+      })
+  });
+  return (data?.data ?? []).map((d) => ({
+    value: String(d.id),
+    label: `${d.name} (${d.countryCode})`
+  }));
+}
+
+function SearchableCountrySelect({
+  value,
+  onChange,
+  options,
+  placeholder = 'Select country...'
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className='space-y-2'>
+      <label className='text-sm font-medium'>Parent Destination</label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type='button'
+            variant='outline'
+            role='combobox'
+            aria-expanded={open}
+            className='w-full justify-between font-normal'
+          >
+            {selected ? selected.label : placeholder}
+            <Icons.chevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className='w-full p-0' align='start'>
+          <Command>
+            <CommandInput placeholder='Search country...' />
+            <CommandList>
+              <CommandEmpty>No country found.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value='__none__'
+                  onSelect={() => {
+                    onChange('');
+                    setOpen(false);
+                  }}
+                >
+                  <Icons.check
+                    className={cn('mr-2 h-4 w-4', !value ? 'opacity-100' : 'opacity-0')}
+                  />
+                  None
+                </CommandItem>
+                {options.map((opt) => (
+                  <CommandItem
+                    key={opt.value}
+                    value={opt.label}
+                    onSelect={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                  >
+                    <Icons.check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === opt.value ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                    {opt.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 function CreateDestinationSheet({
   open,
   onOpenChange
@@ -108,6 +209,7 @@ function CreateDestinationSheet({
   const [flagFile, setFlagFile] = useState<File | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const parentOptions = useDestinationOptions();
 
   const createMutation = useMutation({
     ...createDestinationMutation,
@@ -126,6 +228,8 @@ function CreateDestinationSheet({
       name: '',
       countryCode: '',
       slug: '',
+      parentId: '',
+      keySearch: '',
       isPopular: false,
       isActive: true,
       description: ''
@@ -150,8 +254,10 @@ function CreateDestinationSheet({
           name: value.name,
           countryCode: value.countryCode,
           ...(value.slug && { slug: value.slug }),
+          ...(value.parentId && { parentId: Number(value.parentId) }),
           ...(flagUrl && { flagUrl }),
           ...(avatarUrl && { avatarUrl }),
+          ...(value.keySearch && { keySearch: value.keySearch }),
           isPopular: value.isPopular ?? false,
           isActive: value.isActive ?? true,
           ...(value.description && { description: value.description })
@@ -166,7 +272,7 @@ function CreateDestinationSheet({
     }
   });
 
-  const { FormTextField, FormSwitchField, FormTextareaField } =
+  const { FormTextField, FormSelectField, FormSwitchField, FormTextareaField } =
     useFormFields<CreateDestinationFormValues>();
 
   const isPending = createMutation.isPending || uploading;
@@ -186,7 +292,7 @@ function CreateDestinationSheet({
                 name='name'
                 label='Name'
                 required
-                placeholder='France'
+                placeholder='Japan'
                 validators={{
                   onBlur: z.string().min(2, 'Name must be at least 2 characters')
                 }}
@@ -197,7 +303,7 @@ function CreateDestinationSheet({
                   name='countryCode'
                   label='Country Code'
                   required
-                  placeholder='FR'
+                  placeholder='JP'
                   validators={{
                     onBlur: z
                       .string()
@@ -205,8 +311,16 @@ function CreateDestinationSheet({
                       .max(3, 'Must be 2-3 characters')
                   }}
                 />
-                <FormTextField name='slug' label='Slug' placeholder='france' />
+                <FormTextField name='slug' label='Slug' placeholder='japan' />
               </div>
+
+              <SearchableCountrySelect
+                value={form.getFieldValue('parentId') ?? ''}
+                onChange={(val) => form.setFieldValue('parentId', val)}
+                options={parentOptions}
+              />
+
+              <FormTextField name='keySearch' label='Key Search' placeholder='japan nippon tokyo' />
 
               <ImageUploadField label='Flag Image' onFileSelect={setFlagFile} file={flagFile} />
 
@@ -255,6 +369,7 @@ function EditDestinationSheet({
   const [flagFile, setFlagFile] = useState<File | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const parentOptions = useDestinationOptions();
 
   const updateMutation = useMutation({
     ...updateDestinationMutation,
@@ -270,6 +385,8 @@ function EditDestinationSheet({
       name: destination.name,
       countryCode: destination.countryCode,
       slug: destination.slug ?? '',
+      parentId: destination.parentId ? String(destination.parentId) : '',
+      keySearch: destination.keySearch ?? '',
       isPopular: destination.isPopular,
       isActive: destination.isActive,
       description: destination.description ?? ''
@@ -294,8 +411,10 @@ function EditDestinationSheet({
           name: value.name,
           countryCode: value.countryCode,
           slug: value.slug || undefined,
+          parentId: value.parentId ? Number(value.parentId) : null,
           ...(flagUrl && { flagUrl }),
           ...(avatarUrl && { avatarUrl }),
+          keySearch: value.keySearch || undefined,
           isPopular: value.isPopular,
           isActive: value.isActive,
           description: value.description || undefined
@@ -313,7 +432,7 @@ function EditDestinationSheet({
     }
   });
 
-  const { FormTextField, FormSwitchField, FormTextareaField } =
+  const { FormTextField, FormSelectField, FormSwitchField, FormTextareaField } =
     useFormFields<UpdateDestinationFormValues>();
 
   const isPending = updateMutation.isPending || uploading;
@@ -333,7 +452,7 @@ function EditDestinationSheet({
                 name='name'
                 label='Name'
                 required
-                placeholder='France'
+                placeholder='Japan'
                 validators={{
                   onBlur: z.string().min(2, 'Name must be at least 2 characters')
                 }}
@@ -344,7 +463,7 @@ function EditDestinationSheet({
                   name='countryCode'
                   label='Country Code'
                   required
-                  placeholder='FR'
+                  placeholder='JP'
                   validators={{
                     onBlur: z
                       .string()
@@ -352,8 +471,16 @@ function EditDestinationSheet({
                       .max(3, 'Must be 2-3 characters')
                   }}
                 />
-                <FormTextField name='slug' label='Slug' placeholder='france' />
+                <FormTextField name='slug' label='Slug' placeholder='japan' />
               </div>
+
+              <SearchableCountrySelect
+                value={form.getFieldValue('parentId') ?? ''}
+                onChange={(val) => form.setFieldValue('parentId', val)}
+                options={parentOptions}
+              />
+
+              <FormTextField name='keySearch' label='Key Search' placeholder='japan nippon tokyo' />
 
               <ImageUploadField
                 label='Flag Image'

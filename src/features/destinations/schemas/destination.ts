@@ -7,6 +7,8 @@ export const createDestinationSchema = z.object({
     .min(2, 'Country code must be 2 characters')
     .max(3, 'Country code must be at most 3 characters'),
   slug: z.string().optional(),
+  parentId: z.string().optional(),
+  keySearch: z.string().optional(),
   isPopular: z.boolean().optional(),
   isActive: z.boolean().optional(),
   description: z.string().optional()
@@ -21,6 +23,8 @@ export const updateDestinationSchema = z.object({
     .min(2, 'Country code must be 2 characters')
     .max(3, 'Country code must be at most 3 characters'),
   slug: z.string().optional(),
+  parentId: z.string().optional(),
+  keySearch: z.string().optional(),
   isPopular: z.boolean().optional(),
   isActive: z.boolean().optional(),
   description: z.string().optional()

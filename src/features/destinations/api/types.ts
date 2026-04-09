@@ -3,6 +3,7 @@ export type Destination = {
   name: string;
   slug: string;
   countryCode: string;
+  parentId: number | null;
   flagUrl: string | null;
   avatarUrl: string | null;
   keySearch: string | null;
@@ -30,8 +31,10 @@ export type CreateDestinationPayload = {
   name: string;
   countryCode: string;
   slug?: string;
+  parentId?: number | null;
   flagUrl?: string | null;
   avatarUrl?: string | null;
+  keySearch?: string | null;
   isPopular?: boolean;
   isActive?: boolean;
   description?: string | null;
@@ -41,8 +44,10 @@ export type UpdateDestinationPayload = {
   name?: string;
   countryCode?: string;
   slug?: string;
+  parentId?: number | null;
   flagUrl?: string | null;
   avatarUrl?: string | null;
+  keySearch?: string | null;
   isPopular?: boolean;
   isActive?: boolean;
   description?: string | null;
