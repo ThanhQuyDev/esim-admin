@@ -4,7 +4,9 @@ import type {
   PlanFilters,
   PlansResponse,
   CreatePlanPayload,
-  UpdatePlanPayload
+  UpdatePlanPayload,
+  ImportPlansExcelPayload,
+  ImportPlansExcelResponse
 } from './types';
 
 export async function getPlans(filters: PlanFilters): Promise<PlansResponse> {
@@ -40,4 +42,28 @@ export async function deletePlan(id: number): Promise<void> {
   await apiClient(`/plans/${id}`, {
     method: 'DELETE'
   });
+}
+
+export async function importPlansExcel(
+  payload: ImportPlansExcelPayload
+): Promise<ImportPlansExcelResponse> {
+  const formData = new FormData();
+  formData.append('file', payload.file);
+  formData.append('provider', payload.provider);
+  formData.append('columnMapping', JSON.stringify(payload.columnMapping));
+  if (payload.sheet) {
+    formData.append('sheet', payload.sheet);
+  }
+
+  const res = await fetch('/api/plans/import-excel', {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Import failed: ${res.status}`);
+  }
+
+  return res.json();
 }

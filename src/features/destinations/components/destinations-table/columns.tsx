@@ -10,7 +10,7 @@ export const columns: ColumnDef<Destination>[] = [
   {
     id: 'flag',
     accessorKey: 'flagUrl',
-    header: 'Flag',
+    header: 'Cờ',
     cell: ({ row }) => {
       const flagUrl = row.original.flagUrl;
       return flagUrl ? (
@@ -25,7 +25,7 @@ export const columns: ColumnDef<Destination>[] = [
     id: 'name',
     accessorKey: 'name',
     header: ({ column }: { column: Column<Destination, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Name' />
+      <DataTableColumnHeader column={column} title='Tên' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
@@ -34,8 +34,8 @@ export const columns: ColumnDef<Destination>[] = [
       </div>
     ),
     meta: {
-      label: 'Name',
-      placeholder: 'Search destinations...',
+      label: 'Tên',
+      placeholder: 'Tìm kiếm điểm đến...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -45,17 +45,17 @@ export const columns: ColumnDef<Destination>[] = [
     id: 'countryCode',
     accessorKey: 'countryCode',
     header: ({ column }: { column: Column<Destination, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Country Code' />
+      <DataTableColumnHeader column={column} title='Mã quốc gia' />
     ),
     cell: ({ row }) => <Badge variant='outline'>{row.original.countryCode}</Badge>
   },
   {
     id: 'isPopular',
     accessorKey: 'isPopular',
-    header: 'Popular',
+    header: 'Nổi bật',
     cell: ({ row }) => (
       <Badge variant={row.original.isPopular ? 'default' : 'secondary'}>
-        {row.original.isPopular ? 'Yes' : 'No'}
+        {row.original.isPopular ? 'Có' : 'Không'}
       </Badge>
     ),
     enableSorting: false
@@ -63,10 +63,10 @@ export const columns: ColumnDef<Destination>[] = [
   {
     id: 'isActive',
     accessorKey: 'isActive',
-    header: 'Active',
+    header: 'Hoạt động',
     cell: ({ row }) => (
       <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
-        {row.original.isActive ? 'Active' : 'Inactive'}
+        {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
     enableSorting: false

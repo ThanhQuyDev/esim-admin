@@ -11,7 +11,7 @@ export const columns: ColumnDef<Blog>[] = [
     id: 'title',
     accessorKey: 'title',
     header: ({ column }: { column: Column<Blog, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Title' />
+      <DataTableColumnHeader column={column} title='Tiêu đề' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
@@ -20,8 +20,8 @@ export const columns: ColumnDef<Blog>[] = [
       </div>
     ),
     meta: {
-      label: 'Title',
-      placeholder: 'Search blogs...',
+      label: 'Tiêu đề',
+      placeholder: 'Tìm kiếm bài viết...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -31,23 +31,23 @@ export const columns: ColumnDef<Blog>[] = [
     id: 'author',
     accessorKey: 'author',
     header: ({ column }: { column: Column<Blog, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Author' />
+      <DataTableColumnHeader column={column} title='Tác giả' />
     )
   },
   {
     id: 'language',
     accessorKey: 'language',
-    header: 'Lang',
+    header: 'Ngôn ngữ',
     cell: ({ row }) => <Badge variant='outline'>{row.original.language.toUpperCase()}</Badge>,
     enableSorting: false
   },
   {
     id: 'isPublished',
     accessorKey: 'isPublished',
-    header: 'Published',
+    header: 'Xuất bản',
     cell: ({ row }) => (
       <Badge variant={row.original.isPublished ? 'default' : 'secondary'}>
-        {row.original.isPublished ? 'Published' : 'Draft'}
+        {row.original.isPublished ? 'Đã xuất bản' : 'Bản nháp'}
       </Badge>
     ),
     enableSorting: false

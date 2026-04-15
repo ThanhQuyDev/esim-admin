@@ -140,7 +140,7 @@ function SearchableCountrySelect({
 
   return (
     <div className='space-y-2'>
-      <label className='text-sm font-medium'>Parent Destination</label>
+      <label className='text-sm font-medium'>Điểm đến cha</label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -156,9 +156,9 @@ function SearchableCountrySelect({
         </PopoverTrigger>
         <PopoverContent className='w-full p-0' align='start'>
           <Command>
-            <CommandInput placeholder='Search country...' />
+            <CommandInput placeholder='Tìm quốc gia...' />
             <CommandList>
-              <CommandEmpty>No country found.</CommandEmpty>
+              <CommandEmpty>Không tìm thấy quốc gia.</CommandEmpty>
               <CommandGroup>
                 <CommandItem
                   value='__none__'
@@ -170,7 +170,7 @@ function SearchableCountrySelect({
                   <Icons.check
                     className={cn('mr-2 h-4 w-4', !value ? 'opacity-100' : 'opacity-0')}
                   />
-                  None
+                  Không có
                 </CommandItem>
                 {options.map((opt) => (
                   <CommandItem
@@ -214,13 +214,13 @@ function CreateDestinationSheet({
   const createMutation = useMutation({
     ...createDestinationMutation,
     onSuccess: () => {
-      toast.success('Destination created successfully');
+      toast.success('Tạo điểm đến thành công');
       onOpenChange(false);
       form.reset();
       setFlagFile(null);
       setAvatarFile(null);
     },
-    onError: (error) => toast.error(error.message || 'Failed to create destination')
+    onError: (error) => toast.error(error.message || 'Tạo điểm đến thất bại')
   });
 
   const form = useAppForm({
@@ -265,7 +265,7 @@ function CreateDestinationSheet({
 
         await createMutation.mutateAsync(payload);
       } catch {
-        toast.error('Failed to upload image');
+        toast.error('Tải ảnh lên thất bại');
       } finally {
         setUploading(false);
       }
@@ -281,8 +281,8 @@ function CreateDestinationSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>New Destination</SheetTitle>
-          <SheetDescription>Fill in the details to create a new destination.</SheetDescription>
+          <SheetTitle>Điểm đến mới</SheetTitle>
+          <SheetDescription>Điền thông tin để tạo điểm đến mới.</SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
@@ -290,28 +290,25 @@ function CreateDestinationSheet({
             <form.Form id='destination-form-sheet' className='space-y-4'>
               <FormTextField
                 name='name'
-                label='Name'
+                label='Tên'
                 required
-                placeholder='Japan'
+                placeholder='Nhật Bản'
                 validators={{
-                  onBlur: z.string().min(2, 'Name must be at least 2 characters')
+                  onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
                 }}
               />
 
               <div className='grid grid-cols-2 gap-4'>
                 <FormTextField
                   name='countryCode'
-                  label='Country Code'
+                  label='Mã quốc gia'
                   required
                   placeholder='JP'
                   validators={{
-                    onBlur: z
-                      .string()
-                      .min(2, 'Must be 2-3 characters')
-                      .max(3, 'Must be 2-3 characters')
+                    onBlur: z.string().min(2, 'Phải có 2-3 ký tự').max(3, 'Phải có 2-3 ký tự')
                   }}
                 />
-                <FormTextField name='slug' label='Slug' placeholder='japan' />
+                <FormTextField name='slug' label='Slug' placeholder='nhat-ban' />
               </div>
 
               <SearchableCountrySelect
@@ -320,36 +317,36 @@ function CreateDestinationSheet({
                 options={parentOptions}
               />
 
-              <FormTextField name='keySearch' label='Key Search' placeholder='japan nippon tokyo' />
+              <FormTextField
+                name='keySearch'
+                label='Từ khóa tìm kiếm'
+                placeholder='japan nippon tokyo'
+              />
 
-              <ImageUploadField label='Flag Image' onFileSelect={setFlagFile} file={flagFile} />
+              <ImageUploadField label='Ảnh cờ' onFileSelect={setFlagFile} file={flagFile} />
 
               <ImageUploadField
-                label='Avatar Image'
+                label='Ảnh đại diện'
                 onFileSelect={setAvatarFile}
                 file={avatarFile}
               />
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormSwitchField name='isPopular' label='Popular' />
-                <FormSwitchField name='isActive' label='Active' />
+                <FormSwitchField name='isPopular' label='Nổi bật' />
+                <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
 
-              <FormTextareaField
-                name='description'
-                label='Description'
-                placeholder='Optional description...'
-              />
+              <FormTextareaField name='description' label='Mô tả' placeholder='Mô tả tùy chọn...' />
             </form.Form>
           </form.AppForm>
         </div>
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='destination-form-sheet' isLoading={isPending}>
-            <Icons.check /> Create
+            <Icons.check /> Tạo mới
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -374,10 +371,10 @@ function EditDestinationSheet({
   const updateMutation = useMutation({
     ...updateDestinationMutation,
     onSuccess: () => {
-      toast.success('Destination updated successfully');
+      toast.success('Cập nhật điểm đến thành công');
       onOpenChange(false);
     },
-    onError: (error) => toast.error(error.message || 'Failed to update destination')
+    onError: (error) => toast.error(error.message || 'Cập nhật điểm đến thất bại')
   });
 
   const form = useAppForm({
@@ -425,7 +422,7 @@ function EditDestinationSheet({
           values: payload
         });
       } catch {
-        toast.error('Failed to upload image');
+        toast.error('Tải ảnh lên thất bại');
       } finally {
         setUploading(false);
       }
@@ -441,8 +438,8 @@ function EditDestinationSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Edit Destination</SheetTitle>
-          <SheetDescription>Update the destination details below.</SheetDescription>
+          <SheetTitle>Chỉnh sửa điểm đến</SheetTitle>
+          <SheetDescription>Cập nhật thông tin điểm đến bên dưới.</SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
@@ -450,28 +447,25 @@ function EditDestinationSheet({
             <form.Form id='destination-form-sheet' className='space-y-4'>
               <FormTextField
                 name='name'
-                label='Name'
+                label='Tên'
                 required
-                placeholder='Japan'
+                placeholder='Nhật Bản'
                 validators={{
-                  onBlur: z.string().min(2, 'Name must be at least 2 characters')
+                  onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
                 }}
               />
 
               <div className='grid grid-cols-2 gap-4'>
                 <FormTextField
                   name='countryCode'
-                  label='Country Code'
+                  label='Mã quốc gia'
                   required
                   placeholder='JP'
                   validators={{
-                    onBlur: z
-                      .string()
-                      .min(2, 'Must be 2-3 characters')
-                      .max(3, 'Must be 2-3 characters')
+                    onBlur: z.string().min(2, 'Phải có 2-3 ký tự').max(3, 'Phải có 2-3 ký tự')
                   }}
                 />
-                <FormTextField name='slug' label='Slug' placeholder='japan' />
+                <FormTextField name='slug' label='Slug' placeholder='nhat-ban' />
               </div>
 
               <SearchableCountrySelect
@@ -480,42 +474,42 @@ function EditDestinationSheet({
                 options={parentOptions}
               />
 
-              <FormTextField name='keySearch' label='Key Search' placeholder='japan nippon tokyo' />
+              <FormTextField
+                name='keySearch'
+                label='Từ khóa tìm kiếm'
+                placeholder='japan nippon tokyo'
+              />
 
               <ImageUploadField
-                label='Flag Image'
+                label='Ảnh cờ'
                 currentUrl={destination.flagUrl}
                 onFileSelect={setFlagFile}
                 file={flagFile}
               />
 
               <ImageUploadField
-                label='Avatar Image'
+                label='Ảnh đại diện'
                 currentUrl={destination.avatarUrl}
                 onFileSelect={setAvatarFile}
                 file={avatarFile}
               />
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormSwitchField name='isPopular' label='Popular' />
-                <FormSwitchField name='isActive' label='Active' />
+                <FormSwitchField name='isPopular' label='Nổi bật' />
+                <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
 
-              <FormTextareaField
-                name='description'
-                label='Description'
-                placeholder='Optional description...'
-              />
+              <FormTextareaField name='description' label='Mô tả' placeholder='Mô tả tùy chọn...' />
             </form.Form>
           </form.AppForm>
         </div>
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='destination-form-sheet' isLoading={isPending}>
-            <Icons.check /> Update
+            <Icons.check /> Cập nhật
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -529,7 +523,7 @@ export function DestinationFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)} size='sm'>
-        <Icons.add className='mr-2 h-4 w-4' /> Add Destination
+        <Icons.add className='mr-2 h-4 w-4' /> Thêm điểm đến
       </Button>
       <DestinationFormSheet open={open} onOpenChange={setOpen} />
     </>

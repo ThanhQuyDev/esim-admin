@@ -12,6 +12,8 @@ export type Plan = {
   regionId: number | null;
   durationDays: number;
   dataGb: string;
+  sms: number | null;
+  call: number | null;
   costPrice: string;
   price: string;
   retailPrice: string;
@@ -47,6 +49,8 @@ export type CreatePlanPayload = {
   regionId?: number | null;
   durationDays?: number;
   dataGb?: string;
+  sms?: number | null;
+  call?: number | null;
   costPrice?: string;
   price?: string;
   retailPrice?: string;
@@ -57,3 +61,32 @@ export type CreatePlanPayload = {
 };
 
 export type UpdatePlanPayload = Partial<CreatePlanPayload>;
+
+export type PlanColumnMapping = {
+  providerPlanId?: string;
+  name?: string;
+  durationDays?: string;
+  dataGb?: string;
+  costPrice?: string;
+  price?: string;
+  retailPrice?: string;
+  currency?: string;
+  countryCode?: string;
+  slug?: string;
+  sms?: string;
+  call?: string;
+  type?: string;
+};
+
+export type ImportPlansExcelPayload = {
+  file: File;
+  provider: string;
+  columnMapping: PlanColumnMapping;
+  sheet?: string;
+};
+
+export type ImportPlansExcelResponse = {
+  message: string;
+  imported: number;
+  errors?: string[];
+};

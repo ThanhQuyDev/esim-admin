@@ -12,7 +12,7 @@ export const columns: ColumnDef<User>[] = [
     id: 'name',
     accessorFn: (row) => `${row.firstName} ${row.lastName}`,
     header: ({ column }: { column: Column<User, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Name' />
+      <DataTableColumnHeader column={column} title='Tên' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
@@ -23,8 +23,8 @@ export const columns: ColumnDef<User>[] = [
       </div>
     ),
     meta: {
-      label: 'Name',
-      placeholder: 'Search users...',
+      label: 'Tên',
+      placeholder: 'Tìm kiếm người dùng...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -35,7 +35,7 @@ export const columns: ColumnDef<User>[] = [
     accessorFn: (row) => String(row.role?.id),
     enableSorting: false,
     header: ({ column }: { column: Column<User, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Role' />
+      <DataTableColumnHeader column={column} title='Vai trò' />
     ),
     cell: ({ row }) => {
       return (
@@ -46,7 +46,7 @@ export const columns: ColumnDef<User>[] = [
     },
     enableColumnFilter: true,
     meta: {
-      label: 'roles',
+      label: 'Vai trò',
       variant: 'multiSelect' as const,
       options: ROLE_OPTIONS
     }
@@ -54,7 +54,7 @@ export const columns: ColumnDef<User>[] = [
   {
     id: 'status',
     accessorFn: (row) => String(row.status?.id),
-    header: 'STATUS',
+    header: 'TRẠNG THÁI',
     cell: ({ row }) => {
       const statusName = row.original.status?.name?.toLowerCase();
       const variant =

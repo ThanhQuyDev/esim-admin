@@ -10,7 +10,7 @@ export const columns: ColumnDef<Region>[] = [
   {
     id: 'avatar',
     accessorKey: 'avatarUrl',
-    header: 'Avatar',
+    header: 'Ảnh đại diện',
     cell: ({ row }) => {
       const avatarUrl = row.original.avatarUrl;
       return avatarUrl ? (
@@ -29,7 +29,7 @@ export const columns: ColumnDef<Region>[] = [
     id: 'name',
     accessorKey: 'name',
     header: ({ column }: { column: Column<Region, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Name' />
+      <DataTableColumnHeader column={column} title='Tên' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
@@ -38,8 +38,8 @@ export const columns: ColumnDef<Region>[] = [
       </div>
     ),
     meta: {
-      label: 'Name',
-      placeholder: 'Search regions...',
+      label: 'Tên',
+      placeholder: 'Tìm kiếm khu vực...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -48,19 +48,30 @@ export const columns: ColumnDef<Region>[] = [
   {
     id: 'children',
     accessorFn: (row) => row.destinationCount ?? 0,
-    header: 'Countries',
+    header: 'Quốc gia',
     cell: ({ row }) => (
-      <Badge variant='outline'>{row.original.destinationCount ?? 0} countries</Badge>
+      <Badge variant='outline'>{row.original.destinationCount ?? 0} quốc gia</Badge>
+    ),
+    enableSorting: false
+  },
+  {
+    id: 'isPopular',
+    accessorKey: 'isPopular',
+    header: 'Nổi bật',
+    cell: ({ row }) => (
+      <Badge variant={row.original.isPopular ? 'default' : 'secondary'}>
+        {row.original.isPopular ? 'Có' : 'Không'}
+      </Badge>
     ),
     enableSorting: false
   },
   {
     id: 'isActive',
     accessorKey: 'isActive',
-    header: 'Active',
+    header: 'Hoạt động',
     cell: ({ row }) => (
       <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
-        {row.original.isActive ? 'Active' : 'Inactive'}
+        {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
     enableSorting: false

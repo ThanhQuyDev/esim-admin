@@ -5,7 +5,7 @@ import type { SearchParams } from 'nuqs/server';
 import { RegionFormSheetTrigger } from '@/features/regions/components/region-form-sheet';
 
 export const metadata = {
-  title: 'Dashboard: Regions'
+  title: 'Dashboard: Khu vực'
 };
 
 type PageProps = {
@@ -19,8 +19,8 @@ export default async function RegionsPage(props: PageProps) {
   return (
     <PageContainer
       scrollable={false}
-      pageTitle='Regions'
-      pageDescription='Manage your regions.'
+      pageTitle='Khu vực'
+      pageDescription='Quản lý các khu vực của bạn.'
       pageHeaderAction={<RegionFormSheetTrigger />}
     >
       <RegionListingPage />

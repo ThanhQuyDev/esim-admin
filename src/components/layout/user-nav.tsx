@@ -45,12 +45,12 @@ export function UserNav() {
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
-              Profile
+              Hồ sơ
             </DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuItem>Cài đặt</DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>Đăng xuất</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );

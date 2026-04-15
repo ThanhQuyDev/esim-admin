@@ -2,10 +2,10 @@ import { NavGroup } from '@/types';
 
 export const navGroups: NavGroup[] = [
   {
-    label: 'Overview',
+    label: 'Tổng quan',
     items: [
       {
-        title: 'Dashboard',
+        title: 'Bảng điều khiển',
         url: '/dashboard/overview',
         icon: 'dashboard',
         isActive: false,
@@ -13,7 +13,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Destination',
+        title: 'Điểm đến',
         url: '/dashboard/destinations',
         icon: 'global',
         shortcut: ['p', 'p'],
@@ -21,7 +21,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Region',
+        title: 'Khu vực',
         url: '/dashboard/region',
         icon: 'worldMap',
         shortcut: ['r', 'r'],
@@ -29,7 +29,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Esim Plan',
+        title: 'Gói eSIM',
         url: '/dashboard/esim-plan',
         icon: 'product',
         shortcut: ['p', 'p'],
@@ -37,7 +37,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Users',
+        title: 'Người dùng',
         url: '/dashboard/users',
         icon: 'teams',
         shortcut: ['u', 'u'],
@@ -45,7 +45,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Blogs',
+        title: 'Bài viết',
         url: '/dashboard/blogs',
         icon: 'blog',
         shortcut: ['b', 'b'],
@@ -53,21 +53,21 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Why Choose Us',
+        title: 'Tại sao chọn chúng tôi',
         url: '/dashboard/why-choose-us',
         icon: 'award',
         isActive: false,
         items: []
       },
       {
-        title: 'FAQs',
+        title: 'Câu hỏi thường gặp',
         url: '/dashboard/faqs',
         icon: 'question',
         isActive: false,
         items: []
       },
       {
-        title: 'Chat',
+        title: 'Trò chuyện',
         url: '/dashboard/chat',
         icon: 'chat',
         shortcut: ['c', 'c'],
@@ -80,19 +80,19 @@ export const navGroups: NavGroup[] = [
     label: '',
     items: [
       {
-        title: 'Account',
+        title: 'Tài khoản',
         url: '#',
         icon: 'account',
         isActive: true,
         items: [
           {
-            title: 'Profile',
+            title: 'Hồ sơ',
             url: '/dashboard/profile',
             icon: 'profile',
             shortcut: ['m', 'm']
           },
           {
-            title: 'Notifications',
+            title: 'Thông báo',
             url: '/dashboard/notifications',
             icon: 'notification',
             shortcut: ['n', 'n']

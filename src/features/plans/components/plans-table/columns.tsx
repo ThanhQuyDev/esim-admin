@@ -10,7 +10,7 @@ export const columns: ColumnDef<Plan>[] = [
   {
     id: 'destination',
     accessorFn: (row) => row.destination?.name ?? row.countryCode,
-    header: 'Destination',
+    header: 'Điểm đến',
     cell: ({ row }) => {
       const dest = row.original.destination;
       return (
@@ -28,7 +28,7 @@ export const columns: ColumnDef<Plan>[] = [
     id: 'name',
     accessorKey: 'name',
     header: ({ column }: { column: Column<Plan, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Plan Name' />
+      <DataTableColumnHeader column={column} title='Tên gói' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
@@ -39,8 +39,8 @@ export const columns: ColumnDef<Plan>[] = [
       </div>
     ),
     meta: {
-      label: 'Name',
-      placeholder: 'Search plans...',
+      label: 'Tên',
+      placeholder: 'Tìm kiếm gói...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -50,25 +50,39 @@ export const columns: ColumnDef<Plan>[] = [
     id: 'duration',
     accessorKey: 'durationDays',
     header: ({ column }: { column: Column<Plan, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Duration' />
+      <DataTableColumnHeader column={column} title='Thời hạn' />
     ),
-    cell: ({ row }) => <span>{row.original.durationDays} days</span>
+    cell: ({ row }) => <span>{row.original.durationDays} ngày</span>
   },
   {
     id: 'data',
     accessorKey: 'dataGb',
-    header: 'Data',
+    header: 'Dữ liệu',
     cell: ({ row }) => {
       const gb = parseFloat(row.original.dataGb);
-      return <span>{gb > 0 ? `${gb} GB` : 'Unlimited'}</span>;
+      return <span>{gb > 0 ? `${gb} GB` : 'Không giới hạn'}</span>;
     },
+    enableSorting: false
+  },
+  {
+    id: 'sms',
+    accessorKey: 'sms',
+    header: 'SMS',
+    cell: ({ row }) => <span>{row.original.sms != null ? row.original.sms : '—'}</span>,
+    enableSorting: false
+  },
+  {
+    id: 'call',
+    accessorKey: 'call',
+    header: 'Gọi điện',
+    cell: ({ row }) => <span>{row.original.call != null ? `${row.original.call} phút` : '—'}</span>,
     enableSorting: false
   },
   {
     id: 'price',
     accessorKey: 'price',
     header: ({ column }: { column: Column<Plan, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Price' />
+      <DataTableColumnHeader column={column} title='Giá' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
@@ -76,7 +90,7 @@ export const columns: ColumnDef<Plan>[] = [
           ${row.original.price} {row.original.currency}
         </span>
         <span className='text-muted-foreground text-xs'>
-          Cost: ${row.original.costPrice} · Retail: ${row.original.retailPrice}
+          Giá gốc: ${row.original.costPrice} · Giá bán: ${row.original.retailPrice}
         </span>
       </div>
     )
@@ -87,7 +101,7 @@ export const columns: ColumnDef<Plan>[] = [
     header: 'Top-Up',
     cell: ({ row }) => (
       <Badge variant={row.original.topUp ? 'default' : 'secondary'}>
-        {row.original.topUp ? 'Yes' : 'No'}
+        {row.original.topUp ? 'Có' : 'Không'}
       </Badge>
     ),
     enableSorting: false
@@ -95,30 +109,30 @@ export const columns: ColumnDef<Plan>[] = [
   {
     id: 'isCheapest',
     accessorFn: (row) => (row.isCheapest ? 'true' : 'false'),
-    header: 'Cheapest',
+    header: 'Rẻ nhất',
     cell: ({ row }) => (
       <Badge variant={row.original.isCheapest ? 'default' : 'secondary'}>
-        {row.original.isCheapest ? 'Yes' : 'No'}
+        {row.original.isCheapest ? 'Có' : 'Không'}
       </Badge>
     ),
     enableSorting: false,
     enableColumnFilter: true,
     meta: {
-      label: 'Cheapest',
+      label: 'Rẻ nhất',
       variant: 'multiSelect' as const,
       options: [
-        { value: 'true', label: 'Yes' },
-        { value: 'false', label: 'No' }
+        { value: 'true', label: 'Có' },
+        { value: 'false', label: 'Không' }
       ]
     }
   },
   {
     id: 'isActive',
     accessorKey: 'isActive',
-    header: 'Active',
+    header: 'Hoạt động',
     cell: ({ row }) => (
       <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
-        {row.original.isActive ? 'Active' : 'Inactive'}
+        {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
     enableSorting: false

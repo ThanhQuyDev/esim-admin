@@ -11,7 +11,7 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
     id: 'title',
     accessorKey: 'title',
     header: ({ column }: { column: Column<WhyChooseUs, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Title' />
+      <DataTableColumnHeader column={column} title='Tiêu đề' />
     ),
     cell: ({ row }) => (
       <div className='flex flex-col'>
@@ -19,13 +19,18 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
         <span className='text-muted-foreground text-xs'>{row.original.icon}</span>
       </div>
     ),
-    meta: { label: 'Title', placeholder: 'Search...', variant: 'text' as const, icon: Icons.text },
+    meta: {
+      label: 'Tiêu đề',
+      placeholder: 'Tìm kiếm...',
+      variant: 'text' as const,
+      icon: Icons.text
+    },
     enableColumnFilter: true
   },
   {
     id: 'description',
     accessorKey: 'description',
-    header: 'Description',
+    header: 'Mô tả',
     cell: ({ row }) => (
       <span className='line-clamp-2 max-w-xs text-sm'>{row.original.description}</span>
     )
@@ -33,7 +38,7 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
   {
     id: 'language',
     accessorKey: 'language',
-    header: 'Lang',
+    header: 'Ngôn ngữ',
     cell: ({ row }) => <Badge variant='outline'>{row.original.language.toUpperCase()}</Badge>,
     enableSorting: false
   },
@@ -41,16 +46,16 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
     id: 'sortOrder',
     accessorKey: 'sortOrder',
     header: ({ column }: { column: Column<WhyChooseUs, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Order' />
+      <DataTableColumnHeader column={column} title='Thứ tự' />
     )
   },
   {
     id: 'isActive',
     accessorKey: 'isActive',
-    header: 'Active',
+    header: 'Hoạt động',
     cell: ({ row }) => (
       <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
-        {row.original.isActive ? 'Active' : 'Inactive'}
+        {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
     enableSorting: false

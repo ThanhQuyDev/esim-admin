@@ -30,8 +30,8 @@ const API_ROLE_OPTIONS = [
 ];
 
 const API_STATUS_OPTIONS = [
-  { value: '1', label: 'Active' },
-  { value: '2', label: 'Inactive' }
+  { value: '1', label: 'Hoạt động' },
+  { value: '2', label: 'Không hoạt động' }
 ];
 
 interface UserFormSheetProps {
@@ -60,11 +60,11 @@ function CreateUserSheet({
   const createMutation = useMutation({
     ...createUserMutation,
     onSuccess: () => {
-      toast.success('User created successfully');
+      toast.success('Tạo người dùng thành công');
       onOpenChange(false);
       form.reset();
     },
-    onError: (error) => toast.error(error.message || 'Failed to create user')
+    onError: (error) => toast.error(error.message || 'Tạo người dùng thất bại')
   });
 
   const form = useAppForm({
@@ -98,8 +98,8 @@ function CreateUserSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>New User</SheetTitle>
-          <SheetDescription>Fill in the details to create a new user.</SheetDescription>
+          <SheetTitle>Người dùng mới</SheetTitle>
+          <SheetDescription>Điền thông tin để tạo người dùng mới.</SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
@@ -108,20 +108,20 @@ function CreateUserSheet({
               <div className='grid grid-cols-2 gap-4'>
                 <FormTextField
                   name='firstName'
-                  label='First Name'
+                  label='Họ'
                   required
-                  placeholder='John'
+                  placeholder='Nguyễn'
                   validators={{
-                    onBlur: z.string().min(2, 'First name must be at least 2 characters')
+                    onBlur: z.string().min(2, 'Họ phải có ít nhất 2 ký tự')
                   }}
                 />
                 <FormTextField
                   name='lastName'
-                  label='Last Name'
+                  label='Tên'
                   required
-                  placeholder='Doe'
+                  placeholder='Văn A'
                   validators={{
-                    onBlur: z.string().min(2, 'Last name must be at least 2 characters')
+                    onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
                   }}
                 />
               </div>
@@ -131,42 +131,42 @@ function CreateUserSheet({
                 label='Email'
                 required
                 type='email'
-                placeholder='john@example.com'
+                placeholder='nguyen@example.com'
                 validators={{
-                  onBlur: z.string().email('Please enter a valid email')
+                  onBlur: z.string().email('Vui lòng nhập email hợp lệ')
                 }}
               />
 
               <FormTextField
                 name='password'
-                label='Password'
+                label='Mật khẩu'
                 required
                 type='password'
-                placeholder='Enter password'
+                placeholder='Nhập mật khẩu'
                 validators={{
-                  onBlur: z.string().min(6, 'Password must be at least 6 characters')
+                  onBlur: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
                 }}
               />
 
               <FormSelectField
                 name='roleId'
-                label='Role'
+                label='Vai trò'
                 required
                 options={API_ROLE_OPTIONS}
-                placeholder='Select role'
+                placeholder='Chọn vai trò'
                 validators={{
-                  onBlur: z.string().min(1, 'Please select a role')
+                  onBlur: z.string().min(1, 'Vui lòng chọn vai trò')
                 }}
               />
 
               <FormSelectField
                 name='statusId'
-                label='Status'
+                label='Trạng thái'
                 required
                 options={API_STATUS_OPTIONS}
-                placeholder='Select status'
+                placeholder='Chọn trạng thái'
                 validators={{
-                  onBlur: z.string().min(1, 'Please select a status')
+                  onBlur: z.string().min(1, 'Vui lòng chọn trạng thái')
                 }}
               />
             </form.Form>
@@ -175,10 +175,10 @@ function CreateUserSheet({
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='user-form-sheet' isLoading={createMutation.isPending}>
-            <Icons.check /> Create User
+            <Icons.check /> Tạo người dùng
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -198,10 +198,10 @@ function EditUserSheet({
   const updateMutation = useMutation({
     ...updateUserMutation,
     onSuccess: () => {
-      toast.success('User updated successfully');
+      toast.success('Cập nhật người dùng thành công');
       onOpenChange(false);
     },
-    onError: (error) => toast.error(error.message || 'Failed to update user')
+    onError: (error) => toast.error(error.message || 'Cập nhật người dùng thất bại')
   });
 
   const form = useAppForm({
@@ -233,8 +233,8 @@ function EditUserSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Edit User</SheetTitle>
-          <SheetDescription>Update the user details below.</SheetDescription>
+          <SheetTitle>Chỉnh sửa người dùng</SheetTitle>
+          <SheetDescription>Cập nhật thông tin người dùng bên dưới.</SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
@@ -243,20 +243,20 @@ function EditUserSheet({
               <div className='grid grid-cols-2 gap-4'>
                 <FormTextField
                   name='firstName'
-                  label='First Name'
+                  label='Họ'
                   required
-                  placeholder='John'
+                  placeholder='Nguyễn'
                   validators={{
-                    onBlur: z.string().min(2, 'First name must be at least 2 characters')
+                    onBlur: z.string().min(2, 'Họ phải có ít nhất 2 ký tự')
                   }}
                 />
                 <FormTextField
                   name='lastName'
-                  label='Last Name'
+                  label='Tên'
                   required
-                  placeholder='Doe'
+                  placeholder='Văn A'
                   validators={{
-                    onBlur: z.string().min(2, 'Last name must be at least 2 characters')
+                    onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
                   }}
                 />
               </div>
@@ -266,31 +266,31 @@ function EditUserSheet({
                 label='Email'
                 required
                 type='email'
-                placeholder='john@example.com'
+                placeholder='nguyen@example.com'
                 validators={{
-                  onBlur: z.string().email('Please enter a valid email')
+                  onBlur: z.string().email('Vui lòng nhập email hợp lệ')
                 }}
               />
 
               <FormSelectField
                 name='roleId'
-                label='Role'
+                label='Vai trò'
                 required
                 options={API_ROLE_OPTIONS}
-                placeholder='Select role'
+                placeholder='Chọn vai trò'
                 validators={{
-                  onBlur: z.string().min(1, 'Please select a role')
+                  onBlur: z.string().min(1, 'Vui lòng chọn vai trò')
                 }}
               />
 
               <FormSelectField
                 name='statusId'
-                label='Status'
+                label='Trạng thái'
                 required
                 options={API_STATUS_OPTIONS}
-                placeholder='Select status'
+                placeholder='Chọn trạng thái'
                 validators={{
-                  onBlur: z.string().min(1, 'Please select a status')
+                  onBlur: z.string().min(1, 'Vui lòng chọn trạng thái')
                 }}
               />
             </form.Form>
@@ -299,10 +299,10 @@ function EditUserSheet({
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='user-form-sheet' isLoading={updateMutation.isPending}>
-            <Icons.check /> Update User
+            <Icons.check /> Cập nhật người dùng
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -316,7 +316,7 @@ export function UserFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)}>
-        <Icons.add className='mr-2 h-4 w-4' /> Add User
+        <Icons.add className='mr-2 h-4 w-4' /> Thêm người dùng
       </Button>
       <UserFormSheet open={open} onOpenChange={setOpen} />
     </>

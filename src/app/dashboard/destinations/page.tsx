@@ -5,7 +5,7 @@ import type { SearchParams } from 'nuqs/server';
 import { DestinationFormSheetTrigger } from '@/features/destinations/components/destination-form-sheet';
 
 export const metadata = {
-  title: 'Dashboard: Destinations'
+  title: 'Dashboard: Điểm đến'
 };
 
 type PageProps = {
@@ -19,8 +19,8 @@ export default async function DestinationsPage(props: PageProps) {
   return (
     <PageContainer
       scrollable={false}
-      pageTitle='Destinations'
-      pageDescription='Manage your destinations.'
+      pageTitle='Điểm đến'
+      pageDescription='Quản lý các điểm đến của bạn.'
       pageHeaderAction={<DestinationFormSheetTrigger />}
     >
       <DestinationListingPage />

@@ -61,11 +61,11 @@ function CreatePlanSheet({
   const createMut = useMutation({
     ...createPlanMutation,
     onSuccess: () => {
-      toast.success('Plan created successfully');
+      toast.success('Tạo gói thành công');
       onOpenChange(false);
       form.reset();
     },
-    onError: (error) => toast.error(error.message || 'Failed to create plan')
+    onError: (error) => toast.error(error.message || 'Tạo gói thất bại')
   });
 
   const form = useAppForm({
@@ -79,6 +79,8 @@ function CreatePlanSheet({
       regionId: '',
       durationDays: '',
       dataGb: '',
+      sms: '',
+      call: '',
       costPrice: '',
       price: '',
       retailPrice: '',
@@ -101,6 +103,8 @@ function CreatePlanSheet({
         ...(value.regionId && { regionId: Number(value.regionId) }),
         ...(value.durationDays && { durationDays: Number(value.durationDays) }),
         ...(value.dataGb && { dataGb: value.dataGb }),
+        ...(value.sms && { sms: Number(value.sms) }),
+        ...(value.call && { call: Number(value.call) }),
         ...(value.costPrice && { costPrice: value.costPrice }),
         ...(value.price && { price: value.price }),
         ...(value.retailPrice && { retailPrice: value.retailPrice }),
@@ -119,8 +123,8 @@ function CreatePlanSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>New eSIM Plan</SheetTitle>
-          <SheetDescription>Fill in the details to create a new plan.</SheetDescription>
+          <SheetTitle>Gói eSIM mới</SheetTitle>
+          <SheetDescription>Điền thông tin để tạo gói mới.</SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
@@ -128,57 +132,62 @@ function CreatePlanSheet({
             <form.Form id='plan-form-sheet' className='space-y-4'>
               <FormTextField
                 name='name'
-                label='Plan Name'
+                label='Tên gói'
                 required
-                placeholder='Unlimited - 3 days'
+                placeholder='Không giới hạn - 3 ngày'
                 validators={{
-                  onBlur: z.string().min(2, 'Name must be at least 2 characters')
+                  onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
                 }}
               />
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='provider' label='Provider' placeholder='airalo' />
+                <FormTextField name='provider' label='Nhà cung cấp' placeholder='airalo' />
                 <FormTextField
                   name='providerPlanId'
-                  label='Provider Plan ID'
+                  label='Mã gói nhà cung cấp'
                   placeholder='plan-id'
                 />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='countryCode' label='Country Code' placeholder='US' />
-                <FormTextField name='slug' label='Slug' placeholder='plan-slug' />
+                <FormTextField name='countryCode' label='Mã quốc gia' placeholder='US' />
+                <FormTextField name='slug' label='Slug' placeholder='goi-slug' />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='destinationId' label='Destination ID' placeholder='1' />
-                <FormTextField name='regionId' label='Region ID' placeholder='1' />
+                <FormTextField name='destinationId' label='Mã điểm đến' placeholder='1' />
+                <FormTextField name='regionId' label='Mã khu vực' placeholder='1' />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='durationDays' label='Duration (days)' placeholder='3' />
-                <FormTextField name='dataGb' label='Data (GB)' placeholder='0.00' />
+                <FormTextField name='durationDays' label='Thời hạn (ngày)' placeholder='3' />
+                <FormTextField name='dataGb' label='Dữ liệu (GB)' placeholder='0.00' />
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <FormTextField name='sms' label='SMS' placeholder='Số lượng SMS' />
+                <FormTextField name='call' label='Gọi điện (phút)' placeholder='Số phút gọi' />
               </div>
 
               <div className='grid grid-cols-3 gap-4'>
-                <FormTextField name='costPrice' label='Cost Price' placeholder='6.30' />
-                <FormTextField name='price' label='Price' placeholder='6.30' />
-                <FormTextField name='retailPrice' label='Retail Price' placeholder='11.50' />
+                <FormTextField name='costPrice' label='Giá gốc' placeholder='6.30' />
+                <FormTextField name='price' label='Giá' placeholder='6.30' />
+                <FormTextField name='retailPrice' label='Giá bán lẻ' placeholder='11.50' />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormSelectField name='currency' label='Currency' options={CURRENCY_OPTIONS} />
+                <FormSelectField name='currency' label='Tiền tệ' options={CURRENCY_OPTIONS} />
                 <FormSelectField
                   name='type'
-                  label='Type'
+                  label='Loại'
                   options={PLAN_TYPE_OPTIONS}
-                  placeholder='Select type'
+                  placeholder='Chọn loại'
                 />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
                 <FormSwitchField name='topUp' label='Top-Up' />
-                <FormSwitchField name='isActive' label='Active' />
+                <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
             </form.Form>
           </form.AppForm>
@@ -186,10 +195,10 @@ function CreatePlanSheet({
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='plan-form-sheet' isLoading={createMut.isPending}>
-            <Icons.check /> Create
+            <Icons.check /> Tạo mới
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -209,10 +218,10 @@ function EditPlanSheet({
   const updateMut = useMutation({
     ...updatePlanMutation,
     onSuccess: () => {
-      toast.success('Plan updated successfully');
+      toast.success('Cập nhật gói thành công');
       onOpenChange(false);
     },
-    onError: (error) => toast.error(error.message || 'Failed to update plan')
+    onError: (error) => toast.error(error.message || 'Cập nhật gói thất bại')
   });
 
   const form = useAppForm({
@@ -226,6 +235,8 @@ function EditPlanSheet({
       regionId: plan.regionId ? String(plan.regionId) : '',
       durationDays: String(plan.durationDays ?? ''),
       dataGb: plan.dataGb ?? '',
+      sms: plan.sms != null ? String(plan.sms) : '',
+      call: plan.call != null ? String(plan.call) : '',
       costPrice: plan.costPrice ?? '',
       price: plan.price ?? '',
       retailPrice: plan.retailPrice ?? '',
@@ -248,6 +259,8 @@ function EditPlanSheet({
         regionId: value.regionId ? Number(value.regionId) : undefined,
         durationDays: value.durationDays ? Number(value.durationDays) : undefined,
         dataGb: value.dataGb || undefined,
+        sms: value.sms ? Number(value.sms) : undefined,
+        call: value.call ? Number(value.call) : undefined,
         costPrice: value.costPrice || undefined,
         price: value.price || undefined,
         retailPrice: value.retailPrice || undefined,
@@ -266,8 +279,8 @@ function EditPlanSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Edit eSIM Plan</SheetTitle>
-          <SheetDescription>Update the plan details below.</SheetDescription>
+          <SheetTitle>Chỉnh sửa gói eSIM</SheetTitle>
+          <SheetDescription>Cập nhật thông tin gói bên dưới.</SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
@@ -275,57 +288,62 @@ function EditPlanSheet({
             <form.Form id='plan-form-sheet' className='space-y-4'>
               <FormTextField
                 name='name'
-                label='Plan Name'
+                label='Tên gói'
                 required
-                placeholder='Unlimited - 3 days'
+                placeholder='Không giới hạn - 3 ngày'
                 validators={{
-                  onBlur: z.string().min(2, 'Name must be at least 2 characters')
+                  onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
                 }}
               />
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='provider' label='Provider' placeholder='airalo' />
+                <FormTextField name='provider' label='Nhà cung cấp' placeholder='airalo' />
                 <FormTextField
                   name='providerPlanId'
-                  label='Provider Plan ID'
+                  label='Mã gói nhà cung cấp'
                   placeholder='plan-id'
                 />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='countryCode' label='Country Code' placeholder='US' />
-                <FormTextField name='slug' label='Slug' placeholder='plan-slug' />
+                <FormTextField name='countryCode' label='Mã quốc gia' placeholder='US' />
+                <FormTextField name='slug' label='Slug' placeholder='goi-slug' />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='destinationId' label='Destination ID' placeholder='1' />
-                <FormTextField name='regionId' label='Region ID' placeholder='1' />
+                <FormTextField name='destinationId' label='Mã điểm đến' placeholder='1' />
+                <FormTextField name='regionId' label='Mã khu vực' placeholder='1' />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='durationDays' label='Duration (days)' placeholder='3' />
-                <FormTextField name='dataGb' label='Data (GB)' placeholder='0.00' />
+                <FormTextField name='durationDays' label='Thời hạn (ngày)' placeholder='3' />
+                <FormTextField name='dataGb' label='Dữ liệu (GB)' placeholder='0.00' />
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <FormTextField name='sms' label='SMS' placeholder='Số lượng SMS' />
+                <FormTextField name='call' label='Gọi điện (phút)' placeholder='Số phút gọi' />
               </div>
 
               <div className='grid grid-cols-3 gap-4'>
-                <FormTextField name='costPrice' label='Cost Price' placeholder='6.30' />
-                <FormTextField name='price' label='Price' placeholder='6.30' />
-                <FormTextField name='retailPrice' label='Retail Price' placeholder='11.50' />
+                <FormTextField name='costPrice' label='Giá gốc' placeholder='6.30' />
+                <FormTextField name='price' label='Giá' placeholder='6.30' />
+                <FormTextField name='retailPrice' label='Giá bán lẻ' placeholder='11.50' />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
-                <FormSelectField name='currency' label='Currency' options={CURRENCY_OPTIONS} />
+                <FormSelectField name='currency' label='Tiền tệ' options={CURRENCY_OPTIONS} />
                 <FormSelectField
                   name='type'
-                  label='Type'
+                  label='Loại'
                   options={PLAN_TYPE_OPTIONS}
-                  placeholder='Select type'
+                  placeholder='Chọn loại'
                 />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
                 <FormSwitchField name='topUp' label='Top-Up' />
-                <FormSwitchField name='isActive' label='Active' />
+                <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
             </form.Form>
           </form.AppForm>
@@ -333,10 +351,10 @@ function EditPlanSheet({
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='plan-form-sheet' isLoading={updateMut.isPending}>
-            <Icons.check /> Update
+            <Icons.check /> Cập nhật
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -350,7 +368,7 @@ export function PlanFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)} size='sm'>
-        <Icons.add className='mr-2 h-4 w-4' /> Add Plan
+        <Icons.add className='mr-2 h-4 w-4' /> Thêm gói
       </Button>
       <PlanFormSheet open={open} onOpenChange={setOpen} />
     </>

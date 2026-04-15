@@ -11,7 +11,7 @@ import { CATEGORY_OPTIONS } from './options';
 export const columns: ColumnDef<Product>[] = [
   {
     accessorKey: 'photo_url',
-    header: 'IMAGE',
+    header: 'HÌNH ẢNH',
     cell: ({ row }) => {
       return (
         <div className='relative aspect-square'>
@@ -30,12 +30,12 @@ export const columns: ColumnDef<Product>[] = [
     id: 'name',
     accessorKey: 'name',
     header: ({ column }: { column: Column<Product, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Name' />
+      <DataTableColumnHeader column={column} title='Tên' />
     ),
     cell: ({ cell }) => <div>{cell.getValue<Product['name']>()}</div>,
     meta: {
-      label: 'Name',
-      placeholder: 'Search products...',
+      label: 'Tên',
+      placeholder: 'Tìm kiếm sản phẩm...',
       variant: 'text',
       icon: Icons.text
     },
@@ -46,7 +46,7 @@ export const columns: ColumnDef<Product>[] = [
     accessorKey: 'category',
     enableSorting: false,
     header: ({ column }: { column: Column<Product, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Category' />
+      <DataTableColumnHeader column={column} title='Danh mục' />
     ),
     cell: ({ cell }) => {
       const status = cell.getValue<Product['category']>();
@@ -61,18 +61,18 @@ export const columns: ColumnDef<Product>[] = [
     },
     enableColumnFilter: true,
     meta: {
-      label: 'categories',
+      label: 'Danh mục',
       variant: 'multiSelect',
       options: CATEGORY_OPTIONS
     }
   },
   {
     accessorKey: 'price',
-    header: 'PRICE'
+    header: 'GIÁ'
   },
   {
     accessorKey: 'description',
-    header: 'DESCRIPTION'
+    header: 'MÔ TẢ'
   },
 
   {

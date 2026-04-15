@@ -45,7 +45,7 @@ export function RegionDetailDialog({ region, open, onOpenChange }: RegionDetailD
           </div>
         ) : countries.length === 0 ? (
           <p className='text-muted-foreground py-8 text-center text-sm'>
-            No countries in this region.
+            Không có quốc gia nào trong khu vực này.
           </p>
         ) : (
           <ScrollArea className='max-h-[400px]'>

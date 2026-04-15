@@ -6,7 +6,7 @@ import { usersInfoContent } from '@/features/users/info-content';
 import { UserFormSheetTrigger } from '@/features/users/components/user-form-sheet';
 
 export const metadata = {
-  title: 'Dashboard: Users'
+  title: 'Dashboard: Người dùng'
 };
 
 type PageProps = {
@@ -20,7 +20,7 @@ export default async function UsersPage(props: PageProps) {
   return (
     <PageContainer
       scrollable={false}
-      pageTitle='Users'
+      pageTitle='Người dùng'
       infoContent={usersInfoContent}
       pageHeaderAction={<UserFormSheetTrigger />}
     >

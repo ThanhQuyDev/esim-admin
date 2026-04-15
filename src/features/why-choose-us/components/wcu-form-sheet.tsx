@@ -44,11 +44,11 @@ function CreateSheet({
   const mutation = useMutation({
     ...createWcuMutation,
     onSuccess: () => {
-      toast.success('Created');
+      toast.success('Tạo mục thành công');
       onOpenChange(false);
       form.reset();
     },
-    onError: (e) => toast.error(e.message || 'Failed')
+    onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
   const form = useAppForm({
     defaultValues: {
@@ -78,42 +78,37 @@ function CreateSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>New Item</SheetTitle>
-          <SheetDescription>Add a new Why Choose Us item.</SheetDescription>
+          <SheetTitle>Mục mới</SheetTitle>
+          <SheetDescription>Thêm mục "Tại sao chọn chúng tôi" mới.</SheetDescription>
         </SheetHeader>
         <div className='flex-1 overflow-auto'>
           <form.AppForm>
             <form.Form id='wcu-form-sheet' className='space-y-4'>
               <FormTextField
                 name='title'
-                label='Title'
+                label='Tiêu đề'
                 required
-                placeholder='Title'
+                placeholder='Tiêu đề'
                 validators={{ onBlur: z.string().min(2) }}
               />
-              <FormTextareaField
-                name='description'
-                label='Description'
-                required
-                placeholder='Description...'
-              />
+              <FormTextareaField name='description' label='Mô tả' required placeholder='Mô tả...' />
               <div className='grid grid-cols-2 gap-4'>
-                <FormSelectField name='language' label='Language' required options={LANG_OPTIONS} />
-                <FormTextField name='icon' label='Icon' placeholder='icon-name' />
+                <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
+                <FormTextField name='icon' label='Biểu tượng' placeholder='icon-name' />
               </div>
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='sortOrder' label='Sort Order' placeholder='0' />
-                <FormSwitchField name='isActive' label='Active' />
+                <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
+                <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
             </form.Form>
           </form.AppForm>
         </div>
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='wcu-form-sheet' isLoading={mutation.isPending}>
-            <Icons.check /> Create
+            <Icons.check /> Tạo mới
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -133,10 +128,10 @@ function EditSheet({
   const mutation = useMutation({
     ...updateWcuMutation,
     onSuccess: () => {
-      toast.success('Updated');
+      toast.success('Cập nhật mục thành công');
       onOpenChange(false);
     },
-    onError: (e) => toast.error(e.message || 'Failed')
+    onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
   const form = useAppForm({
     defaultValues: {
@@ -166,42 +161,37 @@ function EditSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Edit Item</SheetTitle>
-          <SheetDescription>Update the item.</SheetDescription>
+          <SheetTitle>Chỉnh sửa mục</SheetTitle>
+          <SheetDescription>Cập nhật thông tin mục.</SheetDescription>
         </SheetHeader>
         <div className='flex-1 overflow-auto'>
           <form.AppForm>
             <form.Form id='wcu-form-sheet' className='space-y-4'>
               <FormTextField
                 name='title'
-                label='Title'
+                label='Tiêu đề'
                 required
-                placeholder='Title'
+                placeholder='Tiêu đề'
                 validators={{ onBlur: z.string().min(2) }}
               />
-              <FormTextareaField
-                name='description'
-                label='Description'
-                required
-                placeholder='Description...'
-              />
+              <FormTextareaField name='description' label='Mô tả' required placeholder='Mô tả...' />
               <div className='grid grid-cols-2 gap-4'>
-                <FormSelectField name='language' label='Language' required options={LANG_OPTIONS} />
-                <FormTextField name='icon' label='Icon' placeholder='icon-name' />
+                <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
+                <FormTextField name='icon' label='Biểu tượng' placeholder='icon-name' />
               </div>
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='sortOrder' label='Sort Order' placeholder='0' />
-                <FormSwitchField name='isActive' label='Active' />
+                <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
+                <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
             </form.Form>
           </form.AppForm>
         </div>
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='wcu-form-sheet' isLoading={mutation.isPending}>
-            <Icons.check /> Update
+            <Icons.check /> Cập nhật
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -214,7 +204,7 @@ export function WcuFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)} size='sm'>
-        <Icons.add className='mr-2 h-4 w-4' /> Add Item
+        <Icons.add className='mr-2 h-4 w-4' /> Thêm mục
       </Button>
       <WcuFormSheet open={open} onOpenChange={setOpen} />
     </>

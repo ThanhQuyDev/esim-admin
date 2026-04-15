@@ -44,11 +44,11 @@ function CreateSheet({
   const mutation = useMutation({
     ...createFaqMutation,
     onSuccess: () => {
-      toast.success('FAQ created');
+      toast.success('Tạo câu hỏi thành công');
       onOpenChange(false);
       form.reset();
     },
-    onError: (e) => toast.error(e.message || 'Failed')
+    onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
   const form = useAppForm({
     defaultValues: {
@@ -76,39 +76,39 @@ function CreateSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>New FAQ</SheetTitle>
-          <SheetDescription>Add a new FAQ.</SheetDescription>
+          <SheetTitle>Câu hỏi mới</SheetTitle>
+          <SheetDescription>Thêm câu hỏi thường gặp mới.</SheetDescription>
         </SheetHeader>
         <div className='flex-1 overflow-auto'>
           <form.AppForm>
             <form.Form id='faq-form-sheet' className='space-y-4'>
               <FormTextField
                 name='question'
-                label='Question'
+                label='Câu hỏi'
                 required
-                placeholder='How do I...?'
+                placeholder='Làm thế nào để...?'
                 validators={{ onBlur: z.string().min(2) }}
               />
               <FormTextareaField
                 name='answer'
-                label='Answer'
+                label='Câu trả lời'
                 required
-                placeholder='The answer is...'
+                placeholder='Câu trả lời là...'
               />
               <div className='grid grid-cols-2 gap-4'>
-                <FormSelectField name='language' label='Language' required options={LANG_OPTIONS} />
-                <FormTextField name='sortOrder' label='Sort Order' placeholder='0' />
+                <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
+                <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
               </div>
-              <FormSwitchField name='isActive' label='Active' />
+              <FormSwitchField name='isActive' label='Hoạt động' />
             </form.Form>
           </form.AppForm>
         </div>
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='faq-form-sheet' isLoading={mutation.isPending}>
-            <Icons.check /> Create
+            <Icons.check /> Tạo mới
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -128,10 +128,10 @@ function EditSheet({
   const mutation = useMutation({
     ...updateFaqMutation,
     onSuccess: () => {
-      toast.success('FAQ updated');
+      toast.success('Cập nhật câu hỏi thành công');
       onOpenChange(false);
     },
-    onError: (e) => toast.error(e.message || 'Failed')
+    onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
   const form = useAppForm({
     defaultValues: {
@@ -159,39 +159,39 @@ function EditSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Edit FAQ</SheetTitle>
-          <SheetDescription>Update the FAQ.</SheetDescription>
+          <SheetTitle>Chỉnh sửa câu hỏi</SheetTitle>
+          <SheetDescription>Cập nhật câu hỏi thường gặp.</SheetDescription>
         </SheetHeader>
         <div className='flex-1 overflow-auto'>
           <form.AppForm>
             <form.Form id='faq-form-sheet' className='space-y-4'>
               <FormTextField
                 name='question'
-                label='Question'
+                label='Câu hỏi'
                 required
-                placeholder='How do I...?'
+                placeholder='Làm thế nào để...?'
                 validators={{ onBlur: z.string().min(2) }}
               />
               <FormTextareaField
                 name='answer'
-                label='Answer'
+                label='Câu trả lời'
                 required
-                placeholder='The answer is...'
+                placeholder='Câu trả lời là...'
               />
               <div className='grid grid-cols-2 gap-4'>
-                <FormSelectField name='language' label='Language' required options={LANG_OPTIONS} />
-                <FormTextField name='sortOrder' label='Sort Order' placeholder='0' />
+                <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
+                <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
               </div>
-              <FormSwitchField name='isActive' label='Active' />
+              <FormSwitchField name='isActive' label='Hoạt động' />
             </form.Form>
           </form.AppForm>
         </div>
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='faq-form-sheet' isLoading={mutation.isPending}>
-            <Icons.check /> Update
+            <Icons.check /> Cập nhật
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -204,7 +204,7 @@ export function FaqFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)} size='sm'>
-        <Icons.add className='mr-2 h-4 w-4' /> Add FAQ
+        <Icons.add className='mr-2 h-4 w-4' /> Thêm câu hỏi
       </Button>
       <FaqFormSheet open={open} onOpenChange={setOpen} />
     </>

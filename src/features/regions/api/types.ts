@@ -15,6 +15,7 @@ export type Region = {
   destinationCount: number;
   destinations: Destination[];
   avatarUrl: string | null;
+  isPopular: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -37,6 +38,7 @@ export type CreateRegionPayload = {
   name: string;
   slug?: string;
   avatarUrl?: string | null;
+  isPopular?: boolean;
   isActive?: boolean;
 };
 
@@ -45,5 +47,6 @@ export type UpdateRegionPayload = {
   slug?: string;
   parentId?: number | null;
   avatarUrl?: string | null;
+  isPopular?: boolean;
   isActive?: boolean;
 };

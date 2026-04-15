@@ -15,13 +15,13 @@ import { login } from '../api/service';
 import { InteractiveGridPattern } from './interactive-grid';
 
 export const metadata: Metadata = {
-  title: 'Sign In',
-  description: 'Sign in to your account'
+  title: 'Đăng nhập',
+  description: 'Đăng nhập vào tài khoản của bạn'
 };
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Enter a valid email address' }),
-  password: z.string().min(1, { message: 'Password is required' })
+  email: z.string().email({ message: 'Nhập địa chỉ email hợp lệ' }),
+  password: z.string().min(1, { message: 'Mật khẩu là bắt buộc' })
 });
 
 export default function SignInViewPage() {
@@ -33,7 +33,7 @@ export default function SignInViewPage() {
       router.push('/dashboard/overview');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Login failed');
+      toast.error(error.message || 'Đăng nhập thất bại');
     }
   });
 
@@ -59,7 +59,7 @@ export default function SignInViewPage() {
           'absolute top-4 right-4 md:top-8 md:right-8'
         )}
       >
-        Sign Up
+        Đăng ký
       </Link>
       <div className='bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r'>
         <div className='absolute inset-0 bg-zinc-900' />
@@ -87,8 +87,8 @@ export default function SignInViewPage() {
         <div className='relative z-20 mt-auto'>
           <blockquote className='space-y-2'>
             <p className='text-lg'>
-              &ldquo;This starter template has saved me countless hours of work and helped me
-              deliver projects to my clients faster than ever before.&rdquo;
+              &ldquo;Mẫu khởi đầu này đã giúp tôi tiết kiệm vô số giờ làm việc và giao dự án cho
+              khách hàng nhanh hơn bao giờ hết.&rdquo;
             </p>
             <footer className='text-sm'>Random Dude</footer>
           </blockquote>
@@ -97,9 +97,9 @@ export default function SignInViewPage() {
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-sm flex-col justify-center space-y-6'>
           <div className='flex flex-col space-y-2 text-center'>
-            <h1 className='text-2xl font-semibold tracking-tight'>Sign In</h1>
+            <h1 className='text-2xl font-semibold tracking-tight'>Đăng nhập</h1>
             <p className='text-muted-foreground text-sm'>
-              Enter your credentials to access your account
+              Nhập thông tin đăng nhập để truy cập tài khoản
             </p>
           </div>
           <form.AppForm>
@@ -130,7 +130,7 @@ export default function SignInViewPage() {
                 children={(field) => (
                   <field.FieldSet>
                     <field.Field>
-                      <Label htmlFor={field.name}>Password</Label>
+                      <Label htmlFor={field.name}>Mật khẩu</Label>
                       <Input
                         id={field.name}
                         name={field.name}
@@ -138,7 +138,7 @@ export default function SignInViewPage() {
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder='Enter your password'
+                        placeholder='Nhập mật khẩu'
                         disabled={mutation.isPending}
                       />
                     </field.Field>
@@ -146,18 +146,13 @@ export default function SignInViewPage() {
                   </field.FieldSet>
                 )}
               />
-              <form.SubmitButton className='w-full'>
-                Sign In
-              </form.SubmitButton>
+              <form.SubmitButton className='w-full'>Đăng nhập</form.SubmitButton>
             </form.Form>
           </form.AppForm>
           <p className='text-muted-foreground text-center text-sm'>
-            Don&apos;t have an account?{' '}
-            <Link
-              href='/auth/sign-up'
-              className='hover:text-primary underline underline-offset-4'
-            >
-              Sign Up
+            Chưa có tài khoản?{' '}
+            <Link href='/auth/sign-up' className='hover:text-primary underline underline-offset-4'>
+              Đăng ký
             </Link>
           </p>
         </div>

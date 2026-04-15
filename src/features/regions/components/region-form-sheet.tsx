@@ -106,18 +106,19 @@ function CreateRegionSheet({
   const createMutation = useMutation({
     ...createRegionMutation,
     onSuccess: () => {
-      toast.success('Region created successfully');
+      toast.success('Tạo khu vực thành công');
       onOpenChange(false);
       form.reset();
       setAvatarFile(null);
     },
-    onError: (error) => toast.error(error.message || 'Failed to create region')
+    onError: (error) => toast.error(error.message || 'Tạo khu vực thất bại')
   });
 
   const form = useAppForm({
     defaultValues: {
       name: '',
       slug: '',
+      isPopular: false,
       isActive: true
     } as CreateRegionFormValues,
     validators: {
@@ -136,12 +137,13 @@ function CreateRegionSheet({
           name: value.name,
           ...(value.slug && { slug: value.slug }),
           ...(avatarUrl && { avatarUrl }),
+          isPopular: value.isPopular ?? false,
           isActive: value.isActive ?? true
         };
 
         await createMutation.mutateAsync(payload);
       } catch {
-        toast.error('Failed to upload image');
+        toast.error('Tải ảnh lên thất bại');
       } finally {
         setUploading(false);
       }
@@ -156,8 +158,8 @@ function CreateRegionSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>New Region</SheetTitle>
-          <SheetDescription>Fill in the details to create a new region.</SheetDescription>
+          <SheetTitle>Khu vực mới</SheetTitle>
+          <SheetDescription>Điền thông tin để tạo khu vực mới.</SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
@@ -165,33 +167,36 @@ function CreateRegionSheet({
             <form.Form id='region-form-sheet' className='space-y-4'>
               <FormTextField
                 name='name'
-                label='Name'
+                label='Tên'
                 required
-                placeholder='European Union'
+                placeholder='Liên minh Châu Âu'
                 validators={{
-                  onBlur: z.string().min(2, 'Name must be at least 2 characters')
+                  onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
                 }}
               />
 
-              <FormTextField name='slug' label='Slug' placeholder='european-union' />
+              <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
 
               <ImageUploadField
-                label='Avatar Image'
+                label='Ảnh đại diện'
                 onFileSelect={setAvatarFile}
                 file={avatarFile}
               />
 
-              <FormSwitchField name='isActive' label='Active' />
+              <div className='grid grid-cols-2 gap-4'>
+                <FormSwitchField name='isPopular' label='Nổi bật' />
+                <FormSwitchField name='isActive' label='Hoạt động' />
+              </div>
             </form.Form>
           </form.AppForm>
         </div>
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='region-form-sheet' isLoading={isPending}>
-            <Icons.check /> Create
+            <Icons.check /> Tạo mới
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -214,16 +219,17 @@ function EditRegionSheet({
   const updateMutation = useMutation({
     ...updateRegionMutation,
     onSuccess: () => {
-      toast.success('Region updated successfully');
+      toast.success('Cập nhật khu vực thành công');
       onOpenChange(false);
     },
-    onError: (error) => toast.error(error.message || 'Failed to update region')
+    onError: (error) => toast.error(error.message || 'Cập nhật khu vực thất bại')
   });
 
   const form = useAppForm({
     defaultValues: {
       name: region.name,
       slug: region.slug ?? '',
+      isPopular: region.isPopular,
       isActive: region.isActive
     } as UpdateRegionFormValues,
     validators: {
@@ -242,6 +248,7 @@ function EditRegionSheet({
           name: value.name,
           slug: value.slug || undefined,
           ...(avatarUrl && { avatarUrl }),
+          isPopular: value.isPopular,
           isActive: value.isActive
         };
 
@@ -250,7 +257,7 @@ function EditRegionSheet({
           values: payload
         });
       } catch {
-        toast.error('Failed to upload image');
+        toast.error('Tải ảnh lên thất bại');
       } finally {
         setUploading(false);
       }
@@ -265,8 +272,8 @@ function EditRegionSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Edit Region</SheetTitle>
-          <SheetDescription>Update the region details below.</SheetDescription>
+          <SheetTitle>Chỉnh sửa khu vực</SheetTitle>
+          <SheetDescription>Cập nhật thông tin khu vực bên dưới.</SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
@@ -274,34 +281,37 @@ function EditRegionSheet({
             <form.Form id='region-form-sheet' className='space-y-4'>
               <FormTextField
                 name='name'
-                label='Name'
+                label='Tên'
                 required
-                placeholder='European Union'
+                placeholder='Liên minh Châu Âu'
                 validators={{
-                  onBlur: z.string().min(2, 'Name must be at least 2 characters')
+                  onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
                 }}
               />
 
-              <FormTextField name='slug' label='Slug' placeholder='european-union' />
+              <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
 
               <ImageUploadField
-                label='Avatar Image'
+                label='Ảnh đại diện'
                 currentUrl={region.avatarUrl}
                 onFileSelect={setAvatarFile}
                 file={avatarFile}
               />
 
-              <FormSwitchField name='isActive' label='Active' />
+              <div className='grid grid-cols-2 gap-4'>
+                <FormSwitchField name='isPopular' label='Nổi bật' />
+                <FormSwitchField name='isActive' label='Hoạt động' />
+              </div>
             </form.Form>
           </form.AppForm>
         </div>
 
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='region-form-sheet' isLoading={isPending}>
-            <Icons.check /> Update
+            <Icons.check /> Cập nhật
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -315,7 +325,7 @@ export function RegionFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)} size='sm'>
-        <Icons.add className='mr-2 h-4 w-4' /> Add Region
+        <Icons.add className='mr-2 h-4 w-4' /> Thêm khu vực
       </Button>
       <RegionFormSheet open={open} onOpenChange={setOpen} />
     </>

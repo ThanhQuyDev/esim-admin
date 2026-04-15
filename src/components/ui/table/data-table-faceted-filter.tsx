@@ -124,7 +124,7 @@ export function DataTableFacetedFilter<TData, TValue>({
         <Command>
           <CommandInput placeholder={title} />
           <CommandList className='max-h-full'>
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>Không tìm thấy kết quả.</CommandEmpty>
             <CommandGroup className='max-h-[18.75rem] overflow-x-hidden overflow-y-auto'>
               {options.map((option) => {
                 const isSelected = selectedValues.has(option.value);

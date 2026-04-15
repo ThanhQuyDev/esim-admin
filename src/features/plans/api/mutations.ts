@@ -1,8 +1,8 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { createPlan, updatePlan, deletePlan } from './service';
+import { createPlan, updatePlan, deletePlan, importPlansExcel } from './service';
 import { planKeys } from './queries';
-import type { CreatePlanPayload, UpdatePlanPayload } from './types';
+import type { CreatePlanPayload, UpdatePlanPayload, ImportPlansExcelPayload } from './types';
 
 const invalidatePlans = () => {
   getQueryClient().invalidateQueries({ queryKey: planKeys.all });
@@ -20,5 +20,10 @@ export const updatePlanMutation = mutationOptions({
 
 export const deletePlanMutation = mutationOptions({
   mutationFn: (id: number) => deletePlan(id),
+  onSettled: invalidatePlans
+});
+
+export const importPlansExcelMutation = mutationOptions({
+  mutationFn: (data: ImportPlansExcelPayload) => importPlansExcel(data),
   onSettled: invalidatePlans
 });

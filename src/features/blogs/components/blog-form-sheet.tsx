@@ -96,13 +96,13 @@ function CreateBlogSheet({
   const mutation = useMutation({
     ...createBlogMutation,
     onSuccess: () => {
-      toast.success('Blog created');
+      toast.success('Tạo bài viết thành công');
       onOpenChange(false);
       form.reset();
       setCoverFile(null);
       setContent('');
     },
-    onError: (e) => toast.error(e.message || 'Failed to create blog')
+    onError: (e) => toast.error(e.message || 'Tạo bài viết thất bại')
   });
 
   const form = useAppForm({
@@ -135,7 +135,7 @@ function CreateBlogSheet({
         };
         await mutation.mutateAsync(payload);
       } catch {
-        toast.error('Failed to upload image');
+        toast.error('Tải ảnh lên thất bại');
       } finally {
         setUploading(false);
       }
@@ -150,55 +150,51 @@ function CreateBlogSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col sm:max-w-xl'>
         <SheetHeader>
-          <SheetTitle>New Blog</SheetTitle>
-          <SheetDescription>Create a new blog post.</SheetDescription>
+          <SheetTitle>Bài viết mới</SheetTitle>
+          <SheetDescription>Tạo bài viết mới.</SheetDescription>
         </SheetHeader>
         <div className='flex-1 overflow-auto'>
           <form.AppForm>
             <form.Form id='blog-form-sheet' className='space-y-4'>
               <FormTextField
                 name='title'
-                label='Title'
+                label='Tiêu đề'
                 required
-                placeholder='Blog title'
+                placeholder='Tiêu đề bài viết'
                 validators={{ onBlur: z.string().min(2) }}
               />
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='author' label='Author' required placeholder='Author name' />
-                <FormSelectField name='language' label='Language' required options={LANG_OPTIONS} />
+                <FormTextField name='author' label='Tác giả' required placeholder='Tên tác giả' />
+                <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
               </div>
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='slug' label='Slug' placeholder='blog-slug' />
-                <FormTextField name='tags' label='Tags' placeholder='tag1, tag2' />
+                <FormTextField name='slug' label='Slug' placeholder='duong-dan-bai-viet' />
+                <FormTextField name='tags' label='Thẻ' placeholder='thẻ1, thẻ2' />
               </div>
-              <ImageUploadField label='Cover Image' onFileSelect={setCoverFile} file={coverFile} />
-              <FormTextareaField
-                name='excerpt'
-                label='Excerpt'
-                placeholder='Short description...'
-              />
+              <ImageUploadField label='Ảnh bìa' onFileSelect={setCoverFile} file={coverFile} />
+              <FormTextareaField name='excerpt' label='Tóm tắt' placeholder='Mô tả ngắn...' />
               <div className='space-y-2'>
-                <label className='text-sm font-medium'>Content *</label>
+                <label className='text-sm font-medium'>Nội dung *</label>
                 <TiptapEditor
                   content={content}
                   onChange={(html) => {
                     setContent(html);
                     form.setFieldValue('content', html);
                   }}
-                  placeholder='Write your blog content...'
+                  placeholder='Viết nội dung bài viết...'
                   onImageUpload={uploadToCloudinary}
                 />
               </div>
-              <FormSwitchField name='isPublished' label='Published' />
+              <FormSwitchField name='isPublished' label='Xuất bản' />
             </form.Form>
           </form.AppForm>
         </div>
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='blog-form-sheet' isLoading={isPending}>
-            <Icons.check /> Create
+            <Icons.check /> Tạo mới
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -222,10 +218,10 @@ function EditBlogSheet({
   const mutation = useMutation({
     ...updateBlogMutation,
     onSuccess: () => {
-      toast.success('Blog updated');
+      toast.success('Cập nhật bài viết thành công');
       onOpenChange(false);
     },
-    onError: (e) => toast.error(e.message || 'Failed to update blog')
+    onError: (e) => toast.error(e.message || 'Cập nhật bài viết thất bại')
   });
 
   const form = useAppForm({
@@ -258,7 +254,7 @@ function EditBlogSheet({
         };
         await mutation.mutateAsync({ id: blog.id, values: payload });
       } catch {
-        toast.error('Failed to upload image');
+        toast.error('Tải ảnh lên thất bại');
       } finally {
         setUploading(false);
       }
@@ -273,60 +269,56 @@ function EditBlogSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col sm:max-w-xl'>
         <SheetHeader>
-          <SheetTitle>Edit Blog</SheetTitle>
-          <SheetDescription>Update the blog post.</SheetDescription>
+          <SheetTitle>Chỉnh sửa bài viết</SheetTitle>
+          <SheetDescription>Cập nhật bài viết.</SheetDescription>
         </SheetHeader>
         <div className='flex-1 overflow-auto'>
           <form.AppForm>
             <form.Form id='blog-form-sheet' className='space-y-4'>
               <FormTextField
                 name='title'
-                label='Title'
+                label='Tiêu đề'
                 required
-                placeholder='Blog title'
+                placeholder='Tiêu đề bài viết'
                 validators={{ onBlur: z.string().min(2) }}
               />
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='author' label='Author' required placeholder='Author name' />
-                <FormSelectField name='language' label='Language' required options={LANG_OPTIONS} />
+                <FormTextField name='author' label='Tác giả' required placeholder='Tên tác giả' />
+                <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
               </div>
               <div className='grid grid-cols-2 gap-4'>
-                <FormTextField name='slug' label='Slug' placeholder='blog-slug' />
-                <FormTextField name='tags' label='Tags' placeholder='tag1, tag2' />
+                <FormTextField name='slug' label='Slug' placeholder='duong-dan-bai-viet' />
+                <FormTextField name='tags' label='Thẻ' placeholder='thẻ1, thẻ2' />
               </div>
               <ImageUploadField
-                label='Cover Image'
+                label='Ảnh bìa'
                 currentUrl={blog.coverImage}
                 onFileSelect={setCoverFile}
                 file={coverFile}
               />
-              <FormTextareaField
-                name='excerpt'
-                label='Excerpt'
-                placeholder='Short description...'
-              />
+              <FormTextareaField name='excerpt' label='Tóm tắt' placeholder='Mô tả ngắn...' />
               <div className='space-y-2'>
-                <label className='text-sm font-medium'>Content *</label>
+                <label className='text-sm font-medium'>Nội dung *</label>
                 <TiptapEditor
                   content={content}
                   onChange={(html) => {
                     setContent(html);
                     form.setFieldValue('content', html);
                   }}
-                  placeholder='Write your blog content...'
+                  placeholder='Viết nội dung bài viết...'
                   onImageUpload={uploadToCloudinary}
                 />
               </div>
-              <FormSwitchField name='isPublished' label='Published' />
+              <FormSwitchField name='isPublished' label='Xuất bản' />
             </form.Form>
           </form.AppForm>
         </div>
         <SheetFooter>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            Hủy
           </Button>
           <Button type='submit' form='blog-form-sheet' isLoading={isPending}>
-            <Icons.check /> Update
+            <Icons.check /> Cập nhật
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -339,7 +331,7 @@ export function BlogFormSheetTrigger() {
   return (
     <>
       <Button onClick={() => setOpen(true)} size='sm'>
-        <Icons.add className='mr-2 h-4 w-4' /> Add Blog
+        <Icons.add className='mr-2 h-4 w-4' /> Thêm bài viết
       </Button>
       <BlogFormSheet open={open} onOpenChange={setOpen} />
     </>

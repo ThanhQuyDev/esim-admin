@@ -15,15 +15,15 @@ import { register } from '../api/service';
 import { InteractiveGridPattern } from './interactive-grid';
 
 export const metadata: Metadata = {
-  title: 'Sign Up',
-  description: 'Create an account'
+  title: 'Đăng ký',
+  description: 'Tạo tài khoản'
 };
 
 const registerSchema = z.object({
-  firstName: z.string().min(1, { message: 'First name is required' }),
-  lastName: z.string().min(1, { message: 'Last name is required' }),
-  email: z.string().email({ message: 'Enter a valid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' })
+  firstName: z.string().min(1, { message: 'Họ là bắt buộc' }),
+  lastName: z.string().min(1, { message: 'Tên là bắt buộc' }),
+  email: z.string().email({ message: 'Nhập địa chỉ email hợp lệ' }),
+  password: z.string().min(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự' })
 });
 
 export default function SignUpViewPage() {
@@ -32,11 +32,11 @@ export default function SignUpViewPage() {
   const mutation = useMutation({
     mutationFn: register,
     onSuccess: () => {
-      toast.success('Account created successfully!');
+      toast.success('Tạo tài khoản thành công!');
       router.push('/dashboard/overview');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Registration failed');
+      toast.error(error.message || 'Đăng ký thất bại');
     }
   });
 
@@ -64,7 +64,7 @@ export default function SignUpViewPage() {
           'absolute top-4 right-4 md:top-8 md:right-8'
         )}
       >
-        Sign In
+        Đăng nhập
       </Link>
       <div className='bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r'>
         <div className='absolute inset-0 bg-zinc-900' />
@@ -92,8 +92,8 @@ export default function SignUpViewPage() {
         <div className='relative z-20 mt-auto'>
           <blockquote className='space-y-2'>
             <p className='text-lg'>
-              &ldquo;This starter template has saved me countless hours of work and helped me
-              deliver projects to my clients faster than ever before.&rdquo;
+              &ldquo;Mẫu khởi đầu này đã giúp tôi tiết kiệm vô số giờ làm việc và giao dự án cho
+              khách hàng nhanh hơn bao giờ hết.&rdquo;
             </p>
             <footer className='text-sm'>Random Dude</footer>
           </blockquote>
@@ -102,10 +102,8 @@ export default function SignUpViewPage() {
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-sm flex-col justify-center space-y-6'>
           <div className='flex flex-col space-y-2 text-center'>
-            <h1 className='text-2xl font-semibold tracking-tight'>Create an account</h1>
-            <p className='text-muted-foreground text-sm'>
-              Enter your details to get started
-            </p>
+            <h1 className='text-2xl font-semibold tracking-tight'>Tạo tài khoản</h1>
+            <p className='text-muted-foreground text-sm'>Nhập thông tin của bạn để bắt đầu</p>
           </div>
           <form.AppForm>
             <form.Form className='space-y-4'>
@@ -115,14 +113,14 @@ export default function SignUpViewPage() {
                   children={(field) => (
                     <field.FieldSet>
                       <field.Field>
-                        <Label htmlFor={field.name}>First Name</Label>
+                        <Label htmlFor={field.name}>Họ</Label>
                         <Input
                           id={field.name}
                           name={field.name}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder='John'
+                          placeholder='Nguyễn'
                           disabled={mutation.isPending}
                         />
                       </field.Field>
@@ -135,14 +133,14 @@ export default function SignUpViewPage() {
                   children={(field) => (
                     <field.FieldSet>
                       <field.Field>
-                        <Label htmlFor={field.name}>Last Name</Label>
+                        <Label htmlFor={field.name}>Tên</Label>
                         <Input
                           id={field.name}
                           name={field.name}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder='Doe'
+                          placeholder='Văn A'
                           disabled={mutation.isPending}
                         />
                       </field.Field>
@@ -177,7 +175,7 @@ export default function SignUpViewPage() {
                 children={(field) => (
                   <field.FieldSet>
                     <field.Field>
-                      <Label htmlFor={field.name}>Password</Label>
+                      <Label htmlFor={field.name}>Mật khẩu</Label>
                       <Input
                         id={field.name}
                         name={field.name}
@@ -185,7 +183,7 @@ export default function SignUpViewPage() {
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder='At least 6 characters'
+                        placeholder='Ít nhất 6 ký tự'
                         disabled={mutation.isPending}
                       />
                     </field.Field>
@@ -193,18 +191,13 @@ export default function SignUpViewPage() {
                   </field.FieldSet>
                 )}
               />
-              <form.SubmitButton className='w-full'>
-                Create Account
-              </form.SubmitButton>
+              <form.SubmitButton className='w-full'>Tạo tài khoản</form.SubmitButton>
             </form.Form>
           </form.AppForm>
           <p className='text-muted-foreground text-center text-sm'>
-            Already have an account?{' '}
-            <Link
-              href='/auth/sign-in'
-              className='hover:text-primary underline underline-offset-4'
-            >
-              Sign In
+            Đã có tài khoản?{' '}
+            <Link href='/auth/sign-in' className='hover:text-primary underline underline-offset-4'>
+              Đăng nhập
             </Link>
           </p>
         </div>

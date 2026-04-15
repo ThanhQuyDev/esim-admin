@@ -11,14 +11,14 @@ export const columns: ColumnDef<Faq>[] = [
     id: 'question',
     accessorKey: 'question',
     header: ({ column }: { column: Column<Faq, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Question' />
+      <DataTableColumnHeader column={column} title='Câu hỏi' />
     ),
     cell: ({ row }) => (
       <span className='line-clamp-2 max-w-sm font-medium'>{row.original.question}</span>
     ),
     meta: {
-      label: 'Question',
-      placeholder: 'Search FAQs...',
+      label: 'Câu hỏi',
+      placeholder: 'Tìm kiếm câu hỏi...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -27,13 +27,13 @@ export const columns: ColumnDef<Faq>[] = [
   {
     id: 'answer',
     accessorKey: 'answer',
-    header: 'Answer',
+    header: 'Câu trả lời',
     cell: ({ row }) => <span className='line-clamp-2 max-w-sm text-sm'>{row.original.answer}</span>
   },
   {
     id: 'language',
     accessorKey: 'language',
-    header: 'Lang',
+    header: 'Ngôn ngữ',
     cell: ({ row }) => <Badge variant='outline'>{row.original.language.toUpperCase()}</Badge>,
     enableSorting: false
   },
@@ -41,16 +41,16 @@ export const columns: ColumnDef<Faq>[] = [
     id: 'sortOrder',
     accessorKey: 'sortOrder',
     header: ({ column }: { column: Column<Faq, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Order' />
+      <DataTableColumnHeader column={column} title='Thứ tự' />
     )
   },
   {
     id: 'isActive',
     accessorKey: 'isActive',
-    header: 'Active',
+    header: 'Hoạt động',
     cell: ({ row }) => (
       <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
-        {row.original.isActive ? 'Active' : 'Inactive'}
+        {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
     enableSorting: false

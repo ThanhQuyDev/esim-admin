@@ -22,10 +22,10 @@ export function CellAction({ data }: { data: WhyChooseUs }) {
   const deleteMutation = useMutation({
     ...deleteWcuMutation,
     onSuccess: () => {
-      toast.success('Deleted');
+      toast.success('Đã xóa');
       setDeleteOpen(false);
     },
-    onError: () => toast.error('Failed to delete')
+    onError: () => toast.error('Xóa thất bại')
   });
   return (
     <>
@@ -43,12 +43,12 @@ export function CellAction({ data }: { data: WhyChooseUs }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Icons.edit className='mr-2 h-4 w-4' /> Update
+            <Icons.edit className='mr-2 h-4 w-4' /> Cập nhật
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDeleteOpen(true)}>
-            <Icons.trash className='mr-2 h-4 w-4' /> Delete
+            <Icons.trash className='mr-2 h-4 w-4' /> Xóa
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -27,11 +27,11 @@ export function CellAction({ data }: CellActionProps) {
   const deleteMutation = useMutation({
     ...deletePlanMutation,
     onSuccess: () => {
-      toast.success('Plan deleted successfully');
+      toast.success('Xóa gói thành công');
       setDeleteOpen(false);
     },
     onError: () => {
-      toast.error('Failed to delete plan');
+      toast.error('Xóa gói thất bại');
     }
   });
 
@@ -47,17 +47,17 @@ export function CellAction({ data }: CellActionProps) {
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='h-8 w-8 p-0'>
-            <span className='sr-only'>Open menu</span>
+            <span className='sr-only'>Mở menu</span>
             <Icons.ellipsis className='h-4 w-4' />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Icons.edit className='mr-2 h-4 w-4' /> Update
+            <Icons.edit className='mr-2 h-4 w-4' /> Cập nhật
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDeleteOpen(true)}>
-            <Icons.trash className='mr-2 h-4 w-4' /> Delete
+            <Icons.trash className='mr-2 h-4 w-4' /> Xóa
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

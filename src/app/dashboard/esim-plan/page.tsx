@@ -3,9 +3,10 @@ import PlanListingPage from '@/features/plans/components/plan-listing';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 import { PlanFormSheetTrigger } from '@/features/plans/components/plan-form-sheet';
+import { ImportExcelDialog } from '@/features/plans/components/import-excel-dialog';
 
 export const metadata = {
-  title: 'Dashboard: eSIM Plans'
+  title: 'Dashboard: Gói eSIM'
 };
 
 type PageProps = {
@@ -19,9 +20,14 @@ export default async function EsimPlanPage(props: PageProps) {
   return (
     <PageContainer
       scrollable={false}
-      pageTitle='eSIM Plans'
-      pageDescription='Manage your eSIM plans.'
-      pageHeaderAction={<PlanFormSheetTrigger />}
+      pageTitle='Gói eSIM'
+      pageDescription='Quản lý các gói eSIM của bạn.'
+      pageHeaderAction={
+        <div className='flex items-center gap-2'>
+          <ImportExcelDialog />
+          <PlanFormSheetTrigger />
+        </div>
+      }
     >
       <PlanListingPage />
     </PageContainer>
