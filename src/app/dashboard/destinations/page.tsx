@@ -2,7 +2,7 @@ import PageContainer from '@/components/layout/page-container';
 import DestinationListingPage from '@/features/destinations/components/destination-listing';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
-import { DestinationFormSheetTrigger } from '@/features/destinations/components/destination-form-sheet';
+import { DestinationFormDialogTrigger } from '@/features/destinations/components/destination-form-dialog';
 
 export const metadata = {
   title: 'Dashboard: Điểm đến'
@@ -21,7 +21,7 @@ export default async function DestinationsPage(props: PageProps) {
       scrollable={false}
       pageTitle='Điểm đến'
       pageDescription='Quản lý các điểm đến của bạn.'
-      pageHeaderAction={<DestinationFormSheetTrigger />}
+      pageHeaderAction={<DestinationFormDialogTrigger />}
     >
       <DestinationListingPage />
     </PageContainer>

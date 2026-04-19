@@ -67,6 +67,13 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Thiết bị được hỗ trợ',
+        url: '/dashboard/supported-devices',
+        icon: 'product',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Trò chuyện',
         url: '/dashboard/chat',
         icon: 'chat',

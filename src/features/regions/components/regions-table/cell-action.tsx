@@ -14,7 +14,7 @@ import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { RegionFormSheet } from '../region-form-sheet';
+import { RegionFormDialog } from '../region-form-dialog';
 import { RegionDetailDialog } from '../region-detail-dialog';
 
 interface CellActionProps {
@@ -45,7 +45,7 @@ export function CellAction({ data }: CellActionProps) {
         onConfirm={() => deleteMutation.mutate(data.id)}
         loading={deleteMutation.isPending}
       />
-      <RegionFormSheet region={data} open={editOpen} onOpenChange={setEditOpen} />
+      <RegionFormDialog region={data} open={editOpen} onOpenChange={setEditOpen} />
       <RegionDetailDialog region={data} open={detailOpen} onOpenChange={setDetailOpen} />
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>

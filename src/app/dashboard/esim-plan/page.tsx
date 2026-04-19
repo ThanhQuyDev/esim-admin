@@ -2,7 +2,7 @@ import PageContainer from '@/components/layout/page-container';
 import PlanListingPage from '@/features/plans/components/plan-listing';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
-import { PlanFormSheetTrigger } from '@/features/plans/components/plan-form-sheet';
+import { PlanFormDialogTrigger } from '@/features/plans/components/plan-form-dialog';
 import { ImportExcelDialog } from '@/features/plans/components/import-excel-dialog';
 
 export const metadata = {
@@ -25,7 +25,7 @@ export default async function EsimPlanPage(props: PageProps) {
       pageHeaderAction={
         <div className='flex items-center gap-2'>
           <ImportExcelDialog />
-          <PlanFormSheetTrigger />
+          <PlanFormDialogTrigger />
         </div>
       }
     >

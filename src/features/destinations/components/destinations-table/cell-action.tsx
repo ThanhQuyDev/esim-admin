@@ -14,7 +14,7 @@ import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { DestinationFormSheet } from '../destination-form-sheet';
+import { DestinationFormDialog } from '../destination-form-dialog';
 
 interface CellActionProps {
   data: Destination;
@@ -43,7 +43,7 @@ export function CellAction({ data }: CellActionProps) {
         onConfirm={() => deleteMutation.mutate(data.id)}
         loading={deleteMutation.isPending}
       />
-      <DestinationFormSheet destination={data} open={editOpen} onOpenChange={setEditOpen} />
+      <DestinationFormDialog destination={data} open={editOpen} onOpenChange={setEditOpen} />
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='h-8 w-8 p-0'>

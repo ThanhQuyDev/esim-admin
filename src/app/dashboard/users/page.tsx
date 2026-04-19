@@ -3,7 +3,7 @@ import UserListingPage from '@/features/users/components/user-listing';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 import { usersInfoContent } from '@/features/users/info-content';
-import { UserFormSheetTrigger } from '@/features/users/components/user-form-sheet';
+import { UserFormDialogTrigger } from '@/features/users/components/user-form-dialog';
 
 export const metadata = {
   title: 'Dashboard: Người dùng'
@@ -22,7 +22,7 @@ export default async function UsersPage(props: PageProps) {
       scrollable={false}
       pageTitle='Người dùng'
       infoContent={usersInfoContent}
-      pageHeaderAction={<UserFormSheetTrigger />}
+      pageHeaderAction={<UserFormDialogTrigger />}
     >
       <UserListingPage />
     </PageContainer>

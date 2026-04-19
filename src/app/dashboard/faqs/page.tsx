@@ -2,7 +2,7 @@ import PageContainer from '@/components/layout/page-container';
 import FaqListingPage from '@/features/faqs/components/faq-listing';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
-import { FaqFormSheetTrigger } from '@/features/faqs/components/faq-form-sheet';
+import { FaqFormDialogTrigger } from '@/features/faqs/components/faq-form-dialog';
 
 export const metadata = { title: 'Dashboard: Câu hỏi thường gặp' };
 
@@ -16,7 +16,7 @@ export default async function FaqsPage(props: PageProps) {
       scrollable={false}
       pageTitle='Câu hỏi thường gặp'
       pageDescription='Quản lý các câu hỏi thường gặp của bạn.'
-      pageHeaderAction={<FaqFormSheetTrigger />}
+      pageHeaderAction={<FaqFormDialogTrigger />}
     >
       <FaqListingPage />
     </PageContainer>

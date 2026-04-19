@@ -14,7 +14,7 @@ import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { FaqFormSheet } from '../faq-form-sheet';
+import { FaqFormDialog } from '../faq-form-dialog';
 
 export function CellAction({ data }: { data: Faq }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -35,7 +35,7 @@ export function CellAction({ data }: { data: Faq }) {
         onConfirm={() => deleteMutation.mutate(data.id)}
         loading={deleteMutation.isPending}
       />
-      <FaqFormSheet faq={data} open={editOpen} onOpenChange={setEditOpen} />
+      <FaqFormDialog faq={data} open={editOpen} onOpenChange={setEditOpen} />
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='h-8 w-8 p-0'>

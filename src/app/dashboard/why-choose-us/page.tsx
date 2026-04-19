@@ -2,7 +2,7 @@ import PageContainer from '@/components/layout/page-container';
 import WcuListingPage from '@/features/why-choose-us/components/wcu-listing';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
-import { WcuFormSheetTrigger } from '@/features/why-choose-us/components/wcu-form-sheet';
+import { WcuFormDialogTrigger } from '@/features/why-choose-us/components/wcu-form-dialog';
 
 export const metadata = { title: 'Dashboard: Tại sao chọn chúng tôi' };
 
@@ -16,7 +16,7 @@ export default async function WhyChooseUsPage(props: PageProps) {
       scrollable={false}
       pageTitle='Tại sao chọn chúng tôi'
       pageDescription='Quản lý các mục "Tại sao chọn chúng tôi".'
-      pageHeaderAction={<WcuFormSheetTrigger />}
+      pageHeaderAction={<WcuFormDialogTrigger />}
     >
       <WcuListingPage />
     </PageContainer>

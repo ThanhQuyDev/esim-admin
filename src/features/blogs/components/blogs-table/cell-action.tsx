@@ -14,7 +14,7 @@ import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { BlogFormSheet } from '../blog-form-sheet';
+import { BlogFormDialog } from '../blog-form-dialog';
 
 interface CellActionProps {
   data: Blog;
@@ -41,7 +41,7 @@ export function CellAction({ data }: CellActionProps) {
         onConfirm={() => deleteMutation.mutate(data.id)}
         loading={deleteMutation.isPending}
       />
-      <BlogFormSheet blog={data} open={editOpen} onOpenChange={setEditOpen} />
+      <BlogFormDialog blog={data} open={editOpen} onOpenChange={setEditOpen} />
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='h-8 w-8 p-0'>

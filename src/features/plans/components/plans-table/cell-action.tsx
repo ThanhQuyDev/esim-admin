@@ -14,7 +14,7 @@ import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { PlanFormSheet } from '../plan-form-sheet';
+import { PlanFormDialog } from '../plan-form-dialog';
 
 interface CellActionProps {
   data: Plan;
@@ -43,7 +43,7 @@ export function CellAction({ data }: CellActionProps) {
         onConfirm={() => deleteMutation.mutate(data.id)}
         loading={deleteMutation.isPending}
       />
-      <PlanFormSheet plan={data} open={editOpen} onOpenChange={setEditOpen} />
+      <PlanFormDialog plan={data} open={editOpen} onOpenChange={setEditOpen} />
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='h-8 w-8 p-0'>
