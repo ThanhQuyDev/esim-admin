@@ -74,6 +74,13 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Coupon',
+        url: '/dashboard/coupons',
+        icon: 'billing',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Trò chuyện',
         url: '/dashboard/chat',
         icon: 'chat',
