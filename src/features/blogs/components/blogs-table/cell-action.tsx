@@ -14,15 +14,15 @@ import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { BlogFormDialog } from '../blog-form-dialog';
+import { useRouter } from 'next/navigation';
 
 interface CellActionProps {
   data: Blog;
 }
 
 export function CellAction({ data }: CellActionProps) {
+  const router = useRouter();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
   const deleteMutation = useMutation({
     ...deleteBlogMutation,
     onSuccess: () => {
@@ -41,7 +41,6 @@ export function CellAction({ data }: CellActionProps) {
         onConfirm={() => deleteMutation.mutate(data.id)}
         loading={deleteMutation.isPending}
       />
-      <BlogFormDialog blog={data} open={editOpen} onOpenChange={setEditOpen} />
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='h-8 w-8 p-0'>
@@ -51,7 +50,7 @@ export function CellAction({ data }: CellActionProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
+          <DropdownMenuItem onClick={() => router.push(`/dashboard/blogs/${data.id}/edit`)}>
             <Icons.edit className='mr-2 h-4 w-4' /> Cập nhật
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDeleteOpen(true)}>
