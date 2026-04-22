@@ -6,7 +6,8 @@ import type {
   CreatePlanPayload,
   UpdatePlanPayload,
   ImportPlansExcelPayload,
-  ImportPlansExcelResponse
+  ImportPlansExcelResponse,
+  BatchDiscountPayload
 } from './types';
 
 export async function getPlans(filters: PlanFilters): Promise<PlansResponse> {
@@ -66,4 +67,11 @@ export async function importPlansExcel(
   }
 
   return res.json();
+}
+
+export async function batchDiscount(data: BatchDiscountPayload): Promise<void> {
+  await apiClient('/plans/batch-discount', {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
 }

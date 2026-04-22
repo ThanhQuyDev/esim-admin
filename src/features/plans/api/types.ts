@@ -20,6 +20,7 @@ export type Plan = {
   currency: string;
   type: string;
   topUp: boolean;
+  discount: number | null;
   isCheapest: boolean;
   isActive: boolean;
   createdAt: string;
@@ -89,4 +90,9 @@ export type ImportPlansExcelResponse = {
   message: string;
   imported: number;
   errors?: string[];
+};
+
+export type BatchDiscountPayload = {
+  ids: number[];
+  discount: number;
 };

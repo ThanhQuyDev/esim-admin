@@ -1,5 +1,6 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Plan } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
@@ -7,6 +8,28 @@ import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<Plan>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label='Chọn tất cả'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label='Chọn hàng'
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+    size: 40
+  },
   {
     id: 'destination',
     accessorFn: (row) => row.destination?.name ?? row.countryCode,
@@ -94,6 +117,16 @@ export const columns: ColumnDef<Plan>[] = [
         </span>
       </div>
     )
+  },
+  {
+    id: 'discount',
+    accessorKey: 'discount',
+    header: 'Discount',
+    cell: ({ row }) => {
+      const discount = row.original.discount;
+      return discount != null ? `${discount}%` : '—';
+    },
+    enableSorting: false
   },
   {
     id: 'topUp',

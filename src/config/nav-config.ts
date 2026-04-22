@@ -81,6 +81,13 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Profit Margin',
+        url: '/dashboard/profit-margins',
+        icon: 'trendingUp',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Trò chuyện',
         url: '/dashboard/chat',
         icon: 'chat',

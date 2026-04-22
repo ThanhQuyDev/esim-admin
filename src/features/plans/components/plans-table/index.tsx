@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
@@ -8,6 +9,7 @@ import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { plansQueryOptions } from '../../api/queries';
 import { columns } from './columns';
+import { BatchDiscountDialog } from '../batch-discount-dialog';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
@@ -51,9 +53,18 @@ export function PlansTable() {
     }
   });
 
+  const selectedIds = useMemo(() => {
+    return table.getSelectedRowModel().rows.map((row) => row.original.id);
+  }, [table.getSelectedRowModel().rows]);
+
   return (
     <DataTable table={table}>
-      <DataTableToolbar table={table} />
+      <DataTableToolbar table={table}>
+        <BatchDiscountDialog
+          selectedIds={selectedIds}
+          onSuccess={() => table.resetRowSelection()}
+        />
+      </DataTableToolbar>
     </DataTable>
   );
 }
