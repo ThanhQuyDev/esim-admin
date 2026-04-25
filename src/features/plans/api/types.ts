@@ -11,7 +11,7 @@ export type Plan = {
   destination: Destination | null;
   regionId: number | null;
   durationDays: number;
-  dataGb: string;
+  dataMb: number;
   sms: number | null;
   call: number | null;
   costPrice: string;
@@ -49,7 +49,7 @@ export type CreatePlanPayload = {
   destinationId?: number | null;
   regionId?: number | null;
   durationDays?: number;
-  dataGb?: string;
+  dataMb?: number;
   sms?: number | null;
   call?: number | null;
   costPrice?: string;
@@ -67,7 +67,7 @@ export type PlanColumnMapping = {
   providerPlanId?: string;
   name?: string;
   durationDays?: string;
-  dataGb?: string;
+  dataMb?: string;
   costPrice?: string;
   price?: string;
   retailPrice?: string;

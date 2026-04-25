@@ -6,6 +6,7 @@ import type { Plan } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
+import { formatDataSize } from '@/lib/format';
 
 export const columns: ColumnDef<Plan>[] = [
   {
@@ -79,11 +80,11 @@ export const columns: ColumnDef<Plan>[] = [
   },
   {
     id: 'data',
-    accessorKey: 'dataGb',
+    accessorKey: 'dataMb',
     header: 'Dữ liệu',
     cell: ({ row }) => {
-      const gb = parseFloat(row.original.dataGb);
-      return <span>{gb > 0 ? `${gb} GB` : 'Không giới hạn'}</span>;
+      const mb = row.original.dataMb;
+      return <span>{formatDataSize(mb)}</span>;
     },
     enableSorting: false
   },

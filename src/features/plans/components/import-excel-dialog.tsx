@@ -44,9 +44,9 @@ const COLUMN_MAPPING_FIELDS: {
     placeholder: 'e.g. Duration'
   },
   {
-    key: 'dataGb',
-    label: 'Data (GB)',
-    placeholder: 'e.g. Data (GB)'
+    key: 'dataMb',
+    label: 'Data (MB)',
+    placeholder: 'e.g. Data (MB)'
   },
   {
     key: 'costPrice',

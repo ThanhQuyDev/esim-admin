@@ -86,7 +86,7 @@ function CreateBlogDialog({
 }) {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [content, setContent] = useState('');
+  const contentRef = useRef('');
 
   const mutation = useMutation({
     ...createBlogMutation,
@@ -95,7 +95,7 @@ function CreateBlogDialog({
       onOpenChange(false);
       form.reset();
       setCoverFile(null);
-      setContent('');
+      contentRef.current = '';
     },
     onError: (e) => toast.error(e.message || 'Tạo bài viết thất bại')
   });
@@ -119,7 +119,7 @@ function CreateBlogDialog({
         if (coverFile) coverImage = await uploadToCloudinary(coverFile);
         const payload: CreateBlogPayload = {
           title: value.title,
-          content: content || value.content,
+          content: contentRef.current || value.content,
           author: value.author,
           language: value.language,
           ...(value.slug && { slug: value.slug }),
@@ -179,10 +179,9 @@ function CreateBlogDialog({
           <div className='space-y-2'>
             <label className='text-sm font-medium'>Nội dung *</label>
             <TiptapEditor
-              content={content}
+              content={contentRef.current}
               onChange={(html) => {
-                setContent(html);
-                form.setFieldValue('content', html);
+                contentRef.current = html;
               }}
               placeholder='Viết nội dung bài viết...'
               onImageUpload={uploadToCloudinary}
@@ -206,7 +205,7 @@ function EditBlogDialog({
 }) {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [content, setContent] = useState(blog.content);
+  const contentRef = useRef(blog.content);
 
   const mutation = useMutation({
     ...updateBlogMutation,
@@ -236,7 +235,7 @@ function EditBlogDialog({
         if (coverFile) coverImage = await uploadToCloudinary(coverFile);
         const payload: UpdateBlogPayload = {
           title: value.title,
-          content: content || value.content,
+          content: contentRef.current || value.content,
           author: value.author,
           language: value.language,
           slug: value.slug || undefined,
@@ -301,10 +300,9 @@ function EditBlogDialog({
           <div className='space-y-2'>
             <label className='text-sm font-medium'>Nội dung *</label>
             <TiptapEditor
-              content={content}
+              content={contentRef.current}
               onChange={(html) => {
-                setContent(html);
-                form.setFieldValue('content', html);
+                contentRef.current = html;
               }}
               placeholder='Viết nội dung bài viết...'
               onImageUpload={uploadToCloudinary}

@@ -9,7 +9,7 @@ export const createPlanSchema = z.object({
   destinationId: z.string().optional(),
   regionId: z.string().optional(),
   durationDays: z.string().optional(),
-  dataGb: z.string().optional(),
+  dataMb: z.string().optional(),
   sms: z.string().optional(),
   call: z.string().optional(),
   costPrice: z.string().optional(),

@@ -68,7 +68,7 @@ function CreateDialog({
       destinationId: '',
       regionId: '',
       durationDays: '',
-      dataGb: '',
+      dataMb: '',
       sms: '',
       call: '',
       costPrice: '',
@@ -92,7 +92,7 @@ function CreateDialog({
         ...(value.destinationId && { destinationId: Number(value.destinationId) }),
         ...(value.regionId && { regionId: Number(value.regionId) }),
         ...(value.durationDays && { durationDays: Number(value.durationDays) }),
-        ...(value.dataGb && { dataGb: value.dataGb }),
+        ...(value.dataMb && { dataMb: Number(value.dataMb) }),
         ...(value.sms && { sms: Number(value.sms) }),
         ...(value.call && { call: Number(value.call) }),
         ...(value.costPrice && { costPrice: value.costPrice }),
@@ -158,7 +158,7 @@ function CreateDialog({
 
           <div className='grid grid-cols-2 gap-4'>
             <FormTextField name='durationDays' label='Thời hạn (ngày)' placeholder='3' />
-            <FormTextField name='dataGb' label='Dữ liệu (GB)' placeholder='0.00' />
+            <FormTextField name='dataMb' label='Dữ liệu (MB)' placeholder='500' />
           </div>
 
           <div className='grid grid-cols-2 gap-4'>
@@ -220,7 +220,7 @@ function EditDialog({
       destinationId: plan.destinationId ? String(plan.destinationId) : '',
       regionId: plan.regionId ? String(plan.regionId) : '',
       durationDays: String(plan.durationDays ?? ''),
-      dataGb: plan.dataGb ?? '',
+      dataMb: plan.dataMb != null ? String(plan.dataMb) : '',
       sms: plan.sms != null ? String(plan.sms) : '',
       call: plan.call != null ? String(plan.call) : '',
       costPrice: plan.costPrice ?? '',
@@ -244,7 +244,7 @@ function EditDialog({
         destinationId: value.destinationId ? Number(value.destinationId) : undefined,
         regionId: value.regionId ? Number(value.regionId) : undefined,
         durationDays: value.durationDays ? Number(value.durationDays) : undefined,
-        dataGb: value.dataGb || undefined,
+        dataMb: value.dataMb ? Number(value.dataMb) : undefined,
         sms: value.sms ? Number(value.sms) : undefined,
         call: value.call ? Number(value.call) : undefined,
         costPrice: value.costPrice || undefined,
@@ -310,7 +310,7 @@ function EditDialog({
 
           <div className='grid grid-cols-2 gap-4'>
             <FormTextField name='durationDays' label='Thời hạn (ngày)' placeholder='3' />
-            <FormTextField name='dataGb' label='Dữ liệu (GB)' placeholder='0.00' />
+            <FormTextField name='dataMb' label='Dữ liệu (MB)' placeholder='500' />
           </div>
 
           <div className='grid grid-cols-2 gap-4'>

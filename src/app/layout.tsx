@@ -34,6 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang='en' suppressHydrationWarning data-theme={themeToApply}>
       <head>
         <script
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               try {

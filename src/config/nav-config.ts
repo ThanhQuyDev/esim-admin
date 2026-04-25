@@ -67,6 +67,13 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Trung tâm hỗ trợ',
+        url: '/dashboard/help-center',
+        icon: 'help',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Thiết bị được hỗ trợ',
         url: '/dashboard/supported-devices',
         icon: 'product',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
@@ -74,7 +74,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
   const router = useRouter();
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [content, setContent] = useState(blog?.content ?? '');
+  const contentRef = useRef(blog?.content ?? '');
   const isEdit = !!blog;
 
   const createMut = useMutation({
@@ -116,7 +116,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
         if (isEdit) {
           const payload: UpdateBlogPayload = {
             title: value.title,
-            content: content || value.content,
+            content: contentRef.current || value.content,
             author: value.author,
             language: value.language,
             slug: value.slug || undefined,
@@ -129,7 +129,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
         } else {
           const payload: CreateBlogPayload = {
             title: value.title,
-            content: content || value.content,
+            content: contentRef.current || value.content,
             author: value.author,
             language: value.language,
             ...(value.slug && { slug: value.slug }),
@@ -191,10 +191,9 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
               <div className='space-y-2'>
                 <label className='text-sm font-medium'>Nội dung *</label>
                 <TiptapEditor
-                  content={content}
+                  content={contentRef.current}
                   onChange={(html) => {
-                    setContent(html);
-                    form.setFieldValue('content', html);
+                    contentRef.current = html;
                   }}
                   placeholder='Viết nội dung bài viết...'
                   onImageUpload={uploadToCloudinary}
