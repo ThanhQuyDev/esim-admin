@@ -48,9 +48,9 @@ export const columns: ColumnDef<Coupon>[] = [
     id: 'minOrderAmount',
     accessorKey: 'minOrderAmount',
     header: ({ column }: { column: Column<Coupon, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Đơn tối thiểu ($)' />
+      <DataTableColumnHeader column={column} title='Đơn tối thiểu (VNĐ)' />
     ),
-    cell: ({ row }) => <span>${row.original.minOrderAmount}</span>
+    cell: ({ row }) => <span>{Number(row.original.minOrderAmount).toLocaleString('vi-VN')} đ</span>
   },
   {
     id: 'expiresAt',

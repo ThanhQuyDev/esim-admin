@@ -173,7 +173,7 @@ function CreateCouponDialog({
             />
             <FormTextField
               name='minOrderAmount'
-              label='Đơn tối thiểu ($)'
+              label='Đơn tối thiểu (VNĐ)'
               required
               placeholder='5'
               type='number'
@@ -301,9 +301,9 @@ function EditCouponDialog({
             />
             <FormTextField
               name='minOrderAmount'
-              label='Đơn tối thiểu ($)'
+              label='Đơn tối thiểu (VNĐ)'
               required
-              placeholder='5'
+              placeholder='100.000'
               type='number'
             />
           </div>

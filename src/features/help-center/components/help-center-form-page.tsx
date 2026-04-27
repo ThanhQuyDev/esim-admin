@@ -108,6 +108,7 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
                   content={contentRef.current}
                   onChange={(html) => {
                     contentRef.current = html;
+                    form.setFieldValue('content', html);
                   }}
                   placeholder='Viết nội dung bài viết...'
                 />

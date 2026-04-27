@@ -37,6 +37,14 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Quản lý eSIM',
+        url: '/dashboard/esims',
+        icon: 'simCard',
+        shortcut: ['e', 's'],
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Người dùng',
         url: '/dashboard/users',
         icon: 'teams',
@@ -77,6 +85,20 @@ export const navGroups: NavGroup[] = [
         title: 'Thiết bị được hỗ trợ',
         url: '/dashboard/supported-devices',
         icon: 'product',
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Email Templates',
+        url: '/dashboard/email-templates',
+        icon: 'mail',
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Cấu hình SEO',
+        url: '/dashboard/seo-configs',
+        icon: 'seo',
         isActive: false,
         items: []
       },

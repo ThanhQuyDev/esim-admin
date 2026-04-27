@@ -48,6 +48,7 @@ import {
   IconDotsVertical,
   IconEdit,
   IconExternalLink,
+  IconEye,
   IconEyeOff,
   IconFile,
   IconFileText,
@@ -83,6 +84,7 @@ import {
   IconLock,
   IconLogin,
   IconLogout,
+  IconMail,
   IconMessage,
   IconMinus,
   IconMoodSmile,
@@ -102,6 +104,7 @@ import {
   IconSearch,
   IconSelector,
   IconSend,
+  IconSeo,
   IconSettings,
   IconShare,
   IconSlash,
@@ -137,7 +140,8 @@ import {
   IconWorldMap,
   IconArticle,
   IconAward,
-  IconQuestionMark
+  IconQuestionMark,
+  IconDeviceSim
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -200,6 +204,8 @@ export const Icons = {
   phone: IconPhone,
   video: IconVideo,
   send: IconSend,
+  seo: IconSeo,
+  mail: IconMail,
   paperclip: IconPaperclip,
 
   // Files
@@ -248,6 +254,7 @@ export const Icons = {
   // Data / Charts
   trendingDown: IconTrendingDown,
   trendingUp: IconTrendingUp,
+  eye: IconEye,
   eyeOff: IconEyeOff,
   adjustments: IconAdjustmentsHorizontal,
 
@@ -338,5 +345,8 @@ export const Icons = {
   // Misc extended
   emoji: IconMoodSmile,
   maximize: IconArrowsMaximize,
-  minimize: IconArrowsMinimize
+  minimize: IconArrowsMinimize,
+
+  // eSIM
+  simCard: IconDeviceSim
 };
