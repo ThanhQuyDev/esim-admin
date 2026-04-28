@@ -14,11 +14,11 @@ export const createBlogMutation = mutationOptions({
 });
 
 export const updateBlogMutation = mutationOptions({
-  mutationFn: ({ id, values }: { id: number; values: UpdateBlogPayload }) => updateBlog(id, values),
+  mutationFn: ({ id, values }: { id: string; values: UpdateBlogPayload }) => updateBlog(id, values),
   onSettled: invalidateBlogs
 });
 
 export const deleteBlogMutation = mutationOptions({
-  mutationFn: (id: number) => deleteBlog(id),
+  mutationFn: (id: string) => deleteBlog(id),
   onSettled: invalidateBlogs
 });

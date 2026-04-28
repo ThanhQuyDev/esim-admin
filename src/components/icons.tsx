@@ -104,7 +104,9 @@ import {
   IconSearch,
   IconSelector,
   IconSend,
+  IconShoppingCart,
   IconSeo,
+  IconTag,
   IconSettings,
   IconShare,
   IconSlash,
@@ -205,6 +207,7 @@ export const Icons = {
   video: IconVideo,
   send: IconSend,
   seo: IconSeo,
+  miniTag: IconTag,
   mail: IconMail,
   paperclip: IconPaperclip,
 
@@ -348,5 +351,8 @@ export const Icons = {
   minimize: IconArrowsMinimize,
 
   // eSIM
-  simCard: IconDeviceSim
+  simCard: IconDeviceSim,
+
+  // Orders
+  order: IconShoppingCart
 };

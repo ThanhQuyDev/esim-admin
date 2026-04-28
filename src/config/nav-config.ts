@@ -45,6 +45,14 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Đơn hàng',
+        url: '/dashboard/orders',
+        icon: 'order',
+        shortcut: ['o', 'o'],
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Người dùng',
         url: '/dashboard/users',
         icon: 'teams',
@@ -99,6 +107,13 @@ export const navGroups: NavGroup[] = [
         title: 'Cấu hình SEO',
         url: '/dashboard/seo-configs',
         icon: 'seo',
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Mini Tags',
+        url: '/dashboard/mini-tags',
+        icon: 'miniTag',
         isActive: false,
         items: []
       },

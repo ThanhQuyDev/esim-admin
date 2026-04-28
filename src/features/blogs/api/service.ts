@@ -17,7 +17,7 @@ export async function getBlogs(filters: BlogFilters): Promise<BlogsResponse> {
   return apiClient<BlogsResponse>(`/blogs${query ? `?${query}` : ''}`);
 }
 
-export async function getBlog(id: number): Promise<Blog> {
+export async function getBlog(id: string): Promise<Blog> {
   return apiClient<Blog>(`/blogs/${id}`);
 }
 
@@ -25,11 +25,11 @@ export async function createBlog(data: CreateBlogPayload): Promise<Blog> {
   return apiClient<Blog>('/blogs', { method: 'POST', body: JSON.stringify(data) });
 }
 
-export async function updateBlog(id: number, data: UpdateBlogPayload): Promise<Blog> {
+export async function updateBlog(id: string, data: UpdateBlogPayload): Promise<Blog> {
   return apiClient<Blog>(`/blogs/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
-export async function deleteBlog(id: number): Promise<void> {
+export async function deleteBlog(id: string): Promise<void> {
   await apiClient(`/blogs/${id}`, { method: 'DELETE' });
 }
 

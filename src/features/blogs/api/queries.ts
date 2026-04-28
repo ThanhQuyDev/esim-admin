@@ -7,11 +7,11 @@ export type { Blog };
 export const blogKeys = {
   all: ['blogs'] as const,
   list: (filters: BlogFilters) => [...blogKeys.all, 'list', filters] as const,
-  detail: (id: number) => [...blogKeys.all, 'detail', id] as const
+  detail: (id: string) => [...blogKeys.all, 'detail', id] as const
 };
 
 export const blogsQueryOptions = (filters: BlogFilters) =>
   queryOptions({ queryKey: blogKeys.list(filters), queryFn: () => getBlogs(filters) });
 
-export const blogQueryOptions = (id: number) =>
+export const blogQueryOptions = (id: string) =>
   queryOptions({ queryKey: blogKeys.detail(id), queryFn: () => getBlog(id) });

@@ -12,7 +12,7 @@ interface EditBlogPageProps {
 
 export default function EditBlogPage({ params }: EditBlogPageProps) {
   const { id } = use(params);
-  const { data: blog } = useSuspenseQuery(blogQueryOptions(Number(id)));
+  const { data: blog } = useSuspenseQuery(blogQueryOptions(id));
 
   return (
     <PageContainer

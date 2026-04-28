@@ -107,7 +107,7 @@ function CreateBlogDialog({
       author: '',
       language: 'en',
       slug: '',
-      tags: '',
+      category: '',
       excerpt: '',
       isPublished: false
     } as BlogFormValues,
@@ -119,11 +119,11 @@ function CreateBlogDialog({
         if (coverFile) coverImage = await uploadToCloudinary(coverFile);
         const payload: CreateBlogPayload = {
           title: value.title,
-          content: contentRef.current || value.content,
+          content: contentRef.current || value.content || '',
           author: value.author,
           language: value.language,
           ...(value.slug && { slug: value.slug }),
-          ...(value.tags && { tags: value.tags }),
+          ...(value.category && { category: value.category }),
           ...(value.excerpt && { excerpt: value.excerpt }),
           ...(coverImage && { coverImage }),
           isPublished: value.isPublished ?? false
@@ -172,7 +172,7 @@ function CreateBlogDialog({
           </div>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormTextField name='slug' label='Slug' placeholder='duong-dan-bai-viet' />
-            <FormTextField name='tags' label='Thẻ' placeholder='thẻ1, thẻ2' />
+            <FormTextField name='category' label='Danh mục' placeholder='danh mục bài viết' />
           </div>
           <ImageUploadField label='Ảnh bìa' onFileSelect={setCoverFile} file={coverFile} />
           <FormTextareaField name='excerpt' label='Tóm tắt' placeholder='Mô tả ngắn...' />
@@ -223,7 +223,7 @@ function EditBlogDialog({
       author: blog.author,
       language: blog.language as 'vi' | 'en',
       slug: blog.slug ?? '',
-      tags: blog.tags ?? '',
+      category: blog.category ?? '',
       excerpt: blog.excerpt ?? '',
       isPublished: blog.isPublished
     } as BlogFormValues,
@@ -235,11 +235,11 @@ function EditBlogDialog({
         if (coverFile) coverImage = await uploadToCloudinary(coverFile);
         const payload: UpdateBlogPayload = {
           title: value.title,
-          content: contentRef.current || value.content,
+          content: contentRef.current || value.content || '',
           author: value.author,
           language: value.language,
           slug: value.slug || undefined,
-          tags: value.tags || undefined,
+          category: value.category || undefined,
           excerpt: value.excerpt || undefined,
           ...(coverImage && { coverImage }),
           isPublished: value.isPublished
@@ -288,7 +288,7 @@ function EditBlogDialog({
           </div>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormTextField name='slug' label='Slug' placeholder='duong-dan-bai-viet' />
-            <FormTextField name='tags' label='Thẻ' placeholder='thẻ1, thẻ2' />
+            <FormTextField name='category' label='Danh mục' placeholder='danh mục bài viết' />
           </div>
           <ImageUploadField
             label='Ảnh bìa'

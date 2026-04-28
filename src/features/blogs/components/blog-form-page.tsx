@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createBlogMutation, updateBlogMutation } from '../api/mutations';
 import { uploadToCloudinary } from '../api/service';
 import type { Blog, CreateBlogPayload, UpdateBlogPayload } from '../api/types';
@@ -14,6 +14,20 @@ import * as z from 'zod';
 import { blogSchema, type BlogFormValues } from '../schemas/blog';
 import { TiptapEditor } from '@/components/tiptap-editor';
 import { Card, CardContent } from '@/components/ui/card';
+import { miniTagsQueryOptions } from '@/features/mini-tags/api/queries';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import type { MiniTag } from '@/features/mini-tags/api/types';
 
 const LANG_OPTIONS = [
   { value: 'vi', label: 'Vietnamese' },
@@ -66,6 +80,77 @@ function ImageUploadField({
   );
 }
 
+function MiniTagSelector({
+  miniTags,
+  value,
+  selectedTitle,
+  onChange
+}: {
+  miniTags: MiniTag[];
+  value: string;
+  selectedTitle?: string;
+  onChange: (val: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className='space-y-2'>
+      <Label>Mini Tag</Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant='outline'
+            role='combobox'
+            aria-expanded={open}
+            className='w-full justify-between'
+          >
+            {selectedTitle || 'Chọn mini tag...'}
+            <Icons.chevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className='w-full p-0' align='start'>
+          <Command>
+            <CommandInput placeholder='Tìm mini tag...' />
+            <CommandList>
+              <CommandEmpty>Không tìm thấy.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  onSelect={() => {
+                    onChange('');
+                    setOpen(false);
+                  }}
+                >
+                  <Icons.check
+                    className={cn('mr-2 h-4 w-4', !value ? 'opacity-100' : 'opacity-0')}
+                  />
+                  Không chọn
+                </CommandItem>
+                {miniTags.map((tag) => (
+                  <CommandItem
+                    key={tag.id}
+                    onSelect={() => {
+                      onChange(String(tag.id));
+                      setOpen(false);
+                    }}
+                  >
+                    <Icons.check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === String(tag.id) ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                    {tag.title}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 interface BlogFormPageProps {
   blog?: Blog;
 }
@@ -95,6 +180,9 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
     onError: (e) => toast.error(e.message || 'Cập nhật bài viết thất bại')
   });
 
+  const { data: miniTagsData } = useQuery(miniTagsQueryOptions({ page: 1, limit: 100 }));
+  const miniTags = miniTagsData?.data ?? [];
+
   const form = useAppForm({
     defaultValues: {
       title: blog?.title ?? '',
@@ -102,9 +190,12 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
       author: blog?.author ?? '',
       language: (blog?.language as 'vi' | 'en') ?? 'en',
       slug: blog?.slug ?? '',
-      tags: blog?.tags ?? '',
+      category: blog?.category ?? '',
       excerpt: blog?.excerpt ?? '',
-      isPublished: blog?.isPublished ?? false
+      isPublished: blog?.isPublished ?? false,
+      miniTagId: blog?.miniTagId ?? '',
+      planIdsText: blog?.planIds?.join(', ') ?? '',
+      timeRead: blog?.timeRead ?? undefined
     } as BlogFormValues,
     validators: { onSubmit: blogSchema },
     onSubmit: async ({ value }) => {
@@ -113,30 +204,43 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
         let coverImage: string | undefined;
         if (coverFile) coverImage = await uploadToCloudinary(coverFile);
 
+        const planIds = value.planIdsText
+          ? value.planIdsText
+              .split(',')
+              .map((s) => Number(s.trim()))
+              .filter((n) => !isNaN(n) && n > 0)
+          : [];
+
         if (isEdit) {
           const payload: UpdateBlogPayload = {
             title: value.title,
-            content: contentRef.current || value.content,
+            content: contentRef.current || value.content || '',
             author: value.author,
             language: value.language,
             slug: value.slug || undefined,
-            tags: value.tags || undefined,
+            category: value.category || undefined,
             excerpt: value.excerpt || undefined,
             ...(coverImage && { coverImage }),
-            isPublished: value.isPublished
+            isPublished: value.isPublished,
+            miniTagId: value.miniTagId || undefined,
+            planIds,
+            timeRead: value.timeRead || undefined
           };
           await updateMut.mutateAsync({ id: blog.id, values: payload });
         } else {
           const payload: CreateBlogPayload = {
             title: value.title,
-            content: contentRef.current || value.content,
+            content: contentRef.current || value.content || '',
             author: value.author,
             language: value.language,
             ...(value.slug && { slug: value.slug }),
-            ...(value.tags && { tags: value.tags }),
+            ...(value.category && { category: value.category }),
             ...(value.excerpt && { excerpt: value.excerpt }),
             ...(coverImage && { coverImage }),
-            isPublished: value.isPublished ?? false
+            isPublished: value.isPublished ?? false,
+            miniTagId: value.miniTagId || undefined,
+            planIds,
+            timeRead: value.timeRead || undefined
           };
           await createMut.mutateAsync(payload);
         }
@@ -172,8 +276,24 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
               </div>
               <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                 <FormTextField name='slug' label='Slug' placeholder='duong-dan-bai-viet' />
-                <FormTextField name='tags' label='Thẻ' placeholder='thẻ1, thẻ2' />
+                <FormTextField name='category' label='Danh mục' placeholder='danh mục bài viết' />
               </div>
+              <form.AppField name='timeRead'>
+                {(field) => (
+                  <div className='space-y-2'>
+                    <Label>Thời gian đọc (phút)</Label>
+                    <Input
+                      type='number'
+                      min={1}
+                      value={field.state.value ?? ''}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value ? Number(e.target.value) : undefined)
+                      }
+                      placeholder='VD: 5'
+                    />
+                  </div>
+                )}
+              </form.AppField>
               <ImageUploadField
                 label='Ảnh bìa'
                 currentUrl={blog?.coverImage}
@@ -181,6 +301,29 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
                 file={coverFile}
               />
               <FormTextareaField name='excerpt' label='Tóm tắt' placeholder='Mô tả ngắn...' />
+
+              {/* Mini Tag selector */}
+              <form.AppField name='miniTagId'>
+                {(field) => {
+                  const selectedTag = miniTags.find((t) => String(t.id) === field.state.value);
+                  return (
+                    <MiniTagSelector
+                      miniTags={miniTags}
+                      value={field.state.value ?? ''}
+                      selectedTitle={selectedTag?.title}
+                      onChange={(val) => field.handleChange(val)}
+                    />
+                  );
+                }}
+              </form.AppField>
+
+              {/* Plan IDs */}
+              <FormTextField
+                name='planIdsText'
+                label='Plan IDs (liên quan)'
+                placeholder='Nhập ID gói, cách nhau bằng dấu phẩy: 1, 2, 3'
+              />
+
               <FormSwitchField name='isPublished' label='Xuất bản' />
             </CardContent>
           </Card>
