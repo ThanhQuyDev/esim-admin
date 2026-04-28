@@ -6,6 +6,7 @@ import type {
   CreatePlanPayload,
   UpdatePlanPayload,
   ImportPlansExcelPayload,
+  ImportGadgetKoreaExcelPayload,
   ImportPlansExcelResponse,
   BatchDiscountPayload
 } from './types';
@@ -57,6 +58,25 @@ export async function importPlansExcel(
   }
 
   const res = await fetch('/api/plans/import-excel', {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Import failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function importGadgetKoreaExcel(
+  payload: ImportGadgetKoreaExcelPayload
+): Promise<ImportPlansExcelResponse> {
+  const formData = new FormData();
+  formData.append('file', payload.file);
+
+  const res = await fetch('/api/plans/import-gadgetkorea', {
     method: 'POST',
     body: formData
   });

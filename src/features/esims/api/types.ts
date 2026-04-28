@@ -89,3 +89,18 @@ export type EsimsResponse = {
   data: Esim[];
   hasNextPage: boolean;
 };
+
+export type EsimType = 'daily' | 'unlimited' | 'unlimited-reduce' | 'fixed';
+
+export type ImportEsimsExcelPayload = {
+  file: File;
+  provider: string;
+  countryCode: string;
+  type: EsimType;
+};
+
+export type ImportEsimsExcelResponse = {
+  message: string;
+  imported?: number;
+  errors?: string[];
+};

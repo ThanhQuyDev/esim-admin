@@ -86,6 +86,10 @@ export type ImportPlansExcelPayload = {
   sheet?: string;
 };
 
+export type ImportGadgetKoreaExcelPayload = {
+  file: File;
+};
+
 export type ImportPlansExcelResponse = {
   message: string;
   imported: number;

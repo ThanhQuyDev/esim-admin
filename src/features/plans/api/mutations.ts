@@ -1,11 +1,19 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { createPlan, updatePlan, deletePlan, importPlansExcel, batchDiscount } from './service';
+import {
+  createPlan,
+  updatePlan,
+  deletePlan,
+  importPlansExcel,
+  importGadgetKoreaExcel,
+  batchDiscount
+} from './service';
 import { planKeys } from './queries';
 import type {
   CreatePlanPayload,
   UpdatePlanPayload,
   ImportPlansExcelPayload,
+  ImportGadgetKoreaExcelPayload,
   BatchDiscountPayload
 } from './types';
 
@@ -30,6 +38,11 @@ export const deletePlanMutation = mutationOptions({
 
 export const importPlansExcelMutation = mutationOptions({
   mutationFn: (data: ImportPlansExcelPayload) => importPlansExcel(data),
+  onSettled: invalidatePlans
+});
+
+export const importGadgetKoreaExcelMutation = mutationOptions({
+  mutationFn: (data: ImportGadgetKoreaExcelPayload) => importGadgetKoreaExcel(data),
   onSettled: invalidatePlans
 });
 
