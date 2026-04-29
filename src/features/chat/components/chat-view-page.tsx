@@ -1,17 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useChatStore } from '../utils/store';
 import { ChatRoomList } from './chat-room-list';
 import { ChatArea } from './chat-area';
 import { ChatEmptyState } from './chat-empty-state';
 import { ChatConnectionStatus } from './chat-connection-status';
-
-function getToken(): string {
-  if (typeof document === 'undefined') return '';
-  const match = document.cookie.split('; ').find((row) => row.startsWith('token='));
-  return match ? match.split('=')[1] : '';
-}
 
 export default function ChatViewPage() {
   const connect = useChatStore((s) => s.connect);
@@ -19,17 +13,30 @@ export default function ChatViewPage() {
   const fetchRooms = useChatStore((s) => s.fetchRooms);
   const connectionStatus = useChatStore((s) => s.connectionStatus);
   const selectedRoomId = useChatStore((s) => s.selectedRoomId);
+  const didConnect = useRef(false);
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      connect(token);
-    }
+    if (didConnect.current) return;
+    didConnect.current = true;
+
+    // Token cookie is httpOnly — fetch it via API route
+    fetch('/api/auth/token')
+      .then((res) => {
+        if (!res.ok) throw new Error('Not authenticated');
+        return res.json();
+      })
+      .then(({ token }: { token: string }) => {
+        connect(token);
+      })
+      .catch(() => {
+        // User not authenticated — connection status stays disconnected
+      });
 
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch rooms once connected (admin view)
   useEffect(() => {
