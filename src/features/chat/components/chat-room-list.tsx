@@ -7,29 +7,29 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { Conversation } from '../utils/types';
+import { useChatStore } from '../utils/store';
+import type { ChatRoomWithMeta } from '../api/types';
+import { formatDistanceToNow } from '@/features/chat/utils/format';
 
-const statusDotColor = {
-  online: 'bg-green-500',
-  offline: 'bg-red-500'
-} as const;
-
-interface ConversationListProps {
-  conversations: Conversation[];
-  selectedId: string;
-  onSelect: (id: string) => void;
+function getRoomInitials(room: ChatRoomWithMeta): string {
+  return `U${room.userId}`;
 }
 
-export function ConversationList({ conversations, selectedId, onSelect }: ConversationListProps) {
+function getRoomDisplayName(room: ChatRoomWithMeta): string {
+  return `User #${room.userId}`;
+}
+
+export function ChatRoomList() {
+  const rooms = useChatStore((s) => s.rooms);
+  const selectedRoomId = useChatStore((s) => s.selectedRoomId);
+  const selectRoom = useChatStore((s) => s.selectRoom);
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return conversations;
+    if (!search.trim()) return rooms;
     const q = search.toLowerCase();
-    return conversations.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.title.toLowerCase().includes(q)
-    );
-  }, [conversations, search]);
+    return rooms.filter((r) => getRoomDisplayName(r).toLowerCase().includes(q));
+  }, [rooms, search]);
 
   return (
     <div className='border-border/40 bg-background/75 hidden h-full flex-col gap-4 overflow-hidden rounded-2xl border p-3 backdrop-blur lg:col-start-1 lg:col-end-2 lg:flex lg:rounded-3xl lg:p-4'>
@@ -37,8 +37,7 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
         <div>
           <p className='text-foreground text-sm font-semibold'>Messenger</p>
           <p className='text-muted-foreground text-xs'>
-            {conversations.length} active conversation
-            {conversations.length === 1 ? '' : 's'}
+            {rooms.length} conversation{rooms.length === 1 ? '' : 's'}
           </p>
         </div>
         <Badge
@@ -75,14 +74,17 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
         {filtered.length === 0 ? (
           <p className='text-muted-foreground py-8 text-center text-xs'>No conversations found</p>
         ) : null}
-        {filtered.map((conversation) => {
-          const isActive = conversation.id === selectedId;
-          const lastMessage = conversation.messages[conversation.messages.length - 1];
+        {filtered.map((room) => {
+          const isActive = room.id === selectedRoomId;
+          const displayName = getRoomDisplayName(room);
+          const initials = getRoomInitials(room);
+          const lastMsg = room.lastMessage;
+
           return (
             <motion.button
-              key={conversation.id}
+              key={room.id}
               type='button'
-              onClick={() => onSelect(conversation.id)}
+              onClick={() => selectRoom(room.id, room.userId)}
               aria-current={isActive ? 'true' : undefined}
               className={cn(
                 'focus-visible:ring-primary/50 group focus-visible:ring-offset-background relative flex w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
@@ -95,40 +97,31 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
               <div className='relative shrink-0'>
                 <Avatar className='border-border/40 bg-background/80 text-foreground h-10 w-10 rounded-2xl border'>
                   <AvatarFallback className='bg-primary/15 text-primary rounded-2xl text-sm font-medium'>
-                    {conversation.initials}
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span
-                  className={cn(
-                    'border-background absolute right-0 bottom-0 inline-flex h-3 w-3 rounded-full border-2',
-                    statusDotColor[conversation.status]
-                  )}
-                  aria-label={conversation.status === 'online' ? 'Online' : 'Offline'}
-                />
               </div>
               <div className='min-w-0 flex-1 space-y-1'>
                 <div className='flex items-start justify-between gap-2'>
                   <div className='min-w-0 flex-1'>
-                    <p className='text-foreground text-sm font-semibold'>{conversation.name}</p>
-                    <p className='text-muted-foreground text-xs'>{conversation.title}</p>
+                    <p className='text-foreground text-sm font-semibold'>{displayName}</p>
+                    <p className='text-muted-foreground text-xs'>Room #{room.id}</p>
                   </div>
-                  {lastMessage && (
+                  {lastMsg && (
                     <span className='text-muted-foreground shrink-0 text-[0.65rem]'>
-                      {lastMessage.timestamp}
+                      {formatDistanceToNow(lastMsg.createdAt)}
                     </span>
                   )}
                 </div>
-                {lastMessage ? (
-                  <p className='text-muted-foreground line-clamp-2 text-xs'>
-                    {lastMessage.author}: {lastMessage.text}
-                  </p>
+                {lastMsg ? (
+                  <p className='text-muted-foreground line-clamp-2 text-xs'>{lastMsg.message}</p>
                 ) : (
                   <p className='text-muted-foreground text-xs'>No messages yet</p>
                 )}
               </div>
-              {conversation.unread > 0 && (
+              {room.unreadCount > 0 && (
                 <span className='bg-primary text-primary-foreground ml-2 inline-flex min-h-[1.5rem] min-w-[1.5rem] items-center justify-center rounded-full text-[0.7rem] font-semibold shadow-lg'>
-                  {conversation.unread}
+                  {room.unreadCount}
                 </span>
               )}
             </motion.button>

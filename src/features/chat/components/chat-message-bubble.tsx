@@ -3,16 +3,17 @@
 import { Icons } from '@/components/icons';
 import { motion, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { FilePreview } from '@/components/ui/file-preview';
-import type { Message } from '../utils/types';
+import type { ChatMessage } from '../api/types';
+import { formatMessageTime } from '../utils/format';
 
-interface MessageBubbleProps {
-  message: Message;
+interface ChatMessageBubbleProps {
+  message: ChatMessage;
+  isOwn: boolean;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function ChatMessageBubble({ message, isOwn }: ChatMessageBubbleProps) {
   const shouldReduceMotion = useReducedMotion();
-  const isUser = message.sender === 'user';
+  const time = formatMessageTime(message.createdAt);
 
   return (
     <motion.div
@@ -22,12 +23,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       transition={{ duration: 0.28, ease: 'easeOut' }}
       className='flex flex-col gap-1'
       role='group'
-      aria-label={message.author + ' at ' + message.timestamp}
+      aria-label={`${isOwn ? 'You' : 'User ' + message.senderId} at ${time}`}
     >
       <div
         className={cn(
           'relative max-w-[85%] rounded-xl border px-3 py-2 text-xs leading-relaxed sm:max-w-[82%] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm',
-          isUser
+          isOwn
             ? 'border-primary/40 bg-primary text-primary-foreground ml-auto'
             : 'bg-muted border-transparent'
         )}
@@ -35,40 +36,35 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         <p
           className={cn(
             'font-medium sm:text-sm',
-            isUser ? 'text-primary-foreground/80' : 'text-foreground/80'
+            isOwn ? 'text-primary-foreground/80' : 'text-foreground/80'
           )}
         >
-          {message.author}
+          {isOwn ? 'You' : `User #${message.senderId}`}
         </p>
-        {message.text && (
+        {message.message && (
           <p
             className={cn(
               'mt-1 text-[0.875rem] sm:text-[0.95rem]',
-              isUser ? 'text-primary-foreground/90' : 'text-foreground/90'
+              isOwn ? 'text-primary-foreground/90' : 'text-foreground/90'
             )}
           >
-            {message.text}
+            {message.message}
           </p>
         )}
-        {message.attachments && message.attachments.length > 0 && (
-          <FilePreview
-            files={message.attachments.map((a) => ({
-              id: a.id,
-              name: a.name,
-              type: a.type
-            }))}
-            variant={isUser ? 'inverted' : 'default'}
-            className='mt-1 p-0'
-          />
-        )}
         <div className='mt-2 flex items-center justify-end gap-1.5 text-[0.65rem] sm:mt-3 sm:gap-2 sm:text-[0.7rem]'>
-          <span className={cn('text-muted-foreground', isUser && 'text-primary-foreground/80')}>
-            {message.timestamp}
+          <span className={cn('text-muted-foreground', isOwn && 'text-primary-foreground/80')}>
+            {time}
           </span>
-          {isUser && (
+          {isOwn && message.isRead && (
             <Icons.checks
               className='text-primary-foreground/80 h-3 w-3 sm:h-3.5 sm:w-3.5'
-              aria-hidden='true'
+              aria-label='Read'
+            />
+          )}
+          {isOwn && !message.isRead && (
+            <Icons.check
+              className='text-primary-foreground/60 h-3 w-3 sm:h-3.5 sm:w-3.5'
+              aria-label='Sent'
             />
           )}
         </div>

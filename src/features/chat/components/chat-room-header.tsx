@@ -3,39 +3,38 @@
 import { Icons } from '@/components/icons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import type { Conversation } from '../utils/types';
+import { useChatStore } from '../utils/store';
 
-const statusDotColor = {
-  online: 'bg-green-500',
-  offline: 'bg-red-500'
-} as const;
+export function ChatRoomHeader() {
+  const selectedRoomId = useChatStore((s) => s.selectedRoomId);
+  const rooms = useChatStore((s) => s.rooms);
+  const connectionStatus = useChatStore((s) => s.connectionStatus);
 
-interface ChatHeaderProps {
-  conversation: Conversation;
-}
+  const activeRoom = rooms.find((r) => r.id === selectedRoomId);
+  const displayName = activeRoom ? `User #${activeRoom.userId}` : `Room #${selectedRoomId}`;
+  const initials = activeRoom ? `U${activeRoom.userId}` : '?';
 
-export function ChatHeader({ conversation }: ChatHeaderProps) {
   return (
     <header className='flex flex-wrap items-center justify-between gap-3 sm:gap-4'>
       <div className='flex items-center gap-2 sm:gap-3'>
         <div className='relative'>
           <Avatar className='border-border/40 bg-card/80 text-foreground h-10 w-10 rounded-2xl border sm:h-12 sm:w-12 sm:rounded-3xl'>
             <AvatarFallback className='bg-primary/20 text-primary rounded-2xl text-sm font-semibold sm:rounded-3xl sm:text-base'>
-              {conversation.initials}
+              {initials}
             </AvatarFallback>
           </Avatar>
           <span
-            className={cn(
-              'border-background absolute right-0 bottom-0 inline-flex h-3 w-3 rounded-full border-2 sm:h-3.5 sm:w-3.5',
-              statusDotColor[conversation.status]
-            )}
-            aria-label={conversation.status === 'online' ? 'Online' : 'Offline'}
+            className={`border-background absolute right-0 bottom-0 inline-flex h-3 w-3 rounded-full border-2 sm:h-3.5 sm:w-3.5 ${
+              connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
+            }`}
+            aria-label={connectionStatus === 'connected' ? 'Online' : 'Offline'}
           />
         </div>
         <div>
-          <p className='text-foreground text-sm font-semibold sm:text-base'>{conversation.name}</p>
-          <p className='text-muted-foreground text-xs sm:text-sm'>{conversation.title}</p>
+          <p className='text-foreground text-sm font-semibold sm:text-base'>{displayName}</p>
+          <p className='text-muted-foreground text-xs sm:text-sm'>
+            {activeRoom ? `Room #${activeRoom.id}` : 'Chat'}
+          </p>
         </div>
       </div>
 

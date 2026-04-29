@@ -1,93 +1,272 @@
 import { create } from 'zustand';
-// import { persist } from 'zustand/middleware';
-import type { Attachment, Conversation, Message } from './types';
-import { initialConversations } from './data';
+import type { ChatMessage, ChatRoomWithMeta, SocketConnectionStatus } from '../api/types';
+import {
+  getChatSocket,
+  disconnectChatSocket,
+  getCurrentChatSocket,
+  type ChatSocket
+} from '../api/socket';
 
-type ReplyCursorState = Record<string, number>;
+// ─── Store Types ────────────────────────────────────────────────────────────
 
-type ChatState = {
-  conversations: Conversation[];
-  selectedConversationId: string;
+interface ChatState {
+  // Connection
+  connectionStatus: SocketConnectionStatus;
+  currentUserId: number | null;
+
+  // Rooms (admin view)
+  rooms: ChatRoomWithMeta[];
+  selectedRoomId: number | null;
+
+  // Messages for the active room
+  messages: ChatMessage[];
+  messagesPage: number;
+  hasMoreMessages: boolean;
+
+  // UI
   draft: string;
-  replyCursor: ReplyCursorState;
+  isLoadingMessages: boolean;
+  error: string | null;
 
-  selectConversation: (id: string) => void;
+  // Actions
+  connect: (token: string) => void;
+  disconnect: () => void;
+  joinRoom: (userId?: number) => void;
+  selectRoom: (roomId: number, userId: number) => void;
+  sendMessage: (text: string) => void;
+  loadMoreMessages: () => void;
+  markAsRead: () => void;
+  fetchRooms: () => void;
   setDraft: (text: string) => void;
-  sendMessage: (text: string, attachments?: Attachment[]) => void;
-  addIncomingMessage: (conversationId: string, message: Message) => void;
-  advanceReplyCursor: (conversationId: string) => void;
-  getActiveConversation: () => Conversation | undefined;
-};
+  clearError: () => void;
 
-export const useChatStore = create<ChatState>()(
-  // To enable persistence across refreshes, uncomment the persist wrapper below:
-  // persist(
-  (set, get) => ({
-    conversations: initialConversations,
-    selectedConversationId: initialConversations[0]?.id ?? '',
-    draft: '',
-    replyCursor: Object.fromEntries(initialConversations.map((c) => [c.id, 0])),
+  // Internal
+  _socket: ChatSocket | null;
+}
 
-    selectConversation: (id) =>
-      set((state) => ({
-        selectedConversationId: id,
-        conversations: state.conversations.map((c) => (c.id === id ? { ...c, unread: 0 } : c))
-      })),
+// ─── Constants ──────────────────────────────────────────────────────────────
 
-    setDraft: (text) => set({ draft: text }),
+const MESSAGES_PER_PAGE = 50;
 
-    sendMessage: (text, attachments) => {
-      const state = get();
-      const timestamp = new Date().toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      const outgoing: Message = {
-        id: 'outgoing-' + Date.now().toString(),
-        sender: 'user',
-        author: 'You',
-        text: text.trim(),
-        timestamp,
-        attachments: attachments?.length ? attachments : undefined
-      };
+// ─── Store ──────────────────────────────────────────────────────────────────
 
+export const useChatStore = create<ChatState>()((set, get) => ({
+  // Initial state
+  connectionStatus: 'disconnected',
+  currentUserId: null,
+  rooms: [],
+  selectedRoomId: null,
+  messages: [],
+  messagesPage: 1,
+  hasMoreMessages: true,
+  draft: '',
+  isLoadingMessages: false,
+  error: null,
+  _socket: null,
+
+  connect: (token: string) => {
+    const existing = getCurrentChatSocket();
+    if (existing?.connected) {
+      set({ connectionStatus: 'connected', _socket: existing });
+      return;
+    }
+
+    set({ connectionStatus: 'connecting' });
+
+    const socket = getChatSocket(token);
+
+    // ── Connection events ──────────────────────────────────────────────
+    socket.on('connect', () => {
+      set({ connectionStatus: 'connected', _socket: socket });
+    });
+
+    socket.on('disconnect', () => {
+      set({ connectionStatus: 'disconnected' });
+    });
+
+    socket.on('connect_error', () => {
+      set({ connectionStatus: 'error', error: 'Connection failed' });
+    });
+
+    // ── Business events ────────────────────────────────────────────────
+    socket.on('joinedRoom', ({ roomId, userId }) => {
       set({
-        draft: '',
-        conversations: state.conversations.map((c) =>
-          c.id === state.selectedConversationId
-            ? { ...c, messages: [...c.messages, outgoing], unread: 0 }
-            : c
-        )
+        selectedRoomId: roomId,
+        currentUserId: userId,
+        messages: [],
+        messagesPage: 1,
+        hasMoreMessages: true,
+        isLoadingMessages: true
       });
-    },
+      // Load initial messages
+      socket.emit('getMessages', {
+        chatRoomId: roomId,
+        page: 1,
+        limit: MESSAGES_PER_PAGE
+      });
+    });
 
-    addIncomingMessage: (conversationId, message) =>
-      set((state) => ({
-        conversations: state.conversations.map((c) => {
-          if (c.id !== conversationId) return c;
-          const isActive = state.selectedConversationId === conversationId;
+    socket.on('messages', ({ chatRoomId, messages: incoming }) => {
+      const state = get();
+      if (chatRoomId !== state.selectedRoomId) return;
+
+      // Messages come DESC (newest first) — reverse for chronological display
+      const chronological = [...incoming].reverse();
+
+      if (state.messagesPage === 1) {
+        // Initial load — replace
+        set({
+          messages: chronological,
+          isLoadingMessages: false,
+          hasMoreMessages: incoming.length >= MESSAGES_PER_PAGE
+        });
+      } else {
+        // Pagination — prepend older messages
+        set({
+          messages: [...chronological, ...state.messages],
+          isLoadingMessages: false,
+          hasMoreMessages: incoming.length >= MESSAGES_PER_PAGE
+        });
+      }
+    });
+
+    socket.on('newMessage', (msg) => {
+      const state = get();
+
+      // Append to current chat if it's the active room
+      if (msg.chatRoomId === state.selectedRoomId) {
+        set({ messages: [...state.messages, msg] });
+        // Auto mark as read since user is viewing this room
+        socket.emit('markAsRead', { chatRoomId: msg.chatRoomId });
+      }
+
+      // Update room list (for admin sidebar)
+      set((s) => ({
+        rooms: s.rooms.map((room) => {
+          if (room.id !== msg.chatRoomId) return room;
           return {
-            ...c,
-            messages: [...c.messages, message],
-            unread: isActive ? 0 : c.unread + 1
+            ...room,
+            lastMessage: msg,
+            unreadCount: msg.chatRoomId === s.selectedRoomId ? 0 : room.unreadCount + 1
           };
         })
-      })),
+      }));
+    });
 
-    advanceReplyCursor: (conversationId) =>
-      set((state) => ({
-        replyCursor: {
-          ...state.replyCursor,
-          [conversationId]: (state.replyCursor[conversationId] ?? 0) + 1
-        }
-      })),
+    socket.on('markedAsRead', ({ chatRoomId }) => {
+      set((s) => ({
+        rooms: s.rooms.map((room) => (room.id === chatRoomId ? { ...room, unreadCount: 0 } : room)),
+        messages: s.messages.map((msg) =>
+          msg.chatRoomId === chatRoomId ? { ...msg, isRead: true } : msg
+        )
+      }));
+    });
 
-    getActiveConversation: () => {
-      const state = get();
-      return state.conversations.find((c) => c.id === state.selectedConversationId);
+    socket.on('rooms', (rooms) => {
+      set({ rooms });
+    });
+
+    socket.on('error', ({ message }) => {
+      set({ error: message, isLoadingMessages: false });
+    });
+
+    // Connect if not already
+    if (!socket.connected) {
+      socket.connect();
     }
-  })
-  //   ,
-  //   { name: 'chat' }
-  // )
-);
+
+    set({ _socket: socket });
+  },
+
+  disconnect: () => {
+    disconnectChatSocket();
+    set({
+      connectionStatus: 'disconnected',
+      _socket: null,
+      rooms: [],
+      selectedRoomId: null,
+      messages: [],
+      messagesPage: 1,
+      draft: '',
+      error: null
+    });
+  },
+
+  joinRoom: (userId?: number) => {
+    const socket = get()._socket;
+    if (!socket?.connected) return;
+    socket.emit('joinRoom', { userId });
+  },
+
+  selectRoom: (roomId: number, userId: number) => {
+    const socket = get()._socket;
+    if (!socket?.connected) return;
+
+    set({
+      selectedRoomId: roomId,
+      messages: [],
+      messagesPage: 1,
+      hasMoreMessages: true,
+      isLoadingMessages: true,
+      draft: ''
+    });
+
+    socket.emit('joinRoom', { userId });
+  },
+
+  sendMessage: (text: string) => {
+    const state = get();
+    const socket = state._socket;
+    if (!socket?.connected || !state.selectedRoomId) return;
+
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    socket.emit('sendMessage', {
+      chatRoomId: state.selectedRoomId,
+      message: trimmed
+    });
+
+    set({ draft: '' });
+  },
+
+  loadMoreMessages: () => {
+    const state = get();
+    const socket = state._socket;
+    if (
+      !socket?.connected ||
+      !state.selectedRoomId ||
+      state.isLoadingMessages ||
+      !state.hasMoreMessages
+    ) {
+      return;
+    }
+
+    const nextPage = state.messagesPage + 1;
+    set({ messagesPage: nextPage, isLoadingMessages: true });
+
+    socket.emit('getMessages', {
+      chatRoomId: state.selectedRoomId,
+      page: nextPage,
+      limit: MESSAGES_PER_PAGE
+    });
+  },
+
+  markAsRead: () => {
+    const state = get();
+    const socket = state._socket;
+    if (!socket?.connected || !state.selectedRoomId) return;
+
+    socket.emit('markAsRead', { chatRoomId: state.selectedRoomId });
+  },
+
+  fetchRooms: () => {
+    const socket = get()._socket;
+    if (!socket?.connected) return;
+    socket.emit('getRooms');
+  },
+
+  setDraft: (text: string) => set({ draft: text }),
+
+  clearError: () => set({ error: null })
+}));

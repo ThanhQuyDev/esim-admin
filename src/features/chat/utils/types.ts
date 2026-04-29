@@ -1,3 +1,5 @@
+// ─── UI Types (used by components) ──────────────────────────────────────────
+
 export type Attachment = {
   id: string;
   name: string;
@@ -5,6 +7,10 @@ export type Attachment = {
   type: string;
 };
 
+/**
+ * @deprecated Use ChatMessage from api/types.ts for WebSocket data.
+ * Kept for backward compatibility with MessageBubble component.
+ */
 export type Message = {
   id: string;
   sender: 'user' | 'contact';
@@ -16,6 +22,10 @@ export type Message = {
 
 export type ConversationStatus = 'online' | 'offline';
 
+/**
+ * @deprecated Use ChatRoomWithMeta from api/types.ts for WebSocket data.
+ * Kept for backward compatibility with ConversationList/ConversationSelect.
+ */
 export type Conversation = {
   id: string;
   name: string;
