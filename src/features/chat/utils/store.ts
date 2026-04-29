@@ -9,10 +9,21 @@ import {
 
 // ─── Store Types ────────────────────────────────────────────────────────────
 
+interface UserInfo {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 interface ChatState {
   // Connection
   connectionStatus: SocketConnectionStatus;
-  currentUserId: number | null;
+  myUserId: number | null; // The logged-in user's (admin's) own ID
+  roomOwnerId: number | null; // The user who owns the current room
+
+  // User info cache (userId → UserInfo)
+  userCache: Record<number, UserInfo>;
 
   // Rooms (admin view)
   rooms: ChatRoomWithMeta[];
@@ -29,7 +40,7 @@ interface ChatState {
   error: string | null;
 
   // Actions
-  connect: (token: string) => void;
+  connect: (token: string, myUserId: number) => void;
   disconnect: () => void;
   joinRoom: (userId?: number) => void;
   selectRoom: (roomId: number, userId: number) => void;
@@ -39,6 +50,7 @@ interface ChatState {
   fetchRooms: () => void;
   setDraft: (text: string) => void;
   clearError: () => void;
+  fetchUserInfo: (userId: number) => void;
 
   // Internal
   _socket: ChatSocket | null;
@@ -53,7 +65,9 @@ const MESSAGES_PER_PAGE = 50;
 export const useChatStore = create<ChatState>()((set, get) => ({
   // Initial state
   connectionStatus: 'disconnected',
-  currentUserId: null,
+  myUserId: null,
+  roomOwnerId: null,
+  userCache: {},
   rooms: [],
   selectedRoomId: null,
   messages: [],
@@ -64,14 +78,14 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   error: null,
   _socket: null,
 
-  connect: (token: string) => {
+  connect: (token: string, myUserId: number) => {
     const existing = getCurrentChatSocket();
     if (existing?.connected) {
-      set({ connectionStatus: 'connected', _socket: existing });
+      set({ connectionStatus: 'connected', _socket: existing, myUserId });
       return;
     }
 
-    set({ connectionStatus: 'connecting' });
+    set({ connectionStatus: 'connecting', myUserId });
 
     const socket = getChatSocket(token);
 
@@ -92,12 +106,16 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     socket.on('joinedRoom', ({ roomId, userId }) => {
       set({
         selectedRoomId: roomId,
-        currentUserId: userId,
+        roomOwnerId: userId,
         messages: [],
         messagesPage: 1,
         hasMoreMessages: true,
         isLoadingMessages: true
       });
+
+      // Fetch user info for the room owner
+      get().fetchUserInfo(userId);
+
       // Load initial messages
       socket.emit('getMessages', {
         chatRoomId: roomId,
@@ -112,6 +130,17 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
       // Messages come DESC (newest first) — reverse for chronological display
       const chronological = [...incoming].reverse();
+
+      // Fetch user info for any unknown senders
+      const unknownSenders = new Set<number>();
+      for (const msg of chronological) {
+        if (!state.userCache[msg.senderId]) {
+          unknownSenders.add(msg.senderId);
+        }
+      }
+      for (const senderId of unknownSenders) {
+        get().fetchUserInfo(senderId);
+      }
 
       if (state.messagesPage === 1) {
         // Initial load — replace
@@ -132,6 +161,11 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
     socket.on('newMessage', (msg) => {
       const state = get();
+
+      // Fetch user info if unknown sender
+      if (!state.userCache[msg.senderId]) {
+        get().fetchUserInfo(msg.senderId);
+      }
 
       // Append to current chat if it's the active room
       if (msg.chatRoomId === state.selectedRoomId) {
@@ -164,6 +198,14 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
     socket.on('rooms', (rooms) => {
       set({ rooms });
+
+      // Fetch user info for all room owners
+      const state = get();
+      for (const room of rooms) {
+        if (!state.userCache[room.userId]) {
+          get().fetchUserInfo(room.userId);
+        }
+      }
     });
 
     socket.on('error', ({ message }) => {
@@ -185,6 +227,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       _socket: null,
       rooms: [],
       selectedRoomId: null,
+      roomOwnerId: null,
       messages: [],
       messagesPage: 1,
       draft: '',
@@ -204,6 +247,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
     set({
       selectedRoomId: roomId,
+      roomOwnerId: userId,
       messages: [],
       messagesPage: 1,
       hasMoreMessages: true,
@@ -268,5 +312,33 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
   setDraft: (text: string) => set({ draft: text }),
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
+
+  fetchUserInfo: (userId: number) => {
+    const state = get();
+    // Skip if already cached or if it's the current admin user
+    if (state.userCache[userId]) return;
+
+    fetch(`/api/users/${userId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch user');
+        return res.json();
+      })
+      .then((user: UserInfo) => {
+        set((s) => ({
+          userCache: {
+            ...s.userCache,
+            [user.id]: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName
+            }
+          }
+        }));
+      })
+      .catch(() => {
+        // Silently fail — display will fall back to "User #id"
+      });
+  }
 }));

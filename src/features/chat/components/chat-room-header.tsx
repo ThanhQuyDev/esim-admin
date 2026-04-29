@@ -9,10 +9,22 @@ export function ChatRoomHeader() {
   const selectedRoomId = useChatStore((s) => s.selectedRoomId);
   const rooms = useChatStore((s) => s.rooms);
   const connectionStatus = useChatStore((s) => s.connectionStatus);
+  const userCache = useChatStore((s) => s.userCache);
 
   const activeRoom = rooms.find((r) => r.id === selectedRoomId);
-  const displayName = activeRoom ? `User #${activeRoom.userId}` : `Room #${selectedRoomId}`;
-  const initials = activeRoom ? `U${activeRoom.userId}` : '?';
+  const user = activeRoom ? userCache[activeRoom.userId] : undefined;
+  const displayName =
+    user?.email ?? (activeRoom ? `User #${activeRoom.userId}` : `Room #${selectedRoomId}`);
+  const subtitle = user
+    ? `${user.firstName} ${user.lastName}`.trim() || `Room #${activeRoom?.id}`
+    : activeRoom
+      ? `Room #${activeRoom.id}`
+      : 'Chat';
+  const initials = user
+    ? user.email.charAt(0).toUpperCase()
+    : activeRoom
+      ? `U${activeRoom.userId}`
+      : '?';
 
   return (
     <header className='flex flex-wrap items-center justify-between gap-3 sm:gap-4'>
@@ -32,9 +44,7 @@ export function ChatRoomHeader() {
         </div>
         <div>
           <p className='text-foreground text-sm font-semibold sm:text-base'>{displayName}</p>
-          <p className='text-muted-foreground text-xs sm:text-sm'>
-            {activeRoom ? `Room #${activeRoom.id}` : 'Chat'}
-          </p>
+          <p className='text-muted-foreground text-xs sm:text-sm'>{subtitle}</p>
         </div>
       </div>
 

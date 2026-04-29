@@ -17,7 +17,8 @@ export function ChatArea() {
   const setDraft = useChatStore((s) => s.setDraft);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const loadMoreMessages = useChatStore((s) => s.loadMoreMessages);
-  const currentUserId = useChatStore((s) => s.currentUserId);
+  const myUserId = useChatStore((s) => s.myUserId);
+  const userCache = useChatStore((s) => s.userCache);
 
   const shouldReduceMotion = useReducedMotion();
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -48,8 +49,10 @@ export function ChatArea() {
   useEffect(() => {
     if (!liveRegionRef.current || messages.length === 0) return;
     const lastMessage = messages[messages.length - 1];
-    liveRegionRef.current.textContent = `Sender ${lastMessage.senderId}: ${lastMessage.message}`;
-  }, [messages]);
+    const senderInfo = userCache[lastMessage.senderId];
+    const senderName = senderInfo ? senderInfo.email : `User #${lastMessage.senderId}`;
+    liveRegionRef.current.textContent = `${senderName}: ${lastMessage.message}`;
+  }, [messages, userCache]);
 
   const handleSubmit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
@@ -116,7 +119,12 @@ export function ChatArea() {
                 <ChatMessageBubble
                   key={msg.id}
                   message={msg}
-                  isOwn={msg.senderId === currentUserId}
+                  isOwn={msg.senderId === myUserId}
+                  senderName={
+                    msg.senderId === myUserId
+                      ? 'You'
+                      : (userCache[msg.senderId]?.email ?? `User #${msg.senderId}`)
+                  }
                 />
               ))}
             </AnimatePresence>

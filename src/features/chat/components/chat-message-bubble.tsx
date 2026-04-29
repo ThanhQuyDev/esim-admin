@@ -9,9 +9,10 @@ import { formatMessageTime } from '../utils/format';
 interface ChatMessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
+  senderName: string;
 }
 
-export function ChatMessageBubble({ message, isOwn }: ChatMessageBubbleProps) {
+export function ChatMessageBubble({ message, isOwn, senderName }: ChatMessageBubbleProps) {
   const shouldReduceMotion = useReducedMotion();
   const time = formatMessageTime(message.createdAt);
 
@@ -23,7 +24,7 @@ export function ChatMessageBubble({ message, isOwn }: ChatMessageBubbleProps) {
       transition={{ duration: 0.28, ease: 'easeOut' }}
       className='flex flex-col gap-1'
       role='group'
-      aria-label={`${isOwn ? 'You' : 'User ' + message.senderId} at ${time}`}
+      aria-label={`${senderName} at ${time}`}
     >
       <div
         className={cn(
@@ -39,7 +40,7 @@ export function ChatMessageBubble({ message, isOwn }: ChatMessageBubbleProps) {
             isOwn ? 'text-primary-foreground/80' : 'text-foreground/80'
           )}
         >
-          {isOwn ? 'You' : `User #${message.senderId}`}
+          {senderName}
         </p>
         {message.message && (
           <p

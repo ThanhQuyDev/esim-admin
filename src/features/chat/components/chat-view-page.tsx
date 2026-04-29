@@ -19,14 +19,19 @@ export default function ChatViewPage() {
     if (didConnect.current) return;
     didConnect.current = true;
 
-    // Token cookie is httpOnly — fetch it via API route
-    fetch('/api/auth/token')
-      .then((res) => {
+    // Fetch token + current user info in parallel
+    Promise.all([
+      fetch('/api/auth/token').then((res) => {
         if (!res.ok) throw new Error('Not authenticated');
-        return res.json();
+        return res.json() as Promise<{ token: string }>;
+      }),
+      fetch('/api/auth/me').then((res) => {
+        if (!res.ok) throw new Error('Not authenticated');
+        return res.json() as Promise<{ id: number }>;
       })
-      .then(({ token }: { token: string }) => {
-        connect(token);
+    ])
+      .then(([{ token }, me]) => {
+        connect(token, me.id);
       })
       .catch(() => {
         // User not authenticated — connection status stays disconnected

@@ -11,25 +11,29 @@ import { useChatStore } from '../utils/store';
 import type { ChatRoomWithMeta } from '../api/types';
 import { formatDistanceToNow } from '@/features/chat/utils/format';
 
-function getRoomInitials(room: ChatRoomWithMeta): string {
-  return `U${room.userId}`;
-}
-
-function getRoomDisplayName(room: ChatRoomWithMeta): string {
-  return `User #${room.userId}`;
+function getRoomInitials(email: string | undefined, userId: number): string {
+  if (email) {
+    return email.charAt(0).toUpperCase();
+  }
+  return `U${userId}`;
 }
 
 export function ChatRoomList() {
   const rooms = useChatStore((s) => s.rooms);
   const selectedRoomId = useChatStore((s) => s.selectedRoomId);
   const selectRoom = useChatStore((s) => s.selectRoom);
+  const userCache = useChatStore((s) => s.userCache);
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
     if (!search.trim()) return rooms;
     const q = search.toLowerCase();
-    return rooms.filter((r) => getRoomDisplayName(r).toLowerCase().includes(q));
-  }, [rooms, search]);
+    return rooms.filter((r) => {
+      const user = userCache[r.userId];
+      const displayName = user?.email ?? `User #${r.userId}`;
+      return displayName.toLowerCase().includes(q);
+    });
+  }, [rooms, search, userCache]);
 
   return (
     <div className='border-border/40 bg-background/75 hidden h-full flex-col gap-4 overflow-hidden rounded-2xl border p-3 backdrop-blur lg:col-start-1 lg:col-end-2 lg:flex lg:rounded-3xl lg:p-4'>
@@ -76,8 +80,9 @@ export function ChatRoomList() {
         ) : null}
         {filtered.map((room) => {
           const isActive = room.id === selectedRoomId;
-          const displayName = getRoomDisplayName(room);
-          const initials = getRoomInitials(room);
+          const user = userCache[room.userId];
+          const displayName = user?.email ?? `User #${room.userId}`;
+          const initials = getRoomInitials(user?.email, room.userId);
           const lastMsg = room.lastMessage;
 
           return (
@@ -104,7 +109,7 @@ export function ChatRoomList() {
               <div className='min-w-0 flex-1 space-y-1'>
                 <div className='flex items-start justify-between gap-2'>
                   <div className='min-w-0 flex-1'>
-                    <p className='text-foreground text-sm font-semibold'>{displayName}</p>
+                    <p className='text-foreground truncate text-sm font-semibold'>{displayName}</p>
                     <p className='text-muted-foreground text-xs'>Room #{room.id}</p>
                   </div>
                   {lastMsg && (
