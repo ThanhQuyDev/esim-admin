@@ -129,9 +129,9 @@ function CreateDialog({
 
       const payload: CreateHeroBannerPayload = {
         title: value.title,
-        firstIcon,
+        firstIcon: firstIcon ?? '',
         firstContent: value.firstContent,
-        secondIcon,
+        secondIcon: secondIcon ?? '',
         secondContent: value.secondContent,
         description: value.description,
         language: value.language,
