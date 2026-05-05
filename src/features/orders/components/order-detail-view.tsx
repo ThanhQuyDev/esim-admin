@@ -136,7 +136,6 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           </CardHeader>
           <CardContent className='space-y-3'>
             <InfoRow label='ID' value={order.user.id} />
-            <InfoRow label='Họ tên' value={`${order.user.firstName} ${order.user.lastName}`} />
             <InfoRow label='Email' value={order.user.email} />
           </CardContent>
         </Card>

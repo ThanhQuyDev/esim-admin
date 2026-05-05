@@ -76,6 +76,27 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Hero Banners',
+        url: '/dashboard/hero-banners',
+        icon: 'media',
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Top Bars',
+        url: '/dashboard/top-bars',
+        icon: 'panelLeft',
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Footers',
+        url: '/dashboard/footers',
+        icon: 'link',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Câu hỏi thường gặp',
         url: '/dashboard/faqs',
         icon: 'question',

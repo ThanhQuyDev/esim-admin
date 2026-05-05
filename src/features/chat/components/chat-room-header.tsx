@@ -14,12 +14,12 @@ export function ChatRoomHeader() {
   const activeRoom = rooms.find((r) => r.id === selectedRoomId);
   const user = activeRoom ? userCache[activeRoom.userId] : undefined;
   const displayName =
-    user?.email ?? (activeRoom ? `User #${activeRoom.userId}` : `Room #${selectedRoomId}`);
+    user?.email ?? (activeRoom ? `Người dùng #${activeRoom.userId}` : `Phòng #${selectedRoomId}`);
   const subtitle = user
-    ? `${user.firstName} ${user.lastName}`.trim() || `Room #${activeRoom?.id}`
+    ? `${user.firstName} ${user.lastName}`.trim() || `Phòng #${activeRoom?.id}`
     : activeRoom
-      ? `Room #${activeRoom.id}`
-      : 'Chat';
+      ? `Phòng #${activeRoom.id}`
+      : 'Trò chuyện';
   const initials = user
     ? user.email.charAt(0).toUpperCase()
     : activeRoom
@@ -39,12 +39,11 @@ export function ChatRoomHeader() {
             className={`border-background absolute right-0 bottom-0 inline-flex h-3 w-3 rounded-full border-2 sm:h-3.5 sm:w-3.5 ${
               connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
             }`}
-            aria-label={connectionStatus === 'connected' ? 'Online' : 'Offline'}
+            aria-label={connectionStatus === 'connected' ? 'Đang trực tuyến' : 'Đang ngoại tuyến'}
           />
         </div>
         <div>
           <p className='text-foreground text-sm font-semibold sm:text-base'>{displayName}</p>
-          <p className='text-muted-foreground text-xs sm:text-sm'>{subtitle}</p>
         </div>
       </div>
 
@@ -54,7 +53,7 @@ export function ChatRoomHeader() {
           variant='ghost'
           size='icon'
           className='border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10'
-          aria-label='Start audio call'
+          aria-label='Bắt đầu cuộc gọi thoại'
         >
           <Icons.phone className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
         </Button>
@@ -63,7 +62,7 @@ export function ChatRoomHeader() {
           variant='ghost'
           size='icon'
           className='border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10'
-          aria-label='Start video call'
+          aria-label='Bắt đầu cuộc gọi video'
         >
           <Icons.video className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
         </Button>
@@ -72,7 +71,7 @@ export function ChatRoomHeader() {
           variant='ghost'
           size='icon'
           className='border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10'
-          aria-label='Open conversation menu'
+          aria-label='Mở menu cuộc trò chuyện'
         >
           <Icons.ellipsis className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
         </Button>

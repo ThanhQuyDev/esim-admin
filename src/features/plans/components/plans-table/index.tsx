@@ -18,12 +18,14 @@ export function PlansTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    provider: parseAsString,
     isCheapest: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
   const apiFilters: Record<string, unknown> = {};
   if (params.name) apiFilters.search = params.name;
+  if (params.provider) apiFilters.provider = params.provider;
   if (params.isCheapest) apiFilters.isCheapest = params.isCheapest === 'true';
 
   const apiSort = params.sort.map((s) => ({

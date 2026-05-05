@@ -7,11 +7,13 @@ import { PlansTable } from './plans-table';
 export default function PlanListingPage() {
   const page = searchParamsCache.get('page');
   const search = searchParamsCache.get('name');
+  const provider = searchParamsCache.get('provider');
   const pageLimit = searchParamsCache.get('perPage');
   const sort = searchParamsCache.get('sort');
 
   const apiFilters: Record<string, unknown> = {};
   if (search) apiFilters.search = search;
+  if (provider) apiFilters.provider = provider;
 
   const filters = {
     page,

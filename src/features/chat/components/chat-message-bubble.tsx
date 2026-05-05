@@ -24,7 +24,7 @@ export function ChatMessageBubble({ message, isOwn, senderName }: ChatMessageBub
       transition={{ duration: 0.28, ease: 'easeOut' }}
       className='flex flex-col gap-1'
       role='group'
-      aria-label={`${senderName} at ${time}`}
+      aria-label={`${senderName} lúc ${time}`}
     >
       <div
         className={cn(
@@ -59,13 +59,13 @@ export function ChatMessageBubble({ message, isOwn, senderName }: ChatMessageBub
           {isOwn && message.isRead && (
             <Icons.checks
               className='text-primary-foreground/80 h-3 w-3 sm:h-3.5 sm:w-3.5'
-              aria-label='Read'
+              aria-label='Đã đọc'
             />
           )}
           {isOwn && !message.isRead && (
             <Icons.check
               className='text-primary-foreground/60 h-3 w-3 sm:h-3.5 sm:w-3.5'
-              aria-label='Sent'
+              aria-label='Đã gửi'
             />
           )}
         </div>

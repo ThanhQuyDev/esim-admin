@@ -1,15 +1,30 @@
-export type ProfitMargin = {
+export type ProfitMarginTier = {
   id: number;
-  name: string;
-  percentage: string;
+  minVnd: number;
+  maxVnd: number;
+  percentage: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null;
 };
 
-export type SaveProfitMarginPayload = {
-  name: string;
+export type ProfitMarginTierFilters = {
+  page?: number;
+  limit?: number;
+  filters?: string;
+  sort?: string;
+};
+
+export type ProfitMarginTierResponse = {
+  data: ProfitMarginTier[];
+  hasNextPage: boolean;
+};
+
+export type CreateProfitMarginTierPayload = {
+  minVnd: number;
+  maxVnd: number;
   percentage: number;
   isActive: boolean;
 };
+
+export type UpdateProfitMarginTierPayload = Partial<CreateProfitMarginTierPayload>;

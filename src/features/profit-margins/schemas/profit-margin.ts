@@ -1,13 +1,23 @@
 import * as z from 'zod';
 
-export const profitMarginSchema = z.object({
-  name: z.string().min(1, 'Tên là bắt buộc'),
-  percentage: z
-    .string()
-    .min(1, 'Phần trăm là bắt buộc')
-    .refine((v) => !isNaN(Number(v)), 'Phải là số')
-    .refine((v) => Number(v) >= 0, 'Phần trăm phải >= 0'),
-  isActive: z.boolean()
-});
+export const profitMarginTierSchema = z
+  .object({
+    minVnd: z.string().min(1, 'Min price is required'),
+    maxVnd: z.string().min(1, 'Max price is required'),
+    percentage: z.string().min(1, 'Percentage is required'),
+    isActive: z.boolean()
+  })
+  .refine(
+    (data) => {
+      const min = Number(data.minVnd);
+      const max = Number(data.maxVnd);
+      if (isNaN(min) || isNaN(max)) return true; // let other validations catch NaN
+      return min <= max;
+    },
+    {
+      message: 'Min price must be less than or equal to Max price',
+      path: ['maxVnd']
+    }
+  );
 
-export type ProfitMarginFormValues = z.infer<typeof profitMarginSchema>;
+export type ProfitMarginTierFormValues = z.infer<typeof profitMarginTierSchema>;

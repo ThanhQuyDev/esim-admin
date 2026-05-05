@@ -30,7 +30,7 @@ export function ChatRoomList() {
     const q = search.toLowerCase();
     return rooms.filter((r) => {
       const user = userCache[r.userId];
-      const displayName = user?.email ?? `User #${r.userId}`;
+      const displayName = user?.email ?? `Người dùng #${r.userId}`;
       return displayName.toLowerCase().includes(q);
     });
   }, [rooms, search, userCache]);
@@ -39,21 +39,19 @@ export function ChatRoomList() {
     <div className='border-border/40 bg-background/75 hidden h-full flex-col gap-4 overflow-hidden rounded-2xl border p-3 backdrop-blur lg:col-start-1 lg:col-end-2 lg:flex lg:rounded-3xl lg:p-4'>
       <div className='flex items-center justify-between gap-3'>
         <div>
-          <p className='text-foreground text-sm font-semibold'>Messenger</p>
-          <p className='text-muted-foreground text-xs'>
-            {rooms.length} conversation{rooms.length === 1 ? '' : 's'}
-          </p>
+          <p className='text-foreground text-sm font-semibold'>Trò chuyện</p>
+          <p className='text-muted-foreground text-xs'>{rooms.length} cuộc trò chuyện</p>
         </div>
         <Badge
           variant='outline'
           className='bg-primary/15 text-primary hover:bg-primary/15 hover:text-primary border-border/50 rounded-full border px-3 py-1 text-[0.7rem] tracking-[0.24em] uppercase'
         >
-          Live
+          Trực tuyến
         </Badge>
       </div>
 
       <label htmlFor='messenger-search' className='sr-only'>
-        Search conversations
+        Tìm kiếm cuộc trò chuyện
       </label>
       <div className='relative'>
         <Icons.search
@@ -65,23 +63,25 @@ export function ChatRoomList() {
           type='search'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder='Search conversations'
+          placeholder='Tìm kiếm cuộc trò chuyện'
           className='border-border/40 bg-background/60 text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-primary/40 w-full rounded-2xl pl-10 text-sm focus-visible:ring-2'
         />
       </div>
 
       <div
         className='flex-1 space-y-2 overflow-y-auto pr-1'
-        aria-label='Conversation list'
+        aria-label='Danh sách cuộc trò chuyện'
         role='list'
       >
         {filtered.length === 0 ? (
-          <p className='text-muted-foreground py-8 text-center text-xs'>No conversations found</p>
+          <p className='text-muted-foreground py-8 text-center text-xs'>
+            Không tìm thấy cuộc trò chuyện
+          </p>
         ) : null}
         {filtered.map((room) => {
           const isActive = room.id === selectedRoomId;
           const user = userCache[room.userId];
-          const displayName = user?.email ?? `User #${room.userId}`;
+          const displayName = user?.email ?? `Người dùng #${room.userId}`;
           const initials = getRoomInitials(user?.email, room.userId);
           const lastMsg = room.lastMessage;
 
@@ -110,7 +110,6 @@ export function ChatRoomList() {
                 <div className='flex items-start justify-between gap-2'>
                   <div className='min-w-0 flex-1'>
                     <p className='text-foreground truncate text-sm font-semibold'>{displayName}</p>
-                    <p className='text-muted-foreground text-xs'>Room #{room.id}</p>
                   </div>
                   {lastMsg && (
                     <span className='text-muted-foreground shrink-0 text-[0.65rem]'>
@@ -121,7 +120,7 @@ export function ChatRoomList() {
                 {lastMsg ? (
                   <p className='text-muted-foreground line-clamp-2 text-xs'>{lastMsg.message}</p>
                 ) : (
-                  <p className='text-muted-foreground text-xs'>No messages yet</p>
+                  <p className='text-muted-foreground text-xs'>Chưa có tin nhắn</p>
                 )}
               </div>
               {room.unreadCount > 0 && (

@@ -49,6 +49,31 @@ export const columns: ColumnDef<Plan>[] = [
     enableSorting: false
   },
   {
+    id: 'provider',
+    accessorKey: 'provider',
+    header: 'Nhà cung cấp',
+    cell: ({ row }) => {
+      const provider = row.original.provider;
+      return (
+        <Badge variant='outline' className='capitalize'>
+          {provider || '—'}
+        </Badge>
+      );
+    },
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Nhà cung cấp',
+      variant: 'multiSelect' as const,
+      options: [
+        { value: 'esimaccess', label: 'EsimAccess' },
+        { value: 'airalo', label: 'Airalo' },
+        { value: 'gadgetkorea', label: 'Gadget Korea' },
+        { value: 'viettel', label: 'Viettel' }
+      ]
+    }
+  },
+  {
     id: 'name',
     accessorKey: 'name',
     header: ({ column }: { column: Column<Plan, unknown> }) => (

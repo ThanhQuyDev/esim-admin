@@ -50,7 +50,7 @@ export function ChatArea() {
     if (!liveRegionRef.current || messages.length === 0) return;
     const lastMessage = messages[messages.length - 1];
     const senderInfo = userCache[lastMessage.senderId];
-    const senderName = senderInfo ? senderInfo.email : `User #${lastMessage.senderId}`;
+    const senderName = senderInfo ? senderInfo.email : `Người dùng #${lastMessage.senderId}`;
     liveRegionRef.current.textContent = `${senderName}: ${lastMessage.message}`;
   }, [messages, userCache]);
 
@@ -93,7 +93,7 @@ export function ChatArea() {
             onScroll={handleScroll}
             className='[&::-webkit-scrollbar-thumb]:bg-muted relative min-h-0 flex-1 space-y-3 overflow-y-auto pr-2 sm:space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full'
             aria-live='off'
-            aria-label='Message thread'
+            aria-label='Luồng tin nhắn'
           >
             {isLoadingMessages && messages.length === 0 && (
               <div className='flex items-center justify-center py-8'>
@@ -109,7 +109,7 @@ export function ChatArea() {
                   disabled={isLoadingMessages}
                   className='text-muted-foreground hover:text-foreground text-xs transition disabled:opacity-50'
                 >
-                  {isLoadingMessages ? 'Loading...' : 'Load older messages'}
+                  {isLoadingMessages ? 'Đang tải...' : 'Tải tin nhắn cũ hơn'}
                 </button>
               </div>
             )}
@@ -122,8 +122,8 @@ export function ChatArea() {
                   isOwn={msg.senderId === myUserId}
                   senderName={
                     msg.senderId === myUserId
-                      ? 'You'
-                      : (userCache[msg.senderId]?.email ?? `User #${msg.senderId}`)
+                      ? 'Bạn'
+                      : (userCache[msg.senderId]?.email ?? `Người dùng #${msg.senderId}`)
                   }
                 />
               ))}
