@@ -1,144 +1,134 @@
 'use client';
 
-import { Bar, BarChart, XAxis } from 'recharts';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartConfig,
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent
 } from '@/components/ui/chart';
-import { Badge } from '@/components/ui/badge';
-import { Icons } from '@/components/icons';
+import { formatNumber, formatPercent, formatVnd } from '@/lib/format';
+import { providerComparisonQueryOptions } from '../api/queries';
+import type { ProviderMetric, ProviderComparisonByProviderResponse } from '../api/types';
 
-const chartData = [
-  { month: 'January', desktop: 186, mobile: 80 },
-  { month: 'February', desktop: 305, mobile: 200 },
-  { month: 'March', desktop: 237, mobile: 120 },
-  { month: 'April', desktop: 73, mobile: 190 },
-  { month: 'May', desktop: 209, mobile: 130 },
-  { month: 'June', desktop: 214, mobile: 140 }
-];
-
-const chartConfig = {
-  desktop: {
-    label: 'Desktop',
+const providerComparisonConfig = {
+  orders: {
+    label: 'Đơn hàng',
     color: 'var(--chart-1)'
   },
-  mobile: {
-    label: 'Mobile',
+  revenue: {
+    label: 'Doanh thu',
     color: 'var(--chart-2)'
+  },
+  plansSold: {
+    label: 'Plan đã bán',
+    color: 'var(--chart-3)'
+  },
+  successRate: {
+    label: 'Tỷ lệ thành công',
+    color: 'var(--chart-4)'
   }
 } satisfies ChartConfig;
 
+const providerLabels: Record<string, string> = {
+  airalo: 'Airalo',
+  esimaccess: 'eSIM Access',
+  gadgetkorea: 'Gadget Korea'
+};
+
+function isProviderComparisonByProvider(
+  data: unknown
+): data is ProviderComparisonByProviderResponse {
+  return typeof data === 'object' && data !== null && 'data' in data;
+}
+
+function formatMetricValue(metric: ProviderMetric, value: number) {
+  if (metric === 'revenue') return formatVnd(value);
+  if (metric === 'successRate') return formatPercent(value);
+  return formatNumber(value);
+}
+
 export function BarGraph() {
+  const metric: ProviderMetric = 'orders';
+  const { data, isLoading, error } = useQuery(
+    providerComparisonQueryOptions({ metric, groupBy: 'provider' })
+  );
+
+  const chartData = useMemo(() => {
+    if (!isProviderComparisonByProvider(data)) return [];
+
+    return data.data.map((item) => ({
+      ...item,
+      providerLabel: providerLabels[item.provider] ?? item.provider
+    }));
+  }, [data]);
+
+  const total = chartData.reduce((sum, item) => sum + item[metric], 0);
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>So sánh provider</CardTitle>
+          <CardDescription className='text-destructive'>
+            Không thể tải dữ liệu provider: {error.message}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          Bar Chart - Multiple
-          <Badge variant='outline'>
-            <Icons.trendingDown />
-            -5.2%
-          </Badge>
+        <CardTitle className='flex items-center gap-2'>
+          So sánh provider
+          <Badge variant='outline'>{formatMetricValue(metric, total)}</Badge>
         </CardTitle>
-        <CardDescription>January - June 2025</CardDescription>
+        <CardDescription>
+          So sánh Airalo, eSIM Access và Gadget Korea theo số đơn hàng
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={chartData}>
-            <rect
-              x='0'
-              y='0'
-              width='100%'
-              height='85%'
-              fill='url(#default-multiple-pattern-dots)'
-            />
-            <defs>
-              <DottedBackgroundPattern />
-            </defs>
-            <XAxis
-              dataKey='month'
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
-            />
+        <ChartContainer config={providerComparisonConfig} className='h-[280px] w-full'>
+          <BarChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
+            <CartesianGrid vertical={false} strokeDasharray='3 3' />
+            <XAxis dataKey='providerLabel' tickLine={false} axisLine={false} tickMargin={10} />
+            <YAxis tickLine={false} axisLine={false} tickMargin={8} width={48} />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent indicator='dashed' hideLabel />}
+              content={
+                <ChartTooltipContent
+                  hideLabel
+                  formatter={(value, name) => (
+                    <div className='flex min-w-[160px] items-center justify-between gap-3'>
+                      <span className='text-muted-foreground'>
+                        {providerComparisonConfig[name as keyof typeof providerComparisonConfig]
+                          ?.label ?? name}
+                      </span>
+                      <span className='font-mono font-medium'>
+                        {formatMetricValue(metric, Number(value))}
+                      </span>
+                    </div>
+                  )}
+                />
+              }
             />
-            <Bar
-              dataKey='desktop'
-              color='var(--chart-1)'
-              fill='var(--color-desktop)'
-              shape={<CustomHatchedBar isHatched={false} />}
-              radius={4}
-            />
-            <Bar
-              dataKey='mobile'
-              fill='var(--color-mobile)'
-              shape={<CustomHatchedBar />}
-              radius={4}
-            />
+            <ChartLegend content={<ChartLegendContent />} />
+            <Bar dataKey={metric} fill={`var(--color-${metric})`} radius={6} />
           </BarChart>
         </ChartContainer>
+        {isLoading ? (
+          <p className='text-muted-foreground mt-3 text-sm'>Đang tải dữ liệu...</p>
+        ) : null}
       </CardContent>
     </Card>
   );
 }
-
-const CustomHatchedBar = (
-  props: React.SVGProps<SVGRectElement> & {
-    dataKey?: string;
-    isHatched?: boolean;
-  }
-) => {
-  const { fill, x, y, width, height, dataKey } = props;
-
-  const isHatched = props.isHatched ?? true;
-
-  return (
-    <>
-      <rect
-        rx={4}
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        stroke='none'
-        fill={isHatched ? `url(#hatched-bar-pattern-${dataKey})` : fill}
-      />
-      <defs>
-        <pattern
-          key={dataKey}
-          id={`hatched-bar-pattern-${dataKey}`}
-          x='0'
-          y='0'
-          width='5'
-          height='5'
-          patternUnits='userSpaceOnUse'
-          patternTransform='rotate(-45)'
-        >
-          <rect width='10' height='10' opacity={0.5} fill={fill}></rect>
-          <rect width='1' height='10' fill={fill}></rect>
-        </pattern>
-      </defs>
-    </>
-  );
-};
-const DottedBackgroundPattern = () => {
-  return (
-    <pattern
-      id='default-multiple-pattern-dots'
-      x='0'
-      y='0'
-      width='10'
-      height='10'
-      patternUnits='userSpaceOnUse'
-    >
-      <circle className='dark:text-muted/40 text-muted' cx='2' cy='2' r='1' fill='currentColor' />
-    </pattern>
-  );
-};

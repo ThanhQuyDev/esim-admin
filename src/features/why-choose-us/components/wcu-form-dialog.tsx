@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { FormDialog } from '@/components/ui/form-dialog';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,9 @@ import type { WhyChooseUs, CreateWhyChooseUsPayload, UpdateWhyChooseUsPayload } 
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { wcuSchema, type WcuFormValues } from '../schemas/wcu';
+import { uploadToCloudinary } from '@/features/blogs/api/service';
+import { getFilePreviewUrl } from '@/features/landing-page/utils/file-preview';
+import { MinimalTiptapEditor } from '@/components/minimal-tiptap-editor';
 
 const LANG_OPTIONS = [
   { value: 'vi', label: 'Vietnamese' },
@@ -28,6 +31,56 @@ export function WcuFormDialog({ item, open, onOpenChange }: WcuFormDialogProps) 
   return <CreateDialog open={open} onOpenChange={onOpenChange} />;
 }
 
+function IconUploadField({
+  label,
+  currentUrl,
+  file,
+  onFileSelect
+}: {
+  label: string;
+  currentUrl?: string;
+  file: File | null;
+  onFileSelect: (file: File | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = file ? URL.createObjectURL(file) : currentUrl;
+
+  return (
+    <div className='space-y-2'>
+      <label className='text-sm font-medium'>{label}</label>
+      <div className='flex items-center gap-3'>
+        {previewUrl && (
+          <div className='relative h-12 w-12 overflow-hidden rounded-lg border-2 border-border/50 shadow-sm'>
+            <img src={previewUrl} alt={label} className='h-full w-full object-cover' />
+          </div>
+        )}
+        <Button type='button' variant='outline' size='sm' onClick={() => inputRef.current?.click()}>
+          <Icons.upload className='mr-2 h-4 w-4' />
+          {previewUrl ? 'Thay đổi' : 'Tải lên'}
+        </Button>
+        {file && (
+          <Button type='button' variant='ghost' size='sm' onClick={() => onFileSelect(null)}>
+            <Icons.close className='h-4 w-4' />
+          </Button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type='file'
+        accept='image/*'
+        className='hidden'
+        onChange={(event) => {
+          onFileSelect(event.target.files?.[0] ?? null);
+          event.target.value = '';
+        }}
+      />
+      <p className='text-muted-foreground text-xs'>
+        Chọn icon để upload hoặc nhập URL/file ID bên dưới.
+      </p>
+    </div>
+  );
+}
+
 function CreateDialog({
   open,
   onOpenChange
@@ -35,12 +88,18 @@ function CreateDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const descriptionRef = useRef('');
+
   const mutation = useMutation({
     ...createWcuMutation,
     onSuccess: () => {
       toast.success('Tạo mục thành công');
       onOpenChange(false);
       form.reset();
+      setIconFile(null);
+      descriptionRef.current = '';
     },
     onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
@@ -56,11 +115,25 @@ function CreateDialog({
     } as WcuFormValues,
     validators: { onSubmit: wcuSchema },
     onSubmit: async ({ value }) => {
+      let icon = value.icon || undefined;
+
+      if (iconFile) {
+        setUploading(true);
+        try {
+          icon = await uploadToCloudinary(iconFile);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Tải icon lên thất bại');
+          return;
+        } finally {
+          setUploading(false);
+        }
+      }
+
       const payload: CreateWhyChooseUsPayload = {
         title: value.title,
-        description: value.description,
+        description: descriptionRef.current || value.description,
         language: value.language,
-        icon: value.icon || undefined,
+        icon: icon || undefined,
         sortOrder: value.sortOrder ? Number(value.sortOrder) : 0,
         isActive: value.isActive ?? true
       };
@@ -68,8 +141,7 @@ function CreateDialog({
     }
   });
 
-  const { FormTextField, FormSelectField, FormSwitchField, FormTextareaField } =
-    useFormFields<WcuFormValues>();
+  const { FormTextField, FormSelectField, FormSwitchField } = useFormFields<WcuFormValues>();
 
   return (
     <FormDialog
@@ -78,7 +150,7 @@ function CreateDialog({
       title='Mục mới'
       description='Thêm mục "Tại sao chọn chúng tôi" mới'
       formId='wcu-form-dialog'
-      isLoading={mutation.isPending}
+      isLoading={mutation.isPending || uploading}
       submitLabel='Tạo mới'
       metaInfo={
         <>
@@ -96,10 +168,29 @@ function CreateDialog({
             placeholder='Tiêu đề'
             validators={{ onBlur: z.string().min(2) }}
           />
-          <FormTextareaField name='description' label='Mô tả' required placeholder='Mô tả...' />
+          <div className='space-y-2'>
+            <label className='text-sm font-medium'>
+              Mô tả <span className='text-destructive'>*</span>
+            </label>
+            <MinimalTiptapEditor
+              content={descriptionRef.current}
+              onChange={(html) => {
+                descriptionRef.current = html;
+              }}
+              placeholder='Nhập mô tả...'
+            />
+          </div>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
-            <FormTextField name='icon' label='Biểu tượng' placeholder='icon-name' />
+            <div>
+              <IconUploadField label='Biểu tượng' file={iconFile} onFileSelect={setIconFile} />
+              <FormTextField
+                name='icon'
+                label='Icon URL / file ID (tuỳ chọn)'
+                placeholder='Dán URL hoặc file ID nếu không upload'
+                description='Nếu chọn file, hệ thống sẽ upload icon và dùng URL mới.'
+              />
+            </div>
           </div>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
@@ -120,11 +211,16 @@ function EditDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const descriptionRef = useRef(item.description);
+
   const mutation = useMutation({
     ...updateWcuMutation,
     onSuccess: () => {
       toast.success('Cập nhật mục thành công');
       onOpenChange(false);
+      setIconFile(null);
     },
     onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
@@ -140,11 +236,25 @@ function EditDialog({
     } as WcuFormValues,
     validators: { onSubmit: wcuSchema },
     onSubmit: async ({ value }) => {
+      let icon = value.icon || undefined;
+
+      if (iconFile) {
+        setUploading(true);
+        try {
+          icon = await uploadToCloudinary(iconFile);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Tải icon lên thất bại');
+          return;
+        } finally {
+          setUploading(false);
+        }
+      }
+
       const payload: UpdateWhyChooseUsPayload = {
         title: value.title,
-        description: value.description,
+        description: descriptionRef.current || value.description,
         language: value.language,
-        icon: value.icon || undefined,
+        icon: icon || undefined,
         sortOrder: value.sortOrder ? Number(value.sortOrder) : undefined,
         isActive: value.isActive
       };
@@ -152,8 +262,7 @@ function EditDialog({
     }
   });
 
-  const { FormTextField, FormSelectField, FormSwitchField, FormTextareaField } =
-    useFormFields<WcuFormValues>();
+  const { FormTextField, FormSelectField, FormSwitchField } = useFormFields<WcuFormValues>();
 
   return (
     <FormDialog
@@ -162,7 +271,7 @@ function EditDialog({
       title='Chỉnh sửa mục'
       description='Cập nhật thông tin mục'
       formId='wcu-form-dialog'
-      isLoading={mutation.isPending}
+      isLoading={mutation.isPending || uploading}
       submitLabel='Cập nhật'
       metaInfo={
         <>
@@ -180,10 +289,34 @@ function EditDialog({
             placeholder='Tiêu đề'
             validators={{ onBlur: z.string().min(2) }}
           />
-          <FormTextareaField name='description' label='Mô tả' required placeholder='Mô tả...' />
+          <div className='space-y-2'>
+            <label className='text-sm font-medium'>
+              Mô tả <span className='text-destructive'>*</span>
+            </label>
+            <MinimalTiptapEditor
+              content={descriptionRef.current}
+              onChange={(html) => {
+                descriptionRef.current = html;
+              }}
+              placeholder='Nhập mô tả...'
+            />
+          </div>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
-            <FormTextField name='icon' label='Biểu tượng' placeholder='icon-name' />
+            <div>
+              <IconUploadField
+                label='Biểu tượng'
+                currentUrl={getFilePreviewUrl(item.icon)}
+                file={iconFile}
+                onFileSelect={setIconFile}
+              />
+              <FormTextField
+                name='icon'
+                label='Icon URL / file ID (tuỳ chọn)'
+                placeholder='Dán URL hoặc file ID nếu không upload'
+                description='Nếu chọn file, hệ thống sẽ upload icon và dùng URL mới.'
+              />
+            </div>
           </div>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />

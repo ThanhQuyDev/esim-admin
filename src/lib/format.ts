@@ -28,3 +28,22 @@ export function formatDataSize(mb: number): string {
   }
   return `${mb} MB`;
 }
+
+export function formatVnd(value: number | undefined): string {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0
+  }).format(value ?? 0);
+}
+
+export function formatNumber(value: number | undefined): string {
+  return new Intl.NumberFormat('vi-VN').format(value ?? 0);
+}
+
+export function formatPercent(value: number | undefined, maximumFractionDigits = 1): string {
+  return `${new Intl.NumberFormat('vi-VN', {
+    maximumFractionDigits,
+    minimumFractionDigits: 0
+  }).format(value ?? 0)}%`;
+}

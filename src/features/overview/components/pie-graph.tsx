@@ -1,6 +1,8 @@
 'use client';
 
-import { LabelList, Pie, PieChart } from 'recharts';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -9,82 +11,107 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from '@/components/ui/chart';
-import { Badge } from '@/components/ui/badge';
-import { Icons } from '@/components/icons';
+import { formatNumber, formatVnd } from '@/lib/format';
+import { topDestinationsQueryOptions } from '../api/queries';
 
-const chartData = [
-  { browser: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
-  { browser: 'safari', visitors: 200, fill: 'var(--color-safari)' },
-  { browser: 'firefox', visitors: 187, fill: 'var(--color-firefox)' },
-  { browser: 'edge', visitors: 173, fill: 'var(--color-edge)' },
-  { browser: 'other', visitors: 90, fill: 'var(--color-other)' }
-];
-
-const chartConfig = {
-  visitors: {
-    label: 'Visitors'
-  },
-  chrome: {
-    label: 'Chrome',
-    color: 'var(--chart-1)'
-  },
-  safari: {
-    label: 'Safari',
-    color: 'var(--chart-2)'
-  },
-  firefox: {
-    label: 'Firefox',
-    color: 'var(--chart-3)'
-  },
-  edge: {
-    label: 'Edge',
+const destinationChartConfig = {
+  plansPurchased: {
+    label: 'Plan đã mua',
     color: 'var(--chart-4)'
   },
-  other: {
-    label: 'Other',
-    color: 'var(--chart-5)'
+  revenue: {
+    label: 'Doanh thu',
+    color: 'var(--chart-2)'
   }
 } satisfies ChartConfig;
 
 export function PieGraph() {
+  const { data, isLoading, error } = useQuery(topDestinationsQueryOptions({ limit: 10 }));
+
+  const chartData = useMemo(() => {
+    return (data?.data ?? []).map((item) => ({
+      ...item,
+      destinationLabel:
+        item.destinationName.length > 14
+          ? `${item.destinationName.slice(0, 14)}…`
+          : item.destinationName
+    }));
+  }, [data]);
+
+  if (error) {
+    return (
+      <Card className='flex h-full flex-col'>
+        <CardHeader>
+          <CardTitle>Top destinations</CardTitle>
+          <CardDescription className='text-destructive'>
+            Không thể tải dữ liệu destination: {error.message}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <Card className='flex h-full flex-col'>
-      <CardHeader className='items-center pb-0'>
-        <CardTitle>
-          Pie Chart
-          <Badge variant='outline'>
-            <Icons.trendingUp />
-            +5.2%
-          </Badge>
-        </CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+      <CardHeader>
+        <CardTitle>Destination mua plan nhiều</CardTitle>
+        <CardDescription>Top destination theo số lượng plan đã mua</CardDescription>
       </CardHeader>
-      <CardContent className='flex flex-1 items-center justify-center pb-0'>
-        <ChartContainer
-          config={chartConfig}
-          className='[&_.recharts-text]:fill-background mx-auto aspect-square max-h-[300px] min-h-[250px]'
-        >
-          <PieChart>
-            <ChartTooltip content={<ChartTooltipContent nameKey='visitors' hideLabel />} />
-            <Pie
-              data={chartData}
-              innerRadius={30}
-              dataKey='visitors'
-              radius={10}
-              cornerRadius={8}
-              paddingAngle={4}
-            >
-              <LabelList
-                dataKey='visitors'
-                stroke='none'
-                fontSize={12}
-                fontWeight={500}
-                fill='currentColor'
-                formatter={(value: number) => value.toString()}
-              />
-            </Pie>
-          </PieChart>
+      <CardContent className='flex flex-1 flex-col justify-center'>
+        <ChartContainer config={destinationChartConfig} className='h-[280px] w-full'>
+          <BarChart
+            accessibilityLayer
+            data={chartData}
+            layout='vertical'
+            margin={{ left: 8, right: 16 }}
+          >
+            <CartesianGrid horizontal={false} strokeDasharray='3 3' />
+            <XAxis type='number' hide />
+            <YAxis
+              dataKey='destinationLabel'
+              type='category'
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              width={92}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  hideLabel
+                  formatter={(value, name, item) => {
+                    const payload = item.payload as {
+                      destinationName?: string;
+                      revenue?: number;
+                    };
+                    return (
+                      <div className='grid min-w-[190px] gap-1'>
+                        <div className='font-medium'>{payload.destinationName}</div>
+                        <div className='flex items-center justify-between gap-3'>
+                          <span className='text-muted-foreground'>Plan đã mua</span>
+                          <span className='font-mono font-medium'>
+                            {formatNumber(Number(value))}
+                          </span>
+                        </div>
+                        <div className='flex items-center justify-between gap-3'>
+                          <span className='text-muted-foreground'>Doanh thu</span>
+                          <span className='font-mono font-medium'>
+                            {formatVnd(payload.revenue)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+              }
+            />
+            <Bar dataKey='plansPurchased' fill='var(--color-plansPurchased)' radius={5} />
+          </BarChart>
         </ChartContainer>
+        {isLoading ? (
+          <p className='text-muted-foreground mt-3 text-sm'>Đang tải dữ liệu...</p>
+        ) : null}
       </CardContent>
     </Card>
   );
