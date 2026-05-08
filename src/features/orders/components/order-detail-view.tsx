@@ -1,8 +1,10 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery, useMutation } from '@tanstack/react-query';
 import { orderQueryOptions } from '../api/queries';
+import { refundOrderMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -13,6 +15,10 @@ import {
   TableRow
 } from '@/components/ui/table';
 import type { OrderItemEsim } from '../api/types';
+import { Icons } from '@/components/icons';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { RefundOrderModal } from './refund-order-modal';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -86,9 +92,32 @@ function EsimRow({ esim }: { esim: OrderItemEsim }) {
 
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
+  const [refundOpen, setRefundOpen] = useState(false);
+
+  const refundMutation = useMutation({
+    ...refundOrderMutation,
+    onSuccess: () => {
+      toast.success(`Đã hoàn tiền cho đơn hàng ${order.orderNumber}`);
+      setRefundOpen(false);
+    },
+    onError: () => {
+      toast.error('Hoàn tiền thất bại');
+    }
+  });
+
+  const canRefund = order.status === 'paid' || order.status === 'refunded';
 
   return (
     <div className='grid gap-6'>
+      <RefundOrderModal
+        orderId={order.id}
+        orderNumber={order.orderNumber}
+        payableVndPrice={order.vndPrice}
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
+        onSubmit={(data) => refundMutation.mutate({ id: order.id, data })}
+        isSubmitting={refundMutation.isPending}
+      />
       {/* Order Info */}
       <Card>
         <CardHeader>
@@ -127,6 +156,24 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Refund Action */}
+      {canRefund && (
+        <Card>
+          <CardContent className='flex items-center justify-between pt-6'>
+            <div>
+              <p className='text-sm font-medium'>Hoàn tiền đơn hàng</p>
+              <p className='text-muted-foreground text-xs'>
+                Hoàn tiền về ví eXu hoặc chuyển khoản trực tiếp
+              </p>
+            </div>
+            <Button variant='destructive' size='sm' onClick={() => setRefundOpen(true)}>
+              <Icons.undo className='mr-2 h-4 w-4' />
+              Hoàn tiền
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* User Info */}
       {order.user && (

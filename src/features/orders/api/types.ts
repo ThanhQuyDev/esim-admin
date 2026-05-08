@@ -123,3 +123,27 @@ export type OrdersResponse = {
   data: Order[];
   hasNextPage: boolean;
 };
+
+// Refund types
+export type RefundMode = 'wallet' | 'direct_bank';
+
+export type RefundOrderRequest = {
+  mode: RefundMode;
+  amountVnd: number;
+  reason?: string;
+  adminNote?: string;
+};
+
+export type OrderRefundResponse = {
+  id: number;
+  orderId: number;
+  userId: number;
+  mode: RefundMode;
+  amountVnd: number;
+  status: 'completed' | 'cancelled';
+  reason: string | null;
+  adminNote: string | null;
+  walletTransactionId: number | null;
+  createdByAdminId: number;
+  createdAt: string;
+};

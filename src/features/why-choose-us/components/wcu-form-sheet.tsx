@@ -171,6 +171,7 @@ function CreateSheet({
                   content={descriptionRef.current}
                   onChange={(html) => {
                     descriptionRef.current = html;
+                    form.setFieldValue('description', html);
                   }}
                   placeholder='Nhập mô tả...'
                 />
@@ -291,6 +292,7 @@ function EditSheet({
                   content={descriptionRef.current}
                   onChange={(html) => {
                     descriptionRef.current = html;
+                    form.setFieldValue('description', html);
                   }}
                   placeholder='Nhập mô tả...'
                 />

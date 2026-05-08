@@ -143,7 +143,8 @@ import {
   IconArticle,
   IconAward,
   IconQuestionMark,
-  IconDeviceSim
+  IconDeviceSim,
+  IconWallet
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -354,5 +355,8 @@ export const Icons = {
   simCard: IconDeviceSim,
 
   // Orders
-  order: IconShoppingCart
+  order: IconShoppingCart,
+
+  // Wallet
+  wallet: IconWallet
 };

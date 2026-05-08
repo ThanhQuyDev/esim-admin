@@ -1,5 +1,11 @@
 import { apiClient } from '@/lib/api-client';
-import type { OrderDetail, OrderFilters, OrdersResponse } from './types';
+import type {
+  OrderDetail,
+  OrderFilters,
+  OrdersResponse,
+  RefundOrderRequest,
+  OrderRefundResponse
+} from './types';
 
 export async function getOrders(filters: OrderFilters): Promise<OrdersResponse> {
   const params = new URLSearchParams();
@@ -14,4 +20,14 @@ export async function getOrders(filters: OrderFilters): Promise<OrdersResponse> 
 
 export async function getOrder(id: number): Promise<OrderDetail> {
   return apiClient<OrderDetail>(`/orders/${id}`);
+}
+
+export async function refundOrder(
+  id: number,
+  data: RefundOrderRequest
+): Promise<OrderRefundResponse> {
+  return apiClient<OrderRefundResponse>(`/orders/${id}/refund`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
 }

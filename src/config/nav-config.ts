@@ -153,6 +153,13 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Ví eXu',
+        url: '/dashboard/wallets',
+        icon: 'wallet',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Trò chuyện',
         url: '/dashboard/chat',
         icon: 'chat',

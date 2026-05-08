@@ -176,6 +176,7 @@ function CreateDialog({
               content={descriptionRef.current}
               onChange={(html) => {
                 descriptionRef.current = html;
+                form.setFieldValue('description', html);
               }}
               placeholder='Nhập mô tả...'
             />
@@ -297,6 +298,7 @@ function EditDialog({
               content={descriptionRef.current}
               onChange={(html) => {
                 descriptionRef.current = html;
+                form.setFieldValue('description', html);
               }}
               placeholder='Nhập mô tả...'
             />
