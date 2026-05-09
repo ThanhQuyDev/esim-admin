@@ -11,15 +11,10 @@ export default function WalletListingPage() {
   const pageLimit = searchParamsCache.get('perPage');
   const sort = searchParamsCache.get('sort');
 
-  const apiFilters: Record<string, unknown> = {};
-  if (search) apiFilters.userId = search;
-
   const filters = {
     page,
     limit: pageLimit,
-    ...(Object.keys(apiFilters).length > 0 && {
-      filters: JSON.stringify(apiFilters)
-    }),
+    ...(search && { email: search }),
     ...(sort && { sort })
   };
 

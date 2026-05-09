@@ -19,9 +19,6 @@ export function WalletsTable() {
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
-  const apiFilters: Record<string, unknown> = {};
-  if (params.name) apiFilters.userId = params.name;
-
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,
     order: s.desc ? 'DESC' : 'ASC'
@@ -30,9 +27,7 @@ export function WalletsTable() {
   const filters = {
     page: params.page,
     limit: params.perPage,
-    ...(Object.keys(apiFilters).length > 0 && {
-      filters: JSON.stringify(apiFilters)
-    }),
+    ...(params.name && { email: params.name }),
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
 

@@ -4,9 +4,17 @@
 
 export type WalletStatus = 'active' | 'locked';
 
+export type WalletUser = {
+  id: number;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+};
+
 export type WalletListItem = {
   id: number;
   userId: number;
+  user: WalletUser;
   balanceVnd: number;
   status: WalletStatus;
   expiresAt: string | null;
@@ -54,6 +62,7 @@ export type UpdateWalletStatusRequest = {
 export type WalletFilters = {
   page?: number;
   limit?: number;
+  email?: string;
   filters?: string;
   sort?: string;
 };

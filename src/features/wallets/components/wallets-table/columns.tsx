@@ -9,17 +9,15 @@ import { formatVnd } from '@/lib/format';
 
 export const columns: ColumnDef<WalletListItem>[] = [
   {
-    id: 'userId',
-    accessorKey: 'userId',
+    id: 'email',
+    accessorFn: (row) => row.user?.email ?? '',
     header: ({ column }: { column: Column<WalletListItem, unknown> }) => (
-      <DataTableColumnHeader column={column} title='User ID' />
+      <DataTableColumnHeader column={column} title='Email' />
     ),
-    cell: ({ row }) => (
-      <span className='font-mono text-xs font-medium'>#{row.original.userId}</span>
-    ),
+    cell: ({ row }) => <span className='text-sm'>{row.original.user?.email ?? '—'}</span>,
     meta: {
-      label: 'User ID',
-      placeholder: 'Tìm kiếm theo User ID...',
+      label: 'Email',
+      placeholder: 'Tìm kiếm theo email...',
       variant: 'text' as const,
       icon: Icons.search
     },

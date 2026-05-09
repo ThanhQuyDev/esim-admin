@@ -13,6 +13,7 @@ export async function getWallets(filters: WalletFilters): Promise<WalletsRespons
   const params = new URLSearchParams();
   if (filters.page) params.set('page', String(filters.page));
   if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.email) params.set('email', filters.email);
   if (filters.filters) params.set('filters', filters.filters);
   if (filters.sort) params.set('sort', filters.sort);
 
