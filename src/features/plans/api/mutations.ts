@@ -6,6 +6,7 @@ import {
   deletePlan,
   importPlansExcel,
   importGadgetKoreaExcel,
+  importJapanTravelSimExcel,
   batchDiscount
 } from './service';
 import { planKeys } from './queries';
@@ -14,6 +15,7 @@ import type {
   UpdatePlanPayload,
   ImportPlansExcelPayload,
   ImportGadgetKoreaExcelPayload,
+  ImportJapanTravelSimExcelPayload,
   BatchDiscountPayload
 } from './types';
 
@@ -43,6 +45,11 @@ export const importPlansExcelMutation = mutationOptions({
 
 export const importGadgetKoreaExcelMutation = mutationOptions({
   mutationFn: (data: ImportGadgetKoreaExcelPayload) => importGadgetKoreaExcel(data),
+  onSettled: invalidatePlans
+});
+
+export const importJapanTravelSimExcelMutation = mutationOptions({
+  mutationFn: (data: ImportJapanTravelSimExcelPayload) => importJapanTravelSimExcel(data),
   onSettled: invalidatePlans
 });
 

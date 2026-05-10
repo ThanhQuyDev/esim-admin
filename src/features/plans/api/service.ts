@@ -7,8 +7,10 @@ import type {
   UpdatePlanPayload,
   ImportPlansExcelPayload,
   ImportGadgetKoreaExcelPayload,
+  ImportJapanTravelSimExcelPayload,
   ImportPlansExcelResponse,
   ImportGadgetKoreaResponse,
+  ImportJapanTravelSimResponse,
   BatchDiscountPayload
 } from './types';
 
@@ -78,6 +80,25 @@ export async function importGadgetKoreaExcel(
   formData.append('file', payload.file);
 
   const res = await fetch('/api/plans/import-gadgetkorea', {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Import failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function importJapanTravelSimExcel(
+  payload: ImportJapanTravelSimExcelPayload
+): Promise<ImportJapanTravelSimResponse> {
+  const formData = new FormData();
+  formData.append('file', payload.file);
+
+  const res = await fetch('/api/plans/import-japantravelsim', {
     method: 'POST',
     body: formData
   });
