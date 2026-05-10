@@ -96,6 +96,15 @@ export type ImportPlansExcelResponse = {
   errors?: string[];
 };
 
+export type ImportGadgetKoreaResponse = {
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+  destinationNotFound: string[];
+};
+
 export type BatchDiscountPayload = {
   ids: number[];
   discount: number;

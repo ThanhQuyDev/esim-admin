@@ -8,6 +8,7 @@ import type {
   ImportPlansExcelPayload,
   ImportGadgetKoreaExcelPayload,
   ImportPlansExcelResponse,
+  ImportGadgetKoreaResponse,
   BatchDiscountPayload
 } from './types';
 
@@ -72,7 +73,7 @@ export async function importPlansExcel(
 
 export async function importGadgetKoreaExcel(
   payload: ImportGadgetKoreaExcelPayload
-): Promise<ImportPlansExcelResponse> {
+): Promise<ImportGadgetKoreaResponse> {
   const formData = new FormData();
   formData.append('file', payload.file);
 
