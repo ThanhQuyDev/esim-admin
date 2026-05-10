@@ -114,8 +114,8 @@ export type ImportJapanTravelSimResponse = {
   created: number;
   updated: number;
   skipped: number;
-  errors: string[];
-  destinationNotFound: string[];
+  errors?: string[];
+  destinationNotFound?: string[];
 };
 
 export type BatchDiscountPayload = {

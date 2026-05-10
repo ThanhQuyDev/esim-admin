@@ -12,19 +12,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Icons } from '@/components/icons';
-import type { ImportGadgetKoreaResponse } from '../api/types';
+import type { ImportGadgetKoreaResponse, ImportJapanTravelSimResponse } from '../api/types';
 
 interface ImportResultDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  result: ImportGadgetKoreaResponse | null;
+  result: ImportGadgetKoreaResponse | ImportJapanTravelSimResponse | null;
 }
 
 export function ImportResultDialog({ open, onOpenChange, result }: ImportResultDialogProps) {
   if (!result) return null;
 
-  const hasErrors = result.errors.length > 0;
-  const hasDestinationNotFound = result.destinationNotFound.length > 0;
+  const errors = result.errors ?? [];
+  const destinationNotFound = result.destinationNotFound ?? [];
+  const hasErrors = errors.length > 0;
+  const hasDestinationNotFound = destinationNotFound.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -32,9 +34,9 @@ export function ImportResultDialog({ open, onOpenChange, result }: ImportResultD
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <Icons.check className='h-5 w-5 text-green-500' />
-            Import Gadget Korea hoàn tất
+            Import hoàn tất
           </DialogTitle>
-          <DialogDescription>Kết quả import file Excel Gadget Korea</DialogDescription>
+          <DialogDescription>Kết quả import file Excel</DialogDescription>
         </DialogHeader>
 
         <div className='grid gap-4 py-4'>
@@ -52,12 +54,12 @@ export function ImportResultDialog({ open, onOpenChange, result }: ImportResultD
               <div className='flex items-center gap-2'>
                 <Icons.warning className='h-4 w-4 text-red-500' />
                 <span className='text-sm font-medium text-red-700 dark:text-red-400'>
-                  Lỗi ({result.errors.length})
+                  Lỗi ({errors.length})
                 </span>
               </div>
               <ScrollArea className='h-[120px] rounded-md border p-3'>
                 <ul className='space-y-1'>
-                  {result.errors.map((error, idx) => (
+                  {errors.map((error, idx) => (
                     <li key={idx} className='text-sm text-red-600 dark:text-red-400'>
                       {error}
                     </li>
@@ -73,12 +75,12 @@ export function ImportResultDialog({ open, onOpenChange, result }: ImportResultD
               <div className='flex items-center gap-2'>
                 <Icons.info className='h-4 w-4 text-amber-500' />
                 <span className='text-sm font-medium text-amber-700 dark:text-amber-400'>
-                  Destination không tìm thấy ({result.destinationNotFound.length})
+                  Destination không tìm thấy ({destinationNotFound.length})
                 </span>
               </div>
               <ScrollArea className='h-[160px] rounded-md border p-3'>
                 <div className='flex flex-wrap gap-1.5'>
-                  {result.destinationNotFound.map((dest) => (
+                  {destinationNotFound.map((dest) => (
                     <Badge key={dest} variant='outline' className='text-xs'>
                       {dest}
                     </Badge>
