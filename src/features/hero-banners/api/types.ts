@@ -12,8 +12,14 @@ export type HeroBanner = {
   updatedAt: string;
 };
 
-export type HeroBannerFilters = { page?: number; limit?: number; filters?: string; sort?: string };
-export type HeroBannerResponse = { data: HeroBanner[]; hasNextPage: boolean };
+export type HeroBannerFilters = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  filters?: string;
+  sort?: string;
+};
+export type HeroBannerResponse = { data: HeroBanner[]; hasNextPage: boolean; totalCount: number };
 
 export type CreateHeroBannerPayload = {
   title: string;

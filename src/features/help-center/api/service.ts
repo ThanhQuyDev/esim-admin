@@ -13,6 +13,7 @@ export async function getHelpCenterArticles(
   const params = new URLSearchParams();
   if (filters.page) params.set('page', String(filters.page));
   if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.search) params.set('search', filters.search);
   if (filters.category) params.set('category', filters.category);
   if (filters.parent) params.set('parent', filters.parent);
   const query = params.toString();

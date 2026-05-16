@@ -38,6 +38,7 @@ export type PlanFilters = {
 export type PlansResponse = {
   data: Plan[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreatePlanPayload = {

@@ -12,7 +12,7 @@ export type TopBar = {
 };
 
 export type TopBarFilters = { page?: number; limit?: number; filters?: string; sort?: string };
-export type TopBarResponse = { data: TopBar[]; hasNextPage: boolean };
+export type TopBarResponse = { data: TopBar[]; hasNextPage: boolean; totalCount: number };
 
 export type CreateTopBarPayload = {
   icon?: string;

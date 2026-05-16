@@ -19,6 +19,7 @@ export type MiniTagFilters = {
 export type MiniTagsResponse = {
   data: MiniTag[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreateMiniTagPayload = {

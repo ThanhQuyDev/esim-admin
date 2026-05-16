@@ -21,6 +21,7 @@ export type Blog = {
 export type BlogFilters = {
   page?: number;
   limit?: number;
+  search?: string;
   filters?: string;
   sort?: string;
 };
@@ -28,6 +29,7 @@ export type BlogFilters = {
 export type BlogsResponse = {
   data: Blog[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreateBlogPayload = {

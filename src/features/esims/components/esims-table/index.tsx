@@ -38,11 +38,12 @@ export function EsimsTable() {
   };
 
   const { data } = useSuspenseQuery(esimsQueryOptions(filters));
+  const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
 
   const { table } = useDataTable({
     data: data.data,
     columns,
-    pageCount: -1,
+    pageCount,
     shallow: true,
     debounceMs: 500,
     initialState: {

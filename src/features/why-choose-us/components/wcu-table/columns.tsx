@@ -25,7 +25,7 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
     enableSorting: false
   },
   {
-    id: 'title',
+    id: 'name',
     accessorKey: 'title',
     header: ({ column }: { column: Column<WhyChooseUs, unknown> }) => (
       <DataTableColumnHeader column={column} title='Tiêu đề' />

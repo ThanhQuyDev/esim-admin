@@ -122,6 +122,7 @@ export type OrderFilters = {
 export type OrdersResponse = {
   data: Order[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 // Refund types

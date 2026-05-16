@@ -192,12 +192,6 @@ function EditDialog({
       formId='supported-device-form-dialog'
       isLoading={updateMut.isPending}
       submitLabel='Cập nhật'
-      metaInfo={
-        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
-          <Icons.dashboard className='h-3.5 w-3.5' />
-          <span>ID: {device.id}</span>
-        </div>
-      }
     >
       <form.AppForm>
         <form.Form id='supported-device-form-dialog' className='space-y-5'>

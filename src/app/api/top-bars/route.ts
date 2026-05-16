@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const headers = await getAuthHeaders();
   const params = new URLSearchParams();
-  for (const key of ['page', 'limit', 'filters', 'sort']) {
+  for (const key of ['page', 'limit', 'search', 'filters', 'sort']) {
     const val = searchParams.get(key);
     if (val) params.set(key, val);
   }

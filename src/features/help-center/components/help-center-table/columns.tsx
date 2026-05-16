@@ -12,7 +12,7 @@ const parentLabel = (val: string) => PARENT_OPTIONS.find((o) => o.value === val)
 
 export const columns: ColumnDef<HelpCenterArticle>[] = [
   {
-    id: 'title',
+    id: 'name',
     accessorKey: 'title',
     header: ({ column }: { column: Column<HelpCenterArticle, unknown> }) => (
       <DataTableColumnHeader column={column} title='Tiêu đề' />

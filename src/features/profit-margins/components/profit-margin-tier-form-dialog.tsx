@@ -164,12 +164,6 @@ function EditDialog({
       formId='profit-margin-tier-form-dialog'
       isLoading={mutation.isPending}
       submitLabel='Update'
-      metaInfo={
-        <>
-          <Icons.edit className='h-4 w-4' />
-          <span>ID: {item.id}</span>
-        </>
-      }
     >
       <form.AppForm>
         <form.Form id='profit-margin-tier-form-dialog' className='space-y-6'>

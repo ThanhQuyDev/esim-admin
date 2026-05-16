@@ -8,8 +8,14 @@ export type Footer = {
   updatedAt: string;
 };
 
-export type FooterFilters = { page?: number; limit?: number; filters?: string; sort?: string };
-export type FooterResponse = { data: Footer[]; hasNextPage: boolean };
+export type FooterFilters = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  filters?: string;
+  sort?: string;
+};
+export type FooterResponse = { data: Footer[]; hasNextPage: boolean; totalCount: number };
 
 export type CreateFooterPayload = {
   title: string;

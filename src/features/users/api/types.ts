@@ -25,6 +25,7 @@ export type UserFilters = {
 export type UsersResponse = {
   data: User[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreateUserPayload = {

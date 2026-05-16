@@ -28,10 +28,11 @@ export function TopBarTable() {
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
   const { data } = useSuspenseQuery(topBarQueryOptions(filters));
+  const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
   const { table } = useDataTable({
     data: data.data,
     columns,
-    pageCount: -1,
+    pageCount,
     shallow: true,
     debounceMs: 500,
     initialState: { columnPinning: { right: ['actions'] } }

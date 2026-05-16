@@ -28,11 +28,16 @@ export type HelpCenterArticle = {
 export type HelpCenterFilters = {
   page?: number;
   limit?: number;
+  search?: string;
   category?: HelpCenterCategory;
   parent?: HelpCenterParent;
 };
 
-export type HelpCenterResponse = { data: HelpCenterArticle[]; hasNextPage: boolean };
+export type HelpCenterResponse = {
+  data: HelpCenterArticle[];
+  hasNextPage: boolean;
+  totalCount: number;
+};
 
 export type CreateHelpCenterPayload = {
   title: string;

@@ -89,6 +89,7 @@ function CreateDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [iconFile, setIconFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const createMutation = useMutation({
@@ -98,6 +99,7 @@ function CreateDialog({
       onOpenChange(false);
       form.reset();
       setAvatarFile(null);
+      setIconFile(null);
     },
     onError: (error) => toast.error(error.message || 'Tạo khu vực thất bại')
   });
@@ -107,7 +109,10 @@ function CreateDialog({
       name: '',
       slug: '',
       isPopular: false,
-      isActive: true
+      isActive: true,
+      description: '',
+      descriptionVi: '',
+      providers: ''
     } as CreateRegionFormValues,
     validators: {
       onSubmit: createRegionSchema
@@ -116,17 +121,25 @@ function CreateDialog({
       setUploading(true);
       try {
         let avatarUrl: string | undefined;
+        let iconUrl: string | undefined;
 
         if (avatarFile) {
           avatarUrl = await uploadToCloudinary(avatarFile);
+        }
+        if (iconFile) {
+          iconUrl = await uploadToCloudinary(iconFile);
         }
 
         const payload: CreateRegionPayload = {
           name: value.name,
           ...(value.slug && { slug: value.slug }),
           ...(avatarUrl && { avatarUrl }),
+          ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular ?? false,
-          isActive: value.isActive ?? true
+          isActive: value.isActive ?? true,
+          ...(value.description && { description: value.description }),
+          ...(value.descriptionVi && { descriptionVi: value.descriptionVi }),
+          ...(value.providers && { providers: value.providers })
         };
 
         await createMutation.mutateAsync(payload);
@@ -138,7 +151,8 @@ function CreateDialog({
     }
   });
 
-  const { FormTextField, FormSwitchField } = useFormFields<CreateRegionFormValues>();
+  const { FormTextField, FormSwitchField, FormTextareaField } =
+    useFormFields<CreateRegionFormValues>();
 
   const isPending = createMutation.isPending || uploading;
 
@@ -172,12 +186,29 @@ function CreateDialog({
 
           <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
 
-          <ImageUploadField label='Ảnh đại diện' onFileSelect={setAvatarFile} file={avatarFile} />
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <ImageUploadField label='Ảnh đại diện' onFileSelect={setAvatarFile} file={avatarFile} />
+            <ImageUploadField label='Icon' onFileSelect={setIconFile} file={iconFile} />
+          </div>
 
           <div className='grid grid-cols-2 gap-4'>
             <FormSwitchField name='isPopular' label='Nổi bật' />
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
+
+          <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
+
+          <FormTextareaField
+            name='description'
+            label='Mô tả (EN)'
+            placeholder='Mô tả tiếng Anh...'
+          />
+
+          <FormTextareaField
+            name='descriptionVi'
+            label='Mô tả (VI)'
+            placeholder='Mô tả tiếng Việt...'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -194,6 +225,7 @@ function EditDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [iconFile, setIconFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const updateMutation = useMutation({
@@ -210,7 +242,10 @@ function EditDialog({
       name: region.name,
       slug: region.slug ?? '',
       isPopular: region.isPopular,
-      isActive: region.isActive
+      isActive: region.isActive,
+      description: region.description ?? '',
+      descriptionVi: region.descriptionVi ?? '',
+      providers: region.providers ?? ''
     } as UpdateRegionFormValues,
     validators: {
       onSubmit: updateRegionSchema
@@ -219,17 +254,25 @@ function EditDialog({
       setUploading(true);
       try {
         let avatarUrl: string | undefined;
+        let iconUrl: string | undefined;
 
         if (avatarFile) {
           avatarUrl = await uploadToCloudinary(avatarFile);
+        }
+        if (iconFile) {
+          iconUrl = await uploadToCloudinary(iconFile);
         }
 
         const payload: UpdateRegionPayload = {
           name: value.name,
           slug: value.slug || undefined,
           ...(avatarUrl && { avatarUrl }),
+          ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular,
-          isActive: value.isActive
+          isActive: value.isActive,
+          description: value.description || undefined,
+          descriptionVi: value.descriptionVi || undefined,
+          providers: value.providers || undefined
         };
 
         await updateMutation.mutateAsync({
@@ -244,7 +287,8 @@ function EditDialog({
     }
   });
 
-  const { FormTextField, FormSwitchField } = useFormFields<UpdateRegionFormValues>();
+  const { FormTextField, FormSwitchField, FormTextareaField } =
+    useFormFields<UpdateRegionFormValues>();
 
   const isPending = updateMutation.isPending || uploading;
 
@@ -278,17 +322,39 @@ function EditDialog({
 
           <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
 
-          <ImageUploadField
-            label='Ảnh đại diện'
-            currentUrl={region.avatarUrl}
-            onFileSelect={setAvatarFile}
-            file={avatarFile}
-          />
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <ImageUploadField
+              label='Ảnh đại diện'
+              currentUrl={region.avatarUrl}
+              onFileSelect={setAvatarFile}
+              file={avatarFile}
+            />
+            <ImageUploadField
+              label='Icon'
+              currentUrl={region.iconUrl}
+              onFileSelect={setIconFile}
+              file={iconFile}
+            />
+          </div>
 
           <div className='grid grid-cols-2 gap-4'>
             <FormSwitchField name='isPopular' label='Nổi bật' />
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
+
+          <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
+
+          <FormTextareaField
+            name='description'
+            label='Mô tả (EN)'
+            placeholder='Mô tả tiếng Anh...'
+          />
+
+          <FormTextareaField
+            name='descriptionVi'
+            label='Mô tả (VI)'
+            placeholder='Mô tả tiếng Việt...'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>

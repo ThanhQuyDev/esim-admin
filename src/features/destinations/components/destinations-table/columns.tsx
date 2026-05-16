@@ -8,6 +8,12 @@ import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<Destination>[] = [
   {
+    id: 'index',
+    header: 'STT',
+    cell: ({ row }) => <span className='text-muted-foreground'>{row.index + 1}</span>,
+    enableSorting: false
+  },
+  {
     id: 'flag',
     accessorKey: 'flagUrl',
     header: 'Cờ',
@@ -69,6 +75,33 @@ export const columns: ColumnDef<Destination>[] = [
         {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
+    enableSorting: false
+  },
+  {
+    id: 'description',
+    accessorKey: 'description',
+    header: 'Mô tả (EN)',
+    cell: ({ row }) => (
+      <span className='line-clamp-2 max-w-[200px] text-sm'>{row.original.description || '—'}</span>
+    ),
+    enableSorting: false
+  },
+  {
+    id: 'descriptionVi',
+    accessorKey: 'descriptionVi',
+    header: 'Mô tả (VI)',
+    cell: ({ row }) => (
+      <span className='line-clamp-2 max-w-[200px] text-sm'>
+        {row.original.descriptionVi || '—'}
+      </span>
+    ),
+    enableSorting: false
+  },
+  {
+    id: 'providers',
+    accessorKey: 'providers',
+    header: 'Providers',
+    cell: ({ row }) => <span className='text-sm'>{row.original.providers || '—'}</span>,
     enableSorting: false
   },
   {

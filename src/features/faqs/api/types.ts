@@ -11,7 +11,7 @@ export type Faq = {
 };
 
 export type FaqFilters = { page?: number; limit?: number; filters?: string; sort?: string };
-export type FaqsResponse = { data: Faq[]; hasNextPage: boolean };
+export type FaqsResponse = { data: Faq[]; hasNextPage: boolean; totalCount: number };
 export type CreateFaqPayload = {
   language: string;
   isActive?: boolean;

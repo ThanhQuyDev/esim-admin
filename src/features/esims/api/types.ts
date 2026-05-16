@@ -88,6 +88,7 @@ export type EsimFilters = {
 export type EsimsResponse = {
   data: Esim[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type EsimType = 'daily' | 'unlimited' | 'unlimited-reduce' | 'fixed';

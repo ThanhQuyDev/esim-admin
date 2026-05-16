@@ -1,10 +1,15 @@
 export type OverviewProvider = 'airalo' | 'esimaccess' | 'gadgetkorea';
 
+export type OverviewPreset = 'today' | 'yesterday' | 'last7days' | 'last30days';
+export type OverviewGroupBy = 'day' | 'week' | 'month' | 'year';
+
 export type ProviderMetric = 'orders' | 'revenue' | 'plansSold' | 'successRate';
-export type ProviderGroupBy = 'day' | 'week' | 'month' | 'provider';
-export type FinancialGroupBy = 'day' | 'week' | 'month' | 'provider' | 'destination';
+export type ProviderGroupBy = 'day' | 'week' | 'month' | 'year' | 'provider';
+export type FinancialGroupBy = 'day' | 'week' | 'month' | 'year' | 'provider' | 'destination';
 
 export interface OverviewFilters {
+  preset?: OverviewPreset;
+  groupBy?: OverviewGroupBy;
   from?: string;
   to?: string;
   provider?: OverviewProvider;
@@ -19,7 +24,7 @@ export interface OverviewSummary {
   failedOrders: number;
 }
 
-export interface ProviderComparisonQuery extends Pick<OverviewFilters, 'from' | 'to'> {
+export interface ProviderComparisonQuery extends Omit<OverviewFilters, 'groupBy'> {
   metric?: ProviderMetric;
   groupBy?: ProviderGroupBy;
 }
@@ -60,7 +65,7 @@ export interface TopDestinationsResponse {
   }>;
 }
 
-export interface FinancialComparisonQuery extends OverviewFilters {
+export interface FinancialComparisonQuery extends Omit<OverviewFilters, 'groupBy'> {
   groupBy?: FinancialGroupBy;
   limit?: number;
 }

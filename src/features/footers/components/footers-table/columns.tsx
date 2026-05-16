@@ -7,13 +7,14 @@ import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<Footer>[] = [
   {
-    id: 'title',
+    id: 'name',
     accessorKey: 'title',
     header: ({ column }: { column: Column<Footer, unknown> }) => (
       <DataTableColumnHeader column={column} title='Title' />
     ),
     cell: ({ row }) => <div className='font-medium'>{row.original.title}</div>,
-    meta: { label: 'Title', variant: 'text' as const }
+    meta: { label: 'Title', placeholder: 'Tìm kiếm...', variant: 'text' as const },
+    enableColumnFilter: true
   },
   {
     id: 'titleVi',

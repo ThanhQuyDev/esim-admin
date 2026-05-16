@@ -70,4 +70,5 @@ export type WalletFilters = {
 export type WalletsResponse = {
   data: WalletListItem[];
   hasNextPage: boolean;
+  totalCount: number;
 };

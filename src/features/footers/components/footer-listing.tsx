@@ -9,12 +9,10 @@ export default function FooterListingPage() {
   const search = searchParamsCache.get('name');
   const pageLimit = searchParamsCache.get('perPage');
   const sort = searchParamsCache.get('sort');
-  const apiFilters: Record<string, unknown> = {};
-  if (search) apiFilters.search = search;
   const filters = {
     page,
     limit: pageLimit,
-    ...(Object.keys(apiFilters).length > 0 && { filters: JSON.stringify(apiFilters) }),
+    ...(search && { search }),
     ...(sort && { sort })
   };
   const queryClient = getQueryClient();

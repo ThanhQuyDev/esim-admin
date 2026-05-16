@@ -26,6 +26,7 @@ export type SeoConfigFilters = {
 export type SeoConfigsResponse = {
   data: SeoConfig[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreateSeoConfigPayload = {

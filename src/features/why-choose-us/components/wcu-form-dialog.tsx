@@ -274,12 +274,6 @@ function EditDialog({
       formId='wcu-form-dialog'
       isLoading={mutation.isPending || uploading}
       submitLabel='Cập nhật'
-      metaInfo={
-        <>
-          <Icons.edit className='h-4 w-4' />
-          <span>ID: {item.id}</span>
-        </>
-      }
     >
       <form.AppForm>
         <form.Form id='wcu-form-dialog' className='space-y-6'>

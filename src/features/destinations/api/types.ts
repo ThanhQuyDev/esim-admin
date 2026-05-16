@@ -10,6 +10,8 @@ export type Destination = {
   isPopular: boolean;
   isActive: boolean;
   description: string | null;
+  descriptionVi: string | null;
+  providers: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -25,6 +27,7 @@ export type DestinationFilters = {
 export type DestinationsResponse = {
   data: Destination[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreateDestinationPayload = {
@@ -38,6 +41,8 @@ export type CreateDestinationPayload = {
   isPopular?: boolean;
   isActive?: boolean;
   description?: string | null;
+  descriptionVi?: string | null;
+  providers?: string | null;
 };
 
 export type UpdateDestinationPayload = {
@@ -51,4 +56,6 @@ export type UpdateDestinationPayload = {
   isPopular?: boolean;
   isActive?: boolean;
   description?: string | null;
+  descriptionVi?: string | null;
+  providers?: string | null;
 };

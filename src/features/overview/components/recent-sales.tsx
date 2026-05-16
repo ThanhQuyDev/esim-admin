@@ -17,9 +17,13 @@ function isFinancialGrouped(data: unknown): data is FinancialComparisonGroupedRe
   return typeof data === 'object' && data !== null && 'data' in data;
 }
 
-export function RecentSales() {
+interface RecentSalesProps {
+  filters?: import('../api/types').OverviewFilters;
+}
+
+export function RecentSales({ filters }: RecentSalesProps) {
   const { data, isLoading, error } = useQuery(
-    financialComparisonQueryOptions({ groupBy: 'provider' })
+    financialComparisonQueryOptions({ ...filters, groupBy: 'provider' })
   );
 
   const rows = isFinancialGrouped(data) ? data.data : [];

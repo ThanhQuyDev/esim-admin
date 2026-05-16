@@ -11,8 +11,14 @@ export type WhyChooseUs = {
   deletedAt: string | null;
 };
 
-export type WhyChooseUsFilters = { page?: number; limit?: number; filters?: string; sort?: string };
-export type WhyChooseUsResponse = { data: WhyChooseUs[]; hasNextPage: boolean };
+export type WhyChooseUsFilters = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  filters?: string;
+  sort?: string;
+};
+export type WhyChooseUsResponse = { data: WhyChooseUs[]; hasNextPage: boolean; totalCount: number };
 export type CreateWhyChooseUsPayload = {
   language: string;
   isActive?: boolean;

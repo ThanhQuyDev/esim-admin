@@ -15,8 +15,12 @@ export type Region = {
   destinationCount: number;
   destinations: Destination[];
   avatarUrl: string | null;
+  iconUrl: string | null;
   isPopular: boolean;
   isActive: boolean;
+  description: string | null;
+  descriptionVi: string | null;
+  providers: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -32,14 +36,19 @@ export type RegionFilters = {
 export type RegionsResponse = {
   data: Region[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreateRegionPayload = {
   name: string;
   slug?: string;
   avatarUrl?: string | null;
+  iconUrl?: string | null;
   isPopular?: boolean;
   isActive?: boolean;
+  description?: string | null;
+  descriptionVi?: string | null;
+  providers?: string | null;
 };
 
 export type UpdateRegionPayload = {
@@ -47,6 +56,10 @@ export type UpdateRegionPayload = {
   slug?: string;
   parentId?: number | null;
   avatarUrl?: string | null;
+  iconUrl?: string | null;
   isPopular?: boolean;
   isActive?: boolean;
+  description?: string | null;
+  descriptionVi?: string | null;
+  providers?: string | null;
 };

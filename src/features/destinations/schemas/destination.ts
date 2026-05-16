@@ -11,7 +11,9 @@ export const createDestinationSchema = z.object({
   keySearch: z.string().optional(),
   isPopular: z.boolean().optional(),
   isActive: z.boolean().optional(),
-  description: z.string().optional()
+  description: z.string().optional(),
+  descriptionVi: z.string().optional(),
+  providers: z.string().optional()
 });
 
 export type CreateDestinationFormValues = z.infer<typeof createDestinationSchema>;
@@ -27,7 +29,9 @@ export const updateDestinationSchema = z.object({
   keySearch: z.string().optional(),
   isPopular: z.boolean().optional(),
   isActive: z.boolean().optional(),
-  description: z.string().optional()
+  description: z.string().optional(),
+  descriptionVi: z.string().optional(),
+  providers: z.string().optional()
 });
 
 export type UpdateDestinationFormValues = z.infer<typeof updateDestinationSchema>;

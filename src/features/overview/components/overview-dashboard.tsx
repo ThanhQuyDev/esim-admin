@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import PageContainer from '@/components/layout/page-container';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -18,10 +19,24 @@ import { AreaGraph } from './area-graph';
 import { BarGraph } from './bar-graph';
 import { PieGraph } from './pie-graph';
 import { RecentSales } from './recent-sales';
+import { OverviewFilters, type OverviewFiltersValue } from './overview-filters';
 import { overviewSummaryQueryOptions } from '../api/queries';
+import type { OverviewFilters as OverviewFiltersType } from '../api/types';
 
 export function OverviewDashboard() {
-  const { data: summary, isLoading, error } = useQuery(overviewSummaryQueryOptions());
+  const [filters, setFilters] = useState<OverviewFiltersValue>({
+    preset: 'last7days',
+    groupBy: 'day',
+    provider: undefined
+  });
+
+  const queryFilters: OverviewFiltersType = {
+    preset: filters.preset,
+    groupBy: filters.groupBy,
+    provider: filters.provider
+  };
+
+  const { data: summary, isLoading, error } = useQuery(overviewSummaryQueryOptions(queryFilters));
 
   const cards = [
     {
@@ -65,6 +80,8 @@ export function OverviewDashboard() {
           <Badge variant='outline'>airalo · esimaccess · gadgetkorea</Badge>
         </div>
 
+        <OverviewFilters value={filters} onChange={setFilters} />
+
         {error ? (
           <Alert variant='destructive'>
             <Icons.alertCircle />
@@ -101,16 +118,16 @@ export function OverviewDashboard() {
 
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7'>
           <div className='col-span-4'>
-            <BarGraph />
+            <BarGraph filters={queryFilters} />
           </div>
           <div className='col-span-4 md:col-span-3'>
-            <RecentSales />
+            <RecentSales filters={queryFilters} />
           </div>
           <div className='col-span-4'>
-            <AreaGraph />
+            <AreaGraph filters={queryFilters} />
           </div>
           <div className='col-span-4 min-h-0 md:col-span-3'>
-            <PieGraph />
+            <PieGraph filters={queryFilters} />
           </div>
         </div>
       </div>

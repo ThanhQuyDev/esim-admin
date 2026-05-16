@@ -162,12 +162,6 @@ function EditDialog({
       formId='faq-form-dialog'
       isLoading={mutation.isPending}
       submitLabel='Cập nhật'
-      metaInfo={
-        <>
-          <Icons.edit className='h-4 w-4' />
-          <span>ID: {faq.id}</span>
-        </>
-      }
     >
       <form.AppForm>
         <form.Form id='faq-form-dialog' className='space-y-6'>

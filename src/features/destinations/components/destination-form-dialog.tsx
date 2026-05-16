@@ -227,7 +227,9 @@ function CreateDestinationDialog({
       keySearch: '',
       isPopular: false,
       isActive: true,
-      description: ''
+      description: '',
+      descriptionVi: '',
+      providers: ''
     } as CreateDestinationFormValues,
     validators: {
       onSubmit: createDestinationSchema
@@ -255,7 +257,9 @@ function CreateDestinationDialog({
           ...(value.keySearch && { keySearch: value.keySearch }),
           isPopular: value.isPopular ?? false,
           isActive: value.isActive ?? true,
-          ...(value.description && { description: value.description })
+          ...(value.description && { description: value.description }),
+          ...(value.descriptionVi && { descriptionVi: value.descriptionVi }),
+          ...(value.providers && { providers: value.providers })
         };
 
         await createMutation.mutateAsync(payload);
@@ -335,7 +339,19 @@ function CreateDestinationDialog({
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
 
-          <FormTextareaField name='description' label='Mô tả' placeholder='Mô tả tùy chọn...' />
+          <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
+
+          <FormTextareaField
+            name='description'
+            label='Mô tả (EN)'
+            placeholder='Mô tả tiếng Anh...'
+          />
+
+          <FormTextareaField
+            name='descriptionVi'
+            label='Mô tả (VI)'
+            placeholder='Mô tả tiếng Việt...'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -374,7 +390,9 @@ function EditDestinationDialog({
       keySearch: destination.keySearch ?? '',
       isPopular: destination.isPopular,
       isActive: destination.isActive,
-      description: destination.description ?? ''
+      description: destination.description ?? '',
+      descriptionVi: destination.descriptionVi ?? '',
+      providers: destination.providers ?? ''
     } as UpdateDestinationFormValues,
     validators: {
       onSubmit: updateDestinationSchema
@@ -402,7 +420,9 @@ function EditDestinationDialog({
           keySearch: value.keySearch || undefined,
           isPopular: value.isPopular,
           isActive: value.isActive,
-          description: value.description || undefined
+          description: value.description || undefined,
+          descriptionVi: value.descriptionVi || undefined,
+          providers: value.providers || undefined
         };
 
         await updateMutation.mutateAsync({
@@ -495,7 +515,19 @@ function EditDestinationDialog({
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
 
-          <FormTextareaField name='description' label='Mô tả' placeholder='Mô tả tùy chọn...' />
+          <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
+
+          <FormTextareaField
+            name='description'
+            label='Mô tả (EN)'
+            placeholder='Mô tả tiếng Anh...'
+          />
+
+          <FormTextareaField
+            name='descriptionVi'
+            label='Mô tả (VI)'
+            placeholder='Mô tả tiếng Việt...'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>

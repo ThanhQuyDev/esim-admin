@@ -18,6 +18,7 @@ export type ProfitMarginTierFilters = {
 export type ProfitMarginTierResponse = {
   data: ProfitMarginTier[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreateProfitMarginTierPayload = {

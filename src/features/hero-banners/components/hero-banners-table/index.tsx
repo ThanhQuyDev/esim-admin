@@ -18,20 +18,19 @@ export function HeroBannerTable() {
     name: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
-  const apiFilters: Record<string, unknown> = {};
-  if (params.name) apiFilters.search = params.name;
   const apiSort = params.sort.map((s) => ({ orderBy: s.id, order: s.desc ? 'DESC' : 'ASC' }));
   const filters = {
     page: params.page,
     limit: params.perPage,
-    ...(Object.keys(apiFilters).length > 0 && { filters: JSON.stringify(apiFilters) }),
+    ...(params.name && { search: params.name }),
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
   const { data } = useSuspenseQuery(heroBannerQueryOptions(filters));
+  const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
   const { table } = useDataTable({
     data: data.data,
     columns,
-    pageCount: -1,
+    pageCount,
     shallow: true,
     debounceMs: 500,
     initialState: { columnPinning: { right: ['actions'] } }

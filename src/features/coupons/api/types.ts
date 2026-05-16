@@ -21,6 +21,7 @@ export type CouponFilters = {
 export type CouponsResponse = {
   data: Coupon[];
   hasNextPage: boolean;
+  totalCount: number;
 };
 
 export type CreateCouponPayload = {

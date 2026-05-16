@@ -47,8 +47,14 @@ function formatDateLabel(value: string) {
   return value;
 }
 
-export function AreaGraph() {
-  const { data, isLoading, error } = useQuery(financialComparisonQueryOptions({ groupBy: 'day' }));
+interface AreaGraphProps {
+  filters?: import('../api/types').OverviewFilters;
+}
+
+export function AreaGraph({ filters }: AreaGraphProps) {
+  const { data, isLoading, error } = useQuery(
+    financialComparisonQueryOptions({ ...filters, groupBy: filters?.groupBy ?? 'day' })
+  );
 
   const chartData = useMemo(() => {
     if (!isFinancialSeries(data)) return [];

@@ -9,13 +9,14 @@ import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<HeroBanner>[] = [
   {
-    id: 'title',
+    id: 'name',
     accessorKey: 'title',
     header: ({ column }: { column: Column<HeroBanner, unknown> }) => (
       <DataTableColumnHeader column={column} title='Tiêu đề' />
     ),
     cell: ({ row }) => <div className='font-medium'>{row.original.title}</div>,
-    meta: { label: 'Tiêu đề', variant: 'text' as const }
+    meta: { label: 'Tiêu đề', placeholder: 'Tìm kiếm...', variant: 'text' as const },
+    enableColumnFilter: true
   },
   {
     id: 'firstContent',

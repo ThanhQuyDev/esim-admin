@@ -25,8 +25,14 @@ const destinationChartConfig = {
   }
 } satisfies ChartConfig;
 
-export function PieGraph() {
-  const { data, isLoading, error } = useQuery(topDestinationsQueryOptions({ limit: 10 }));
+interface PieGraphProps {
+  filters?: import('../api/types').OverviewFilters;
+}
+
+export function PieGraph({ filters }: PieGraphProps) {
+  const { data, isLoading, error } = useQuery(
+    topDestinationsQueryOptions({ ...filters, limit: 10 })
+  );
 
   const chartData = useMemo(() => {
     return (data?.data ?? []).map((item) => ({

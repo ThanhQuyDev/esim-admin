@@ -55,10 +55,14 @@ function formatMetricValue(metric: ProviderMetric, value: number) {
   return formatNumber(value);
 }
 
-export function BarGraph() {
+interface BarGraphProps {
+  filters?: import('../api/types').OverviewFilters;
+}
+
+export function BarGraph({ filters }: BarGraphProps) {
   const metric: ProviderMetric = 'orders';
   const { data, isLoading, error } = useQuery(
-    providerComparisonQueryOptions({ metric, groupBy: 'provider' })
+    providerComparisonQueryOptions({ ...filters, metric, groupBy: 'provider' })
   );
 
   const chartData = useMemo(() => {
