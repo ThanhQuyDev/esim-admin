@@ -1,11 +1,16 @@
 import { apiClient } from '@/lib/api-client';
 import type {
+  Esim,
   EsimDetail,
   EsimFilters,
   EsimsResponse,
+  CreateEsimPayload,
+  UpdateEsimPayload,
   ImportEsimsExcelPayload,
   ImportEsimsExcelResponse
 } from './types';
+
+const BASE = '/esims';
 
 export async function getEsims(filters: EsimFilters): Promise<EsimsResponse> {
   const params = new URLSearchParams();
@@ -15,11 +20,29 @@ export async function getEsims(filters: EsimFilters): Promise<EsimsResponse> {
   if (filters.sort) params.set('sort', filters.sort);
 
   const query = params.toString();
-  return apiClient<EsimsResponse>(`/esims${query ? `?${query}` : ''}`);
+  return apiClient<EsimsResponse>(`${BASE}${query ? `?${query}` : ''}`);
 }
 
 export async function getEsim(id: number): Promise<EsimDetail> {
-  return apiClient<EsimDetail>(`/esims/${id}`);
+  return apiClient<EsimDetail>(`${BASE}/${id}`);
+}
+
+export async function createEsim(data: CreateEsimPayload): Promise<Esim> {
+  return apiClient<Esim>(BASE, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function updateEsim(id: number, data: UpdateEsimPayload): Promise<Esim> {
+  return apiClient<Esim>(`${BASE}/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function deleteEsim(id: number): Promise<void> {
+  await apiClient(`${BASE}/${id}`, { method: 'DELETE' });
 }
 
 export async function importEsimsExcel(
@@ -29,7 +52,6 @@ export async function importEsimsExcel(
   formData.append('file', payload.file);
   formData.append('provider', payload.provider);
   formData.append('countryCode', payload.countryCode);
-  formData.append('type', payload.type);
 
   const res = await fetch('/api/esims/import-excel', {
     method: 'POST',

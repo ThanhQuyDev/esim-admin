@@ -8,6 +8,7 @@ import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { esimsQueryOptions } from '../../api/queries';
 import { ImportEsimExcelDialog } from '../import-esim-excel-dialog';
+import { EsimFormDialog } from '../esim-form-dialog';
 import { columns } from './columns';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
@@ -54,6 +55,7 @@ export function EsimsTable() {
   return (
     <DataTable table={table}>
       <DataTableToolbar table={table}>
+        <EsimFormDialog />
         <ImportEsimExcelDialog />
       </DataTableToolbar>
     </DataTable>

@@ -3,7 +3,6 @@ import PlanListingPage from '@/features/plans/components/plan-listing';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 import { PlanFormDialogTrigger } from '@/features/plans/components/plan-form-dialog';
-import { ImportExcelDialog } from '@/features/plans/components/import-excel-dialog';
 import { ImportGadgetKoreaExcelDialog } from '@/features/plans/components/import-gadget-korea-excel-dialog';
 import { ImportJapanTravelSimExcelDialog } from '@/features/plans/components/import-japan-travel-sim-excel-dialog';
 
@@ -26,7 +25,6 @@ export default async function EsimPlanPage(props: PageProps) {
       pageDescription='Quản lý các gói eSIM của bạn.'
       pageHeaderAction={
         <div className='flex items-center gap-2'>
-          <ImportExcelDialog />
           <ImportGadgetKoreaExcelDialog />
           <ImportJapanTravelSimExcelDialog />
           <PlanFormDialogTrigger />

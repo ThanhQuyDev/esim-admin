@@ -93,11 +93,31 @@ export type EsimsResponse = {
 
 export type EsimType = 'daily' | 'unlimited' | 'unlimited-reduce' | 'fixed';
 
+export type CreateEsimPayload = {
+  iccid: string;
+  smdpAddress?: string;
+  activationCode?: string;
+  lpa?: string;
+  matchId?: string;
+  qrcode?: string;
+  directAppleInstallationUrl?: string;
+  apnValue?: string;
+  isRoaming?: boolean;
+  status?: string;
+  provider?: string;
+  phoneNumber?: string;
+  planId?: number;
+  userId?: number;
+  dataTotal?: string;
+  expiresAt?: string | null;
+};
+
+export type UpdateEsimPayload = Partial<CreateEsimPayload>;
+
 export type ImportEsimsExcelPayload = {
   file: File;
   provider: string;
   countryCode: string;
-  type: EsimType;
 };
 
 export type ImportEsimsExcelResponse = {

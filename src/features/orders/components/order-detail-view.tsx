@@ -6,15 +6,7 @@ import { refundOrderMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import type { OrderItemEsim } from '../api/types';
+import type { OrderItemEsim, OrderItemPlan } from '../api/types';
 import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -67,26 +59,116 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount);
 }
 
-function EsimRow({ esim }: { esim: OrderItemEsim }) {
+function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemPlan | null }) {
   return (
-    <TableRow>
-      <TableCell className='font-mono text-xs'>{esim.iccid}</TableCell>
-      <TableCell>
-        <Badge variant={esimStatusVariant[esim.status] ?? 'outline'}>{esim.status}</Badge>
-      </TableCell>
-      <TableCell>{esim.provider || '—'}</TableCell>
-      <TableCell>
-        {esim.dataUsed} / {esim.dataTotal}
-      </TableCell>
-      <TableCell>{esim.phoneNumber || '—'}</TableCell>
-      <TableCell>
-        <Badge variant={esim.isRoaming ? 'default' : 'secondary'}>
-          {esim.isRoaming ? 'Có' : 'Không'}
-        </Badge>
-      </TableCell>
-      <TableCell>{formatDate(esim.activatedAt)}</TableCell>
-      <TableCell>{formatDate(esim.expiresAt)}</TableCell>
-    </TableRow>
+    <div className='rounded-lg border p-4 space-y-4'>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-2'>
+          <span className='font-mono text-xs font-medium'>{esim.iccid}</span>
+          <Badge variant={esimStatusVariant[esim.status] ?? 'outline'}>{esim.status}</Badge>
+        </div>
+        {esim.provider && <Badge variant='outline'>{esim.provider}</Badge>}
+      </div>
+
+      <div className='grid gap-4 md:grid-cols-2'>
+        {/* Technical Info */}
+        <div className='space-y-2'>
+          <h6 className='text-xs font-semibold uppercase text-muted-foreground'>
+            Thông tin kỹ thuật
+          </h6>
+          <InfoRow
+            label='SMDP Address'
+            value={<span className='font-mono text-xs break-all'>{esim.smdpAddress || '—'}</span>}
+          />
+          <InfoRow
+            label='Activation Code'
+            value={
+              <span className='font-mono text-xs break-all'>{esim.activationCode || '—'}</span>
+            }
+          />
+          <InfoRow
+            label='LPA'
+            value={<span className='font-mono text-xs break-all'>{esim.lpa || '—'}</span>}
+          />
+          <InfoRow
+            label='Match ID'
+            value={<span className='font-mono text-xs break-all'>{esim.matchId || '—'}</span>}
+          />
+          <InfoRow label='APN' value={esim.apnValue || '—'} />
+          <InfoRow
+            label='eSIM Tran No'
+            value={<span className='font-mono text-xs'>{esim.esimTranNo || '—'}</span>}
+          />
+        </div>
+
+        {/* Network & Usage */}
+        <div className='space-y-2'>
+          <h6 className='text-xs font-semibold uppercase text-muted-foreground'>Mạng & Sử dụng</h6>
+          {plan && (
+            <>
+              <InfoRow label='Nhà mạng' value={plan.operatorName || '—'} />
+              <InfoRow label='Tốc độ' value={plan.speed || '—'} />
+            </>
+          )}
+          <InfoRow label='Dữ liệu' value={`${esim.dataUsed} / ${esim.dataTotal}`} />
+          <InfoRow label='SĐT' value={esim.phoneNumber || '—'} />
+          <InfoRow
+            label='Roaming'
+            value={
+              <Badge variant={esim.isRoaming ? 'default' : 'secondary'}>
+                {esim.isRoaming ? 'Có' : 'Không'}
+              </Badge>
+            }
+          />
+          <InfoRow label='Kích hoạt' value={formatDate(esim.activatedAt)} />
+          <InfoRow label='Hết hạn' value={formatDate(esim.expiresAt)} />
+        </div>
+      </div>
+
+      {/* QR Code & Install Links */}
+      <div className='space-y-2'>
+        <h6 className='text-xs font-semibold uppercase text-muted-foreground'>
+          Kích hoạt & Cài đặt
+        </h6>
+        <div className='grid gap-4 md:grid-cols-2'>
+          {esim.qrcode && (
+            <div className='flex flex-col items-center gap-2 rounded-md border p-3'>
+              <span className='text-xs font-medium text-muted-foreground'>Mã QR kích hoạt</span>
+              <img
+                src={esim.qrcode}
+                alt='QR Code kích hoạt eSIM'
+                className='h-32 w-32 rounded object-contain'
+              />
+            </div>
+          )}
+          <div className='space-y-2'>
+            {esim.directAppleInstallationUrl && (
+              <div className='space-y-1'>
+                <span className='text-xs font-medium text-muted-foreground'>Link cài đặt iOS</span>
+                <a
+                  href={esim.directAppleInstallationUrl}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='block truncate rounded-md border px-3 py-2 text-xs text-blue-600 hover:underline'
+                >
+                  {esim.directAppleInstallationUrl}
+                </a>
+              </div>
+            )}
+            {esim.lpa && (
+              <div className='space-y-1'>
+                <span className='text-xs font-medium text-muted-foreground'>
+                  Link cài đặt Android (LPA)
+                </span>
+                <p className='rounded-md border px-3 py-2 font-mono text-xs break-all'>
+                  {esim.lpa}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -156,6 +238,51 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* eXU Wallet Payment Breakdown */}
+      {(order.walletSpentVndAmount != null && order.walletSpentVndAmount > 0) ||
+      (order.cashbackAmountVnd != null && order.cashbackAmountVnd > 0) ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <Icons.creditCard className='h-4 w-4' />
+              Thanh toán eXU Wallet
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-3'>
+            {order.walletSpentVndAmount != null && order.walletSpentVndAmount > 0 && (
+              <>
+                <InfoRow
+                  label='Số tiền dùng từ ví eXU'
+                  value={
+                    <span className='font-semibold text-orange-600'>
+                      {formatCurrency(order.walletSpentVndAmount, 'VND')}
+                    </span>
+                  }
+                />
+                <InfoRow
+                  label='Còn lại thanh toán tiền'
+                  value={
+                    <span className='font-semibold'>
+                      {formatCurrency(order.vndPrice - order.walletSpentVndAmount, 'VND')}
+                    </span>
+                  }
+                />
+              </>
+            )}
+            {order.cashbackAmountVnd != null && order.cashbackAmountVnd > 0 && (
+              <InfoRow
+                label='Hoàn lại vào ví eXU'
+                value={
+                  <span className='font-semibold text-green-600'>
+                    +{formatCurrency(order.cashbackAmountVnd, 'VND')}
+                  </span>
+                }
+              />
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Refund Action */}
       {canRefund && (
@@ -279,31 +406,13 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
 
                   {/* eSIMs for this item */}
                   {item.esims && item.esims.length > 0 && (
-                    <div className='mt-4'>
-                      <h5 className='text-muted-foreground mb-2 text-xs font-semibold uppercase'>
+                    <div className='mt-4 space-y-3'>
+                      <h5 className='text-muted-foreground text-xs font-semibold uppercase'>
                         eSIM ({item.esims.length})
                       </h5>
-                      <div className='overflow-x-auto rounded-md border'>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>ICCID</TableHead>
-                              <TableHead>Trạng thái</TableHead>
-                              <TableHead>Provider</TableHead>
-                              <TableHead>Dữ liệu</TableHead>
-                              <TableHead>SĐT</TableHead>
-                              <TableHead>Roaming</TableHead>
-                              <TableHead>Kích hoạt</TableHead>
-                              <TableHead>Hết hạn</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {item.esims.map((esim) => (
-                              <EsimRow key={esim.id} esim={esim} />
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                      {item.esims.map((esim) => (
+                        <EsimDetailCard key={esim.id} esim={esim} plan={item.plan} />
+                      ))}
                     </div>
                   )}
                 </div>

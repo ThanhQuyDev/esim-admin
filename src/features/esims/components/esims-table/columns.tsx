@@ -73,6 +73,17 @@ export const columns: ColumnDef<Esim>[] = [
     enableSorting: false
   },
   {
+    id: 'expiresAt',
+    accessorKey: 'expiresAt',
+    header: ({ column }: { column: Column<Esim, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Ngày hết hạn' />
+    ),
+    cell: ({ row }) => {
+      const date = row.original.expiresAt;
+      return date ? new Date(date).toLocaleDateString('vi-VN') : '—';
+    }
+  },
+  {
     id: 'createdAt',
     accessorKey: 'createdAt',
     header: ({ column }: { column: Column<Esim, unknown> }) => (

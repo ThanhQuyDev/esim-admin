@@ -13,33 +13,17 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Icons } from '@/components/icons';
 import { useMutation } from '@tanstack/react-query';
 import { importEsimsExcelMutation } from '../api/mutations';
-import type { EsimType } from '../api/types';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
-const ESIM_TYPES: { value: EsimType; label: string }[] = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'unlimited', label: 'Unlimited' },
-  { value: 'unlimited-reduce', label: 'Unlimited Reduce' },
-  { value: 'fixed', label: 'Fixed' }
-];
 
 export function ImportEsimExcelDialog() {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [provider, setProvider] = useState('');
   const [countryCode, setCountryCode] = useState('');
-  const [type, setType] = useState<EsimType | ''>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { mutate, isPending } = useMutation({
@@ -58,7 +42,6 @@ export function ImportEsimExcelDialog() {
     setFile(null);
     setProvider('');
     setCountryCode('');
-    setType('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
@@ -83,7 +66,7 @@ export function ImportEsimExcelDialog() {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (!file || !provider.trim() || !countryCode.trim() || !type) {
+    if (!file || !provider.trim() || !countryCode.trim()) {
       toast.error('Vui lòng điền đầy đủ các trường bắt buộc');
       return;
     }
@@ -91,10 +74,9 @@ export function ImportEsimExcelDialog() {
     mutate({
       file,
       provider: provider.trim(),
-      countryCode: countryCode.trim(),
-      type
+      countryCode: countryCode.trim()
     });
-  }, [file, provider, countryCode, type, mutate]);
+  }, [file, provider, countryCode, mutate]);
 
   return (
     <Dialog
@@ -187,25 +169,6 @@ export function ImportEsimExcelDialog() {
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
             />
-          </div>
-
-          {/* Type */}
-          <div className='grid gap-2'>
-            <Label htmlFor='esim-type'>
-              Type <span className='text-destructive'>*</span>
-            </Label>
-            <Select value={type} onValueChange={(v) => setType(v as EsimType)}>
-              <SelectTrigger id='esim-type'>
-                <SelectValue placeholder='Chọn loại eSIM' />
-              </SelectTrigger>
-              <SelectContent>
-                {ESIM_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 

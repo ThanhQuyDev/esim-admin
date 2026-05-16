@@ -5,7 +5,7 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { plansQueryOptions } from '../../api/queries';
 import { columns } from './columns';
@@ -19,14 +19,16 @@ export function PlansTable() {
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
     provider: parseAsString,
-    isCheapest: parseAsString,
+    isCheapest: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
   const apiFilters: Record<string, unknown> = {};
   if (params.name) apiFilters.search = params.name;
   if (params.provider) apiFilters.provider = params.provider;
-  if (params.isCheapest) apiFilters.isCheapest = params.isCheapest === 'true';
+  if (params.isCheapest && params.isCheapest.length === 1) {
+    apiFilters.isCheapest = params.isCheapest[0] === 'true';
+  }
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,

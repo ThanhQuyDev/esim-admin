@@ -27,6 +27,8 @@ export type Order = {
   discountAmount: number;
   vndPrice: number;
   vndCostPrice: number;
+  walletSpentVndAmount: number | null;
+  cashbackAmountVnd: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

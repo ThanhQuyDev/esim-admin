@@ -25,9 +25,10 @@ import {
 } from '../schemas/plan';
 
 const PLAN_TYPE_OPTIONS = [
-  { value: 'daily-unlimited', label: 'Daily Unlimited' },
-  { value: 'fixed-data', label: 'Fixed Data' },
-  { value: 'unlimited', label: 'Unlimited' }
+  { value: 'daily', label: 'Daily' },
+  { value: 'unlimited', label: 'Unlimited' },
+  { value: 'fixed', label: 'Fixed' },
+  { value: 'unlimited-reduce', label: 'Unlimited Slow' }
 ];
 
 const CURRENCY_OPTIONS = [
@@ -331,15 +332,12 @@ function EditPlanSheet({
                 <FormTextField name='retailPrice' label='Giá bán lẻ' placeholder='11.50' />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
-                <FormSelectField name='currency' label='Tiền tệ' options={CURRENCY_OPTIONS} />
-                <FormSelectField
-                  name='type'
-                  label='Loại'
-                  options={PLAN_TYPE_OPTIONS}
-                  placeholder='Chọn loại'
-                />
-              </div>
+              <FormSelectField
+                name='type'
+                label='Loại'
+                options={PLAN_TYPE_OPTIONS}
+                placeholder='Chọn loại'
+              />
 
               <div className='grid grid-cols-2 gap-4'>
                 <FormSwitchField name='topUp' label='Top-Up' />

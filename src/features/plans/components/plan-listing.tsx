@@ -8,12 +8,16 @@ export default function PlanListingPage() {
   const page = searchParamsCache.get('page');
   const search = searchParamsCache.get('name');
   const provider = searchParamsCache.get('provider');
+  const isCheapest = searchParamsCache.get('isCheapest');
   const pageLimit = searchParamsCache.get('perPage');
   const sort = searchParamsCache.get('sort');
 
   const apiFilters: Record<string, unknown> = {};
   if (search) apiFilters.search = search;
   if (provider) apiFilters.provider = provider;
+  if (isCheapest && isCheapest.length === 1) {
+    apiFilters.isCheapest = isCheapest[0] === 'true';
+  }
 
   const filters = {
     page,

@@ -1,6 +1,7 @@
 import {
   createSearchParamsCache,
   createSerializer,
+  parseAsArrayOf,
   parseAsInteger,
   parseAsString
 } from 'nuqs/server';
@@ -13,6 +14,7 @@ export const searchParams = {
   gender: parseAsString,
   category: parseAsString,
   role: parseAsString,
+  isCheapest: parseAsArrayOf(parseAsString, ','),
   sort: parseAsString
   // advanced filter
   // filters: getFiltersStateParser().withDefault([]),

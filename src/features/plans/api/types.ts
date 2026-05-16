@@ -1,4 +1,5 @@
 import type { Destination } from '@/features/destinations/api/types';
+import type { Region } from '@/features/regions/api/types';
 
 export type Plan = {
   id: number;
@@ -10,6 +11,7 @@ export type Plan = {
   destinationId: number | null;
   destination: Destination | null;
   regionId: number | null;
+  region: Region | null;
   durationDays: number;
   dataMb: number;
   sms: number | null;
