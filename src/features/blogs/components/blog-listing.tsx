@@ -1,8 +1,9 @@
+import { Suspense } from 'react';
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { searchParamsCache } from '@/lib/searchparams';
 import { blogsQueryOptions } from '../api/queries';
-import { BlogsTable } from './blogs-table';
+import { BlogsTable, BlogsTableSkeleton } from './blogs-table';
 
 export default function BlogListingPage() {
   const page = searchParamsCache.get('page');
@@ -19,7 +20,9 @@ export default function BlogListingPage() {
   void queryClient.prefetchQuery(blogsQueryOptions(filters));
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <BlogsTable />
+      <Suspense fallback={<BlogsTableSkeleton />}>
+        <BlogsTable />
+      </Suspense>
     </HydrationBoundary>
   );
 }

@@ -20,7 +20,18 @@ export async function GET(request: NextRequest) {
     const val = searchParams.get(key);
     if (val) params.set(key, val);
   }
-  const res = await fetch(`${API_URL}/api/v1/help-center?${params}`, { headers });
+
+  // Forward language filter as x-custom-lang header to backend
+  const language = searchParams.get('language');
+  const fetchHeaders: Record<string, string> = { ...headers };
+  if (language) {
+    fetchHeaders['x-custom-lang'] = language;
+  }
+
+  const query = params.toString();
+  const res = await fetch(`${API_URL}/api/v1/help-center${query ? `?${query}` : ''}`, {
+    headers: fetchHeaders
+  });
   const data = await res.json();
   if (!res.ok)
     return NextResponse.json(

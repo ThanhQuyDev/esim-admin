@@ -6,6 +6,26 @@ import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+}
+
+function getWarningBadge(blog: Blog) {
+  const now = new Date();
+  const updatedAt = new Date(blog.updatedAt);
+  const diffDays = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays > 15) {
+    return <Badge variant='destructive'>Lỗi thời</Badge>;
+  }
+  return <Badge className='bg-green-500 text-white hover:bg-green-600'>Mới</Badge>;
+}
+
 export const columns: ColumnDef<Blog>[] = [
   {
     id: 'name',
@@ -50,6 +70,28 @@ export const columns: ColumnDef<Blog>[] = [
         {row.original.isPublished ? 'Đã xuất bản' : 'Bản nháp'}
       </Badge>
     ),
+    enableSorting: false
+  },
+  {
+    id: 'publishedAt',
+    accessorKey: 'publishedAt',
+    header: ({ column }: { column: Column<Blog, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Ngày đăng' />
+    ),
+    cell: ({ row }) => <span className='text-sm'>{formatDate(row.original.publishedAt)}</span>
+  },
+  {
+    id: 'updatedAt',
+    accessorKey: 'updatedAt',
+    header: ({ column }: { column: Column<Blog, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Ngày sửa' />
+    ),
+    cell: ({ row }) => <span className='text-sm'>{formatDate(row.original.updatedAt)}</span>
+  },
+  {
+    id: 'warning',
+    header: 'Cảnh báo',
+    cell: ({ row }) => getWarningBadge(row.original),
     enableSorting: false
   },
   {

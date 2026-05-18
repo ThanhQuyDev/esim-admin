@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
+import { useBreadcrumbOverrides } from './use-breadcrumb-context';
 
 type BreadcrumbItem = {
   title: string;
@@ -24,6 +25,7 @@ const routeMapping: Record<string, BreadcrumbItem[]> = {
 
 export function useBreadcrumbs() {
   const pathname = usePathname();
+  const { overrides } = useBreadcrumbOverrides();
 
   const breadcrumbs = useMemo(() => {
     // Check if we have a custom mapping for this exact path
@@ -35,12 +37,14 @@ export function useBreadcrumbs() {
     const segments = pathname.split('/').filter(Boolean);
     return segments.map((segment, index) => {
       const path = `/${segments.slice(0, index + 1).join('/')}`;
+      // Use override title if available for this segment
+      const title = overrides[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
       return {
-        title: segment.charAt(0).toUpperCase() + segment.slice(1),
+        title,
         link: path
       };
     });
-  }, [pathname]);
+  }, [pathname, overrides]);
 
   return breadcrumbs;
 }

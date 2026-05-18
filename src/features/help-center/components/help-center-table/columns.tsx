@@ -43,6 +43,18 @@ export const columns: ColumnDef<HelpCenterArticle>[] = [
     enableSorting: false
   },
   {
+    id: 'language',
+    accessorKey: 'language',
+    header: 'Ngôn ngữ',
+    cell: ({ row }) =>
+      row.original.language ? (
+        <Badge variant='outline'>{row.original.language.toUpperCase()}</Badge>
+      ) : (
+        <span className='text-muted-foreground/50 text-sm'>—</span>
+      ),
+    enableSorting: false
+  },
+  {
     id: 'order',
     accessorKey: 'order',
     header: ({ column }: { column: Column<HelpCenterArticle, unknown> }) => (

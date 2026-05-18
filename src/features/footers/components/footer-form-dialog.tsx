@@ -11,6 +11,11 @@ import { createFooterMutation, updateFooterMutation } from '../api/mutations';
 import type { CreateFooterPayload, Footer, UpdateFooterPayload } from '../api/types';
 import { footerSchema, type FooterFormValues } from '../schemas/footer';
 
+const LANG_OPTIONS = [
+  { value: 'vi', label: 'Tiếng Việt' },
+  { value: 'en', label: 'English' }
+];
+
 interface FooterFormDialogProps {
   item?: Footer;
   open: boolean;
@@ -40,20 +45,27 @@ function CreateDialog({
   });
 
   const form = useAppForm({
-    defaultValues: { title: '', titleVi: '', url: '', categories: '' } as FooterFormValues,
+    defaultValues: {
+      title: '',
+      titleVi: '',
+      url: '',
+      language: 'en',
+      categories: ''
+    } as FooterFormValues,
     validators: { onSubmit: footerSchema },
     onSubmit: async ({ value }) => {
       const payload: CreateFooterPayload = {
         title: value.title,
         titleVi: value.titleVi,
         url: value.url,
+        language: value.language,
         categories: value.categories || null
       };
       await mutation.mutateAsync(payload);
     }
   });
 
-  const { FormTextField, FormTextareaField } = useFormFields<FooterFormValues>();
+  const { FormTextField, FormTextareaField, FormSelectField } = useFormFields<FooterFormValues>();
 
   return (
     <FormDialog
@@ -80,6 +92,12 @@ function CreateDialog({
             placeholder='Nhập tiêu đề tiếng Việt'
           />
           <FormTextField name='url' label='URL' placeholder='https://...' />
+          <FormSelectField
+            name='language'
+            label='Ngôn ngữ'
+            placeholder='Chọn ngôn ngữ'
+            options={LANG_OPTIONS}
+          />
           <FormTextareaField
             name='categories'
             label='Categories'
@@ -114,6 +132,7 @@ function EditDialog({
       title: item.title,
       titleVi: item.titleVi,
       url: item.url,
+      language: item.language || 'en',
       categories: item.categories || ''
     } as FooterFormValues,
     validators: { onSubmit: footerSchema },
@@ -122,13 +141,14 @@ function EditDialog({
         title: value.title,
         titleVi: value.titleVi,
         url: value.url,
+        language: value.language,
         categories: value.categories || null
       };
       await mutation.mutateAsync({ id: item.id, values: payload });
     }
   });
 
-  const { FormTextField, FormTextareaField } = useFormFields<FooterFormValues>();
+  const { FormTextField, FormTextareaField, FormSelectField } = useFormFields<FooterFormValues>();
 
   return (
     <FormDialog
@@ -149,6 +169,12 @@ function EditDialog({
             placeholder='Nhập tiêu đề tiếng Việt'
           />
           <FormTextField name='url' label='URL' placeholder='https://...' />
+          <FormSelectField
+            name='language'
+            label='Ngôn ngữ'
+            placeholder='Chọn ngôn ngữ'
+            options={LANG_OPTIONS}
+          />
           <FormTextareaField
             name='categories'
             label='Categories'

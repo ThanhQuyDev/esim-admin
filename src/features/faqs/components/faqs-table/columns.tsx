@@ -38,6 +38,18 @@ export const columns: ColumnDef<Faq>[] = [
     enableSorting: false
   },
   {
+    id: 'url',
+    accessorKey: 'url',
+    header: 'URL',
+    cell: ({ row }) =>
+      row.original.url ? (
+        <span className='text-muted-foreground text-sm'>{row.original.url}</span>
+      ) : (
+        <span className='text-muted-foreground/50 text-sm'>—</span>
+      ),
+    enableSorting: false
+  },
+  {
     id: 'sortOrder',
     accessorKey: 'sortOrder',
     header: ({ column }: { column: Column<Faq, unknown> }) => (

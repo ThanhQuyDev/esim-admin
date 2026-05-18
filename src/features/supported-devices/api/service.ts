@@ -44,7 +44,7 @@ export async function updateSupportedDevice(
   payload: UpdateSupportedDevicePayload
 ): Promise<SupportedDevice> {
   const response = await apiClient<{ data: SupportedDevice }>(`/supported-devices/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(payload)
   });
   return response.data;

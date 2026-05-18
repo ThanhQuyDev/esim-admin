@@ -51,7 +51,8 @@ function CreateDialog({
       answer: '',
       language: 'en',
       sortOrder: '0',
-      isActive: true
+      isActive: true,
+      url: ''
     } as FaqFormValues,
     validators: { onSubmit: faqSchema },
     onSubmit: async ({ value }) => {
@@ -60,7 +61,8 @@ function CreateDialog({
         answer: value.answer,
         language: value.language,
         sortOrder: value.sortOrder ? Number(value.sortOrder) : 0,
-        isActive: value.isActive ?? true
+        isActive: value.isActive ?? true,
+        url: value.url || undefined
       };
       await mutation.mutateAsync(payload);
     }
@@ -104,6 +106,7 @@ function CreateDialog({
             <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
             <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
           </div>
+          <FormTextField name='url' label='URL liên kết' placeholder='/esim-for-japan' />
           <FormSwitchField name='isActive' label='Hoạt động' />
         </form.Form>
       </form.AppForm>
@@ -135,7 +138,8 @@ function EditDialog({
       answer: faq.answer,
       language: faq.language as 'vi' | 'en',
       sortOrder: String(faq.sortOrder ?? 0),
-      isActive: faq.isActive
+      isActive: faq.isActive,
+      url: faq.url ?? ''
     } as FaqFormValues,
     validators: { onSubmit: faqSchema },
     onSubmit: async ({ value }) => {
@@ -144,7 +148,8 @@ function EditDialog({
         answer: value.answer,
         language: value.language,
         sortOrder: value.sortOrder ? Number(value.sortOrder) : undefined,
-        isActive: value.isActive
+        isActive: value.isActive,
+        url: value.url || undefined
       };
       await mutation.mutateAsync({ id: faq.id, values: payload });
     }
@@ -182,6 +187,7 @@ function EditDialog({
             <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
             <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
           </div>
+          <FormTextField name='url' label='URL liên kết' placeholder='/esim-for-japan' />
           <FormSwitchField name='isActive' label='Hoạt động' />
         </form.Form>
       </form.AppForm>

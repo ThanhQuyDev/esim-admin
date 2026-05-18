@@ -40,6 +40,15 @@ export const columns: ColumnDef<Footer>[] = [
       </a>
     )
   },
+  {
+    id: 'language',
+    accessorKey: 'language',
+    header: 'Ngôn ngữ',
+    cell: ({ row }) => {
+      const lang = row.original.language;
+      return <div>{lang === 'vi' ? 'Tiếng Việt' : lang === 'en' ? 'English' : lang}</div>;
+    }
+  },
   { id: 'categories', accessorKey: 'categories', header: 'Categories' },
   {
     id: 'createdAt',

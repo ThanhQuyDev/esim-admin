@@ -6,6 +6,7 @@ import { ChatRoomList } from './chat-room-list';
 import { ChatArea } from './chat-area';
 import { ChatEmptyState } from './chat-empty-state';
 import { ChatConnectionStatus } from './chat-connection-status';
+import { ChatOrderWidget } from './chat-order-widget';
 
 export default function ChatViewPage() {
   const connect = useChatStore((s) => s.connect);
@@ -52,10 +53,15 @@ export default function ChatViewPage() {
 
   return (
     <div className='flex min-h-0 flex-1 px-4 py-2 md:px-6'>
-      <div className='border-border/50 bg-background/70 relative grid h-[calc(100dvh-5.5rem)] w-full grid-rows-[auto,1fr] gap-3 overflow-hidden rounded-2xl border p-3 backdrop-blur-xl sm:gap-4 sm:p-4 lg:[grid-template-columns:30%_1fr] lg:grid-rows-[1fr] lg:gap-4 lg:rounded-3xl lg:p-5'>
+      <div className='border-border/50 bg-background/70 relative grid h-[calc(100dvh-5.5rem)] w-full grid-rows-[auto,1fr] gap-3 overflow-hidden rounded-2xl border p-3 backdrop-blur-xl sm:gap-4 sm:p-4 lg:[grid-template-columns:25%_1fr_20%] lg:grid-rows-[1fr] lg:gap-4 lg:rounded-3xl lg:p-5'>
         <ChatConnectionStatus />
         <ChatRoomList />
         {selectedRoomId ? <ChatArea /> : <ChatEmptyState />}
+        {selectedRoomId && (
+          <aside className='hidden overflow-y-auto lg:block'>
+            <ChatOrderWidget />
+          </aside>
+        )}
       </div>
     </div>
   );

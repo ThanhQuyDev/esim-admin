@@ -1,3 +1,5 @@
+import type { Faq } from '@/features/faqs/api/types';
+
 export type Blog = {
   id: string;
   language: string;
@@ -13,6 +15,12 @@ export type Blog = {
   miniTagId: string | null;
   planIds: number[];
   timeRead: number | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  seoKeywords: string | null;
+  faqEnabled: boolean;
+  faqIds: number[];
+  faqs: Faq[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -46,6 +54,11 @@ export type CreateBlogPayload = {
   miniTagId?: string;
   planIds?: number[];
   timeRead?: number;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  faqEnabled?: boolean;
+  faqIds?: number[];
 };
 
 export type UpdateBlogPayload = Partial<CreateBlogPayload>;

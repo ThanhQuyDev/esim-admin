@@ -16,6 +16,7 @@ export async function getHelpCenterArticles(
   if (filters.search) params.set('search', filters.search);
   if (filters.category) params.set('category', filters.category);
   if (filters.parent) params.set('parent', filters.parent);
+  if (filters.language) params.set('language', filters.language);
   const query = params.toString();
   return apiClient<HelpCenterResponse>(`/help-center${query ? `?${query}` : ''}`);
 }

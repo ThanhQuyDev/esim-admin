@@ -13,7 +13,12 @@ export const blogSchema = z.object({
   isPublished: z.boolean().optional(),
   miniTagId: z.string().optional(),
   planIdsText: z.string().optional(),
-  timeRead: z.number().optional()
+  timeRead: z.number().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.string().optional(),
+  faqEnabled: z.boolean().optional(),
+  faqIds: z.array(z.number()).optional()
 });
 
 export type BlogFormValues = z.infer<typeof blogSchema>;

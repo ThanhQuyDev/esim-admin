@@ -12,7 +12,7 @@ import type {
   CreateHelpCenterPayload,
   UpdateHelpCenterPayload
 } from '../api/types';
-import { CATEGORY_OPTIONS, PARENT_OPTIONS } from '../api/types';
+import { CATEGORY_OPTIONS, PARENT_OPTIONS, LANG_OPTIONS } from '../api/types';
 import { toast } from 'sonner';
 import { helpCenterSchema, type HelpCenterFormValues } from '../schemas/help-center';
 
@@ -53,7 +53,8 @@ function CreateDialog({
       content: '',
       order: '0',
       category: 'getting_started',
-      parent: 'setting_up'
+      parent: 'setting_up',
+      language: 'en'
     } as HelpCenterFormValues,
     validators: { onSubmit: helpCenterSchema },
     onSubmit: async ({ value }) => {
@@ -62,7 +63,8 @@ function CreateDialog({
         content: value.content,
         order: value.order ? Number(value.order) : 0,
         category: value.category,
-        parent: value.parent
+        parent: value.parent,
+        language: value.language || undefined
       };
       await mutation.mutateAsync(payload);
     }
@@ -100,7 +102,10 @@ function CreateDialog({
             <FormSelectField name='category' label='Danh mục' required options={CATEGORY_OPTIONS} />
             <FormSelectField name='parent' label='Thư mục' required options={PARENT_OPTIONS} />
           </div>
-          <FormTextField name='order' label='Thứ tự' placeholder='0' />
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+            <FormSelectField name='language' label='Ngôn ngữ' options={LANG_OPTIONS} />
+            <FormTextField name='order' label='Thứ tự' placeholder='0' />
+          </div>
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -131,7 +136,8 @@ function EditDialog({
       content: article.content,
       order: String(article.order ?? 0),
       category: article.category,
-      parent: article.parent
+      parent: article.parent,
+      language: (article.language as 'vi' | 'en') ?? 'en'
     } as HelpCenterFormValues,
     validators: { onSubmit: helpCenterSchema },
     onSubmit: async ({ value }) => {
@@ -140,7 +146,8 @@ function EditDialog({
         content: value.content,
         order: value.order ? Number(value.order) : undefined,
         category: value.category,
-        parent: value.parent
+        parent: value.parent,
+        language: value.language || undefined
       };
       await mutation.mutateAsync({ id: article.id, values: payload });
     }
@@ -178,7 +185,10 @@ function EditDialog({
             <FormSelectField name='category' label='Danh mục' required options={CATEGORY_OPTIONS} />
             <FormSelectField name='parent' label='Thư mục' required options={PARENT_OPTIONS} />
           </div>
-          <FormTextField name='order' label='Thứ tự' placeholder='0' />
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+            <FormSelectField name='language' label='Ngôn ngữ' options={LANG_OPTIONS} />
+            <FormTextField name='order' label='Thứ tự' placeholder='0' />
+          </div>
         </form.Form>
       </form.AppForm>
     </FormDialog>

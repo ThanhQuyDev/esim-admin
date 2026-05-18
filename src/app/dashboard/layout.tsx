@@ -2,8 +2,10 @@ import KBar from '@/components/kbar';
 import AppSidebar from '@/components/layout/app-sidebar';
 import Header from '@/components/layout/header';
 import { InfoSidebar } from '@/components/layout/info-sidebar';
+import { ScrollToTop } from '@/components/scroll-to-top';
 import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { BreadcrumbProvider } from '@/hooks/use-breadcrumb-context';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
@@ -22,18 +24,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
   return (
     <KBar>
-      <SidebarProvider defaultOpen={defaultOpen}>
-        <InfobarProvider defaultOpen={false}>
-          <AppSidebar />
-          <SidebarInset>
-            <Header />
-            {/* page main content */}
-            {children}
-            {/* page main content ends */}
-          </SidebarInset>
-          <InfoSidebar side='right' />
-        </InfobarProvider>
-      </SidebarProvider>
+      <BreadcrumbProvider>
+        <SidebarProvider defaultOpen={defaultOpen}>
+          <InfobarProvider defaultOpen={false}>
+            <AppSidebar />
+            <SidebarInset className='overflow-hidden'>
+              <Header />
+              {/* page main content */}
+              {children}
+              {/* page main content ends */}
+              <ScrollToTop />
+            </SidebarInset>
+            <InfoSidebar side='right' />
+          </InfobarProvider>
+        </SidebarProvider>
+      </BreadcrumbProvider>
     </KBar>
   );
 }

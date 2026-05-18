@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useAppForm } from '@/components/ui/tanstack-form';
 import { FormDialog } from '@/components/ui/form-dialog';
 import { Button } from '@/components/ui/button';
@@ -8,20 +8,22 @@ import { Icons } from '@/components/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createSeoConfigMutation, updateSeoConfigMutation } from '../api/mutations';
 import { getDestinations } from '@/features/destinations/api/service';
-import { uploadToCloudinary } from '@/features/destinations/api/service';
 import { getRegions } from '@/features/regions/api/service';
 import type { SeoConfig, CreateSeoConfigPayload, UpdateSeoConfigPayload } from '../api/types';
 import type { Destination } from '@/features/destinations/api/types';
 import type { Region } from '@/features/regions/api/types';
 import { toast } from 'sonner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 interface SeoConfigFormDialogProps {
   seoConfig?: SeoConfig;
@@ -46,50 +48,65 @@ export function SeoConfigFormDialog({ seoConfig, open, onOpenChange }: SeoConfig
 
 const FORM_ID = 'seo-config-form-dialog';
 
-function ImageUploadField({
+function SearchableSelect<T extends { id: number; name: string; slug: string }>({
   label,
-  currentUrl,
-  onFileSelect,
-  file
+  items,
+  value,
+  onSelect,
+  placeholder
 }: {
   label: string;
-  currentUrl?: string | null;
-  onFileSelect: (file: File | null) => void;
-  file: File | null;
+  items: T[];
+  value?: number | null;
+  onSelect: (id: string) => void;
+  placeholder: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const previewUrl = file ? URL.createObjectURL(file) : currentUrl;
+  const [open, setOpen] = useState(false);
+  const selected = items.find((item) => item.id === value);
 
   return (
     <div className='space-y-2'>
-      <label className='text-sm font-medium'>{label}</label>
-      <div className='flex items-center gap-3'>
-        {previewUrl && (
-          <div className='relative h-20 w-32 overflow-hidden rounded-lg border-2 border-border/50 shadow-sm'>
-            <img src={previewUrl} alt={label} className='h-full w-full object-cover' />
-          </div>
-        )}
-        <Button type='button' variant='outline' size='sm' onClick={() => inputRef.current?.click()}>
-          <Icons.upload className='mr-2 h-4 w-4' />
-          {previewUrl ? 'Thay đổi' : 'Tải lên'}
-        </Button>
-        {file && (
-          <Button type='button' variant='ghost' size='sm' onClick={() => onFileSelect(null)}>
-            <Icons.close className='h-4 w-4' />
+      <Label>{label}</Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant='outline'
+            role='combobox'
+            aria-expanded={open}
+            className='w-full justify-between'
+          >
+            {selected ? `${selected.name} (${selected.slug})` : placeholder}
+            <Icons.chevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
           </Button>
-        )}
-      </div>
-      <input
-        ref={inputRef}
-        type='file'
-        accept='image/*'
-        className='hidden'
-        onChange={(e) => {
-          const selected = e.target.files?.[0] ?? null;
-          onFileSelect(selected);
-          e.target.value = '';
-        }}
-      />
+        </PopoverTrigger>
+        <PopoverContent className='w-full p-0' align='start'>
+          <Command>
+            <CommandInput placeholder='Tìm kiếm...' />
+            <CommandList>
+              <CommandEmpty>Không tìm thấy.</CommandEmpty>
+              <CommandGroup>
+                {items.map((item) => (
+                  <CommandItem
+                    key={item.id}
+                    onSelect={() => {
+                      onSelect(String(item.id));
+                      setOpen(false);
+                    }}
+                  >
+                    <Icons.check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === item.id ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                    {item.name} ({item.slug})
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -102,7 +119,6 @@ function CreateSeoConfigDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [urlSource, setUrlSource] = useState<'manual' | 'destination' | 'region'>('manual');
-  const [ogImageFile, setOgImageFile] = useState<File | null>(null);
 
   const { data: destinationsData } = useQuery({
     queryKey: ['destinations', 'all-for-seo'],
@@ -123,7 +139,6 @@ function CreateSeoConfigDialog({
     ...createSeoConfigMutation,
     onSuccess: () => {
       toast.success('Tạo cấu hình SEO thành công');
-      setOgImageFile(null);
       onOpenChange(false);
     },
     onError: () => {
@@ -137,34 +152,17 @@ function CreateSeoConfigDialog({
       metaTitle: '',
       metaDescription: '',
       metaKeywords: '',
-      ogImage: '',
-      ogTitle: '',
-      ogDescription: '',
       destinationId: null as number | null,
       regionId: null as number | null,
       planId: null as number | null,
       isActive: true
     },
     onSubmit: async ({ value }) => {
-      let ogImageUrl = value.ogImage;
-
-      if (ogImageFile) {
-        try {
-          ogImageUrl = await uploadToCloudinary(ogImageFile);
-        } catch {
-          toast.error('Upload ảnh OG thất bại');
-          return;
-        }
-      }
-
       const payload: CreateSeoConfigPayload = {
         url: value.url,
         metaTitle: value.metaTitle,
         metaDescription: value.metaDescription || undefined,
         metaKeywords: value.metaKeywords || undefined,
-        ogImage: ogImageUrl || undefined,
-        ogTitle: value.ogTitle || undefined,
-        ogDescription: value.ogDescription || undefined,
         destinationId: value.destinationId,
         regionId: value.regionId,
         planId: value.planId,
@@ -237,42 +235,26 @@ function CreateSeoConfigDialog({
             </div>
           </div>
 
-          {/* Destination Selector */}
+          {/* Destination Selector with Search */}
           {urlSource === 'destination' && (
-            <div className='space-y-2'>
-              <Label>Điểm đến</Label>
-              <Select onValueChange={handleDestinationSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Chọn điểm đến...' />
-                </SelectTrigger>
-                <SelectContent>
-                  {destinations.map((d: Destination) => (
-                    <SelectItem key={d.id} value={String(d.id)}>
-                      {d.name} ({d.slug})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SearchableSelect
+              label='Điểm đến'
+              items={destinations}
+              value={form.getFieldValue('destinationId')}
+              onSelect={handleDestinationSelect}
+              placeholder='Chọn điểm đến...'
+            />
           )}
 
-          {/* Region Selector */}
+          {/* Region Selector with Search */}
           {urlSource === 'region' && (
-            <div className='space-y-2'>
-              <Label>Khu vực</Label>
-              <Select onValueChange={handleRegionSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Chọn khu vực...' />
-                </SelectTrigger>
-                <SelectContent>
-                  {regions.map((r: Region) => (
-                    <SelectItem key={r.id} value={String(r.id)}>
-                      {r.name} ({r.slug})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SearchableSelect
+              label='Khu vực'
+              items={regions}
+              value={form.getFieldValue('regionId')}
+              onSelect={handleRegionSelect}
+              placeholder='Chọn khu vực...'
+            />
           )}
 
           <form.AppField name='url'>
@@ -295,18 +277,6 @@ function CreateSeoConfigDialog({
             )}
           </form.AppField>
 
-          <form.AppField name='ogTitle'>
-            {(field) => <field.TextField label='OG Title' placeholder='Open Graph title' />}
-          </form.AppField>
-
-          <form.AppField name='ogDescription'>
-            {(field) => (
-              <field.TextareaField label='OG Description' placeholder='Open Graph description' />
-            )}
-          </form.AppField>
-
-          <ImageUploadField label='OG Image' onFileSelect={setOgImageFile} file={ogImageFile} />
-
           <form.AppField name='isActive'>
             {(field) => <field.SwitchField label='Hoạt động' />}
           </form.AppField>
@@ -326,7 +296,6 @@ function EditSeoConfigDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [urlSource, setUrlSource] = useState<'manual' | 'destination' | 'region'>('manual');
-  const [ogImageFile, setOgImageFile] = useState<File | null>(null);
 
   const { data: destinationsData } = useQuery({
     queryKey: ['destinations', 'all-for-seo'],
@@ -347,7 +316,6 @@ function EditSeoConfigDialog({
     ...updateSeoConfigMutation,
     onSuccess: () => {
       toast.success('Cập nhật cấu hình SEO thành công');
-      setOgImageFile(null);
       onOpenChange(false);
     },
     onError: () => {
@@ -361,34 +329,17 @@ function EditSeoConfigDialog({
       metaTitle: seoConfig.metaTitle,
       metaDescription: seoConfig.metaDescription || '',
       metaKeywords: seoConfig.metaKeywords || '',
-      ogImage: seoConfig.ogImage || '',
-      ogTitle: seoConfig.ogTitle || '',
-      ogDescription: seoConfig.ogDescription || '',
       destinationId: seoConfig.destinationId,
       regionId: seoConfig.regionId,
       planId: seoConfig.planId,
       isActive: seoConfig.isActive
     },
     onSubmit: async ({ value }) => {
-      let ogImageUrl = value.ogImage;
-
-      if (ogImageFile) {
-        try {
-          ogImageUrl = await uploadToCloudinary(ogImageFile);
-        } catch {
-          toast.error('Upload ảnh OG thất bại');
-          return;
-        }
-      }
-
       const payload: UpdateSeoConfigPayload = {
         url: value.url,
         metaTitle: value.metaTitle,
         metaDescription: value.metaDescription || undefined,
         metaKeywords: value.metaKeywords || undefined,
-        ogImage: ogImageUrl || undefined,
-        ogTitle: value.ogTitle || undefined,
-        ogDescription: value.ogDescription || undefined,
         destinationId: value.destinationId,
         regionId: value.regionId,
         planId: value.planId,
@@ -461,48 +412,26 @@ function EditSeoConfigDialog({
             </div>
           </div>
 
-          {/* Destination Selector */}
+          {/* Destination Selector with Search */}
           {urlSource === 'destination' && (
-            <div className='space-y-2'>
-              <Label>Điểm đến</Label>
-              <Select
-                onValueChange={handleDestinationSelect}
-                defaultValue={seoConfig.destinationId ? String(seoConfig.destinationId) : undefined}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Chọn điểm đến...' />
-                </SelectTrigger>
-                <SelectContent>
-                  {destinations.map((d: Destination) => (
-                    <SelectItem key={d.id} value={String(d.id)}>
-                      {d.name} ({d.slug})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SearchableSelect
+              label='Điểm đến'
+              items={destinations}
+              value={form.getFieldValue('destinationId')}
+              onSelect={handleDestinationSelect}
+              placeholder='Chọn điểm đến...'
+            />
           )}
 
-          {/* Region Selector */}
+          {/* Region Selector with Search */}
           {urlSource === 'region' && (
-            <div className='space-y-2'>
-              <Label>Khu vực</Label>
-              <Select
-                onValueChange={handleRegionSelect}
-                defaultValue={seoConfig.regionId ? String(seoConfig.regionId) : undefined}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Chọn khu vực...' />
-                </SelectTrigger>
-                <SelectContent>
-                  {regions.map((r: Region) => (
-                    <SelectItem key={r.id} value={String(r.id)}>
-                      {r.name} ({r.slug})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SearchableSelect
+              label='Khu vực'
+              items={regions}
+              value={form.getFieldValue('regionId')}
+              onSelect={handleRegionSelect}
+              placeholder='Chọn khu vực...'
+            />
           )}
 
           <form.AppField name='url'>
@@ -524,23 +453,6 @@ function EditSeoConfigDialog({
               <field.TextField label='Meta Keywords' placeholder='esim, japan, travel...' />
             )}
           </form.AppField>
-
-          <form.AppField name='ogTitle'>
-            {(field) => <field.TextField label='OG Title' placeholder='Open Graph title' />}
-          </form.AppField>
-
-          <form.AppField name='ogDescription'>
-            {(field) => (
-              <field.TextareaField label='OG Description' placeholder='Open Graph description' />
-            )}
-          </form.AppField>
-
-          <ImageUploadField
-            label='OG Image'
-            currentUrl={seoConfig.ogImage}
-            onFileSelect={setOgImageFile}
-            file={ogImageFile}
-          />
 
           <form.AppField name='isActive'>
             {(field) => <field.SwitchField label='Hoạt động' />}

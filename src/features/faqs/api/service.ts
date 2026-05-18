@@ -1,5 +1,12 @@
 import { apiClient } from '@/lib/api-client';
-import type { Faq, FaqFilters, FaqsResponse, CreateFaqPayload, UpdateFaqPayload } from './types';
+import type {
+  Faq,
+  FaqFilters,
+  FaqsResponse,
+  FaqByContextFilters,
+  CreateFaqPayload,
+  UpdateFaqPayload
+} from './types';
 
 export async function getFaqs(filters: FaqFilters): Promise<FaqsResponse> {
   const params = new URLSearchParams();
@@ -13,6 +20,16 @@ export async function getFaqs(filters: FaqFilters): Promise<FaqsResponse> {
 
 export async function getFaq(id: number): Promise<Faq> {
   return apiClient<Faq>(`/faqs/${id}`);
+}
+
+export async function getFaqsByContext(filters: FaqByContextFilters): Promise<Faq[]> {
+  const params = new URLSearchParams();
+  if (filters.url) params.set('url', filters.url);
+  if (filters.blogId) params.set('blogId', filters.blogId);
+  if (filters.language) params.set('language', filters.language);
+  if (filters.limit) params.set('limit', String(filters.limit));
+  const query = params.toString();
+  return apiClient<Faq[]>(`/faqs/by-context${query ? `?${query}` : ''}`);
 }
 
 export async function createFaq(data: CreateFaqPayload): Promise<Faq> {

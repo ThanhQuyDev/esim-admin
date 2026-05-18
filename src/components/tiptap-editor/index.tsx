@@ -104,7 +104,8 @@ function buildExtensions(options?: {
     Image.configure({
       upload: options?.onImageUpload
         ? (file: File) => options.onImageUpload!(file)
-        : (file: File) => Promise.resolve(URL.createObjectURL(file))
+        : (file: File) => Promise.resolve(URL.createObjectURL(file)),
+      acceptMimes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
     }),
     Video.configure({ upload: (file: File) => Promise.resolve(URL.createObjectURL(file)) }),
     ImageGif,

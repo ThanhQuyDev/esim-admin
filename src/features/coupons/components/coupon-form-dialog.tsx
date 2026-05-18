@@ -81,9 +81,16 @@ function DateTimeField({
     <div className='space-y-2'>
       <label className='text-sm font-medium'>
         {label}
-        {required && ' *'}
+        {required && <span className='text-destructive'> *</span>}
       </label>
-      <Input type='datetime-local' value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        type='datetime-local'
+        value={value || ''}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          onChange(newValue);
+        }}
+      />
     </div>
   );
 }
@@ -197,12 +204,16 @@ function CreateCouponDialog({
             />
           </div>
 
-          <DateTimeField
-            label='Ngày hết hạn'
-            required
-            value={form.getFieldValue('expiresAt') ?? ''}
-            onChange={(val) => form.setFieldValue('expiresAt', val)}
-          />
+          <form.Field name='expiresAt'>
+            {(field) => (
+              <DateTimeField
+                label='Ngày hết hạn'
+                required
+                value={field.state.value ?? ''}
+                onChange={(val) => field.handleChange(val)}
+              />
+            )}
+          </form.Field>
 
           <FormSwitchField name='isActive' label='Hoạt động' />
         </form.Form>
@@ -325,12 +336,16 @@ function EditCouponDialog({
             />
           </div>
 
-          <DateTimeField
-            label='Ngày hết hạn'
-            required
-            value={form.getFieldValue('expiresAt') ?? ''}
-            onChange={(val) => form.setFieldValue('expiresAt', val)}
-          />
+          <form.Field name='expiresAt'>
+            {(field) => (
+              <DateTimeField
+                label='Ngày hết hạn'
+                required
+                value={field.state.value ?? ''}
+                onChange={(val) => field.handleChange(val)}
+              />
+            )}
+          </form.Field>
 
           <FormSwitchField name='isActive' label='Hoạt động' />
         </form.Form>

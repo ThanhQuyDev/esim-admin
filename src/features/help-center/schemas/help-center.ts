@@ -12,13 +12,20 @@ const PARENTS = [
   'esim_basics',
   'about_esimvn'
 ] as const;
+const LANG_OPTIONS = ['vi', 'en'] as const;
 
 export const helpCenterSchema = z.object({
   title: z.string().min(2, 'Tiêu đề là bắt buộc'),
   content: z.string().min(1, 'Nội dung là bắt buộc'),
   order: z.string().optional(),
   category: z.enum(CATEGORIES),
-  parent: z.enum(PARENTS)
+  parent: z.enum(PARENTS),
+  language: z.enum(LANG_OPTIONS).optional(),
+  slug: z.string().optional(),
+  isPublished: z.boolean().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.string().optional()
 });
 
 export type HelpCenterFormValues = z.infer<typeof helpCenterSchema>;

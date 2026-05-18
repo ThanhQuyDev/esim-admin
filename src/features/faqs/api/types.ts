@@ -5,6 +5,7 @@ export type Faq = {
   sortOrder: number;
   answer: string;
   question: string;
+  url: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -18,5 +19,13 @@ export type CreateFaqPayload = {
   sortOrder?: number;
   answer: string;
   question: string;
+  url?: string;
 };
 export type UpdateFaqPayload = Partial<CreateFaqPayload>;
+
+export type FaqByContextFilters = {
+  url?: string;
+  blogId?: string;
+  language?: string;
+  limit?: number;
+};

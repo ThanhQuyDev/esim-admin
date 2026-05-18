@@ -23,11 +23,17 @@ export const columns: ColumnDef<HeroBanner>[] = [
     accessorKey: 'firstContent',
     header: 'First Content',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
+      <div className='flex max-w-[200px] items-center gap-2'>
         {row.original.firstIcon && (
-          <img src={row.original.firstIcon} alt='' className='h-6 w-6 rounded object-cover' />
+          <img
+            src={row.original.firstIcon}
+            alt=''
+            className='h-6 w-6 shrink-0 rounded object-cover'
+          />
         )}
-        <span className='text-sm'>{row.original.firstContent}</span>
+        <span className='truncate text-sm' title={row.original.firstContent ?? ''}>
+          {row.original.firstContent}
+        </span>
       </div>
     ),
     enableSorting: false
@@ -37,11 +43,17 @@ export const columns: ColumnDef<HeroBanner>[] = [
     accessorKey: 'secondContent',
     header: 'Second Content',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
+      <div className='flex max-w-[200px] items-center gap-2'>
         {row.original.secondIcon && (
-          <img src={row.original.secondIcon} alt='' className='h-6 w-6 rounded object-cover' />
+          <img
+            src={row.original.secondIcon}
+            alt=''
+            className='h-6 w-6 shrink-0 rounded object-cover'
+          />
         )}
-        <span className='text-sm'>{row.original.secondContent}</span>
+        <span className='truncate text-sm' title={row.original.secondContent ?? ''}>
+          {row.original.secondContent}
+        </span>
       </div>
     ),
     enableSorting: false
@@ -51,7 +63,9 @@ export const columns: ColumnDef<HeroBanner>[] = [
     accessorKey: 'description',
     header: 'Mô tả',
     cell: ({ row }) => (
-      <div className='max-w-[200px] truncate text-sm'>{row.original.description}</div>
+      <div className='max-w-[200px] truncate text-sm' title={row.original.description ?? ''}>
+        {row.original.description}
+      </div>
     ),
     enableSorting: false
   },

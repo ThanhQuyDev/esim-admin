@@ -7,7 +7,8 @@ export const faqSchema = z.object({
   answer: z.string().min(1, 'Answer is required'),
   language: z.enum(LANG_OPTIONS),
   sortOrder: z.string().optional(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  url: z.string().optional()
 });
 
 export type FaqFormValues = z.infer<typeof faqSchema>;

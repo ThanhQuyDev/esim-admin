@@ -8,6 +8,7 @@ import { Icons } from '@/components/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createBlogMutation, updateBlogMutation } from '../api/mutations';
 import { uploadToCloudinary } from '../api/service';
+import { createSeoConfig } from '@/features/seo-configs/api/service';
 import type { Blog, CreateBlogPayload, UpdateBlogPayload } from '../api/types';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -15,6 +16,8 @@ import { blogSchema, type BlogFormValues } from '../schemas/blog';
 import { TiptapEditor } from '@/components/tiptap-editor';
 import { Card, CardContent } from '@/components/ui/card';
 import { miniTagsQueryOptions } from '@/features/mini-tags/api/queries';
+import { faqsQueryOptions } from '@/features/faqs/api/queries';
+import type { Faq } from '@/features/faqs/api/types';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -183,6 +186,9 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
   const { data: miniTagsData } = useQuery(miniTagsQueryOptions({ page: 1, limit: 100 }));
   const miniTags = miniTagsData?.data ?? [];
 
+  const { data: faqsData } = useQuery(faqsQueryOptions({ page: 1, limit: 100 }));
+  const faqs: Faq[] = faqsData?.data ?? [];
+
   const form = useAppForm({
     defaultValues: {
       title: blog?.title ?? '',
@@ -193,9 +199,14 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
       category: blog?.category ?? '',
       excerpt: blog?.excerpt ?? '',
       isPublished: blog?.isPublished ?? false,
-      miniTagId: blog?.miniTagId ?? '',
-      planIdsText: blog?.planIds?.join(', ') ?? '',
-      timeRead: blog?.timeRead ?? undefined
+      miniTagId: blog?.miniTagId ? String(blog.miniTagId) : '',
+      planIdsText: blog?.planIds?.length ? blog.planIds.join(', ') : '',
+      timeRead: blog?.timeRead ?? undefined,
+      seoTitle: blog?.seoTitle ?? '',
+      seoDescription: blog?.seoDescription ?? '',
+      seoKeywords: blog?.seoKeywords ?? '',
+      faqEnabled: blog?.faqEnabled ?? false,
+      faqIds: blog?.faqIds ?? []
     } as BlogFormValues,
     validators: { onSubmit: blogSchema },
     onSubmit: async ({ value }) => {
@@ -224,9 +235,31 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             isPublished: value.isPublished,
             miniTagId: value.miniTagId || undefined,
             planIds,
-            timeRead: value.timeRead || undefined
+            timeRead: value.timeRead || undefined,
+            seoTitle: value.seoTitle || undefined,
+            seoDescription: value.seoDescription || undefined,
+            seoKeywords: value.seoKeywords || undefined,
+            faqEnabled: value.faqEnabled ?? false,
+            faqIds: value.faqEnabled ? (value.faqIds ?? []) : []
           };
-          await updateMut.mutateAsync({ id: blog.id, values: payload });
+          const updatedBlog = await updateMut.mutateAsync({ id: blog.id, values: payload });
+
+          // Sync SEO config record
+          if (value.seoTitle || value.seoDescription || value.seoKeywords) {
+            const seoUrl = `/blog/${updatedBlog.slug || blog.slug}`;
+            const seoPayload = {
+              url: seoUrl,
+              metaTitle: value.seoTitle || value.title,
+              metaDescription: value.seoDescription || '',
+              metaKeywords: value.seoKeywords || '',
+              isActive: true
+            };
+            try {
+              await createSeoConfig(seoPayload);
+            } catch {
+              // SEO config may already exist — silently ignore duplicate errors
+            }
+          }
         } else {
           const payload: CreateBlogPayload = {
             title: value.title,
@@ -240,9 +273,31 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             isPublished: value.isPublished ?? false,
             miniTagId: value.miniTagId || undefined,
             planIds,
-            timeRead: value.timeRead || undefined
+            timeRead: value.timeRead || undefined,
+            seoTitle: value.seoTitle || undefined,
+            seoDescription: value.seoDescription || undefined,
+            seoKeywords: value.seoKeywords || undefined,
+            faqEnabled: value.faqEnabled ?? false,
+            faqIds: value.faqEnabled ? (value.faqIds ?? []) : []
           };
-          await createMut.mutateAsync(payload);
+          const createdBlog = await createMut.mutateAsync(payload);
+
+          // Sync SEO config record
+          if (value.seoTitle || value.seoDescription || value.seoKeywords) {
+            const seoUrl = `/blog/${createdBlog.slug || value.slug || ''}`;
+            const seoPayload = {
+              url: seoUrl,
+              metaTitle: value.seoTitle || value.title,
+              metaDescription: value.seoDescription || '',
+              metaKeywords: value.seoKeywords || '',
+              isActive: true
+            };
+            try {
+              await createSeoConfig(seoPayload);
+            } catch {
+              // SEO config creation failed — non-blocking
+            }
+          }
         }
       } catch {
         toast.error('Tải ảnh lên thất bại');
@@ -325,6 +380,102 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
               />
 
               <FormSwitchField name='isPublished' label='Xuất bản' />
+            </CardContent>
+          </Card>
+
+          {/* SEO fields */}
+          <Card>
+            <CardContent className='space-y-4 pt-6'>
+              <label className='text-sm font-semibold'>Cấu hình SEO</label>
+              <FormTextField
+                name='seoTitle'
+                label='SEO Title'
+                placeholder='Tiêu đề SEO (hiển thị trên Google)'
+              />
+              <FormTextareaField
+                name='seoDescription'
+                label='SEO Description'
+                placeholder='Mô tả SEO (hiển thị trên Google)'
+              />
+              <FormTextField
+                name='seoKeywords'
+                label='SEO Keywords'
+                placeholder='Từ khóa SEO, cách nhau bằng dấu phẩy'
+              />
+            </CardContent>
+          </Card>
+
+          {/* FAQ toggle */}
+          <Card>
+            <CardContent className='space-y-4 pt-6'>
+              <form.AppField name='faqEnabled'>
+                {(field) => (
+                  <div className='flex items-center justify-between'>
+                    <Label>Bật FAQ cho bài viết</Label>
+                    <button
+                      type='button'
+                      role='switch'
+                      aria-checked={field.state.value ?? false}
+                      onClick={() => field.handleChange(!field.state.value)}
+                      className={cn(
+                        'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                        field.state.value ? 'bg-primary' : 'bg-input'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform',
+                          field.state.value ? 'translate-x-5' : 'translate-x-0'
+                        )}
+                      />
+                    </button>
+                  </div>
+                )}
+              </form.AppField>
+
+              <form.AppField name='faqEnabled'>
+                {(enabledField) =>
+                  enabledField.state.value ? (
+                    <form.AppField name='faqIds'>
+                      {(faqIdsField) => (
+                        <div className='space-y-2'>
+                          <Label>Chọn câu hỏi FAQ</Label>
+                          <div className='max-h-60 space-y-2 overflow-y-auto rounded-md border p-3'>
+                            {faqs.map((faq) => {
+                              const selected = (faqIdsField.state.value ?? []).includes(faq.id);
+                              return (
+                                <label
+                                  key={faq.id}
+                                  className='flex cursor-pointer items-center gap-2 rounded p-1 hover:bg-muted'
+                                >
+                                  <input
+                                    type='checkbox'
+                                    checked={selected}
+                                    onChange={() => {
+                                      const current = faqIdsField.state.value ?? [];
+                                      const next = selected
+                                        ? current.filter((id) => id !== faq.id)
+                                        : [...current, faq.id];
+                                      faqIdsField.handleChange(next);
+                                    }}
+                                    className='h-4 w-4 rounded border-gray-300'
+                                  />
+                                  <span className='text-sm'>{faq.question}</span>
+                                </label>
+                              );
+                            })}
+                            {faqs.length === 0 && (
+                              <p className='text-muted-foreground text-sm'>
+                                Chưa có câu hỏi FAQ nào.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </form.AppField>
+                  ) : null
+                }
+              </form.AppField>
             </CardContent>
           </Card>
 

@@ -39,6 +39,9 @@ interface ChatState {
   isLoadingMessages: boolean;
   error: string | null;
 
+  // Sound notification
+  soundEnabled: boolean;
+
   // Actions
   connect: (token: string, myUserId: number) => void;
   disconnect: () => void;
@@ -51,6 +54,7 @@ interface ChatState {
   setDraft: (text: string) => void;
   clearError: () => void;
   fetchUserInfo: (userId: number) => void;
+  toggleSound: () => void;
 
   // Internal
   _socket: ChatSocket | null;
@@ -76,6 +80,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   draft: '',
   isLoadingMessages: false,
   error: null,
+  soundEnabled: true,
   _socket: null,
 
   connect: (token: string, myUserId: number) => {
@@ -165,6 +170,17 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       // Fetch user info if unknown sender
       if (!state.userCache[msg.senderId]) {
         get().fetchUserInfo(msg.senderId);
+      }
+
+      // Play notification sound if enabled and message is from customer
+      if (state.soundEnabled && msg.senderId !== state.myUserId) {
+        try {
+          const audio = new Audio('/assets/notification.mp3');
+          audio.volume = 0.5;
+          audio.play().catch(() => {});
+        } catch {
+          // Audio playback not available
+        }
       }
 
       // Append to current chat if it's the active room
@@ -340,5 +356,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       .catch(() => {
         // Silently fail — display will fall back to "User #id"
       });
-  }
+  },
+
+  toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled }))
 }));

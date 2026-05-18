@@ -78,6 +78,24 @@ export function EmailTemplateFormPage() {
     setHtmlBody((prev) => prev + variable);
   }
 
+  const RECOMMENDED_HEADER = `<!-- Header -->
+<div class="email-header" style="background-color: #ffffff; padding: 20px; text-align: center; border-bottom: 1px solid #e5e7eb;">
+  <img src="https://esim.vn/assets/logo.png" alt="{{app_name}}" style="height: 40px; width: auto; display: inline-block;" />
+</div>`;
+
+  function insertHeader() {
+    setHtmlBody((prev) => {
+      // If there's already a header comment, replace it
+      const headerRegex = /<!--\s*Header\s*-->[\s\S]*?(?=\n\n|<!--(?!\s*Header))/i;
+      if (headerRegex.test(prev)) {
+        return prev.replace(headerRegex, RECOMMENDED_HEADER);
+      }
+      // Otherwise prepend
+      return RECOMMENDED_HEADER + '\n\n' + prev;
+    });
+    toast.success('Header đã được chèn/cập nhật');
+  }
+
   return (
     <div className='mx-auto w-full max-w-5xl space-y-6'>
       {/* Stepper indicator */}
@@ -186,8 +204,14 @@ export function EmailTemplateFormPage() {
           {/* HTML editor */}
           <Card>
             <CardHeader>
-              <CardTitle>
-                Nội dung HTML <span className='text-destructive'>*</span>
+              <CardTitle className='flex items-center justify-between'>
+                <span>
+                  Nội dung HTML <span className='text-destructive'>*</span>
+                </span>
+                <Button type='button' variant='outline' size='sm' onClick={insertHeader}>
+                  <Icons.add className='mr-2 h-4 w-4' />
+                  Chèn Header (Nền trắng + Logo)
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -25,6 +25,7 @@ interface FormDialogProps {
   onCancel?: () => void;
   submitLabel?: string;
   metaInfo?: React.ReactNode;
+  extraActions?: React.ReactNode;
   className?: string;
 }
 
@@ -39,6 +40,7 @@ export function FormDialog({
   onCancel,
   submitLabel = 'Lưu',
   metaInfo,
+  extraActions,
   className
 }: FormDialogProps) {
   const handleCancel = () => {
@@ -89,6 +91,7 @@ export function FormDialog({
               Tất cả các trường có dấu <span className='text-destructive'>*</span> là bắt buộc
             </p>
             <div className='flex gap-3'>
+              {extraActions}
               <Button
                 type='button'
                 variant='outline'

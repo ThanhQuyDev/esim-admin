@@ -61,7 +61,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Bài viết',
+        title: 'Blog',
         url: '/dashboard/blogs',
         icon: 'blog',
         shortcut: ['b', 'b'],

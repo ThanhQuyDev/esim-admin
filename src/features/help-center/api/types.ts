@@ -21,6 +21,12 @@ export type HelpCenterArticle = {
   order: number;
   category: HelpCenterCategory;
   parent: HelpCenterParent;
+  language: string | null;
+  slug: string | null;
+  isPublished: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  seoKeywords: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -31,6 +37,7 @@ export type HelpCenterFilters = {
   search?: string;
   category?: HelpCenterCategory;
   parent?: HelpCenterParent;
+  language?: string;
 };
 
 export type HelpCenterResponse = {
@@ -45,6 +52,12 @@ export type CreateHelpCenterPayload = {
   order?: number;
   category: HelpCenterCategory;
   parent: HelpCenterParent;
+  language?: string;
+  slug?: string;
+  isPublished?: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
 };
 
 export type UpdateHelpCenterPayload = Partial<CreateHelpCenterPayload>;
@@ -70,4 +83,9 @@ export const PARENT_OPTIONS: {
   { value: 'esim_functions', label: 'eSIM functions', category: 'faq' },
   { value: 'esim_basics', label: 'eSIM basics', category: 'faq' },
   { value: 'about_esimvn', label: 'About esim.vn', category: 'faq' }
+];
+
+export const LANG_OPTIONS = [
+  { value: 'vi', label: 'Vietnamese' },
+  { value: 'en', label: 'English' }
 ];

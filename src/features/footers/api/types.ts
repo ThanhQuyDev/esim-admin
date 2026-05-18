@@ -3,6 +3,7 @@ export type Footer = {
   title: string;
   titleVi: string;
   url: string;
+  language: string;
   categories?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +22,7 @@ export type CreateFooterPayload = {
   title: string;
   titleVi: string;
   url: string;
+  language: string;
   categories?: string | null;
 };
 
