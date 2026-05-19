@@ -1,7 +1,6 @@
 import KBar from '@/components/kbar';
 import AppSidebar from '@/components/layout/app-sidebar';
 import Header from '@/components/layout/header';
-import { InfoSidebar } from '@/components/layout/info-sidebar';
 import { ScrollToTop } from '@/components/scroll-to-top';
 import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -26,17 +25,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <KBar>
       <BreadcrumbProvider>
         <SidebarProvider defaultOpen={defaultOpen}>
-          <InfobarProvider defaultOpen={false}>
-            <AppSidebar />
-            <SidebarInset className='overflow-hidden'>
-              <Header />
-              {/* page main content */}
-              {children}
-              {/* page main content ends */}
-              <ScrollToTop />
-            </SidebarInset>
-            <InfoSidebar side='right' />
-          </InfobarProvider>
+          <AppSidebar />
+          <SidebarInset className='overflow-hidden'>
+            <Header />
+            {/* page main content */}
+            {children}
+            {/* page main content ends */}
+            <ScrollToTop />
+          </SidebarInset>
         </SidebarProvider>
       </BreadcrumbProvider>
     </KBar>

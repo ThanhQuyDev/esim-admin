@@ -153,6 +153,14 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Lệnh thanh toán tùy ý',
+        url: '/dashboard/custom-payment-links',
+        icon: 'creditCard',
+        shortcut: ['c', 'p'],
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Ví eXu',
         url: '/dashboard/wallets',
         icon: 'wallet',

@@ -18,7 +18,7 @@ export const blogSchema = z.object({
   seoDescription: z.string().optional(),
   seoKeywords: z.string().optional(),
   faqEnabled: z.boolean().optional(),
-  faqIds: z.array(z.number()).optional()
+  faqIds: z.array(z.string()).optional()
 });
 
 export type BlogFormValues = z.infer<typeof blogSchema>;

@@ -15,6 +15,11 @@ export interface ChatMessage {
   isRead: boolean;
   createdAt: string; // ISO 8601
   updatedAt: string;
+  // Optional file attachment (image/* or video/*) uploaded via Cloudinary
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
 }
 
 export interface ChatRoomWithMeta extends ChatRoom {
@@ -24,9 +29,18 @@ export interface ChatRoomWithMeta extends ChatRoom {
 
 // ─── Client → Server Events ─────────────────────────────────────────────────
 
+export interface SendMessagePayload {
+  chatRoomId: number;
+  message: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+}
+
 export interface ClientToServerEvents {
   joinRoom: (data: { userId?: number }) => void;
-  sendMessage: (data: { chatRoomId: number; message: string }) => void;
+  sendMessage: (data: SendMessagePayload) => void;
   getMessages: (data: { chatRoomId: number; page?: number; limit?: number }) => void;
   markAsRead: (data: { chatRoomId: number }) => void;
   getRooms: () => void;

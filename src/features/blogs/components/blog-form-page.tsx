@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
+import { useAppForm, useFormFields, FormErrors } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createBlogMutation, updateBlogMutation } from '../api/mutations';
 import { uploadToCloudinary } from '../api/service';
-import { createSeoConfig } from '@/features/seo-configs/api/service';
+import { createSeoConfig, updateSeoConfig } from '@/features/seo-configs/api/service';
 import type { Blog, CreateBlogPayload, UpdateBlogPayload } from '../api/types';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -17,6 +17,7 @@ import { TiptapEditor } from '@/components/tiptap-editor';
 import { Card, CardContent } from '@/components/ui/card';
 import { miniTagsQueryOptions } from '@/features/mini-tags/api/queries';
 import { faqsQueryOptions } from '@/features/faqs/api/queries';
+import { seoConfigByUrlQueryOptions } from '@/features/seo-configs/api/queries';
 import type { Faq } from '@/features/faqs/api/types';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -189,6 +190,18 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
   const { data: faqsData } = useQuery(faqsQueryOptions({ page: 1, limit: 100 }));
   const faqs: Faq[] = faqsData?.data ?? [];
 
+  // Fetch existing SEO config by URL when editing
+  const seoUrlForLookup = blog?.slug ? `/blog/${blog.slug.replace(/^\/+|\/+$/g, '')}` : '';
+  const { data: existingSeo } = useQuery(seoConfigByUrlQueryOptions(seoUrlForLookup));
+
+  // Derive ids from nested objects (API returns miniTag/plans/faqs nested)
+  const initialMiniTagId = blog?.miniTag?.id ?? blog?.miniTagId ?? '';
+  const initialPlanIds = blog?.plans?.length ? blog.plans.map((p) => p.id) : (blog?.planIds ?? []);
+  const initialFaqIds = blog?.faqs?.length
+    ? blog.faqs.map((f) => String(f.id))
+    : (blog?.faqIds ?? []);
+  const initialFaqEnabled = blog?.faqEnabled ?? (blog?.faqs?.length ?? 0) > 0;
+
   const form = useAppForm({
     defaultValues: {
       title: blog?.title ?? '',
@@ -199,16 +212,29 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
       category: blog?.category ?? '',
       excerpt: blog?.excerpt ?? '',
       isPublished: blog?.isPublished ?? false,
-      miniTagId: blog?.miniTagId ? String(blog.miniTagId) : '',
-      planIdsText: blog?.planIds?.length ? blog.planIds.join(', ') : '',
+      miniTagId: initialMiniTagId ? String(initialMiniTagId) : '',
+      planIdsText: initialPlanIds.length ? initialPlanIds.join(', ') : '',
       timeRead: blog?.timeRead ?? undefined,
       seoTitle: blog?.seoTitle ?? '',
       seoDescription: blog?.seoDescription ?? '',
       seoKeywords: blog?.seoKeywords ?? '',
-      faqEnabled: blog?.faqEnabled ?? false,
-      faqIds: blog?.faqIds ?? []
+      faqEnabled: initialFaqEnabled,
+      faqIds: initialFaqIds
     } as BlogFormValues,
     validators: { onSubmit: blogSchema },
+    onSubmitInvalid: ({ formApi }) => {
+      const fieldErrors = formApi.state.fieldMeta;
+      const firstError = Object.entries(fieldErrors).find(
+        ([, meta]) => meta && meta.errors && meta.errors.length > 0
+      );
+      if (firstError) {
+        const [field, meta] = firstError;
+        const msg = meta?.errors?.[0]?.message || 'Vui lòng kiểm tra lại form';
+        toast.error(`${field}: ${msg}`);
+      } else {
+        toast.error('Vui lòng kiểm tra lại form');
+      }
+    },
     onSubmit: async ({ value }) => {
       setUploading(true);
       try {
@@ -244,9 +270,10 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
           };
           const updatedBlog = await updateMut.mutateAsync({ id: blog.id, values: payload });
 
-          // Sync SEO config record
+          // Sync SEO config record (update if exists, else create)
           if (value.seoTitle || value.seoDescription || value.seoKeywords) {
-            const seoUrl = `/blog/${updatedBlog.slug || blog.slug}`;
+            const finalSlug = (updatedBlog.slug || blog.slug || '').replace(/^\/+|\/+$/g, '');
+            const seoUrl = `/blog/${finalSlug}`;
             const seoPayload = {
               url: seoUrl,
               metaTitle: value.seoTitle || value.title,
@@ -255,9 +282,13 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
               isActive: true
             };
             try {
-              await createSeoConfig(seoPayload);
+              if (existingSeo?.id) {
+                await updateSeoConfig(existingSeo.id, seoPayload);
+              } else {
+                await createSeoConfig(seoPayload);
+              }
             } catch {
-              // SEO config may already exist — silently ignore duplicate errors
+              // SEO sync is non-blocking
             }
           }
         } else {
@@ -284,7 +315,8 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
 
           // Sync SEO config record
           if (value.seoTitle || value.seoDescription || value.seoKeywords) {
-            const seoUrl = `/blog/${createdBlog.slug || value.slug || ''}`;
+            const finalSlug = (createdBlog.slug || value.slug || '').replace(/^\/+|\/+$/g, '');
+            const seoUrl = `/blog/${finalSlug}`;
             const seoPayload = {
               url: seoUrl,
               metaTitle: value.seoTitle || value.title,
@@ -307,6 +339,18 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
     }
   });
 
+  // Sync SEO fields into form when existing SEO config is loaded (edit mode)
+  useEffect(() => {
+    if (!existingSeo) return;
+    if (!form.getFieldValue('seoTitle'))
+      form.setFieldValue('seoTitle', existingSeo.metaTitle ?? '');
+    if (!form.getFieldValue('seoDescription'))
+      form.setFieldValue('seoDescription', existingSeo.metaDescription ?? '');
+    if (!form.getFieldValue('seoKeywords'))
+      form.setFieldValue('seoKeywords', existingSeo.metaKeywords ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingSeo?.id]);
+
   const { FormTextField, FormSelectField, FormSwitchField, FormTextareaField } =
     useFormFields<BlogFormValues>();
   const isPending = createMut.isPending || updateMut.isPending || uploading;
@@ -315,6 +359,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
     <div className='mx-auto w-full max-w-5xl space-y-6'>
       <form.AppForm>
         <form.Form id='blog-page-form' className='space-y-6'>
+          <FormErrors />
           {/* Meta fields */}
           <Card>
             <CardContent className='space-y-4 pt-6'>
@@ -442,7 +487,8 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
                           <Label>Chọn câu hỏi FAQ</Label>
                           <div className='max-h-60 space-y-2 overflow-y-auto rounded-md border p-3'>
                             {faqs.map((faq) => {
-                              const selected = (faqIdsField.state.value ?? []).includes(faq.id);
+                              const faqIdStr = String(faq.id);
+                              const selected = (faqIdsField.state.value ?? []).includes(faqIdStr);
                               return (
                                 <label
                                   key={faq.id}
@@ -454,8 +500,8 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
                                     onChange={() => {
                                       const current = faqIdsField.state.value ?? [];
                                       const next = selected
-                                        ? current.filter((id) => id !== faq.id)
-                                        : [...current, faq.id];
+                                        ? current.filter((id) => id !== faqIdStr)
+                                        : [...current, faqIdStr];
                                       faqIdsField.handleChange(next);
                                     }}
                                     className='h-4 w-4 rounded border-gray-300'

@@ -7,6 +7,7 @@ import { ChatRoomHeader } from './chat-room-header';
 import { ChatMessageBubble } from './chat-message-bubble';
 import { ChatComposer } from './chat-composer';
 import { Spinner } from '@/components/ui/spinner';
+import type { ChatUploadResult } from '../api/upload';
 
 export function ChatArea() {
   const messages = useChatStore((s) => s.messages);
@@ -55,10 +56,10 @@ export function ChatArea() {
   }, [messages, userCache]);
 
   const handleSubmit = useCallback(
-    (e: FormEvent<HTMLFormElement>) => {
+    (e: FormEvent<HTMLFormElement>, attachment?: ChatUploadResult) => {
       e.preventDefault();
-      if (!draft.trim()) return;
-      sendMessage(draft);
+      if (!draft.trim() && !attachment) return;
+      sendMessage(draft, attachment);
     },
     [draft, sendMessage]
   );

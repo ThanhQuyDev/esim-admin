@@ -1,5 +1,6 @@
 import PageContainer from '@/components/layout/page-container';
 import OrderListingPage from '@/features/orders/components/order-listing';
+import { SubmitManualOrderTrigger } from '@/features/orders/components/submit-manual-order-trigger';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 
@@ -20,6 +21,7 @@ export default async function OrdersPage(props: PageProps) {
       scrollable={false}
       pageTitle='Quản lý đơn hàng'
       pageDescription='Danh sách các đơn hàng trong hệ thống.'
+      pageHeaderAction={<SubmitManualOrderTrigger />}
     >
       <OrderListingPage />
     </PageContainer>

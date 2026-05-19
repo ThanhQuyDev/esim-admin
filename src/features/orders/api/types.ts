@@ -150,3 +150,45 @@ export type OrderRefundResponse = {
   createdByAdminId: number;
   createdAt: string;
 };
+
+// Resend eSIM email
+export type ResendEsimEmailSkipReason =
+  | 'buyer-has-no-email'
+  | 'no-order-items'
+  | 'no-esims-provisioned-yet';
+
+export type ResendEsimEmailResponse = {
+  sent: number;
+  skippedReason?: ResendEsimEmailSkipReason | null;
+};
+
+// Invoice
+export type InvoiceStatus = 'PENDING' | 'ISSUED' | 'FAILED';
+
+export type CreateInvoiceForOrderPayload = {
+  companyName: string;
+  taxCode: string;
+  address: string;
+  invoiceEmail: string;
+};
+
+export type Invoice = {
+  id: string;
+  status: InvoiceStatus;
+  companyName: string;
+  taxCode: string;
+  address: string;
+  invoiceEmail: string;
+  orderId: number;
+  order?: Order;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Manual order
+export type SubmitManualOrderPayload = {
+  email: string;
+  packageCode: string;
+  slug: string;
+  quantity: number;
+};

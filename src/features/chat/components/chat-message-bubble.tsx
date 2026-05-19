@@ -42,6 +42,50 @@ export function ChatMessageBubble({ message, isOwn, senderName }: ChatMessageBub
         >
           {senderName}
         </p>
+        {message.fileUrl && message.fileType?.startsWith('image/') && (
+          <a
+            href={message.fileUrl}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='mt-2 block overflow-hidden rounded-lg'
+            aria-label={`Mở hình ảnh ${message.fileName ?? ''}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={message.fileUrl}
+              alt={message.fileName ?? 'Hình ảnh đính kèm'}
+              className='max-h-64 w-auto max-w-full object-cover'
+              loading='lazy'
+            />
+          </a>
+        )}
+        {message.fileUrl && message.fileType?.startsWith('video/') && (
+          <video
+            src={message.fileUrl}
+            controls
+            preload='metadata'
+            className='mt-2 max-h-64 w-full rounded-lg'
+            aria-label={message.fileName ?? 'Video đính kèm'}
+          />
+        )}
+        {message.fileUrl &&
+          !message.fileType?.startsWith('image/') &&
+          !message.fileType?.startsWith('video/') && (
+            <a
+              href={message.fileUrl}
+              target='_blank'
+              rel='noopener noreferrer'
+              className={cn(
+                'mt-2 flex items-center gap-2 rounded-lg border px-2 py-1.5 text-xs underline-offset-2 hover:underline',
+                isOwn
+                  ? 'border-primary-foreground/30 text-primary-foreground'
+                  : 'border-border/60 text-foreground'
+              )}
+            >
+              <Icons.page className='h-4 w-4 shrink-0' />
+              <span className='truncate'>{message.fileName ?? 'Tệp đính kèm'}</span>
+            </a>
+          )}
         {message.message && (
           <p
             className={cn(

@@ -7,6 +7,14 @@ import {
   type ChatSocket
 } from '../api/socket';
 
+// File attachment metadata for the sendMessage event payload
+export interface ChatFileAttachment {
+  fileUrl: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+}
+
 // ─── Store Types ────────────────────────────────────────────────────────────
 
 interface UserInfo {
@@ -47,7 +55,7 @@ interface ChatState {
   disconnect: () => void;
   joinRoom: (userId?: number) => void;
   selectRoom: (roomId: number, userId: number) => void;
-  sendMessage: (text: string) => void;
+  sendMessage: (text: string, file?: ChatFileAttachment) => void;
   loadMoreMessages: () => void;
   markAsRead: () => void;
   fetchRooms: () => void;
@@ -274,17 +282,24 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     socket.emit('joinRoom', { userId });
   },
 
-  sendMessage: (text: string) => {
+  sendMessage: (text: string, file?: ChatFileAttachment) => {
     const state = get();
     const socket = state._socket;
     if (!socket?.connected || !state.selectedRoomId) return;
 
     const trimmed = text.trim();
-    if (!trimmed) return;
+    // Allow sending a file with no text, but require at least one of them
+    if (!trimmed && !file) return;
 
     socket.emit('sendMessage', {
       chatRoomId: state.selectedRoomId,
-      message: trimmed
+      message: trimmed,
+      ...(file && {
+        fileUrl: file.fileUrl,
+        fileName: file.fileName,
+        fileType: file.fileType,
+        fileSize: file.fileSize
+      })
     });
 
     set({ draft: '' });

@@ -22,6 +22,14 @@ export async function getSeoConfig(id: number): Promise<SeoConfig> {
   return apiClient<SeoConfig>(`/seo-configs/${id}`);
 }
 
+export async function getSeoConfigByUrl(url: string): Promise<SeoConfig | null> {
+  try {
+    return await apiClient<SeoConfig>(`/seo-configs/by-url?url=${encodeURIComponent(url)}`);
+  } catch {
+    return null;
+  }
+}
+
 export async function createSeoConfig(data: CreateSeoConfigPayload): Promise<SeoConfig> {
   return apiClient<SeoConfig>('/seo-configs', {
     method: 'POST',

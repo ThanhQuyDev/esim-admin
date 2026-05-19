@@ -11,6 +11,8 @@ import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { RefundOrderModal } from './refund-order-modal';
+import { ResendEsimEmailButton } from './resend-esim-email-button';
+import { CreateInvoiceDialog } from './create-invoice-dialog';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -175,6 +177,7 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
   const [refundOpen, setRefundOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
 
   const refundMutation = useMutation({
     ...refundOrderMutation,
@@ -187,7 +190,8 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
     }
   });
 
-  const canRefund = order.status === 'paid' || order.status === 'refunded';
+  const canRefund = order.status === 'paid';
+  const canResendEmail = order.status === 'paid';
 
   return (
     <div className='grid gap-6'>
@@ -200,6 +204,35 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         onSubmit={(data) => refundMutation.mutate({ id: order.id, data })}
         isSubmitting={refundMutation.isPending}
       />
+      <CreateInvoiceDialog
+        orderId={order.id}
+        orderNumber={order.orderNumber}
+        open={invoiceOpen}
+        onOpenChange={setInvoiceOpen}
+        defaultEmail={order.user?.email}
+      />
+
+      {/* Admin actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'>
+            <Icons.settings className='h-4 w-4' />
+            Thao tác quản trị
+          </CardTitle>
+        </CardHeader>
+        <CardContent className='flex flex-wrap gap-3'>
+          <ResendEsimEmailButton
+            orderId={order.id}
+            orderStatus={canResendEmail ? 'paid' : order.status}
+            size='sm'
+          />
+          <Button type='button' size='sm' variant='outline' onClick={() => setInvoiceOpen(true)}>
+            <Icons.fileTypePdf className='mr-2 h-4 w-4' />
+            Xuất hóa đơn
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Order Info */}
       <Card>
         <CardHeader>

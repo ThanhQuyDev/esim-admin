@@ -1,10 +1,15 @@
 import { apiClient } from '@/lib/api-client';
 import type {
+  CreateInvoiceForOrderPayload,
+  Invoice,
+  Order,
   OrderDetail,
   OrderFilters,
   OrdersResponse,
+  OrderRefundResponse,
   RefundOrderRequest,
-  OrderRefundResponse
+  ResendEsimEmailResponse,
+  SubmitManualOrderPayload
 } from './types';
 
 export async function getOrders(filters: OrderFilters): Promise<OrdersResponse> {
@@ -27,6 +32,29 @@ export async function refundOrder(
   data: RefundOrderRequest
 ): Promise<OrderRefundResponse> {
   return apiClient<OrderRefundResponse>(`/orders/${id}/refund`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function resendEsimEmail(orderId: number): Promise<ResendEsimEmailResponse> {
+  return apiClient<ResendEsimEmailResponse>(`/admin/orders/${orderId}/resend-esim-email`, {
+    method: 'POST'
+  });
+}
+
+export async function createInvoiceForOrder(
+  orderId: number,
+  data: CreateInvoiceForOrderPayload
+): Promise<Invoice> {
+  return apiClient<Invoice>(`/admin/orders/${orderId}/invoices`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function submitManualOrder(data: SubmitManualOrderPayload): Promise<Order> {
+  return apiClient<Order>('/admin/orders/submit-manual', {
     method: 'POST',
     body: JSON.stringify(data)
   });
