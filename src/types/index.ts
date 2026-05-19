@@ -20,6 +20,8 @@ export interface NavItem {
   isActive?: boolean;
   items?: NavItem[];
   access?: PermissionCheck;
+  /** Identifier for a live counter badge rendered next to the title (e.g. 'tickets-open'). */
+  badge?: string;
 }
 
 export interface NavGroup {

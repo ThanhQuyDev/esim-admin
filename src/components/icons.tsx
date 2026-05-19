@@ -145,7 +145,9 @@ import {
   IconAward,
   IconQuestionMark,
   IconDeviceSim,
-  IconWallet
+  IconWallet,
+  IconHeadset,
+  IconTicket
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -360,5 +362,9 @@ export const Icons = {
   order: IconShoppingCart,
 
   // Wallet
-  wallet: IconWallet
+  wallet: IconWallet,
+
+  // Support / Tickets
+  customerService: IconHeadset,
+  ticket: IconTicket
 };

@@ -34,6 +34,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '../icons';
+import { SidebarTicketsBadge } from '@/features/tickets/components/sidebar-tickets-badge';
+
+function NavBadge({ id }: { id: string }) {
+  if (id === 'tickets-open') return <SidebarTicketsBadge />;
+  return null;
+}
 
 export default function AppSidebar() {
   const pathname = usePathname();
@@ -117,6 +123,7 @@ export default function AppSidebar() {
                       <Link href={item.url}>
                         <Icon />
                         <span>{item.title}</span>
+                        {item.badge && <NavBadge id={item.badge} />}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

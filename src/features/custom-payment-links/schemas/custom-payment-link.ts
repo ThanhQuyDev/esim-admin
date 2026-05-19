@@ -1,14 +1,24 @@
 import * as z from 'zod';
 
+const numericString = z
+  .union([z.string(), z.number()])
+  .transform((v) => (typeof v === 'number' ? v : v.trim() === '' ? NaN : Number(v)));
+
 export const createCustomPaymentLinkSchema = z.object({
   customer_email: z.string().min(1, 'Email là bắt buộc').email('Email không hợp lệ'),
-  amount: z
-    .string()
-    .min(1, 'Số tiền là bắt buộc')
-    .refine((v) => Number.isInteger(Number(v)) && Number(v) > 0, {
-      message: 'Số tiền phải là số nguyên dương (VND)'
-    }),
+  amount: numericString.pipe(
+    z
+      .number({ message: 'Số tiền là bắt buộc' })
+      .int('Số tiền phải là số nguyên')
+      .positive('Số tiền phải lớn hơn 0')
+  ),
   description: z.string().min(1, 'Mô tả là bắt buộc').max(500, 'Mô tả tối đa 500 ký tự')
 });
 
-export type CreateCustomPaymentLinkFormValues = z.infer<typeof createCustomPaymentLinkSchema>;
+// Form input type — what defaultValues / FormTextField produce.
+// (z.infer would give the OUTPUT type after transform; we need the INPUT type.)
+export type CreateCustomPaymentLinkFormValues = {
+  customer_email: string;
+  amount: string | number;
+  description: string;
+};

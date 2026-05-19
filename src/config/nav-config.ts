@@ -53,6 +53,15 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Tickets',
+        url: '/dashboard/tickets',
+        icon: 'customerService',
+        shortcut: ['t', 't'],
+        isActive: false,
+        badge: 'tickets-open',
+        items: []
+      },
+      {
         title: 'Người dùng',
         url: '/dashboard/users',
         icon: 'teams',

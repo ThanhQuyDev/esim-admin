@@ -1,5 +1,9 @@
 import * as z from 'zod';
 
+const numericString = z
+  .union([z.string(), z.number()])
+  .transform((v) => (typeof v === 'number' ? v : v.trim() === '' ? NaN : Number(v)));
+
 export const createInvoiceSchema = z.object({
   companyName: z
     .string()
@@ -16,12 +20,18 @@ export const submitManualOrderSchema = z.object({
   email: z.string().min(1, 'Email là bắt buộc').email('Email không hợp lệ'),
   packageCode: z.string().min(1, 'Package code là bắt buộc'),
   slug: z.string().min(1, 'Slug là bắt buộc'),
-  quantity: z
-    .string()
-    .min(1, 'Số lượng là bắt buộc')
-    .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 1, {
-      message: 'Số lượng phải là số nguyên >= 1'
-    })
+  quantity: numericString.pipe(
+    z
+      .number({ message: 'Số lượng là bắt buộc' })
+      .int('Số lượng phải là số nguyên')
+      .min(1, 'Số lượng phải >= 1')
+  )
 });
 
-export type SubmitManualOrderFormValues = z.infer<typeof submitManualOrderSchema>;
+// Form input type — defaultValues / FormTextField produce string|number for numeric fields.
+export type SubmitManualOrderFormValues = {
+  email: string;
+  packageCode: string;
+  slug: string;
+  quantity: string | number;
+};

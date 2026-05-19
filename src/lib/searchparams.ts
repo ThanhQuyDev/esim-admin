@@ -15,7 +15,10 @@ export const searchParams = {
   category: parseAsString,
   role: parseAsString,
   isCheapest: parseAsArrayOf(parseAsString, ','),
-  sort: parseAsString
+  sort: parseAsString,
+  // tickets module
+  search: parseAsString,
+  status: parseAsString
   // advanced filter
   // filters: getFiltersStateParser().withDefault([]),
   // joinOperator: parseAsStringEnum(['and', 'or']).withDefault('and')
