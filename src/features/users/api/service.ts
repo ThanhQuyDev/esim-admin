@@ -28,7 +28,7 @@ export async function getUsers(filters: UserFilters): Promise<UsersResponse> {
   const merged: Record<string, unknown> = { ...(explicitFilters ?? {}) };
 
   if (filters.roleIds && filters.roleIds.length > 0) {
-    merged.roles = filters.roleIds.map((id) => ({ id: String(id) }));
+    merged.roles = filters.roleIds.map((id) => ({ id }));
   }
 
   if (Object.keys(merged).length > 0) {
