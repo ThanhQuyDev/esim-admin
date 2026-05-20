@@ -7,6 +7,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { usersQueryOptions } from '../../api/queries';
+import { roleIdsForTab, USER_TAB_DEFAULT, USER_TAB_VALUES } from '../user-tab-config';
 import { columns } from './columns';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
@@ -17,12 +18,18 @@ export function UsersTable() {
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
     role: parseAsString,
+    tab: parseAsString.withDefault(USER_TAB_DEFAULT),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
+
+  const tab = (USER_TAB_VALUES as readonly string[]).includes(params.tab)
+    ? (params.tab as (typeof USER_TAB_VALUES)[number])
+    : USER_TAB_DEFAULT;
 
   const filters = {
     page: params.page,
     limit: params.perPage,
+    roleIds: roleIdsForTab(tab),
     ...(params.sort.length > 0 && { sort: JSON.stringify(params.sort) })
   };
 

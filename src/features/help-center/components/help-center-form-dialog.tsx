@@ -12,7 +12,15 @@ import type {
   CreateHelpCenterPayload,
   UpdateHelpCenterPayload
 } from '../api/types';
-import { CATEGORY_OPTIONS, PARENT_OPTIONS, LANG_OPTIONS } from '../api/types';
+import {
+  getCategoryOptions,
+  getParentOptions,
+  getCategoryApiKey,
+  getParentApiKey,
+  getCategoryKeyFromLabel,
+  getParentKeyFromLabel,
+  LANG_OPTIONS
+} from '../api/types';
 import { toast } from 'sonner';
 import { helpCenterSchema, type HelpCenterFormValues } from '../schemas/help-center';
 
@@ -58,12 +66,13 @@ function CreateDialog({
     } as HelpCenterFormValues,
     validators: { onSubmit: helpCenterSchema },
     onSubmit: async ({ value }) => {
+      const lang = value.language || 'en';
       const payload: CreateHelpCenterPayload = {
         title: value.title,
         content: value.content,
         order: value.order ? Number(value.order) : 0,
-        category: value.category,
-        parent: value.parent,
+        category: getCategoryApiKey(value.category, lang),
+        parent: getParentApiKey(value.parent, lang),
         language: value.language || undefined
       };
       await mutation.mutateAsync(payload);
@@ -98,10 +107,24 @@ function CreateDialog({
             required
             placeholder='Nhập nội dung...'
           />
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-            <FormSelectField name='category' label='Danh mục' required options={CATEGORY_OPTIONS} />
-            <FormSelectField name='parent' label='Thư mục' required options={PARENT_OPTIONS} />
-          </div>
+          <form.Subscribe selector={(s) => s.values.language}>
+            {(language) => (
+              <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                <FormSelectField
+                  name='category'
+                  label='Danh mục'
+                  required
+                  options={getCategoryOptions(language)}
+                />
+                <FormSelectField
+                  name='parent'
+                  label='Thư mục'
+                  required
+                  options={getParentOptions(language)}
+                />
+              </div>
+            )}
+          </form.Subscribe>
           <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
             <FormSelectField name='language' label='Ngôn ngữ' options={LANG_OPTIONS} />
             <FormTextField name='order' label='Thứ tự' placeholder='0' />
@@ -135,18 +158,19 @@ function EditDialog({
       title: article.title,
       content: article.content,
       order: String(article.order ?? 0),
-      category: article.category,
-      parent: article.parent,
+      category: getCategoryKeyFromLabel(article.category) ?? 'getting_started',
+      parent: getParentKeyFromLabel(article.parent) ?? 'setting_up',
       language: (article.language as 'vi' | 'en') ?? 'en'
     } as HelpCenterFormValues,
     validators: { onSubmit: helpCenterSchema },
     onSubmit: async ({ value }) => {
+      const lang = value.language || 'en';
       const payload: UpdateHelpCenterPayload = {
         title: value.title,
         content: value.content,
         order: value.order ? Number(value.order) : undefined,
-        category: value.category,
-        parent: value.parent,
+        category: getCategoryApiKey(value.category, lang),
+        parent: getParentApiKey(value.parent, lang),
         language: value.language || undefined
       };
       await mutation.mutateAsync({ id: article.id, values: payload });
@@ -181,10 +205,24 @@ function EditDialog({
             required
             placeholder='Nhập nội dung...'
           />
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-            <FormSelectField name='category' label='Danh mục' required options={CATEGORY_OPTIONS} />
-            <FormSelectField name='parent' label='Thư mục' required options={PARENT_OPTIONS} />
-          </div>
+          <form.Subscribe selector={(s) => s.values.language}>
+            {(language) => (
+              <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                <FormSelectField
+                  name='category'
+                  label='Danh mục'
+                  required
+                  options={getCategoryOptions(language)}
+                />
+                <FormSelectField
+                  name='parent'
+                  label='Thư mục'
+                  required
+                  options={getParentOptions(language)}
+                />
+              </div>
+            )}
+          </form.Subscribe>
           <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
             <FormSelectField name='language' label='Ngôn ngữ' options={LANG_OPTIONS} />
             <FormTextField name='order' label='Thứ tự' placeholder='0' />

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { FieldLabel } from '@/components/ui/field';
 import { Icons } from '@/components/icons';
 import { useMutation } from '@tanstack/react-query';
 import { createPlanMutation, updatePlanMutation } from '../api/mutations';
@@ -12,10 +14,13 @@ import * as z from 'zod';
 import {
   createPlanSchema,
   updatePlanSchema,
+  PLAN_TAG_OPTIONS,
   type CreatePlanFormValues,
+  type PlanTag,
   type UpdatePlanFormValues
 } from '../schemas/plan';
 import { FormDialog } from '@/components/ui/form-dialog';
+import { cn } from '@/lib/utils';
 
 const PLAN_TYPE_OPTIONS = [
   { value: 'daily', label: 'Daily' },
@@ -28,6 +33,41 @@ const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'USD' },
   { value: 'EUR', label: 'EUR' }
 ];
+
+function TagsPicker({
+  value,
+  onChange
+}: {
+  value: PlanTag[];
+  onChange: (next: PlanTag[]) => void;
+}) {
+  const toggle = (tag: PlanTag) => {
+    onChange(value.includes(tag) ? value.filter((t) => t !== tag) : [...value, tag]);
+  };
+  return (
+    <div className='space-y-2'>
+      <FieldLabel>Tags</FieldLabel>
+      <div className='flex flex-wrap gap-2'>
+        {PLAN_TAG_OPTIONS.map((opt) => {
+          const selected = value.includes(opt.value);
+          return (
+            <Badge
+              key={opt.value}
+              variant={selected ? 'default' : 'outline'}
+              onClick={() => toggle(opt.value)}
+              className={cn(
+                'cursor-pointer select-none transition-colors',
+                !selected && 'hover:bg-muted'
+              )}
+            >
+              {opt.label}
+            </Badge>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 interface PlanFormDialogProps {
   plan?: Plan;
@@ -78,7 +118,8 @@ function CreateDialog({
       currency: 'USD',
       type: '',
       topUp: false,
-      isActive: true
+      isActive: true,
+      tags: [] as PlanTag[]
     } as CreatePlanFormValues,
     validators: {
       onSubmit: createPlanSchema
@@ -101,6 +142,7 @@ function CreateDialog({
         ...(value.retailPrice && { retailPrice: value.retailPrice }),
         ...(value.currency && { currency: value.currency }),
         ...(value.type && { type: value.type }),
+        ...(value.tags && value.tags.length > 0 && { tags: value.tags }),
         topUp: value.topUp ?? false,
         isActive: value.isActive ?? true
       };
@@ -183,6 +225,15 @@ function CreateDialog({
             />
           </div>
 
+          <form.AppField name='tags'>
+            {(field) => (
+              <TagsPicker
+                value={(field.state.value ?? []) as PlanTag[]}
+                onChange={(next) => field.handleChange(next)}
+              />
+            )}
+          </form.AppField>
+
           <div className='grid grid-cols-2 gap-4'>
             <FormSwitchField name='topUp' label='Top-Up' />
             <FormSwitchField name='isActive' label='Hoạt động' />
@@ -230,7 +281,8 @@ function EditDialog({
       currency: plan.currency ?? 'USD',
       type: plan.type ?? '',
       topUp: plan.topUp,
-      isActive: plan.isActive
+      isActive: plan.isActive,
+      tags: (plan.tags ?? []) as PlanTag[]
     } as UpdatePlanFormValues,
     validators: {
       onSubmit: updatePlanSchema
@@ -254,7 +306,8 @@ function EditDialog({
         currency: value.currency || undefined,
         type: value.type || undefined,
         topUp: value.topUp,
-        isActive: value.isActive
+        isActive: value.isActive,
+        tags: value.tags ?? []
       };
       await updateMut.mutateAsync({ id: plan.id, values: payload });
     }
@@ -331,6 +384,15 @@ function EditDialog({
             options={PLAN_TYPE_OPTIONS}
             placeholder='Chọn loại'
           />
+
+          <form.AppField name='tags'>
+            {(field) => (
+              <TagsPicker
+                value={(field.state.value ?? []) as PlanTag[]}
+                onChange={(next) => field.handleChange(next)}
+              />
+            )}
+          </form.AppField>
 
           <div className='grid grid-cols-2 gap-4'>
             <FormSwitchField name='topUp' label='Top-Up' />

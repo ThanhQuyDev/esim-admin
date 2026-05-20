@@ -29,6 +29,8 @@ export type Order = {
   vndCostPrice: number;
   walletSpentVndAmount: number | null;
   cashbackAmountVnd: number | null;
+  hasInvoice?: boolean;
+  totalQuantity?: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -49,6 +51,15 @@ export type OrderCoupon = {
   deletedAt: string | null;
 };
 
+export type PlanLocationInfo = {
+  type: 'DESTINATION' | 'REGION';
+  locationCode: string | null;
+  slug: string;
+  title: string | null;
+  titleVi: string | null;
+  thumbnailUrl: string | null;
+};
+
 export type OrderItemPlan = {
   id: number;
   name: string;
@@ -62,6 +73,7 @@ export type OrderItemPlan = {
   operatorName: string;
   countryCode: string;
   provider: string;
+  locationInfo?: PlanLocationInfo | null;
 };
 
 export type OrderItemEsim = {

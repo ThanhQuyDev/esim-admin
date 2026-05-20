@@ -9,14 +9,37 @@ export default function PlanListingPage() {
   const search = searchParamsCache.get('name');
   const provider = searchParamsCache.get('provider');
   const isCheapest = searchParamsCache.get('isCheapest');
+  const isActive = searchParamsCache.get('isActive');
+  const type = searchParamsCache.get('type');
+  const tags = searchParamsCache.get('tags');
+  const duration = searchParamsCache.get('duration');
+  const dataFilter = searchParamsCache.get('data');
   const pageLimit = searchParamsCache.get('perPage');
   const sort = searchParamsCache.get('sort');
 
   const apiFilters: Record<string, unknown> = {};
   if (search) apiFilters.search = search;
-  if (provider) apiFilters.provider = provider;
+  if (provider && provider.length > 0) {
+    apiFilters.provider = provider;
+  }
   if (isCheapest && isCheapest.length === 1) {
     apiFilters.isCheapest = isCheapest[0] === 'true';
+  }
+  if (isActive && isActive.length === 1) {
+    apiFilters.isActive = isActive[0] === 'true';
+  }
+  if (type && type.length > 0) {
+    apiFilters.type = type.length === 1 ? type[0] : type;
+  }
+  if (tags && tags.length > 0) {
+    apiFilters.tags = tags;
+  }
+  if (duration) {
+    const durationNum = Number(duration);
+    if (!isNaN(durationNum)) apiFilters.duration = durationNum;
+  }
+  if (dataFilter) {
+    apiFilters.data = dataFilter;
   }
 
   const filters = {

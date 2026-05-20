@@ -232,7 +232,10 @@ function CreateDestinationSheet({
       keySearch: '',
       isPopular: false,
       isActive: true,
-      description: ''
+      title: '',
+      titleVi: '',
+      description: '',
+      descriptionVi: ''
     } as CreateDestinationFormValues,
     validators: {
       onSubmit: createDestinationSchema
@@ -260,7 +263,10 @@ function CreateDestinationSheet({
           ...(value.keySearch && { keySearch: value.keySearch }),
           isPopular: value.isPopular ?? false,
           isActive: value.isActive ?? true,
-          ...(value.description && { description: value.description })
+          ...(value.title && { title: value.title }),
+          ...(value.titleVi && { titleVi: value.titleVi }),
+          ...(value.description && { description: value.description }),
+          ...(value.descriptionVi && { descriptionVi: value.descriptionVi })
         };
 
         await createMutation.mutateAsync(payload);
@@ -336,7 +342,27 @@ function CreateDestinationSheet({
                 <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
 
-              <FormTextareaField name='description' label='Mô tả' placeholder='Mô tả tùy chọn...' />
+              <FormTextField
+                name='title'
+                label='Title (EN) — SEO'
+                placeholder='eSIM Japan - Fast Mobile Data Plans'
+              />
+              <FormTextField
+                name='titleVi'
+                label='Title (VI) — SEO'
+                placeholder='eSIM Nhật Bản - Gói Data Tốc Độ Cao'
+              />
+
+              <FormTextareaField
+                name='description'
+                label='Mô tả (EN)'
+                placeholder='Mô tả tùy chọn...'
+              />
+              <FormTextareaField
+                name='descriptionVi'
+                label='Mô tả (VI)'
+                placeholder='Mô tả tiếng Việt...'
+              />
             </form.Form>
           </form.AppForm>
         </div>
@@ -386,7 +412,10 @@ function EditDestinationSheet({
       keySearch: destination.keySearch ?? '',
       isPopular: destination.isPopular,
       isActive: destination.isActive,
-      description: destination.description ?? ''
+      title: destination.title ?? '',
+      titleVi: destination.titleVi ?? '',
+      description: destination.description ?? '',
+      descriptionVi: destination.descriptionVi ?? ''
     } as UpdateDestinationFormValues,
     validators: {
       onSubmit: updateDestinationSchema
@@ -414,7 +443,10 @@ function EditDestinationSheet({
           keySearch: value.keySearch || undefined,
           isPopular: value.isPopular,
           isActive: value.isActive,
-          description: value.description || undefined
+          title: value.title || undefined,
+          titleVi: value.titleVi || undefined,
+          description: value.description || undefined,
+          descriptionVi: value.descriptionVi || undefined
         };
 
         await updateMutation.mutateAsync({
@@ -499,7 +531,27 @@ function EditDestinationSheet({
                 <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
 
-              <FormTextareaField name='description' label='Mô tả' placeholder='Mô tả tùy chọn...' />
+              <FormTextField
+                name='title'
+                label='Title (EN) — SEO'
+                placeholder='eSIM Japan - Fast Mobile Data Plans'
+              />
+              <FormTextField
+                name='titleVi'
+                label='Title (VI) — SEO'
+                placeholder='eSIM Nhật Bản - Gói Data Tốc Độ Cao'
+              />
+
+              <FormTextareaField
+                name='description'
+                label='Mô tả (EN)'
+                placeholder='Mô tả tùy chọn...'
+              />
+              <FormTextareaField
+                name='descriptionVi'
+                label='Mô tả (VI)'
+                placeholder='Mô tả tiếng Việt...'
+              />
             </form.Form>
           </form.AppForm>
         </div>

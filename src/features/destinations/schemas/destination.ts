@@ -11,6 +11,8 @@ export const createDestinationSchema = z.object({
   keySearch: z.string().optional(),
   isPopular: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  title: z.string().optional(),
+  titleVi: z.string().optional(),
   description: z.string().optional(),
   descriptionVi: z.string().optional(),
   providers: z.string().optional()
@@ -29,6 +31,8 @@ export const updateDestinationSchema = z.object({
   keySearch: z.string().optional(),
   isPopular: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  title: z.string().optional(),
+  titleVi: z.string().optional(),
   description: z.string().optional(),
   descriptionVi: z.string().optional(),
   providers: z.string().optional()

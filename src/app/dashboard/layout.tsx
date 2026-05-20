@@ -24,16 +24,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <KBar>
       <BreadcrumbProvider>
-        <SidebarProvider defaultOpen={defaultOpen}>
-          <AppSidebar />
-          <SidebarInset className='overflow-hidden'>
-            <Header />
-            {/* page main content */}
-            {children}
-            {/* page main content ends */}
-            <ScrollToTop />
-          </SidebarInset>
-        </SidebarProvider>
+        <InfobarProvider>
+          <SidebarProvider defaultOpen={defaultOpen}>
+            <AppSidebar />
+            <SidebarInset className='overflow-hidden'>
+              <Header />
+              {/* page main content */}
+              {children}
+              {/* page main content ends */}
+              <ScrollToTop />
+            </SidebarInset>
+          </SidebarProvider>
+        </InfobarProvider>
       </BreadcrumbProvider>
     </KBar>
   );

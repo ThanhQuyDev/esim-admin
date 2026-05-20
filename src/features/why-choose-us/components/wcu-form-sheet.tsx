@@ -16,15 +16,52 @@ import { createWcuMutation, updateWcuMutation } from '../api/mutations';
 import type { WhyChooseUs, CreateWhyChooseUsPayload, UpdateWhyChooseUsPayload } from '../api/types';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { wcuSchema, type WcuFormValues } from '../schemas/wcu';
+import {
+  wcuSchema,
+  WCU_TYPE_OPTIONS,
+  parseWcuTypeString,
+  serializeWcuType,
+  type WcuFormValues
+} from '../schemas/wcu';
 import { uploadToCloudinary } from '@/features/blogs/api/service';
 import { getFilePreviewUrl } from '@/features/landing-page/utils/file-preview';
 import { MinimalTiptapEditor } from '@/components/minimal-tiptap-editor';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const LANG_OPTIONS = [
   { value: 'vi', label: 'Vietnamese' },
   { value: 'en', label: 'English' }
 ];
+
+function TypesField({ value, onChange }: { value: string[]; onChange: (value: string[]) => void }) {
+  return (
+    <div className='space-y-2'>
+      <label className='text-sm font-medium'>Loại hiển thị</label>
+      <ToggleGroup
+        type='multiple'
+        variant='outline'
+        size='sm'
+        value={value}
+        onValueChange={onChange}
+        className='flex w-full flex-wrap justify-start gap-2'
+      >
+        {WCU_TYPE_OPTIONS.map((opt) => (
+          <ToggleGroupItem
+            key={opt.value}
+            value={opt.value}
+            aria-label={opt.label}
+            className='!rounded-md !border data-[state=on]:!border-primary data-[state=on]:!bg-primary/10 data-[state=on]:!text-primary'
+          >
+            {opt.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      <p className='text-muted-foreground text-xs'>
+        Có thể chọn nhiều, hoặc không chọn để hiển thị mặc định.
+      </p>
+    </div>
+  );
+}
 
 interface WcuFormSheetProps {
   item?: WhyChooseUs;
@@ -116,7 +153,8 @@ function CreateSheet({
       language: 'en',
       icon: '',
       sortOrder: '0',
-      isActive: true
+      isActive: true,
+      type: []
     } as WcuFormValues,
     validators: { onSubmit: wcuSchema },
     onSubmit: async ({ value }) => {
@@ -140,7 +178,8 @@ function CreateSheet({
         language: value.language,
         icon: icon || undefined,
         sortOrder: value.sortOrder ? Number(value.sortOrder) : 0,
-        isActive: value.isActive ?? true
+        isActive: value.isActive ?? true,
+        type: serializeWcuType(value.type)
       };
       await mutation.mutateAsync(payload);
     }
@@ -192,6 +231,14 @@ function CreateSheet({
                 <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
                 <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
+              <form.Field name='type'>
+                {(field) => (
+                  <TypesField
+                    value={(field.state.value as string[] | undefined) ?? []}
+                    onChange={(v) => field.handleChange(v as WcuFormValues['type'])}
+                  />
+                )}
+              </form.Field>
             </form.Form>
           </form.AppForm>
         </div>
@@ -237,7 +284,8 @@ function EditSheet({
       language: item.language as 'vi' | 'en',
       icon: item.icon ?? '',
       sortOrder: String(item.sortOrder ?? 0),
-      isActive: item.isActive
+      isActive: item.isActive,
+      type: parseWcuTypeString(item.type)
     } as WcuFormValues,
     validators: { onSubmit: wcuSchema },
     onSubmit: async ({ value }) => {
@@ -261,7 +309,8 @@ function EditSheet({
         language: value.language,
         icon: icon || undefined,
         sortOrder: value.sortOrder ? Number(value.sortOrder) : undefined,
-        isActive: value.isActive
+        isActive: value.isActive,
+        type: serializeWcuType(value.type) ?? ''
       };
       await mutation.mutateAsync({ id: item.id, values: payload });
     }
@@ -318,6 +367,14 @@ function EditSheet({
                 <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
                 <FormSwitchField name='isActive' label='Hoạt động' />
               </div>
+              <form.Field name='type'>
+                {(field) => (
+                  <TypesField
+                    value={(field.state.value as string[] | undefined) ?? []}
+                    onChange={(v) => field.handleChange(v as WcuFormValues['type'])}
+                  />
+                )}
+              </form.Field>
             </form.Form>
           </form.AppForm>
         </div>

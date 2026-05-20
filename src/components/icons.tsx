@@ -47,6 +47,7 @@ import {
   IconDeviceLaptop,
   IconDots,
   IconDotsVertical,
+  IconDownload,
   IconEdit,
   IconExternalLink,
   IconEye,
@@ -228,6 +229,7 @@ export const Icons = {
   // Actions
   add: IconPlus,
   copy: IconCopy,
+  download: IconDownload,
   edit: IconEdit,
   upload: IconUpload,
   share: IconShare,

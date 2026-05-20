@@ -85,27 +85,25 @@ export function FormDialog({
         {/* Divider */}
         <div className='h-px bg-gradient-to-r from-transparent via-border to-transparent' />
 
-        <DialogFooter className='px-8 py-5 bg-muted/20 backdrop-blur-sm'>
-          <div className='flex items-center justify-between w-full gap-3'>
-            <p className='text-xs text-muted-foreground/60'>
-              Tất cả các trường có dấu <span className='text-destructive'>*</span> là bắt buộc
-            </p>
-            <div className='flex gap-3'>
-              {extraActions}
-              <Button
-                type='button'
-                variant='outline'
-                onClick={handleCancel}
-                className='min-w-[100px]'
-                disabled={isLoading}
-              >
-                Hủy
-              </Button>
-              <Button type='submit' form={formId} isLoading={isLoading} className='min-w-[140px]'>
-                <Icons.check className='mr-2 h-4 w-4' /> {submitLabel}
-              </Button>
-            </div>
+        <DialogFooter className='flex-col items-stretch gap-3 px-8 py-5 bg-muted/20 backdrop-blur-sm sm:flex-col sm:space-x-0'>
+          <div className='flex flex-wrap items-center justify-end gap-3'>
+            {extraActions}
+            <Button
+              type='button'
+              variant='outline'
+              onClick={handleCancel}
+              className='min-w-[100px]'
+              disabled={isLoading}
+            >
+              Hủy
+            </Button>
+            <Button type='submit' form={formId} isLoading={isLoading} className='min-w-[140px]'>
+              <Icons.check className='mr-2 h-4 w-4' /> {submitLabel}
+            </Button>
           </div>
+          <p className='text-xs text-muted-foreground/60'>
+            Tất cả các trường có dấu <span className='text-destructive'>*</span> là bắt buộc
+          </p>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -7,12 +7,12 @@ import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { helpCenterQueryOptions } from '../../api/queries';
 import {
-  CATEGORY_OPTIONS,
-  PARENT_OPTIONS,
-  type HelpCenterCategory,
-  type HelpCenterParent
+  getCategoryOptions,
+  getParentOptions,
+  getCategoryApiKey,
+  getParentApiKey
 } from '../../api/types';
-import { columns } from './columns';
+import { buildColumns } from './columns';
 import {
   Select,
   SelectContent,
@@ -21,8 +21,6 @@ import {
   SelectValue
 } from '@/components/ui/select';
 
-const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
-
 export function HelpCenterTable() {
   const [params, setParams] = useQueryStates({
     page: parseAsInteger.withDefault(1),
@@ -30,22 +28,48 @@ export function HelpCenterTable() {
     name: parseAsString,
     category: parseAsString,
     parent: parseAsString,
-    sort: getSortingStateParser(columnIds).withDefault([])
+    language: parseAsString,
+    sort: getSortingStateParser(
+      // build a stable list of column ids regardless of language
+      buildColumns('en')
+        .map((c) => c.id)
+        .filter(Boolean) as string[]
+    ).withDefault([])
   });
 
+  const lang = params.language ?? 'en';
+  const categoryOptions = getCategoryOptions(lang);
+  const parentOptions = getParentOptions(lang);
   const filteredParentOptions = params.category
-    ? PARENT_OPTIONS.filter((p) => p.category === params.category)
-    : PARENT_OPTIONS;
+    ? parentOptions.filter((p) => p.category === params.category)
+    : parentOptions;
 
+  const isVi = lang === 'vi';
+  const t = {
+    allCategories: isVi ? 'Tất cả danh mục' : 'All categories',
+    allFolders: isVi ? 'Tất cả thư mục' : 'All folders',
+    filterCategory: isVi ? 'Lọc theo danh mục' : 'Filter by category',
+    filterFolder: isVi ? 'Lọc theo thư mục' : 'Filter by folder',
+    filterLanguage: isVi ? 'Ngôn ngữ' : 'Language',
+    languageAll: isVi ? 'Tất cả ngôn ngữ' : 'All languages',
+    vietnamese: isVi ? 'Tiếng Việt' : 'Vietnamese',
+    english: isVi ? 'Tiếng Anh' : 'English'
+  };
+
+  // URL params hold canonical ids (stable when the user toggles the filter
+  // language). Translate to the localized snake_case key the backend expects
+  // (e.g. category=bat_dau when lang=vi, category=getting_started when lang=en).
   const filters = {
     page: params.page,
     limit: params.perPage,
     ...(params.name && { search: params.name }),
-    ...(params.category && { category: params.category as HelpCenterCategory }),
-    ...(params.parent && { parent: params.parent as HelpCenterParent })
+    ...(params.category && { category: getCategoryApiKey(params.category, lang) }),
+    ...(params.parent && { parent: getParentApiKey(params.parent, lang) }),
+    ...(params.language && { language: params.language })
   };
   const { data } = useSuspenseQuery(helpCenterQueryOptions(filters));
   const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
+  const columns = buildColumns(lang);
   const { table } = useDataTable({
     data: data.data,
     columns,
@@ -58,17 +82,35 @@ export function HelpCenterTable() {
     <DataTable table={table}>
       <DataTableToolbar table={table}>
         <Select
-          value={params.category ?? ''}
+          value={params.language ?? 'all'}
           onValueChange={(val) =>
-            setParams({ category: val || null, parent: null, page: 1 }, { shallow: true })
+            setParams({ language: val === 'all' ? null : val, page: 1 }, { shallow: true })
+          }
+        >
+          <SelectTrigger className='h-8 w-[150px]'>
+            <SelectValue placeholder={t.filterLanguage} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>{t.languageAll}</SelectItem>
+            <SelectItem value='vi'>{t.vietnamese}</SelectItem>
+            <SelectItem value='en'>{t.english}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={params.category ?? 'all'}
+          onValueChange={(val) =>
+            setParams(
+              { category: val === 'all' ? null : val, parent: null, page: 1 },
+              { shallow: true }
+            )
           }
         >
           <SelectTrigger className='h-8 w-[180px]'>
-            <SelectValue placeholder='Lọc theo danh mục' />
+            <SelectValue placeholder={t.filterCategory} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value=''>Tất cả danh mục</SelectItem>
-            {CATEGORY_OPTIONS.map((opt) => (
+            <SelectItem value='all'>{t.allCategories}</SelectItem>
+            {categoryOptions.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
@@ -76,14 +118,16 @@ export function HelpCenterTable() {
           </SelectContent>
         </Select>
         <Select
-          value={params.parent ?? ''}
-          onValueChange={(val) => setParams({ parent: val || null, page: 1 }, { shallow: true })}
+          value={params.parent ?? 'all'}
+          onValueChange={(val) =>
+            setParams({ parent: val === 'all' ? null : val, page: 1 }, { shallow: true })
+          }
         >
           <SelectTrigger className='h-8 w-[180px]'>
-            <SelectValue placeholder='Lọc theo thư mục' />
+            <SelectValue placeholder={t.filterFolder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value=''>Tất cả thư mục</SelectItem>
+            <SelectItem value='all'>{t.allFolders}</SelectItem>
             {filteredParentOptions.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}

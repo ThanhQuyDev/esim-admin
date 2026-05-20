@@ -20,6 +20,7 @@ export type UserFilters = {
   limit?: number;
   filters?: string;
   sort?: string;
+  roleIds?: number[];
 };
 
 export type UsersResponse = {

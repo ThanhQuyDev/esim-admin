@@ -8,19 +8,27 @@ import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { ordersQueryOptions } from '../../api/queries';
 import { columns } from './columns';
+import { Input } from '@/components/ui/input';
+import { Icons } from '@/components/icons';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
 export function OrdersTable() {
-  const [params] = useQueryStates({
+  const [params, setParams] = useQueryStates({
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    iccid: parseAsString,
+    planName: parseAsString,
+    status: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
   const apiFilters: Record<string, unknown> = {};
   if (params.name) apiFilters.search = params.name;
+  if (params.iccid) apiFilters.iccid = params.iccid;
+  if (params.planName) apiFilters.planName = params.planName;
+  if (params.status) apiFilters.status = params.status;
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,
@@ -51,9 +59,33 @@ export function OrdersTable() {
   });
 
   return (
-    <DataTable table={table}>
-      <DataTableToolbar table={table} />
-    </DataTable>
+    <div className='space-y-4'>
+      {/* Advanced Filters */}
+      <div className='flex flex-wrap items-center gap-3'>
+        <div className='relative w-56'>
+          <Icons.search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
+          <Input
+            placeholder='Tìm theo ICCID...'
+            value={params.iccid ?? ''}
+            onChange={(e) => setParams({ iccid: e.target.value || null, page: 1 })}
+            className='pl-8'
+          />
+        </div>
+        <div className='relative w-56'>
+          <Icons.search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
+          <Input
+            placeholder='Tìm theo tên gói cước...'
+            value={params.planName ?? ''}
+            onChange={(e) => setParams({ planName: e.target.value || null, page: 1 })}
+            className='pl-8'
+          />
+        </div>
+      </div>
+
+      <DataTable table={table}>
+        <DataTableToolbar table={table} />
+      </DataTable>
+    </div>
   );
 }
 

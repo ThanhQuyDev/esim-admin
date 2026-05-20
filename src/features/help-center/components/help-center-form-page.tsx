@@ -1,21 +1,31 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createHelpCenterMutation, updateHelpCenterMutation } from '../api/mutations';
-import { createSeoConfig } from '@/features/seo-configs/api/service';
+import { uploadToCloudinary } from '@/features/blogs/api/service';
+import { createSeoConfig, updateSeoConfig } from '@/features/seo-configs/api/service';
+import { seoConfigByUrlQueryOptions } from '@/features/seo-configs/api/queries';
 import type {
   HelpCenterArticle,
   CreateHelpCenterPayload,
   UpdateHelpCenterPayload
 } from '../api/types';
-import { CATEGORY_OPTIONS, PARENT_OPTIONS, LANG_OPTIONS } from '../api/types';
+import {
+  getCategoryOptions,
+  getParentOptions,
+  getCategoryApiKey,
+  getParentApiKey,
+  getCategoryKeyFromLabel,
+  getParentKeyFromLabel,
+  LANG_OPTIONS
+} from '../api/types';
 import { toast } from 'sonner';
 import { helpCenterSchema, type HelpCenterFormValues } from '../schemas/help-center';
 import { TiptapEditor } from '@/components/tiptap-editor';
@@ -36,24 +46,59 @@ function generateSlug(title: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
+/** Build the canonical SEO URL for a help-center article. */
+function buildHelpCenterSeoUrl(args: {
+  language?: string | null;
+  category: string;
+  parent: string;
+  slug?: string | null;
+}): string {
+  const locale = args.language || 'en';
+  const categorySlug = getCategoryApiKey(args.category, locale).replace(/_/g, '-');
+  const parentSlug = getParentApiKey(args.parent, locale).replace(/_/g, '-');
+  const cleanSlug = (args.slug ?? '').replace(/^\/+|\/+$/g, '');
+  return `/${locale}/help-center/${categorySlug}/${parentSlug}/${cleanSlug}`;
+}
+
 export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
   const router = useRouter();
   const contentRef = useRef(article?.content ?? '');
   const isEdit = !!article;
 
+  // Look up an existing SEO config for this article (edit mode only).
+  // Fall back to a slug derived from the title so we still query when the
+  // backend stored the article without a slug field.
+  const seoUrlForLookup = article
+    ? buildHelpCenterSeoUrl({
+        language: article.language,
+        category: article.category,
+        parent: article.parent,
+        slug: article.slug || generateSlug(article.title)
+      })
+    : '';
+  const { data: existingSeo } = useQuery(seoConfigByUrlQueryOptions(seoUrlForLookup));
+
   const syncSeoConfig = async (value: HelpCenterFormValues, slug: string) => {
+    if (!value.seoTitle && !value.seoDescription && !value.seoKeywords) return;
     try {
-      const locale = value.language || 'en';
-      const categorySlug = value.category.replace(/_/g, '-');
-      const parentSlug = value.parent.replace(/_/g, '-');
-      const seoUrl = `/${locale}/help-center/${categorySlug}/${parentSlug}/${slug}`;
-      await createSeoConfig({
+      const seoUrl = buildHelpCenterSeoUrl({
+        language: value.language,
+        category: value.category,
+        parent: value.parent,
+        slug
+      });
+      const seoPayload = {
         url: seoUrl,
         metaTitle: value.seoTitle || value.title,
         metaDescription: value.seoDescription || '',
         metaKeywords: value.seoKeywords || '',
         isActive: true
-      });
+      };
+      if (existingSeo?.id) {
+        await updateSeoConfig(existingSeo.id, seoPayload);
+      } else {
+        await createSeoConfig(seoPayload);
+      }
     } catch {
       // SEO sync is best-effort, don't block the main save
     }
@@ -82,8 +127,10 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
       title: article?.title ?? '',
       content: article?.content ?? '',
       order: String(article?.order ?? 0),
-      category: article?.category ?? 'getting_started',
-      parent: article?.parent ?? 'setting_up',
+      category: article
+        ? (getCategoryKeyFromLabel(article.category) ?? 'getting_started')
+        : 'getting_started',
+      parent: article ? (getParentKeyFromLabel(article.parent) ?? 'setting_up') : 'setting_up',
       language: (article?.language as 'vi' | 'en') ?? 'en',
       slug: article?.slug ?? '',
       isPublished: article?.isPublished ?? false,
@@ -94,13 +141,16 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
     validators: { onSubmit: helpCenterSchema },
     onSubmit: async ({ value }) => {
       const slug = value.slug || generateSlug(value.title);
+      const lang = value.language || 'en';
+      const apiCategory = getCategoryApiKey(value.category, lang);
+      const apiParent = getParentApiKey(value.parent, lang);
       if (isEdit) {
         const payload: UpdateHelpCenterPayload = {
           title: value.title,
           content: contentRef.current || value.content,
           order: value.order ? Number(value.order) : undefined,
-          category: value.category,
-          parent: value.parent,
+          category: apiCategory,
+          parent: apiParent,
           language: value.language || undefined,
           slug,
           isPublished: value.isPublished,
@@ -115,8 +165,8 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
           title: value.title,
           content: contentRef.current || value.content,
           order: value.order ? Number(value.order) : 0,
-          category: value.category,
-          parent: value.parent,
+          category: apiCategory,
+          parent: apiParent,
           language: value.language || undefined,
           slug,
           isPublished: value.isPublished,
@@ -133,6 +183,17 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
   const { FormTextField, FormSelectField, FormCheckboxField } =
     useFormFields<HelpCenterFormValues>();
   const isPending = createMut.isPending || updateMut.isPending;
+
+  // Hydrate SEO fields from the looked-up SEO config when editing.
+  // The SEO config record is the source of truth, so it overwrites the
+  // article-level seo* fields whenever a matching record is found.
+  useEffect(() => {
+    if (!existingSeo) return;
+    form.setFieldValue('seoTitle', existingSeo.metaTitle ?? '');
+    form.setFieldValue('seoDescription', existingSeo.metaDescription ?? '');
+    form.setFieldValue('seoKeywords', existingSeo.metaKeywords ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingSeo?.id]);
 
   return (
     <div className='mx-auto w-full max-w-5xl space-y-6'>
@@ -153,15 +214,24 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
                 label='Slug (URL)'
                 placeholder='Tự động tạo từ tiêu đề nếu để trống'
               />
-              <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                <FormSelectField
-                  name='category'
-                  label='Danh mục'
-                  required
-                  options={CATEGORY_OPTIONS}
-                />
-                <FormSelectField name='parent' label='Thư mục' required options={PARENT_OPTIONS} />
-              </div>
+              <form.Subscribe selector={(s) => s.values.language}>
+                {(language) => (
+                  <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                    <FormSelectField
+                      name='category'
+                      label='Danh mục'
+                      required
+                      options={getCategoryOptions(language)}
+                    />
+                    <FormSelectField
+                      name='parent'
+                      label='Thư mục'
+                      required
+                      options={getParentOptions(language)}
+                    />
+                  </div>
+                )}
+              </form.Subscribe>
               <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                 <FormSelectField name='language' label='Ngôn ngữ' options={LANG_OPTIONS} />
                 <FormTextField name='order' label='Thứ tự' placeholder='0' />
@@ -194,6 +264,7 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
                     form.setFieldValue('content', html);
                   }}
                   placeholder='Viết nội dung bài viết...'
+                  onImageUpload={uploadToCloudinary}
                 />
               </div>
             </CardContent>

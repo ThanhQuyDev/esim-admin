@@ -18,6 +18,8 @@ export type Region = {
   iconUrl: string | null;
   isPopular: boolean;
   isActive: boolean;
+  title: string | null;
+  titleVi: string | null;
   description: string | null;
   descriptionVi: string | null;
   providers: string | null;
@@ -46,6 +48,8 @@ export type CreateRegionPayload = {
   iconUrl?: string | null;
   isPopular?: boolean;
   isActive?: boolean;
+  title?: string | null;
+  titleVi?: string | null;
   description?: string | null;
   descriptionVi?: string | null;
   providers?: string | null;
@@ -59,6 +63,8 @@ export type UpdateRegionPayload = {
   iconUrl?: string | null;
   isPopular?: boolean;
   isActive?: boolean;
+  title?: string | null;
+  titleVi?: string | null;
   description?: string | null;
   descriptionVi?: string | null;
   providers?: string | null;

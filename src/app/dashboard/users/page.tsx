@@ -1,5 +1,6 @@
 import PageContainer from '@/components/layout/page-container';
 import UserListingPage from '@/features/users/components/user-listing';
+import { UsersTabs } from '@/features/users/components/users-tabs';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 import { usersInfoContent } from '@/features/users/info-content';
@@ -24,7 +25,10 @@ export default async function UsersPage(props: PageProps) {
       infoContent={usersInfoContent}
       pageHeaderAction={<UserFormDialogTrigger />}
     >
-      <UserListingPage />
+      <div className='flex flex-1 flex-col gap-4'>
+        <UsersTabs />
+        <UserListingPage />
+      </div>
     </PageContainer>
   );
 }

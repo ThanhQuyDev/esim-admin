@@ -119,7 +119,9 @@ function CreateRegionSheet({
       name: '',
       slug: '',
       isPopular: false,
-      isActive: true
+      isActive: true,
+      title: '',
+      titleVi: ''
     } as CreateRegionFormValues,
     validators: {
       onSubmit: createRegionSchema
@@ -138,7 +140,9 @@ function CreateRegionSheet({
           ...(value.slug && { slug: value.slug }),
           ...(avatarUrl && { avatarUrl }),
           isPopular: value.isPopular ?? false,
-          isActive: value.isActive ?? true
+          isActive: value.isActive ?? true,
+          ...(value.title && { title: value.title }),
+          ...(value.titleVi && { titleVi: value.titleVi })
         };
 
         await createMutation.mutateAsync(payload);
@@ -181,6 +185,17 @@ function CreateRegionSheet({
                 label='Ảnh đại diện'
                 onFileSelect={setAvatarFile}
                 file={avatarFile}
+              />
+
+              <FormTextField
+                name='title'
+                label='Title (EN) — SEO'
+                placeholder='eSIM Europe - Multi-Country Data Plans'
+              />
+              <FormTextField
+                name='titleVi'
+                label='Title (VI) — SEO'
+                placeholder='eSIM Châu Âu - Gói Data Đa Quốc Gia'
               />
 
               <div className='grid grid-cols-2 gap-4'>
@@ -230,7 +245,9 @@ function EditRegionSheet({
       name: region.name,
       slug: region.slug ?? '',
       isPopular: region.isPopular,
-      isActive: region.isActive
+      isActive: region.isActive,
+      title: region.title ?? '',
+      titleVi: region.titleVi ?? ''
     } as UpdateRegionFormValues,
     validators: {
       onSubmit: updateRegionSchema
@@ -249,7 +266,9 @@ function EditRegionSheet({
           slug: value.slug || undefined,
           ...(avatarUrl && { avatarUrl }),
           isPopular: value.isPopular,
-          isActive: value.isActive
+          isActive: value.isActive,
+          ...(value.title && { title: value.title }),
+          ...(value.titleVi && { titleVi: value.titleVi })
         };
 
         await updateMutation.mutateAsync({
@@ -296,6 +315,17 @@ function EditRegionSheet({
                 currentUrl={region.avatarUrl}
                 onFileSelect={setAvatarFile}
                 file={avatarFile}
+              />
+
+              <FormTextField
+                name='title'
+                label='Title (EN) — SEO'
+                placeholder='eSIM Europe - Multi-Country Data Plans'
+              />
+              <FormTextField
+                name='titleVi'
+                label='Title (VI) — SEO'
+                placeholder='eSIM Châu Âu - Gói Data Đa Quốc Gia'
               />
 
               <div className='grid grid-cols-2 gap-4'>

@@ -1,3 +1,5 @@
+export type WhyChooseUsType = 'trang_chu' | 'quoc_gia' | 'khu_vuc';
+
 export type WhyChooseUs = {
   id: number;
   language: string;
@@ -6,6 +8,8 @@ export type WhyChooseUs = {
   icon: string;
   description: string;
   title: string;
+  /** Comma-separated list of types, e.g. "trang_chu,quoc_gia" */
+  type?: string;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -26,5 +30,7 @@ export type CreateWhyChooseUsPayload = {
   icon?: string;
   description: string;
   title: string;
+  /** Comma-separated list of types, e.g. "trang_chu,quoc_gia". Empty/undefined when no type selected. */
+  type?: string;
 };
 export type UpdateWhyChooseUsPayload = Partial<CreateWhyChooseUsPayload>;

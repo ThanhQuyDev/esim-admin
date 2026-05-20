@@ -10,6 +10,9 @@ import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 import { formatDataSize } from '@/lib/format';
+import { PLAN_TAG_OPTIONS } from '../../schemas/plan';
+
+const PLAN_TAG_LABEL_MAP = new Map<string, string>(PLAN_TAG_OPTIONS.map((o) => [o.value, o.label]));
 
 function CopyIdButton({ value }: { value: string }) {
   const [copied, setCopied] = React.useState(false);
@@ -181,7 +184,14 @@ export const columns: ColumnDef<Plan>[] = [
     header: ({ column }: { column: Column<Plan, unknown> }) => (
       <DataTableColumnHeader column={column} title='Thời hạn' />
     ),
-    cell: ({ row }) => <span>{row.original.durationDays} ngày</span>
+    cell: ({ row }) => <span>{row.original.durationDays} ngày</span>,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Thời hạn',
+      placeholder: 'Số ngày...',
+      variant: 'number' as const,
+      unit: 'ngày'
+    }
   },
   {
     id: 'data',
@@ -191,7 +201,13 @@ export const columns: ColumnDef<Plan>[] = [
       const mb = row.original.dataMb;
       return <span>{formatDataSize(mb)}</span>;
     },
-    enableSorting: false
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Dữ liệu',
+      placeholder: 'VD: 1GB, 50GB...',
+      variant: 'text' as const
+    }
   },
   {
     id: 'sms',
@@ -235,6 +251,31 @@ export const columns: ColumnDef<Plan>[] = [
     enableSorting: false
   },
   {
+    id: 'tags',
+    accessorKey: 'tags',
+    header: 'Tags',
+    cell: ({ row }) => {
+      const tags = row.original.tags;
+      if (!tags || tags.length === 0) return <span className='text-muted-foreground'>—</span>;
+      return (
+        <div className='flex flex-wrap gap-1'>
+          {tags.map((tag) => (
+            <Badge key={tag} variant='secondary' className='capitalize'>
+              {PLAN_TAG_LABEL_MAP.get(tag) ?? tag}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Tags',
+      variant: 'multiSelect' as const,
+      options: PLAN_TAG_OPTIONS
+    }
+  },
+  {
     id: 'topUp',
     accessorKey: 'topUp',
     header: 'Top-Up',
@@ -266,15 +307,46 @@ export const columns: ColumnDef<Plan>[] = [
     }
   },
   {
+    id: 'type',
+    accessorKey: 'type',
+    header: 'Loại gói',
+    cell: ({ row }) => (
+      <Badge variant='outline' className='capitalize'>
+        {row.original.type || '—'}
+      </Badge>
+    ),
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Loại gói',
+      variant: 'multiSelect' as const,
+      options: [
+        { value: 'fixed', label: 'Cố định' },
+        { value: 'unlimited', label: 'Không giới hạn' },
+        { value: 'unlimited-reduce', label: 'Không giới hạn tốc độ thấp' },
+        { value: 'daily', label: 'Theo ngày' }
+      ]
+    }
+  },
+  {
     id: 'isActive',
-    accessorKey: 'isActive',
+    accessorFn: (row) => (row.isActive ? 'true' : 'false'),
     header: 'Hoạt động',
     cell: ({ row }) => (
       <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
         {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
-    enableSorting: false
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Hoạt động',
+      variant: 'multiSelect' as const,
+      options: [
+        { value: 'true', label: 'Hoạt động' },
+        { value: 'false', label: 'Không hoạt động' }
+      ]
+    }
   },
   {
     id: 'actions',

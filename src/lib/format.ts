@@ -47,3 +47,21 @@ export function formatPercent(value: number | undefined, maximumFractionDigits =
     minimumFractionDigits: 0
   }).format(value ?? 0)}%`;
 }
+
+/**
+ * Format a 2-letter country code (ISO 3166-1 alpha-2) to "Country Name (CODE)".
+ * Falls back to just the code if the locale data is unavailable.
+ * @example formatCountry('VN') => 'Việt Nam (VN)'
+ */
+export function formatCountry(code: string | undefined | null, locale = 'vi'): string {
+  if (!code) return '';
+  const upper = code.trim().toUpperCase();
+  if (upper.length !== 2) return upper;
+  try {
+    const displayNames = new Intl.DisplayNames([locale], { type: 'region' });
+    const name = displayNames.of(upper);
+    return name && name !== upper ? `${name} (${upper})` : upper;
+  } catch {
+    return upper;
+  }
+}

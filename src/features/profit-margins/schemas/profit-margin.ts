@@ -1,10 +1,24 @@
 import * as z from 'zod';
 
+/**
+ * Numeric field that accepts both strings (default values, empty input) and
+ * numbers (TextField with type="number" emits parseFloat on change).
+ * Validates that the value is non-empty and a valid finite number.
+ */
+const numericField = (message: string) =>
+  z.union([z.string(), z.number()]).refine(
+    (v) => {
+      if (typeof v === 'number') return Number.isFinite(v);
+      return v.trim().length > 0 && Number.isFinite(Number(v));
+    },
+    { message }
+  );
+
 export const profitMarginTierSchema = z
   .object({
-    minVnd: z.string().min(1, 'Min price is required'),
-    maxVnd: z.string().min(1, 'Max price is required'),
-    percentage: z.string().min(1, 'Percentage is required'),
+    minVnd: numericField('Min price is required'),
+    maxVnd: numericField('Max price is required'),
+    percentage: numericField('Percentage is required'),
     isActive: z.boolean()
   })
   .refine(

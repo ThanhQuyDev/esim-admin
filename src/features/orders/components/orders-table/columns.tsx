@@ -44,7 +44,19 @@ export const columns: ColumnDef<Order>[] = [
       <DataTableColumnHeader column={column} title='Mã đơn hàng' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-xs font-medium'>{row.original.orderNumber}</span>
+      <div className='flex items-center gap-1.5'>
+        <span className='font-mono text-xs font-medium'>{row.original.orderNumber}</span>
+        {row.original.hasInvoice && (
+          <Badge variant='destructive' className='px-1 py-0 text-[10px]'>
+            VAT
+          </Badge>
+        )}
+        {(row.original.totalQuantity ?? 0) > 1 && (
+          <Badge variant='secondary' className='px-1 py-0 text-[10px]'>
+            x{row.original.totalQuantity}
+          </Badge>
+        )}
+      </div>
     ),
     meta: {
       label: 'Mã đơn hàng',
@@ -63,10 +75,10 @@ export const columns: ColumnDef<Order>[] = [
       if (!user) return '—';
       return (
         <div className='flex flex-col'>
-          <span className='text-sm font-medium'>
+          <span className='text-sm font-medium'>{user.email}</span>
+          <span className='text-muted-foreground text-xs'>
             {user.firstName} {user.lastName}
           </span>
-          <span className='text-muted-foreground text-xs'>{user.email}</span>
         </div>
       );
     },

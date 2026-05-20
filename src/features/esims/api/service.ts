@@ -65,3 +65,33 @@ export async function importEsimsExcel(
 
   return res.json();
 }
+
+export async function exportEsimsExcel(filters: EsimFilters): Promise<void> {
+  const params = new URLSearchParams();
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.filters) params.set('filters', filters.filters);
+  if (filters.sort) params.set('sort', filters.sort);
+
+  const query = params.toString();
+  const url = `/api/esims/export-excel${query ? `?${query}` : ''}`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Export failed: ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition');
+  const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
+  const filename = filenameMatch?.[1] || 'esims-export.xlsx';
+
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}

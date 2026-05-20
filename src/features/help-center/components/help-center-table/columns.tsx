@@ -2,64 +2,84 @@
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { HelpCenterArticle } from '../../api/types';
-import { CATEGORY_OPTIONS, PARENT_OPTIONS } from '../../api/types';
+import { getCategoryLabel, getParentLabel } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 
-const categoryLabel = (val: string) => CATEGORY_OPTIONS.find((o) => o.value === val)?.label ?? val;
-const parentLabel = (val: string) => PARENT_OPTIONS.find((o) => o.value === val)?.label ?? val;
+export function buildColumns(lang: string): ColumnDef<HelpCenterArticle>[] {
+  const isVi = lang === 'vi';
+  const t = {
+    title: isVi ? 'Tiêu đề' : 'Title',
+    titleSearch: isVi ? 'Tìm kiếm tiêu đề...' : 'Search title...',
+    category: isVi ? 'Danh mục' : 'Category',
+    folder: isVi ? 'Thư mục' : 'Folder',
+    language: isVi ? 'Ngôn ngữ' : 'Language',
+    order: isVi ? 'Thứ tự' : 'Order'
+  };
 
-export const columns: ColumnDef<HelpCenterArticle>[] = [
-  {
-    id: 'name',
-    accessorKey: 'title',
-    header: ({ column }: { column: Column<HelpCenterArticle, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Tiêu đề' />
-    ),
-    cell: ({ row }) => (
-      <span className='line-clamp-2 max-w-sm font-medium'>{row.original.title}</span>
-    ),
-    meta: {
-      label: 'Tiêu đề',
-      placeholder: 'Tìm kiếm tiêu đề...',
-      variant: 'text' as const,
-      icon: Icons.text
-    },
-    enableColumnFilter: true
-  },
-  {
-    id: 'category',
-    accessorKey: 'category',
-    header: 'Danh mục',
-    cell: ({ row }) => <Badge variant='outline'>{categoryLabel(row.original.category)}</Badge>,
-    enableSorting: false
-  },
-  {
-    id: 'parent',
-    accessorKey: 'parent',
-    header: 'Thư mục',
-    cell: ({ row }) => <Badge variant='secondary'>{parentLabel(row.original.parent)}</Badge>,
-    enableSorting: false
-  },
-  {
-    id: 'language',
-    accessorKey: 'language',
-    header: 'Ngôn ngữ',
-    cell: ({ row }) =>
-      row.original.language ? (
-        <Badge variant='outline'>{row.original.language.toUpperCase()}</Badge>
-      ) : (
-        <span className='text-muted-foreground/50 text-sm'>—</span>
+  return [
+    {
+      id: 'name',
+      accessorKey: 'title',
+      header: ({ column }: { column: Column<HelpCenterArticle, unknown> }) => (
+        <DataTableColumnHeader column={column} title={t.title} />
       ),
-    enableSorting: false
-  },
-  {
-    id: 'order',
-    accessorKey: 'order',
-    header: ({ column }: { column: Column<HelpCenterArticle, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Thứ tự' />
-    )
-  },
-  { id: 'actions', cell: ({ row }) => <CellAction data={row.original} /> }
-];
+      cell: ({ row }) => (
+        <span className='line-clamp-2 max-w-sm font-medium'>{row.original.title}</span>
+      ),
+      meta: {
+        label: t.title,
+        placeholder: t.titleSearch,
+        variant: 'text' as const,
+        icon: Icons.text
+      },
+      enableColumnFilter: true
+    },
+    {
+      id: 'category',
+      accessorKey: 'category',
+      header: t.category,
+      cell: ({ row }) => (
+        <Badge variant='outline'>
+          {getCategoryLabel(row.original.category, row.original.language ?? lang)}
+        </Badge>
+      ),
+      enableSorting: false
+    },
+    {
+      id: 'parent',
+      accessorKey: 'parent',
+      header: t.folder,
+      cell: ({ row }) => (
+        <Badge variant='secondary'>
+          {getParentLabel(row.original.parent, row.original.language ?? lang)}
+        </Badge>
+      ),
+      enableSorting: false
+    },
+    {
+      id: 'language',
+      accessorKey: 'language',
+      header: t.language,
+      cell: ({ row }) =>
+        row.original.language ? (
+          <Badge variant='outline'>{row.original.language.toUpperCase()}</Badge>
+        ) : (
+          <span className='text-muted-foreground/50 text-sm'>—</span>
+        ),
+      enableSorting: false
+    },
+    {
+      id: 'order',
+      accessorKey: 'order',
+      header: ({ column }: { column: Column<HelpCenterArticle, unknown> }) => (
+        <DataTableColumnHeader column={column} title={t.order} />
+      )
+    },
+    { id: 'actions', cell: ({ row }) => <CellAction data={row.original} /> }
+  ];
+}
+
+// Backwards-compatible export (English defaults)
+export const columns = buildColumns('en');

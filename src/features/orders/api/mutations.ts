@@ -1,9 +1,16 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { createInvoiceForOrder, refundOrder, resendEsimEmail, submitManualOrder } from './service';
+import {
+  createInvoiceForOrder,
+  refundOrder,
+  resendEsimEmail,
+  submitManualOrder,
+  updateInvoiceStatus
+} from './service';
 import { orderKeys } from './queries';
 import type {
   CreateInvoiceForOrderPayload,
+  InvoiceStatus,
   RefundOrderRequest,
   SubmitManualOrderPayload
 } from './types';
@@ -29,5 +36,11 @@ export const createInvoiceForOrderMutation = mutationOptions({
 
 export const submitManualOrderMutation = mutationOptions({
   mutationFn: (data: SubmitManualOrderPayload) => submitManualOrder(data),
+  onSettled: invalidateOrders
+});
+
+export const updateInvoiceStatusMutation = mutationOptions({
+  mutationFn: ({ invoiceId, status }: { invoiceId: string; status: InvoiceStatus }) =>
+    updateInvoiceStatus(invoiceId, status),
   onSettled: invalidateOrders
 });

@@ -9,6 +9,8 @@ export type Destination = {
   keySearch: string | null;
   isPopular: boolean;
   isActive: boolean;
+  title: string | null;
+  titleVi: string | null;
   description: string | null;
   descriptionVi: string | null;
   providers: string | null;
@@ -40,6 +42,8 @@ export type CreateDestinationPayload = {
   keySearch?: string | null;
   isPopular?: boolean;
   isActive?: boolean;
+  title?: string | null;
+  titleVi?: string | null;
   description?: string | null;
   descriptionVi?: string | null;
   providers?: string | null;
@@ -55,6 +59,8 @@ export type UpdateDestinationPayload = {
   keySearch?: string | null;
   isPopular?: boolean;
   isActive?: boolean;
+  title?: string | null;
+  titleVi?: string | null;
   description?: string | null;
   descriptionVi?: string | null;
   providers?: string | null;

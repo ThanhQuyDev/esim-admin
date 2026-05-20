@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api-client';
 import type {
   CreateInvoiceForOrderPayload,
   Invoice,
+  InvoiceStatus,
   Order,
   OrderDetail,
   OrderFilters,
@@ -57,5 +58,15 @@ export async function submitManualOrder(data: SubmitManualOrderPayload): Promise
   return apiClient<Order>('/admin/orders/submit-manual', {
     method: 'POST',
     body: JSON.stringify(data)
+  });
+}
+
+export async function updateInvoiceStatus(
+  invoiceId: string,
+  status: 'PENDING' | 'ISSUED' | 'FAILED'
+): Promise<Invoice> {
+  return apiClient<Invoice>(`/invoices/${invoiceId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status })
   });
 }

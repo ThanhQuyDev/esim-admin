@@ -6,6 +6,11 @@ import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 import { getFilePreviewUrl } from '@/features/landing-page/utils/file-preview';
+import { WCU_TYPE_OPTIONS } from '../../schemas/wcu';
+
+const TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  WCU_TYPE_OPTIONS.map((o) => [o.value, o.label])
+);
 
 export const columns: ColumnDef<WhyChooseUs>[] = [
   {
@@ -59,6 +64,31 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
     accessorKey: 'language',
     header: 'Ngôn ngữ',
     cell: ({ row }) => <Badge variant='outline'>{row.original.language.toUpperCase()}</Badge>,
+    enableSorting: false
+  },
+  {
+    id: 'type',
+    accessorKey: 'type',
+    header: 'Loại',
+    cell: ({ row }) => {
+      const raw = row.original.type ?? '';
+      const types = raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (types.length === 0) {
+        return <span className='text-muted-foreground text-xs'>—</span>;
+      }
+      return (
+        <div className='flex flex-wrap gap-1'>
+          {types.map((t) => (
+            <Badge key={t} variant='secondary' className='text-xs'>
+              {TYPE_LABELS[t] ?? t}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
     enableSorting: false
   },
   {

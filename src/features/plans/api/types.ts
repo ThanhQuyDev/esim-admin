@@ -25,6 +25,7 @@ export type Plan = {
   discount: number | null;
   isCheapest: boolean;
   isActive: boolean;
+  tags: string[] | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -62,6 +63,7 @@ export type CreatePlanPayload = {
   type?: string;
   topUp?: boolean;
   isActive?: boolean;
+  tags?: string[] | null;
 };
 
 export type UpdatePlanPayload = Partial<CreatePlanPayload>;

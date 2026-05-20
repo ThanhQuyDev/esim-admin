@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { RefundOrderModal } from './refund-order-modal';
 import { ResendEsimEmailButton } from './resend-esim-email-button';
 import { CreateInvoiceDialog } from './create-invoice-dialog';
+import { formatCountry } from '@/lib/format';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -421,7 +422,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                       {item.plan && (
                         <>
                           <InfoRow label='Nhà cung cấp' value={item.plan.provider} />
-                          <InfoRow label='Quốc gia' value={item.plan.countryCode} />
+                          <InfoRow label='Quốc gia' value={formatCountry(item.plan.countryCode)} />
                           <InfoRow label='Thời hạn' value={`${item.plan.durationDays} ngày`} />
                           <InfoRow
                             label='Dung lượng'
@@ -432,6 +433,31 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                             }
                           />
                           <InfoRow label='Tốc độ' value={item.plan.speed} />
+                          {item.plan.locationInfo && (
+                            <InfoRow
+                              label='Điểm đến'
+                              value={
+                                <div className='flex items-center gap-2'>
+                                  {item.plan.locationInfo.thumbnailUrl && (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={item.plan.locationInfo.thumbnailUrl}
+                                      alt={item.plan.locationInfo.slug}
+                                      className='h-5 w-5 rounded object-cover'
+                                    />
+                                  )}
+                                  <span>
+                                    {item.plan.locationInfo.titleVi ??
+                                      item.plan.locationInfo.title ??
+                                      item.plan.locationInfo.slug}
+                                  </span>
+                                  <Badge variant='outline' className='text-[10px]'>
+                                    {item.plan.locationInfo.type}
+                                  </Badge>
+                                </div>
+                              }
+                            />
+                          )}
                         </>
                       )}
                     </div>
