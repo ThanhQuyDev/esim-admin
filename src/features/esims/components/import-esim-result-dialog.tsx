@@ -58,13 +58,29 @@ export function ImportEsimResultDialog({
                   Lỗi ({errors.length})
                 </span>
               </div>
-              <ScrollArea className='h-[120px] rounded-md border p-3'>
-                <ul className='space-y-1'>
-                  {errors.map((error, idx) => (
-                    <li key={idx} className='text-sm text-red-600 dark:text-red-400'>
-                      {error}
-                    </li>
-                  ))}
+              <ScrollArea className='h-[160px] rounded-md border p-3'>
+                <ul className='space-y-1.5'>
+                  {errors.map((error, idx) => {
+                    if (typeof error === 'string') {
+                      return (
+                        <li key={idx} className='text-sm text-red-600 dark:text-red-400'>
+                          {error}
+                        </li>
+                      );
+                    }
+                    return (
+                      <li
+                        key={idx}
+                        className='text-sm text-red-600 dark:text-red-400 flex flex-wrap items-baseline gap-2'
+                      >
+                        {typeof error.row === 'number' && (
+                          <span className='font-mono text-xs opacity-70'>Row {error.row}</span>
+                        )}
+                        {error.iccid && <span className='font-mono text-xs'>{error.iccid}</span>}
+                        <span>{error.error ?? error.message ?? 'Unknown error'}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </ScrollArea>
             </div>

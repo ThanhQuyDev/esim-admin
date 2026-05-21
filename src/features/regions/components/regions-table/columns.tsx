@@ -18,7 +18,7 @@ export const columns: ColumnDef<Region>[] = [
     accessorKey: 'avatarUrl',
     header: 'Ảnh đại diện',
     cell: ({ row }) => {
-      const avatarUrl = row.original.avatarUrl;
+      const avatarUrl = row.original.iconUrl;
       return avatarUrl ? (
         <img
           src={avatarUrl}

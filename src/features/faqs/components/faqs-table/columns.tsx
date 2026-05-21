@@ -8,7 +8,7 @@ import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<Faq>[] = [
   {
-    id: 'question',
+    id: 'name',
     accessorKey: 'question',
     header: ({ column }: { column: Column<Faq, unknown> }) => (
       <DataTableColumnHeader column={column} title='Câu hỏi' />

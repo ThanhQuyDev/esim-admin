@@ -37,18 +37,38 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Normalize: backend may return array, { data, hasNextPage, totalCount } or { items, meta }
-  const data = Array.isArray(raw) ? raw : (raw.data ?? raw.items ?? []);
-  const hasNextPage = raw.hasNextPage ?? raw.meta?.hasNextPage ?? false;
-  const totalCount =
-    raw.totalCount ??
-    raw.meta?.totalCount ??
-    raw.total ??
-    (Array.isArray(raw) ? raw.length : undefined);
+  // Normalize response to { data, hasNextPage, totalCount }
+  if (Array.isArray(raw)) {
+    return NextResponse.json({
+      data: raw,
+      hasNextPage: false,
+      totalCount: raw.length
+    });
+  }
 
+  // If backend already returns { data, hasNextPage, totalCount }
+  if (Array.isArray(raw.data)) {
+    return NextResponse.json({
+      data: raw.data,
+      hasNextPage: raw.hasNextPage ?? false,
+      totalCount: raw.totalCount ?? raw.total ?? raw.data.length
+    });
+  }
+
+  // Nested: { data: { data: [...], ... } }
+  if (raw.data && typeof raw.data === 'object' && Array.isArray(raw.data.data)) {
+    return NextResponse.json({
+      data: raw.data.data,
+      hasNextPage: raw.data.hasNextPage ?? false,
+      totalCount: raw.data.totalCount ?? raw.data.total ?? raw.data.data.length
+    });
+  }
+
+  // Fallback: try items/orders/results
+  const items = raw.items ?? raw.orders ?? raw.results ?? [];
   return NextResponse.json({
-    data,
-    hasNextPage,
-    ...(typeof totalCount === 'number' ? { totalCount } : {})
+    data: items,
+    hasNextPage: raw.hasNextPage ?? raw.meta?.hasNextPage ?? false,
+    totalCount: raw.totalCount ?? raw.meta?.totalCount ?? raw.total ?? items.length
   });
 }

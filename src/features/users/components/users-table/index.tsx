@@ -26,10 +26,16 @@ export function UsersTable() {
     ? (params.tab as (typeof USER_TAB_VALUES)[number])
     : USER_TAB_DEFAULT;
 
+  const apiFilters: Record<string, unknown> = {};
+  if (params.name) apiFilters.search = params.name;
+
   const filters = {
     page: params.page,
     limit: params.perPage,
     roleIds: roleIdsForTab(tab),
+    ...(Object.keys(apiFilters).length > 0 && {
+      filters: JSON.stringify(apiFilters)
+    }),
     ...(params.sort.length > 0 && { sort: JSON.stringify(params.sort) })
   };
 

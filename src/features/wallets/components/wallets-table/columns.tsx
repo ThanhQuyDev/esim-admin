@@ -9,7 +9,7 @@ import { formatVnd } from '@/lib/format';
 
 export const columns: ColumnDef<WalletListItem>[] = [
   {
-    id: 'email',
+    id: 'name',
     accessorFn: (row) => row.user?.email ?? '',
     header: ({ column }: { column: Column<WalletListItem, unknown> }) => (
       <DataTableColumnHeader column={column} title='Email' />

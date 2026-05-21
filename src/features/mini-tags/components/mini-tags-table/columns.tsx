@@ -26,7 +26,7 @@ export const columns: ColumnDef<MiniTag>[] = [
     enableSorting: false
   },
   {
-    id: 'title',
+    id: 'name',
     accessorKey: 'title',
     header: ({ column }: { column: Column<MiniTag, unknown> }) => (
       <DataTableColumnHeader column={column} title='Tiêu đề' />

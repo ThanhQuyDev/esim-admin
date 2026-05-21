@@ -59,7 +59,7 @@ export function OrdersTable() {
   });
 
   return (
-    <div className='space-y-4'>
+    <div className='flex flex-1 flex-col space-y-4'>
       {/* Advanced Filters */}
       <div className='flex flex-wrap items-center gap-3'>
         <div className='relative w-56'>

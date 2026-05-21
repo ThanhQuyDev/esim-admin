@@ -8,7 +8,7 @@ import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<SeoConfig>[] = [
   {
-    id: 'url',
+    id: 'name',
     accessorKey: 'url',
     header: ({ column }: { column: Column<SeoConfig, unknown> }) => (
       <DataTableColumnHeader column={column} title='URL' />

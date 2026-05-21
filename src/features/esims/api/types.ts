@@ -120,11 +120,20 @@ export type ImportEsimsExcelPayload = {
   countryCode: string;
 };
 
+export type ImportEsimsExcelError =
+  | string
+  | {
+      row?: number;
+      iccid?: string;
+      error?: string;
+      message?: string;
+    };
+
 export type ImportEsimsExcelResponse = {
   total: number;
   created: number;
   skipped: number;
   planCreated: number;
-  errors: string[];
+  errors: ImportEsimsExcelError[];
   message?: string;
 };

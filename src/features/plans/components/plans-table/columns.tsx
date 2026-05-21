@@ -167,9 +167,6 @@ export const columns: ColumnDef<Plan>[] = [
         <div className='text-muted-foreground flex items-center gap-1 text-xs'>
           <span className='font-mono'>#{row.original.id}</span>
           <CopyIdButton value={String(row.original.id)} />
-          <span className='mx-0.5'>·</span>
-          <span>{row.original.providerPlanId}</span>
-          <CopyIdButton value={row.original.providerPlanId} />
         </div>
       </div>
     ),

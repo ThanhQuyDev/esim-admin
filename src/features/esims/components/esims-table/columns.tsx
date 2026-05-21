@@ -15,7 +15,7 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
 
 export const columns: ColumnDef<Esim>[] = [
   {
-    id: 'iccid',
+    id: 'name',
     accessorKey: 'iccid',
     header: ({ column }: { column: Column<Esim, unknown> }) => (
       <DataTableColumnHeader column={column} title='ICCID' />

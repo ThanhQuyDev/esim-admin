@@ -19,11 +19,13 @@ export async function GET(request: NextRequest) {
   const params = new URLSearchParams();
   const page = searchParams.get('page');
   const limit = searchParams.get('limit');
+  const email = searchParams.get('email');
   const filters = searchParams.get('filters');
   const sort = searchParams.get('sort');
 
   if (page) params.set('page', page);
   if (limit) params.set('limit', limit);
+  if (email) params.set('email', email);
   if (filters) params.set('filters', filters);
   if (sort) params.set('sort', sort);
 

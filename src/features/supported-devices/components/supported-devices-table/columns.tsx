@@ -3,15 +3,24 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import { CellAction } from './cell-action';
+import { Icons } from '@/components/icons';
 import type { SupportedDevice } from '../../api/types';
 
 export const columns: ColumnDef<SupportedDevice>[] = [
   {
+    id: 'name',
     accessorKey: 'device',
     header: ({ column }) => <DataTableColumnHeader column={column} title='Tên thiết bị' />,
-    cell: ({ row }) => <div className='font-medium'>{row.getValue('device')}</div>,
+    cell: ({ row }) => <div className='font-medium'>{row.getValue('name')}</div>,
     enableSorting: true,
-    enableHiding: false
+    enableHiding: false,
+    meta: {
+      label: 'Thiết bị',
+      placeholder: 'Tìm kiếm thiết bị...',
+      variant: 'text' as const,
+      icon: Icons.search
+    },
+    enableColumnFilter: true
   },
   {
     accessorKey: 'manufacturer',
