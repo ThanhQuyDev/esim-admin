@@ -103,7 +103,7 @@ export function PlansTable() {
   }, [filters]);
 
   return (
-    <DataTable table={table}>
+    <DataTable table={table} totalRowCount={responseData.totalCount}>
       <DataTableToolbar table={table}>
         <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
           {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}

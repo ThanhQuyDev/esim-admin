@@ -33,7 +33,7 @@ const PLAN_TYPE_OPTIONS = [
   { value: 'daily', label: 'Daily' },
   { value: 'unlimited', label: 'Unlimited' },
   { value: 'fixed', label: 'Fixed' },
-  { value: 'unlimited-reduce', label: 'Unlimited Slow' }
+  { value: 'unlimited-reduce', label: 'Unlimited Reduce' }
 ];
 
 const CURRENCY_OPTIONS = [
@@ -333,7 +333,21 @@ function EditPlanSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Chỉnh sửa gói eSIM</SheetTitle>
+          <SheetTitle className='flex items-center gap-2'>
+            Chỉnh sửa gói eSIM
+            <span className='text-muted-foreground text-xs font-normal'>ID: {plan.id}</span>
+            <button
+              type='button'
+              onClick={() => {
+                navigator.clipboard.writeText(String(plan.id));
+              }}
+              title='Copy ID'
+              className='text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center rounded p-0.5 transition-colors'
+              aria-label={`Copy ID: ${plan.id}`}
+            >
+              <Icons.copy className='size-3.5' />
+            </button>
+          </SheetTitle>
           <SheetDescription>Cập nhật thông tin gói bên dưới.</SheetDescription>
         </SheetHeader>
 

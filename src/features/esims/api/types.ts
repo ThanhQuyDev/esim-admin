@@ -121,7 +121,10 @@ export type ImportEsimsExcelPayload = {
 };
 
 export type ImportEsimsExcelResponse = {
-  message: string;
-  imported?: number;
-  errors?: string[];
+  total: number;
+  created: number;
+  skipped: number;
+  planCreated: number;
+  errors: string[];
+  message?: string;
 };

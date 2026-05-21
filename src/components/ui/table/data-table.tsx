@@ -16,9 +16,15 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 interface DataTableProps<TData> extends React.ComponentProps<'div'> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
+  totalRowCount?: number;
 }
 
-export function DataTable<TData>({ table, actionBar, children }: DataTableProps<TData>) {
+export function DataTable<TData>({
+  table,
+  actionBar,
+  children,
+  totalRowCount
+}: DataTableProps<TData>) {
   return (
     <div className='flex flex-1 flex-col space-y-4'>
       {children}
@@ -75,7 +81,7 @@ export function DataTable<TData>({ table, actionBar, children }: DataTableProps<
         </div>
       </div>
       <div className='flex flex-col gap-2.5'>
-        <DataTablePagination table={table} />
+        <DataTablePagination table={table} totalRowCount={totalRowCount} />
         {actionBar && table.getFilteredSelectedRowModel().rows.length > 0 && actionBar}
       </div>
     </div>

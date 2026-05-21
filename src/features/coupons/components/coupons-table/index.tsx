@@ -51,7 +51,7 @@ export function CouponsTable() {
   });
 
   return (
-    <DataTable table={table}>
+    <DataTable table={table} totalRowCount={data.totalCount}>
       <DataTableToolbar table={table} />
     </DataTable>
   );

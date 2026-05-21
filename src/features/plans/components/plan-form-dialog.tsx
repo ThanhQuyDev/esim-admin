@@ -26,7 +26,7 @@ const PLAN_TYPE_OPTIONS = [
   { value: 'daily', label: 'Daily' },
   { value: 'unlimited', label: 'Unlimited' },
   { value: 'fixed', label: 'Fixed' },
-  { value: 'unlimited-reduce', label: 'Unlimited Slow' }
+  { value: 'unlimited-reduce', label: 'Unlimited Reduce' }
 ];
 
 const CURRENCY_OPTIONS = [
@@ -328,6 +328,17 @@ function EditDialog({
         <div className='flex items-center gap-2 text-xs text-muted-foreground'>
           <Icons.dashboard className='h-3.5 w-3.5' />
           <span>ID: {plan.id}</span>
+          <button
+            type='button'
+            onClick={() => {
+              navigator.clipboard.writeText(String(plan.id));
+            }}
+            title='Copy ID'
+            className='text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center rounded p-0.5 transition-colors'
+            aria-label={`Copy ID: ${plan.id}`}
+          >
+            <Icons.copy className='size-3.5' />
+          </button>
         </div>
       }
     >

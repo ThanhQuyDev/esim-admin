@@ -82,7 +82,7 @@ export function OrdersTable() {
         </div>
       </div>
 
-      <DataTable table={table}>
+      <DataTable table={table} totalRowCount={data.totalCount}>
         <DataTableToolbar table={table} />
       </DataTable>
     </div>

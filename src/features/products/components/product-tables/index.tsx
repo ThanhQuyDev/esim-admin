@@ -44,7 +44,7 @@ export function ProductTable() {
   });
 
   return (
-    <DataTable table={table}>
+    <DataTable table={table} totalRowCount={data.total_products}>
       <DataTableToolbar table={table} />
     </DataTable>
   );

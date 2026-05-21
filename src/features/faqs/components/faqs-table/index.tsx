@@ -37,7 +37,7 @@ export function FaqsTable() {
     initialState: { columnPinning: { right: ['actions'] } }
   });
   return (
-    <DataTable table={table}>
+    <DataTable table={table} totalRowCount={data.totalCount}>
       <DataTableToolbar table={table} />
     </DataTable>
   );

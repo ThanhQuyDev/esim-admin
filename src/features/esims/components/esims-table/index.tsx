@@ -71,7 +71,7 @@ export function EsimsTable() {
   }, [filters]);
 
   return (
-    <DataTable table={table}>
+    <DataTable table={table} totalRowCount={data.totalCount}>
       <DataTableToolbar table={table}>
         <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
           {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}

@@ -62,6 +62,35 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount);
 }
 
+function CopyLinkButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    toast.success('Đã copy vào clipboard');
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <Button
+      type='button'
+      variant='outline'
+      size='icon'
+      onClick={handleCopy}
+      className='h-8 w-8 shrink-0'
+      aria-label='Copy link'
+      title={copied ? 'Đã copy!' : 'Copy'}
+    >
+      {copied ? (
+        <Icons.check className='size-3.5 text-green-500' />
+      ) : (
+        <Icons.copy className='size-3.5' />
+      )}
+    </Button>
+  );
+}
+
 function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemPlan | null }) {
   return (
     <div className='rounded-lg border p-4 space-y-4'>
@@ -145,28 +174,54 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
             </div>
           )}
           <div className='space-y-2'>
-            {esim.directAppleInstallationUrl && (
-              <div className='space-y-1'>
-                <span className='text-xs font-medium text-muted-foreground'>Link cài đặt iOS</span>
-                <a
-                  href={esim.directAppleInstallationUrl}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='block truncate rounded-md border px-3 py-2 text-xs text-blue-600 hover:underline'
-                >
-                  {esim.directAppleInstallationUrl}
-                </a>
-              </div>
-            )}
             {esim.lpa && (
-              <div className='space-y-1'>
-                <span className='text-xs font-medium text-muted-foreground'>
-                  Link cài đặt Android (LPA)
-                </span>
-                <p className='rounded-md border px-3 py-2 font-mono text-xs break-all'>
-                  {esim.lpa}
-                </p>
-              </div>
+              <>
+                <div className='space-y-1'>
+                  <span className='text-xs font-medium text-muted-foreground'>
+                    Link cài đặt iOS
+                  </span>
+                  <div className='flex items-center gap-2'>
+                    <a
+                      href={`https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=${esim.lpa}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='block min-w-0 flex-1 truncate rounded-md border px-3 py-2 text-xs text-blue-600 hover:underline'
+                    >
+                      {`https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=${esim.lpa}`}
+                    </a>
+                    <CopyLinkButton
+                      value={`https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=${esim.lpa}`}
+                    />
+                  </div>
+                </div>
+                <div className='space-y-1'>
+                  <span className='text-xs font-medium text-muted-foreground'>
+                    Link cài đặt Android
+                  </span>
+                  <div className='flex items-center gap-2'>
+                    <a
+                      href={`https://esimsetup.android.com/esim_qrcode_provisioning?carddata=${esim.lpa}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='block min-w-0 flex-1 truncate rounded-md border px-3 py-2 text-xs text-blue-600 hover:underline'
+                    >
+                      {`https://esimsetup.android.com/esim_qrcode_provisioning?carddata=${esim.lpa}`}
+                    </a>
+                    <CopyLinkButton
+                      value={`https://esimsetup.android.com/esim_qrcode_provisioning?carddata=${esim.lpa}`}
+                    />
+                  </div>
+                </div>
+                <div className='space-y-1'>
+                  <span className='text-xs font-medium text-muted-foreground'>LPA</span>
+                  <div className='flex items-center gap-2'>
+                    <p className='min-w-0 flex-1 rounded-md border px-3 py-2 font-mono text-xs break-all'>
+                      {esim.lpa}
+                    </p>
+                    <CopyLinkButton value={esim.lpa} />
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

@@ -28,14 +28,27 @@ export async function GET(request: NextRequest) {
   if (sort) params.set('sort', sort);
 
   const res = await fetch(`${API_URL}/api/v1/orders?${params}`, { headers });
-  const data = await res.json();
+  const raw = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     return NextResponse.json(
-      { message: data.message || 'Failed to fetch orders', errors: data.errors },
+      { message: raw.message || 'Failed to fetch orders', errors: raw.errors },
       { status: res.status }
     );
   }
 
-  return NextResponse.json(data);
+  // Normalize: backend may return array, { data, hasNextPage, totalCount } or { items, meta }
+  const data = Array.isArray(raw) ? raw : (raw.data ?? raw.items ?? []);
+  const hasNextPage = raw.hasNextPage ?? raw.meta?.hasNextPage ?? false;
+  const totalCount =
+    raw.totalCount ??
+    raw.meta?.totalCount ??
+    raw.total ??
+    (Array.isArray(raw) ? raw.length : undefined);
+
+  return NextResponse.json({
+    data,
+    hasNextPage,
+    ...(typeof totalCount === 'number' ? { totalCount } : {})
+  });
 }
