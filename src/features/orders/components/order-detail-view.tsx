@@ -352,9 +352,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                 <InfoRow
                   label='Còn lại thanh toán tiền'
                   value={
-                    <span className='font-semibold'>
-                      {formatCurrency(order.vndPrice - order.walletSpentVndAmount, 'VND')}
-                    </span>
+                    <span className='font-semibold'>{formatCurrency(order.vndPrice, 'VND')}</span>
                   }
                 />
               </>
