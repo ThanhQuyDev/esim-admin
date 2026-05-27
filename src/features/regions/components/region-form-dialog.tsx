@@ -110,6 +110,8 @@ function CreateDialog({
       slug: '',
       isPopular: false,
       isActive: true,
+      title: '',
+      titleVi: '',
       description: '',
       descriptionVi: '',
       providers: ''
@@ -137,6 +139,8 @@ function CreateDialog({
           ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular ?? false,
           isActive: value.isActive ?? true,
+          ...(value.title && { title: value.title }),
+          ...(value.titleVi && { titleVi: value.titleVi }),
           ...(value.description && { description: value.description }),
           ...(value.descriptionVi && { descriptionVi: value.descriptionVi }),
           ...(value.providers && { providers: value.providers })
@@ -198,6 +202,11 @@ function CreateDialog({
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <FormTextField name='title' label='Tiêu đề (EN)' placeholder='Title in English' />
+            <FormTextField name='titleVi' label='Tiêu đề (VI)' placeholder='Tiêu đề tiếng Việt' />
+          </div>
+
           <FormTextareaField
             name='description'
             label='Mô tả (EN)'
@@ -243,6 +252,8 @@ function EditDialog({
       slug: region.slug ?? '',
       isPopular: region.isPopular,
       isActive: region.isActive,
+      title: region.title ?? '',
+      titleVi: region.titleVi ?? '',
       description: region.description ?? '',
       descriptionVi: region.descriptionVi ?? '',
       providers: region.providers ?? ''
@@ -270,6 +281,8 @@ function EditDialog({
           ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular,
           isActive: value.isActive,
+          title: value.title || undefined,
+          titleVi: value.titleVi || undefined,
           description: value.description || undefined,
           descriptionVi: value.descriptionVi || undefined,
           providers: value.providers || undefined
@@ -343,6 +356,11 @@ function EditDialog({
           </div>
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
+
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <FormTextField name='title' label='Tiêu đề (EN)' placeholder='Title in English' />
+            <FormTextField name='titleVi' label='Tiêu đề (VI)' placeholder='Tiêu đề tiếng Việt' />
+          </div>
 
           <FormTextareaField
             name='description'

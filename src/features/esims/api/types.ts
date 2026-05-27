@@ -116,8 +116,6 @@ export type UpdateEsimPayload = Partial<CreateEsimPayload>;
 
 export type ImportEsimsExcelPayload = {
   file: File;
-  provider: string;
-  countryCode: string;
 };
 
 export type ImportEsimsExcelError =

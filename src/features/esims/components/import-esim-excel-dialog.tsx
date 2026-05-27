@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,
@@ -24,8 +23,6 @@ import type { ImportEsimsExcelResponse } from '../api/types';
 export function ImportEsimExcelDialog() {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [provider, setProvider] = useState('');
-  const [countryCode, setCountryCode] = useState('');
   const [importResult, setImportResult] = useState<ImportEsimsExcelResponse | null>(null);
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,8 +45,6 @@ export function ImportEsimExcelDialog() {
 
   const handleReset = useCallback(() => {
     setFile(null);
-    setProvider('');
-    setCountryCode('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
@@ -74,17 +69,13 @@ export function ImportEsimExcelDialog() {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (!file || !provider.trim() || !countryCode.trim()) {
-      toast.error('Vui lòng điền đầy đủ các trường bắt buộc');
+    if (!file) {
+      toast.error('Vui lòng chọn file Excel');
       return;
     }
 
-    mutate({
-      file,
-      provider: provider.trim(),
-      countryCode: countryCode.trim()
-    });
-  }, [file, provider, countryCode, mutate]);
+    mutate({ file });
+  }, [file, mutate]);
 
   return (
     <>
@@ -104,9 +95,7 @@ export function ImportEsimExcelDialog() {
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>Import eSIM từ Excel</DialogTitle>
-            <DialogDescription>
-              Upload file Excel và điền thông tin để import eSIM.
-            </DialogDescription>
+            <DialogDescription>Upload file Excel để import eSIM.</DialogDescription>
           </DialogHeader>
 
           <div className='grid gap-4 py-4'>
@@ -153,32 +142,6 @@ export function ImportEsimExcelDialog() {
                 accept='.xlsx,.xls'
                 className='hidden'
                 onChange={handleFileChange}
-              />
-            </div>
-
-            {/* Provider */}
-            <div className='grid gap-2'>
-              <Label htmlFor='esim-provider'>
-                Provider <span className='text-destructive'>*</span>
-              </Label>
-              <Input
-                id='esim-provider'
-                placeholder='Nhập provider'
-                value={provider}
-                onChange={(e) => setProvider(e.target.value)}
-              />
-            </div>
-
-            {/* Country Code */}
-            <div className='grid gap-2'>
-              <Label htmlFor='esim-country-code'>
-                Country Code <span className='text-destructive'>*</span>
-              </Label>
-              <Input
-                id='esim-country-code'
-                placeholder='VD: VN, US, JP...'
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
               />
             </div>
           </div>

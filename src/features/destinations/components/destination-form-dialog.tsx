@@ -227,6 +227,8 @@ function CreateDestinationDialog({
       keySearch: '',
       isPopular: false,
       isActive: true,
+      title: '',
+      titleVi: '',
       description: '',
       descriptionVi: '',
       providers: ''
@@ -257,6 +259,8 @@ function CreateDestinationDialog({
           ...(value.keySearch && { keySearch: value.keySearch }),
           isPopular: value.isPopular ?? false,
           isActive: value.isActive ?? true,
+          ...(value.title && { title: value.title }),
+          ...(value.titleVi && { titleVi: value.titleVi }),
           ...(value.description && { description: value.description }),
           ...(value.descriptionVi && { descriptionVi: value.descriptionVi }),
           ...(value.providers && { providers: value.providers })
@@ -341,6 +345,11 @@ function CreateDestinationDialog({
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField name='title' label='Tiêu đề (EN)' placeholder='Title in English' />
+            <FormTextField name='titleVi' label='Tiêu đề (VI)' placeholder='Tiêu đề tiếng Việt' />
+          </div>
+
           <FormTextareaField
             name='description'
             label='Mô tả (EN)'
@@ -390,6 +399,8 @@ function EditDestinationDialog({
       keySearch: destination.keySearch ?? '',
       isPopular: destination.isPopular,
       isActive: destination.isActive,
+      title: destination.title ?? '',
+      titleVi: destination.titleVi ?? '',
       description: destination.description ?? '',
       descriptionVi: destination.descriptionVi ?? '',
       providers: destination.providers ?? ''
@@ -420,6 +431,8 @@ function EditDestinationDialog({
           keySearch: value.keySearch || undefined,
           isPopular: value.isPopular,
           isActive: value.isActive,
+          title: value.title || undefined,
+          titleVi: value.titleVi || undefined,
           description: value.description || undefined,
           descriptionVi: value.descriptionVi || undefined,
           providers: value.providers || undefined
@@ -516,6 +529,11 @@ function EditDestinationDialog({
           </div>
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
+
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField name='title' label='Tiêu đề (EN)' placeholder='Title in English' />
+            <FormTextField name='titleVi' label='Tiêu đề (VI)' placeholder='Tiêu đề tiếng Việt' />
+          </div>
 
           <FormTextareaField
             name='description'
