@@ -82,9 +82,15 @@ export function CellAction({ data }: CellActionProps) {
           >
             <Icons.send className='mr-2 h-4 w-4' /> Gửi lại email eSIM
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setInvoiceOpen(true)}>
-            <Icons.fileTypePdf className='mr-2 h-4 w-4' /> Xuất hóa đơn
-          </DropdownMenuItem>
+          {data.hasInvoice ? (
+            <DropdownMenuItem onClick={() => router.push(`/dashboard/orders/${data.id}`)}>
+              <Icons.eye className='mr-2 h-4 w-4' /> Xem hóa đơn
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => setInvoiceOpen(true)}>
+              <Icons.fileTypePdf className='mr-2 h-4 w-4' /> Xuất hóa đơn
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

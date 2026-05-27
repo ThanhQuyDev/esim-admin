@@ -107,6 +107,7 @@ export type OrderItem = {
   id: number;
   planId: number;
   plan: OrderItemPlan;
+  referralCode: string;
   orderRequestId: string;
   providerOrderId: string;
   providerOrderCode: string;
@@ -121,9 +122,21 @@ export type OrderItem = {
   updatedAt: string;
 };
 
+export type AdminOrderInvoice = {
+  id: string;
+  status: InvoiceStatus;
+  companyName: string;
+  taxCode: string;
+  address: string;
+  invoiceEmail: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type OrderDetail = Order & {
   coupon: OrderCoupon | null;
   items: OrderItem[];
+  invoice: AdminOrderInvoice | null;
 };
 
 export type OrderFilters = {
