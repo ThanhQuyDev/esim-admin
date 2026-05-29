@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Order } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
-import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -58,27 +57,24 @@ export const columns: ColumnDef<Order>[] = [
         )}
       </div>
     ),
-    meta: {
-      label: 'Mã đơn hàng',
-      placeholder: 'Tìm kiếm đơn hàng...',
-      variant: 'text' as const,
-      icon: Icons.search
-    },
-    enableColumnFilter: true
+    enableColumnFilter: false
   },
   {
-    id: 'user',
-    accessorKey: 'user',
+    id: 'userEmail',
+    accessorKey: 'userEmail',
     header: 'Khách hàng',
     cell: ({ row }) => {
+      const email = row.original.userEmail ?? row.original.user?.email;
       const user = row.original.user;
-      if (!user) return '—';
+      if (!email && !user) return '—';
       return (
         <div className='flex flex-col'>
-          <span className='text-sm font-medium'>{user.email}</span>
-          <span className='text-muted-foreground text-xs'>
-            {user.firstName} {user.lastName}
-          </span>
+          <span className='text-sm font-medium'>{email ?? '—'}</span>
+          {user && (
+            <span className='text-muted-foreground text-xs'>
+              {user.firstName} {user.lastName}
+            </span>
+          )}
         </div>
       );
     },
@@ -91,6 +87,25 @@ export const columns: ColumnDef<Order>[] = [
     cell: ({ row }) => (
       <Badge variant={statusVariant[row.original.status] ?? 'outline'}>{row.original.status}</Badge>
     ),
+    enableSorting: false
+  },
+  {
+    id: 'isInvoice',
+    accessorKey: 'isInvoice',
+    header: 'Xuất hóa đơn',
+    cell: ({ row }) =>
+      row.original.isInvoice ? (
+        <Badge variant='default'>Có</Badge>
+      ) : (
+        <Badge variant='outline'>Không</Badge>
+      ),
+    enableSorting: false
+  },
+  {
+    id: 'itemCount',
+    accessorKey: 'itemCount',
+    header: 'Số lượng',
+    cell: ({ row }) => row.original.itemCount ?? row.original.totalQuantity ?? 0,
     enableSorting: false
   },
   {

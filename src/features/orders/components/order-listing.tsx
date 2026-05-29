@@ -7,20 +7,18 @@ import { OrdersTable, OrdersTableSkeleton } from './orders-table/index';
 
 export default function OrderListingPage() {
   const page = searchParamsCache.get('page');
-  const search = searchParamsCache.get('name');
   const pageLimit = searchParamsCache.get('perPage');
-  const sort = searchParamsCache.get('sort');
+  const status = searchParamsCache.get('status');
 
   const apiFilters: Record<string, unknown> = {};
-  if (search) apiFilters.search = search;
+  if (status) apiFilters.status = status;
 
   const filters = {
     page,
     limit: pageLimit,
     ...(Object.keys(apiFilters).length > 0 && {
       filters: JSON.stringify(apiFilters)
-    }),
-    ...(sort && { sort })
+    })
   };
 
   const queryClient = getQueryClient();

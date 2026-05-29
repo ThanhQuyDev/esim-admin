@@ -17,6 +17,7 @@ export type Order = {
   id: number;
   userId: number;
   user: OrderUser;
+  userEmail?: string;
   orderNumber: string;
   status: string;
   totalAmount: number;
@@ -30,6 +31,8 @@ export type Order = {
   walletSpentVndAmount: number | null;
   cashbackAmountVnd: number | null;
   hasInvoice?: boolean;
+  isInvoice?: boolean;
+  itemCount?: number;
   totalQuantity?: number;
   createdAt: string;
   updatedAt: string;
