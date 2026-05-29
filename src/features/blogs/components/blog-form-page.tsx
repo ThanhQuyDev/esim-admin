@@ -166,11 +166,19 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
   const contentRef = useRef(blog?.content ?? '');
   const isEdit = !!blog;
 
+  const goBackToListing = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/dashboard/blogs');
+    }
+  };
+
   const createMut = useMutation({
     ...createBlogMutation,
     onSuccess: () => {
       toast.success('Tạo bài viết thành công');
-      router.push('/dashboard/blogs');
+      goBackToListing();
     },
     onError: (e) => toast.error(e.message || 'Tạo bài viết thất bại')
   });
@@ -179,7 +187,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
     ...updateBlogMutation,
     onSuccess: () => {
       toast.success('Cập nhật bài viết thành công');
-      router.push('/dashboard/blogs');
+      goBackToListing();
     },
     onError: (e) => toast.error(e.message || 'Cập nhật bài viết thất bại')
   });
@@ -544,7 +552,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
 
           {/* Actions */}
           <div className='flex items-center justify-end gap-3'>
-            <Button type='button' variant='outline' onClick={() => router.push('/dashboard/blogs')}>
+            <Button type='button' variant='outline' onClick={goBackToListing}>
               Hủy
             </Button>
             <Button type='submit' form='blog-page-form' isLoading={isPending}>

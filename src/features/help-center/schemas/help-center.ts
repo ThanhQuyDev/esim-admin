@@ -1,16 +1,16 @@
 import * as z from 'zod';
 
-const CATEGORIES = ['getting_started', 'plans_and_payments', 'troubleshooting', 'faq'] as const;
+const CATEGORIES = ['getting-started', 'plans-and-payments', 'troubleshooting', 'faq'] as const;
 const PARENTS = [
-  'setting_up',
-  'using_esim',
-  'device_compatibility',
+  'setting-up',
+  'using-esim',
+  'device-compatibility',
   'payments',
   'plans',
-  'find_an_answer',
-  'esim_functions',
-  'esim_basics',
-  'about_esimvn'
+  'find-an-answer',
+  'esim-functions',
+  'esim-basics',
+  'about-esimvn'
 ] as const;
 const LANG_OPTIONS = ['vi', 'en'] as const;
 
@@ -23,6 +23,7 @@ export const helpCenterSchema = z.object({
   language: z.enum(LANG_OPTIONS).optional(),
   slug: z.string().optional(),
   isPublished: z.boolean().optional(),
+  isPopular: z.boolean().optional(),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
   seoKeywords: z.string().optional()

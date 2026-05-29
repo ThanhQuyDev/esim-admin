@@ -15,7 +15,8 @@ export function buildColumns(lang: string): ColumnDef<HelpCenterArticle>[] {
     category: isVi ? 'Danh mục' : 'Category',
     folder: isVi ? 'Thư mục' : 'Folder',
     language: isVi ? 'Ngôn ngữ' : 'Language',
-    order: isVi ? 'Thứ tự' : 'Order'
+    order: isVi ? 'Thứ tự' : 'Order',
+    popular: isVi ? 'Phổ biến' : 'Popular'
   };
 
   return [
@@ -65,6 +66,21 @@ export function buildColumns(lang: string): ColumnDef<HelpCenterArticle>[] {
       cell: ({ row }) =>
         row.original.language ? (
           <Badge variant='outline'>{row.original.language.toUpperCase()}</Badge>
+        ) : (
+          <span className='text-muted-foreground/50 text-sm'>—</span>
+        ),
+      enableSorting: false
+    },
+    {
+      id: 'isPopular',
+      accessorKey: 'isPopular',
+      header: t.popular,
+      cell: ({ row }) =>
+        row.original.isPopular ? (
+          <Badge variant='default'>
+            <Icons.check className='mr-1 h-3 w-3' />
+            {t.popular}
+          </Badge>
         ) : (
           <span className='text-muted-foreground/50 text-sm'>—</span>
         ),

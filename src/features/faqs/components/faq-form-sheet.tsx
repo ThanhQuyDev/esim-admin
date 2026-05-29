@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,7 @@ import type { Faq, CreateFaqPayload, UpdateFaqPayload } from '../api/types';
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { faqSchema, type FaqFormValues } from '../schemas/faq';
+import { MinimalTiptapEditor } from '@/components/minimal-tiptap-editor';
 
 const LANG_OPTIONS = [
   { value: 'vi', label: 'Vietnamese' },
@@ -41,12 +42,14 @@ function CreateSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const answerRef = useRef('');
   const mutation = useMutation({
     ...createFaqMutation,
     onSuccess: () => {
       toast.success('Tạo câu hỏi thành công');
       onOpenChange(false);
       form.reset();
+      answerRef.current = '';
     },
     onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
@@ -63,7 +66,7 @@ function CreateSheet({
     onSubmit: async ({ value }) => {
       const payload: CreateFaqPayload = {
         question: value.question,
-        answer: value.answer,
+        answer: answerRef.current || value.answer,
         language: value.language,
         sortOrder: value.sortOrder ? Number(value.sortOrder) : 0,
         isActive: value.isActive ?? true,
@@ -72,8 +75,7 @@ function CreateSheet({
       await mutation.mutateAsync(payload);
     }
   });
-  const { FormTextField, FormSelectField, FormSwitchField, FormTextareaField } =
-    useFormFields<FaqFormValues>();
+  const { FormTextField, FormSelectField, FormSwitchField } = useFormFields<FaqFormValues>();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
@@ -91,12 +93,19 @@ function CreateSheet({
                 placeholder='Làm thế nào để...?'
                 validators={{ onBlur: z.string().min(2) }}
               />
-              <FormTextareaField
-                name='answer'
-                label='Câu trả lời'
-                required
-                placeholder='Câu trả lời là...'
-              />
+              <div className='space-y-2'>
+                <label className='text-sm font-medium'>
+                  Câu trả lời <span className='text-destructive'>*</span>
+                </label>
+                <MinimalTiptapEditor
+                  content={answerRef.current}
+                  onChange={(html) => {
+                    answerRef.current = html;
+                    form.setFieldValue('answer', html);
+                  }}
+                  placeholder='Câu trả lời là...'
+                />
+              </div>
               <div className='grid grid-cols-2 gap-4'>
                 <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
                 <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />
@@ -128,6 +137,7 @@ function EditSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const answerRef = useRef(faq.answer ?? '');
   const mutation = useMutation({
     ...updateFaqMutation,
     onSuccess: () => {
@@ -149,7 +159,7 @@ function EditSheet({
     onSubmit: async ({ value }) => {
       const payload: UpdateFaqPayload = {
         question: value.question,
-        answer: value.answer,
+        answer: answerRef.current || value.answer,
         language: value.language,
         sortOrder: value.sortOrder ? Number(value.sortOrder) : undefined,
         isActive: value.isActive,
@@ -158,8 +168,7 @@ function EditSheet({
       await mutation.mutateAsync({ id: faq.id, values: payload });
     }
   });
-  const { FormTextField, FormSelectField, FormSwitchField, FormTextareaField } =
-    useFormFields<FaqFormValues>();
+  const { FormTextField, FormSelectField, FormSwitchField } = useFormFields<FaqFormValues>();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='flex flex-col'>
@@ -177,12 +186,19 @@ function EditSheet({
                 placeholder='Làm thế nào để...?'
                 validators={{ onBlur: z.string().min(2) }}
               />
-              <FormTextareaField
-                name='answer'
-                label='Câu trả lời'
-                required
-                placeholder='Câu trả lời là...'
-              />
+              <div className='space-y-2'>
+                <label className='text-sm font-medium'>
+                  Câu trả lời <span className='text-destructive'>*</span>
+                </label>
+                <MinimalTiptapEditor
+                  content={answerRef.current}
+                  onChange={(html) => {
+                    answerRef.current = html;
+                    form.setFieldValue('answer', html);
+                  }}
+                  placeholder='Câu trả lời là...'
+                />
+              </div>
               <div className='grid grid-cols-2 gap-4'>
                 <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
                 <FormTextField name='sortOrder' label='Thứ tự' placeholder='0' />

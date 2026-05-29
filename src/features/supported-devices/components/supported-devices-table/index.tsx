@@ -4,25 +4,47 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { parseAsString, useQueryStates } from 'nuqs';
+import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { getSortingStateParser } from '@/lib/parsers';
 import { supportedDevicesQueryOptions } from '../../api/queries';
 import { columns } from './columns';
 
+const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
+
+const sortIdToApiField: Record<string, string> = {
+  name: 'device'
+};
+
 export function SupportedDevicesTable() {
   const [params] = useQueryStates({
-    name: parseAsString
+    page: parseAsInteger.withDefault(1),
+    perPage: parseAsInteger.withDefault(10),
+    name: parseAsString,
+    sort: getSortingStateParser(columnIds).withDefault([])
   });
 
+  const apiFilters: Record<string, unknown> = {};
+  if (params.name) apiFilters.search = params.name;
+
+  const apiSort = params.sort.map((s) => ({
+    orderBy: sortIdToApiField[s.id] ?? s.id,
+    order: s.desc ? 'DESC' : 'ASC'
+  }));
+
   const filters = {
-    ...(params.name && { search: params.name })
+    page: params.page,
+    limit: params.perPage,
+    ...(Object.keys(apiFilters).length > 0 && { filters: JSON.stringify(apiFilters) }),
+    ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
 
   const { data } = useSuspenseQuery(supportedDevicesQueryOptions(filters));
+  const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
 
   const { table } = useDataTable({
-    data,
+    data: data.data,
     columns,
-    pageCount: -1,
+    pageCount,
     shallow: true,
     debounceMs: 500,
     initialState: {
@@ -31,7 +53,7 @@ export function SupportedDevicesTable() {
   });
 
   return (
-    <DataTable table={table}>
+    <DataTable table={table} totalRowCount={data.totalCount}>
       <DataTableToolbar table={table} />
     </DataTable>
   );

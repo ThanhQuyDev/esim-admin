@@ -60,9 +60,10 @@ function CreateDialog({
       title: '',
       content: '',
       order: '0',
-      category: 'getting_started',
-      parent: 'setting_up',
-      language: 'en'
+      category: 'getting-started',
+      parent: 'setting-up',
+      language: 'en',
+      isPopular: false
     } as HelpCenterFormValues,
     validators: { onSubmit: helpCenterSchema },
     onSubmit: async ({ value }) => {
@@ -73,7 +74,8 @@ function CreateDialog({
         order: value.order ? Number(value.order) : 0,
         category: getCategoryApiKey(value.category, lang),
         parent: getParentApiKey(value.parent, lang),
-        language: value.language || undefined
+        language: value.language || undefined,
+        isPopular: value.isPopular
       };
       await mutation.mutateAsync(payload);
     }
@@ -158,9 +160,10 @@ function EditDialog({
       title: article.title,
       content: article.content,
       order: String(article.order ?? 0),
-      category: getCategoryKeyFromLabel(article.category) ?? 'getting_started',
-      parent: getParentKeyFromLabel(article.parent) ?? 'setting_up',
-      language: (article.language as 'vi' | 'en') ?? 'en'
+      category: getCategoryKeyFromLabel(article.category) ?? 'getting-started',
+      parent: getParentKeyFromLabel(article.parent) ?? 'setting-up',
+      language: (article.language as 'vi' | 'en') ?? 'en',
+      isPopular: article.isPopular ?? false
     } as HelpCenterFormValues,
     validators: { onSubmit: helpCenterSchema },
     onSubmit: async ({ value }) => {
@@ -171,7 +174,8 @@ function EditDialog({
         order: value.order ? Number(value.order) : undefined,
         category: getCategoryApiKey(value.category, lang),
         parent: getParentApiKey(value.parent, lang),
-        language: value.language || undefined
+        language: value.language || undefined,
+        isPopular: value.isPopular
       };
       await mutation.mutateAsync({ id: article.id, values: payload });
     }

@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import type {
   SupportedDevice,
+  SupportedDevicesResponse,
   CreateSupportedDevicePayload,
   UpdateSupportedDevicePayload,
   SupportedDeviceFilters
@@ -8,16 +9,17 @@ import type {
 
 export async function getSupportedDevices(
   filters?: SupportedDeviceFilters
-): Promise<SupportedDevice[]> {
+): Promise<SupportedDevicesResponse> {
   const params = new URLSearchParams();
-  if (filters?.search) params.append('search', filters.search);
-  if (filters?.type) params.append('type', filters.type);
+  if (filters?.page) params.set('page', String(filters.page));
+  if (filters?.limit) params.set('limit', String(filters.limit));
+  if (filters?.filters) params.set('filters', filters.filters);
+  if (filters?.sort) params.set('sort', filters.sort);
 
   const queryString = params.toString();
   const url = `/supported-devices${queryString ? `?${queryString}` : ''}`;
 
-  const response = await apiClient<{ data: SupportedDevice[] }>(url);
-  return response.data;
+  return apiClient<SupportedDevicesResponse>(url);
 }
 
 export async function getSupportedDeviceById(id: number): Promise<SupportedDevice | null> {

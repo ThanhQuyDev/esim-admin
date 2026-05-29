@@ -18,11 +18,10 @@ export async function GET(request: NextRequest) {
   const headers = await getAuthHeaders();
 
   const params = new URLSearchParams();
-  const search = searchParams.get('search');
-  const type = searchParams.get('type');
-
-  if (search) params.set('search', search);
-  if (type) params.set('type', type);
+  for (const key of ['page', 'limit', 'search', 'type', 'filters', 'sort']) {
+    const val = searchParams.get(key);
+    if (val) params.set(key, val);
+  }
 
   const res = await fetch(`${API_URL}/api/v1/supported-devices?${params}`, { headers });
   const data = await res.json();

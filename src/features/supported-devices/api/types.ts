@@ -22,4 +22,14 @@ export interface UpdateSupportedDevicePayload {
 export interface SupportedDeviceFilters {
   search?: string;
   type?: string;
+  limit?: number;
+  page?: number;
+  sort?: string;
+  filters?: string;
+}
+
+export interface SupportedDevicesResponse {
+  data: SupportedDevice[];
+  totalCount: number;
+  hasNextPage: boolean;
 }

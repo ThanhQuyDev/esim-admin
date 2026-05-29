@@ -175,7 +175,7 @@ export function MinimalTiptapEditor({
   if (!editor) return null;
 
   return (
-    <div className='overflow-hidden rounded-[0.5rem] bg-background shadow outline outline-1 outline-border'>
+    <div className='mx-1 overflow-hidden rounded-[0.5rem] bg-background shadow outline outline-1 outline-border'>
       <Toolbar editor={editor} />
       <EditorContent
         editor={editor}

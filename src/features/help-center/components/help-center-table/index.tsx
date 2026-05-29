@@ -57,8 +57,8 @@ export function HelpCenterTable() {
   };
 
   // URL params hold canonical ids (stable when the user toggles the filter
-  // language). Translate to the localized snake_case key the backend expects
-  // (e.g. category=bat_dau when lang=vi, category=getting_started when lang=en).
+  // language). Translate to the localized kebab-case key the backend expects
+  // (e.g. category=bat-dau when lang=vi, category=getting-started when lang=en).
   const filters = {
     page: params.page,
     limit: params.perPage,

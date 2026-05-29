@@ -54,10 +54,11 @@ function buildHelpCenterSeoUrl(args: {
   slug?: string | null;
 }): string {
   const locale = args.language || 'en';
-  const categorySlug = getCategoryApiKey(args.category, locale).replace(/_/g, '-');
-  const parentSlug = getParentApiKey(args.parent, locale).replace(/_/g, '-');
+  const categorySlug = getCategoryApiKey(args.category, locale);
+  const parentSlug = getParentApiKey(args.parent, locale);
   const cleanSlug = (args.slug ?? '').replace(/^\/+|\/+$/g, '');
-  return `/${locale}/help-center/${categorySlug}/${parentSlug}/${cleanSlug}`;
+  const basePath = locale === 'vi' ? 'tro-giup' : 'help-center';
+  return `/${locale}/${basePath}/${categorySlug}/${parentSlug}/${cleanSlug}`;
 }
 
 export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
@@ -104,11 +105,19 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
     }
   };
 
+  const goBackToListing = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/dashboard/help-center');
+    }
+  };
+
   const createMut = useMutation({
     ...createHelpCenterMutation,
     onSuccess: (_data, variables) => {
       toast.success('Tạo bài viết thành công');
-      router.push('/dashboard/help-center');
+      goBackToListing();
     },
     onError: (e) => toast.error(e.message || 'Tạo bài viết thất bại')
   });
@@ -117,7 +126,7 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
     ...updateHelpCenterMutation,
     onSuccess: () => {
       toast.success('Cập nhật bài viết thành công');
-      router.push('/dashboard/help-center');
+      goBackToListing();
     },
     onError: (e) => toast.error(e.message || 'Cập nhật bài viết thất bại')
   });
@@ -128,12 +137,13 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
       content: article?.content ?? '',
       order: String(article?.order ?? 0),
       category: article
-        ? (getCategoryKeyFromLabel(article.category) ?? 'getting_started')
-        : 'getting_started',
-      parent: article ? (getParentKeyFromLabel(article.parent) ?? 'setting_up') : 'setting_up',
+        ? (getCategoryKeyFromLabel(article.category) ?? 'getting-started')
+        : 'getting-started',
+      parent: article ? (getParentKeyFromLabel(article.parent) ?? 'setting-up') : 'setting-up',
       language: (article?.language as 'vi' | 'en') ?? 'en',
       slug: article?.slug ?? '',
       isPublished: article?.isPublished ?? false,
+      isPopular: article?.isPopular ?? false,
       seoTitle: article?.seoTitle ?? '',
       seoDescription: article?.seoDescription ?? '',
       seoKeywords: article?.seoKeywords ?? ''
@@ -154,6 +164,7 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
           language: value.language || undefined,
           slug,
           isPublished: value.isPublished,
+          isPopular: value.isPopular,
           seoTitle: value.seoTitle || undefined,
           seoDescription: value.seoDescription || undefined,
           seoKeywords: value.seoKeywords || undefined
@@ -170,6 +181,7 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
           language: value.language || undefined,
           slug,
           isPublished: value.isPublished,
+          isPopular: value.isPopular,
           seoTitle: value.seoTitle || undefined,
           seoDescription: value.seoDescription || undefined,
           seoKeywords: value.seoKeywords || undefined
@@ -201,14 +213,7 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
         <form.Form id='help-center-page-form' className='space-y-6'>
           <Card>
             <CardContent className='space-y-4 pt-6'>
-              <div className='flex items-center justify-between'>
-                <FormTextField
-                  name='title'
-                  label='Tiêu đề'
-                  required
-                  placeholder='Nhập tiêu đề...'
-                />
-              </div>
+              <FormTextField name='title' label='Tiêu đề' required placeholder='Nhập tiêu đề...' />
               <FormTextField
                 name='slug'
                 label='Slug (URL)'
@@ -236,7 +241,7 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
                 <FormSelectField name='language' label='Ngôn ngữ' options={LANG_OPTIONS} />
                 <FormTextField name='order' label='Thứ tự' placeholder='0' />
               </div>
-              <div className='flex items-center gap-3 pt-2'>
+              <div className='flex flex-wrap items-center gap-6 pt-2'>
                 <form.Field name='isPublished'>
                   {(field) => (
                     <div className='flex items-center gap-2'>
@@ -246,6 +251,18 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
                         onCheckedChange={(checked) => field.handleChange(checked)}
                       />
                       <Label htmlFor='isPublished'>Xuất bản (Publish)</Label>
+                    </div>
+                  )}
+                </form.Field>
+                <form.Field name='isPopular'>
+                  {(field) => (
+                    <div className='flex items-center gap-2'>
+                      <Switch
+                        id='isPopular'
+                        checked={field.state.value ?? false}
+                        onCheckedChange={(checked) => field.handleChange(checked)}
+                      />
+                      <Label htmlFor='isPopular'>Phổ biến (Popular)</Label>
                     </div>
                   )}
                 </form.Field>
@@ -294,11 +311,7 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
           </Card>
 
           <div className='flex items-center justify-end gap-3'>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => router.push('/dashboard/help-center')}
-            >
+            <Button type='button' variant='outline' onClick={goBackToListing}>
               Hủy
             </Button>
             <Button type='submit' form='help-center-page-form' isLoading={isPending}>
