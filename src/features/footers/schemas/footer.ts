@@ -5,7 +5,8 @@ export const footerSchema = z.object({
   titleVi: z.string().min(1, 'Vietnamese title is required'),
   url: z.string().min(1, 'URL is required'),
   language: z.string().min(1, 'Language is required'),
-  categories: z.string().optional()
+  categories: z.string().optional(),
+  iconUrl: z.string().optional()
 });
 
 export type FooterFormValues = z.infer<typeof footerSchema>;

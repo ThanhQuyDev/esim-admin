@@ -5,6 +5,7 @@ export type Footer = {
   url: string;
   language: string;
   categories?: string | null;
+  iconUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -24,6 +25,7 @@ export type CreateFooterPayload = {
   url: string;
   language: string;
   categories?: string | null;
+  iconUrl?: string | null;
 };
 
 export type UpdateFooterPayload = Partial<CreateFooterPayload>;

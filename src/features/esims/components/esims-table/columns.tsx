@@ -10,7 +10,9 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
   available: 'outline',
   active: 'default',
   expired: 'destructive',
-  deactivated: 'secondary'
+  deactivated: 'secondary',
+  sold: 'default',
+  refunded: 'destructive'
 };
 
 export const columns: ColumnDef<Esim>[] = [

@@ -54,3 +54,12 @@ export async function updateWalletStatus(
     body: JSON.stringify(data)
   });
 }
+
+export async function getWalletTransactions(
+  userId: number,
+  limit = 100
+): Promise<WalletTransactionResponse[]> {
+  return apiClient<WalletTransactionResponse[]>(
+    `/wallets/admin/${userId}/transactions?limit=${limit}`
+  );
+}

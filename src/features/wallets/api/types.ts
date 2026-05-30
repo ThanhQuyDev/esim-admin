@@ -32,17 +32,27 @@ export type WalletMeResponse = {
   daysLeft: number | null;
 };
 
-export type WalletTransactionType = 'manual_credit' | 'manual_debit' | 'manual_cancel';
+export type WalletTransactionType =
+  | 'order_cashback'
+  | 'order_cashback_reversal'
+  | 'referral_reward'
+  | 'referral_reward_reversal'
+  | 'refund_to_wallet'
+  | 'manual_credit'
+  | 'manual_debit'
+  | 'manual_cancel'
+  | 'redemption_capture'
+  | 'redemption_release'
+  | 'expiry_debit';
 
 export type WalletTransactionResponse = {
   id: number;
-  walletId: number;
   userId: number;
   type: WalletTransactionType;
   amountVnd: number;
   balanceAfterVnd: number;
+  orderId?: number | null;
   reason: string | null;
-  createdByAdminId: number;
   createdAt: string;
 };
 

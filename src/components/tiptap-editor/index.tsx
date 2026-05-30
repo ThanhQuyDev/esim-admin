@@ -31,6 +31,7 @@ import {
   MultipleColumnNode,
   RichTextColumn
 } from 'reactjs-tiptap-editor/column';
+import { CodeView, RichTextCodeView } from 'reactjs-tiptap-editor/codeview';
 import { Emoji, RichTextEmoji } from 'reactjs-tiptap-editor/emoji';
 import { ExportPdf, RichTextExportPdf } from 'reactjs-tiptap-editor/exportpdf';
 import { ExportWord, RichTextExportWord } from 'reactjs-tiptap-editor/exportword';
@@ -121,7 +122,8 @@ function buildExtensions(options?: {
     TextDirection,
     Attachment.configure({ upload: (file: File) => Promise.resolve(URL.createObjectURL(file)) }),
     SlashCommand,
-    MarkdownPaste
+    MarkdownPaste,
+    CodeView
   ];
 }
 
@@ -160,6 +162,7 @@ const Toolbar = memo(function Toolbar() {
       <RichTextExportWord />
       <RichTextTextDirection />
       <RichTextAttachment />
+      <RichTextCodeView />
     </div>
   );
 });

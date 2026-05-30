@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { FormDialog } from '@/components/ui/form-dialog';
 import { Icons } from '@/components/icons';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
+import { uploadToCloudinary } from '@/features/destinations/api/service';
 import { createFooterMutation, updateFooterMutation } from '../api/mutations';
 import type { CreateFooterPayload, Footer, UpdateFooterPayload } from '../api/types';
 import { footerSchema, type FooterFormValues } from '../schemas/footer';
+import Image from 'next/image';
 
 const LANG_OPTIONS = [
   { value: 'vi', label: 'Tiếng Việt' },
@@ -27,6 +30,57 @@ export function FooterFormDialog({ item, open, onOpenChange }: FooterFormDialogP
   return <CreateDialog open={open} onOpenChange={onOpenChange} />;
 }
 
+function IconUploadField({
+  label,
+  currentUrl,
+  onFileSelect,
+  file
+}: {
+  label: string;
+  currentUrl?: string | null;
+  onFileSelect: (f: File | null) => void;
+  file: File | null;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = file ? URL.createObjectURL(file) : currentUrl;
+
+  return (
+    <div className='space-y-2'>
+      <Label>{label}</Label>
+      <div className='flex items-center gap-3'>
+        {previewUrl && (
+          <Image
+            src={previewUrl}
+            alt='icon preview'
+            width={32}
+            height={32}
+            className='rounded-md border object-cover'
+          />
+        )}
+        <Button type='button' variant='outline' size='sm' onClick={() => inputRef.current?.click()}>
+          <Icons.upload className='mr-2 h-4 w-4' />
+          {previewUrl ? 'Thay đổi' : 'Tải lên'}
+        </Button>
+        {file && (
+          <Button type='button' variant='ghost' size='sm' onClick={() => onFileSelect(null)}>
+            <Icons.close className='h-4 w-4' />
+          </Button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type='file'
+        accept='image/*'
+        className='hidden'
+        onChange={(e) => {
+          onFileSelect(e.target.files?.[0] ?? null);
+          e.target.value = '';
+        }}
+      />
+    </div>
+  );
+}
+
 function CreateDialog({
   open,
   onOpenChange
@@ -34,12 +88,15 @@ function CreateDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const [iconFile, setIconFile] = useState<File | null>(null);
+
   const mutation = useMutation({
     ...createFooterMutation,
     onSuccess: () => {
       toast.success('Tạo footer thành công');
       onOpenChange(false);
       form.reset();
+      setIconFile(null);
     },
     onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
@@ -50,16 +107,22 @@ function CreateDialog({
       titleVi: '',
       url: '',
       language: 'en',
-      categories: ''
+      categories: '',
+      iconUrl: ''
     } as FooterFormValues,
     validators: { onSubmit: footerSchema },
     onSubmit: async ({ value }) => {
+      let iconUrl: string | null = value.iconUrl || null;
+      if (iconFile) {
+        iconUrl = await uploadToCloudinary(iconFile);
+      }
       const payload: CreateFooterPayload = {
         title: value.title,
         titleVi: value.titleVi,
         url: value.url,
         language: value.language,
-        categories: value.categories || null
+        categories: value.categories || null,
+        iconUrl
       };
       await mutation.mutateAsync(payload);
     }
@@ -103,6 +166,17 @@ function CreateDialog({
             label='Categories'
             placeholder='Nhập category (tuỳ chọn)'
           />
+          <IconUploadField
+            label='Icon'
+            currentUrl={null}
+            onFileSelect={setIconFile}
+            file={iconFile}
+          />
+          <FormTextField
+            name='iconUrl'
+            label='Hoặc nhập Icon URL'
+            placeholder='https://... (bỏ qua nếu đã upload)'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -118,6 +192,8 @@ function EditDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const [iconFile, setIconFile] = useState<File | null>(null);
+
   const mutation = useMutation({
     ...updateFooterMutation,
     onSuccess: () => {
@@ -133,16 +209,22 @@ function EditDialog({
       titleVi: item.titleVi,
       url: item.url,
       language: item.language || 'en',
-      categories: item.categories || ''
+      categories: item.categories || '',
+      iconUrl: item.iconUrl || ''
     } as FooterFormValues,
     validators: { onSubmit: footerSchema },
     onSubmit: async ({ value }) => {
+      let iconUrl: string | null = value.iconUrl || item.iconUrl || null;
+      if (iconFile) {
+        iconUrl = await uploadToCloudinary(iconFile);
+      }
       const payload: UpdateFooterPayload = {
         title: value.title,
         titleVi: value.titleVi,
         url: value.url,
         language: value.language,
-        categories: value.categories || null
+        categories: value.categories || null,
+        iconUrl
       };
       await mutation.mutateAsync({ id: item.id, values: payload });
     }
@@ -179,6 +261,17 @@ function EditDialog({
             name='categories'
             label='Categories'
             placeholder='Nhập category (tuỳ chọn)'
+          />
+          <IconUploadField
+            label='Icon'
+            currentUrl={item.iconUrl}
+            onFileSelect={setIconFile}
+            file={iconFile}
+          />
+          <FormTextField
+            name='iconUrl'
+            label='Hoặc nhập Icon URL'
+            placeholder='https://... (bỏ qua nếu đã upload)'
           />
         </form.Form>
       </form.AppForm>
