@@ -5,6 +5,7 @@ export type OrderUser = {
   socialId?: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string | null;
   photo?: { id: string; path: string } | null;
   role?: { id: number; name: string };
   status?: { id: number; name: string };

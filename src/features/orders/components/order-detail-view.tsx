@@ -442,6 +442,11 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           <CardContent className='space-y-3'>
             <InfoRow label='ID' value={order.user.id} />
             <InfoRow label='Email' value={order.user.email} />
+            <InfoRow
+              label='Họ và tên'
+              value={[order.user.firstName, order.user.lastName].filter(Boolean).join(' ') || '—'}
+            />
+            <InfoRow label='Số điện thoại' value={order.user.phoneNumber || '—'} />
           </CardContent>
         </Card>
       )}
