@@ -25,6 +25,8 @@ export type Order = {
   paymentMethod: string;
   paymentId: string;
   couponCode: string | null;
+  referralCode?: string | null;
+  referralDiscountVndAmount?: number | null;
   discountAmount: number;
   vndPrice: number;
   vndCostPrice: number;

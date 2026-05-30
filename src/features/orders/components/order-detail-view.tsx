@@ -350,6 +350,22 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               label='Giảm giá'
               value={formatCurrency(order.discountAmount, order.currency)}
             />
+            {order.referralCode && (
+              <>
+                <InfoRow
+                  label='Mã giới thiệu'
+                  value={<Badge variant='outline'>{order.referralCode}</Badge>}
+                />
+                <InfoRow
+                  label='Giảm giá giới thiệu'
+                  value={
+                    <span className='font-semibold text-blue-600'>
+                      -{formatCurrency(order.referralDiscountVndAmount || 10000, 'VND')}
+                    </span>
+                  }
+                />
+              </>
+            )}
             <InfoRow label='Ngày tạo' value={formatDate(order.createdAt)} />
             <InfoRow label='Cập nhật' value={formatDate(order.updatedAt)} />
           </div>

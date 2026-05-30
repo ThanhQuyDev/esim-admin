@@ -132,9 +132,16 @@ export const columns: ColumnDef<Order>[] = [
   {
     id: 'couponCode',
     accessorKey: 'couponCode',
-    header: 'Coupon',
-    cell: ({ row }) =>
-      row.original.couponCode ? <Badge variant='secondary'>{row.original.couponCode}</Badge> : '—',
+    header: 'Coupon / Referral',
+    cell: ({ row }) => {
+      if (row.original.couponCode) {
+        return <Badge variant='secondary'>{row.original.couponCode}</Badge>;
+      }
+      if (row.original.referralCode) {
+        return <Badge variant='outline'>{row.original.referralCode}</Badge>;
+      }
+      return '—';
+    },
     enableSorting: false
   },
   {
