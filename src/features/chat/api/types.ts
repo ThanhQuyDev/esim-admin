@@ -44,6 +44,7 @@ export interface ClientToServerEvents {
   getMessages: (data: { chatRoomId: number; page?: number; limit?: number }) => void;
   markAsRead: (data: { chatRoomId: number }) => void;
   getRooms: () => void;
+  subscribeAllRooms: () => void;
 }
 
 // ─── Server → Client Events ─────────────────────────────────────────────────
