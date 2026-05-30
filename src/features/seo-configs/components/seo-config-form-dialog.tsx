@@ -152,6 +152,7 @@ function CreateSeoConfigDialog({
       metaTitle: '',
       metaDescription: '',
       metaKeywords: '',
+      structuredData: '',
       destinationId: null as number | null,
       regionId: null as number | null,
       planId: null as number | null,
@@ -163,6 +164,7 @@ function CreateSeoConfigDialog({
         metaTitle: value.metaTitle,
         metaDescription: value.metaDescription || undefined,
         metaKeywords: value.metaKeywords || undefined,
+        structuredData: value.structuredData || undefined,
         destinationId: value.destinationId,
         regionId: value.regionId,
         planId: value.planId,
@@ -277,6 +279,16 @@ function CreateSeoConfigDialog({
             )}
           </form.AppField>
 
+          <form.AppField name='structuredData'>
+            {(field) => (
+              <field.TextareaField
+                label='Structured Data (Schema/Script)'
+                placeholder='<script type="application/ld+json">...</script>'
+                rows={6}
+              />
+            )}
+          </form.AppField>
+
           <form.AppField name='isActive'>
             {(field) => <field.SwitchField label='Hoạt động' />}
           </form.AppField>
@@ -329,6 +341,7 @@ function EditSeoConfigDialog({
       metaTitle: seoConfig.metaTitle,
       metaDescription: seoConfig.metaDescription || '',
       metaKeywords: seoConfig.metaKeywords || '',
+      structuredData: seoConfig.structuredData || '',
       destinationId: seoConfig.destinationId,
       regionId: seoConfig.regionId,
       planId: seoConfig.planId,
@@ -340,6 +353,7 @@ function EditSeoConfigDialog({
         metaTitle: value.metaTitle,
         metaDescription: value.metaDescription || undefined,
         metaKeywords: value.metaKeywords || undefined,
+        structuredData: value.structuredData || undefined,
         destinationId: value.destinationId,
         regionId: value.regionId,
         planId: value.planId,
@@ -451,6 +465,16 @@ function EditSeoConfigDialog({
           <form.AppField name='metaKeywords'>
             {(field) => (
               <field.TextField label='Meta Keywords' placeholder='esim, japan, travel...' />
+            )}
+          </form.AppField>
+
+          <form.AppField name='structuredData'>
+            {(field) => (
+              <field.TextareaField
+                label='Structured Data (Schema/Script)'
+                placeholder='<script type="application/ld+json">...</script>'
+                rows={6}
+              />
             )}
           </form.AppField>
 

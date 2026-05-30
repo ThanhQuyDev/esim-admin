@@ -241,7 +241,11 @@ function EditCouponDialog({
   });
 
   const expiresAtLocal = coupon.expiresAt
-    ? new Date(coupon.expiresAt).toISOString().slice(0, 16)
+    ? (() => {
+        const d = new Date(coupon.expiresAt);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      })()
     : '';
 
   const form = useAppForm({

@@ -57,6 +57,7 @@ function CreateDialog({
       minVnd: '0',
       maxVnd: '0',
       percentage: '30',
+      fixedAmountVnd: '0',
       isActive: true
     } as ProfitMarginTierFormValues,
     validators: { onSubmit: profitMarginTierSchema },
@@ -65,6 +66,7 @@ function CreateDialog({
         minVnd: Number(value.minVnd),
         maxVnd: Number(value.maxVnd),
         percentage: Number(value.percentage),
+        fixedAmountVnd: Number(value.fixedAmountVnd) || 0,
         isActive: value.isActive
       };
       await mutation.mutateAsync(payload);
@@ -106,7 +108,18 @@ function CreateDialog({
               type='number'
             />
           </div>
-          <FormTextField name='percentage' label='Profit %' placeholder='30' type='number' />
+          <div className='grid grid-cols-2 gap-4'>
+            <FormTextField name='percentage' label='Tăng theo %' placeholder='30' type='number' />
+            <FormTextField
+              name='fixedAmountVnd'
+              label='Tăng cố định (VND)'
+              placeholder='10000'
+              type='number'
+            />
+          </div>
+          <p className='text-muted-foreground text-xs'>
+            Nếu nhập số tiền cố định {'>'} 0, hệ thống sẽ ưu tiên dùng số tiền cố định thay vì %.
+          </p>
           <FormSwitchField name='isActive' label='Active' />
         </form.Form>
       </form.AppForm>
@@ -139,6 +152,7 @@ function EditDialog({
       minVnd: String(item.minVnd),
       maxVnd: String(item.maxVnd),
       percentage: String(item.percentage),
+      fixedAmountVnd: String(item.fixedAmountVnd || 0),
       isActive: item.isActive
     } as ProfitMarginTierFormValues,
     validators: { onSubmit: profitMarginTierSchema },
@@ -147,6 +161,7 @@ function EditDialog({
         minVnd: Number(value.minVnd),
         maxVnd: Number(value.maxVnd),
         percentage: Number(value.percentage),
+        fixedAmountVnd: Number(value.fixedAmountVnd) || 0,
         isActive: value.isActive
       };
       await mutation.mutateAsync({ id: item.id, values: payload });
@@ -182,7 +197,18 @@ function EditDialog({
               type='number'
             />
           </div>
-          <FormTextField name='percentage' label='Profit %' placeholder='30' type='number' />
+          <div className='grid grid-cols-2 gap-4'>
+            <FormTextField name='percentage' label='Tăng theo %' placeholder='30' type='number' />
+            <FormTextField
+              name='fixedAmountVnd'
+              label='Tăng cố định (VND)'
+              placeholder='10000'
+              type='number'
+            />
+          </div>
+          <p className='text-muted-foreground text-xs'>
+            Nếu nhập số tiền cố định {'>'} 0, hệ thống sẽ ưu tiên dùng số tiền cố định thay vì %.
+          </p>
           <FormSwitchField name='isActive' label='Active' />
         </form.Form>
       </form.AppForm>

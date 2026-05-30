@@ -5,6 +5,7 @@ import { ScrollToTop } from '@/components/scroll-to-top';
 import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { BreadcrumbProvider } from '@/hooks/use-breadcrumb-context';
+import { ChatNotificationListener } from '@/features/chat/components/chat-notification-listener';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
@@ -35,6 +36,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <ScrollToTop />
             </SidebarInset>
           </SidebarProvider>
+          <ChatNotificationListener />
         </InfobarProvider>
       </BreadcrumbProvider>
     </KBar>

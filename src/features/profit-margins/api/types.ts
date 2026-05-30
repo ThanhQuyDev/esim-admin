@@ -3,6 +3,7 @@ export type ProfitMarginTier = {
   minVnd: number;
   maxVnd: number;
   percentage: number;
+  fixedAmountVnd: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -25,6 +26,7 @@ export type CreateProfitMarginTierPayload = {
   minVnd: number;
   maxVnd: number;
   percentage: number;
+  fixedAmountVnd?: number;
   isActive: boolean;
 };
 

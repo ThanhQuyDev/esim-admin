@@ -88,7 +88,11 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   draft: '',
   isLoadingMessages: false,
   error: null,
-  soundEnabled: true,
+  soundEnabled: (() => {
+    if (typeof window === 'undefined') return true;
+    const stored = localStorage.getItem('chat_sound_enabled');
+    return stored !== null ? stored === 'true' : true;
+  })(),
   _socket: null,
 
   connect: (token: string, myUserId: number) => {
@@ -105,6 +109,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     // ── Connection events ──────────────────────────────────────────────
     socket.on('connect', () => {
       set({ connectionStatus: 'connected', _socket: socket });
+      // Subscribe to all rooms for global notifications
+      socket.emit('subscribeAllRooms');
     });
 
     socket.on('disconnect', () => {
@@ -183,7 +189,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       // Play notification sound if enabled and message is from customer
       if (state.soundEnabled && msg.senderId !== state.myUserId) {
         try {
-          const audio = new Audio('/assets/notification.mp3');
+          const audio = new Audio('/app/sound/notification.mp3');
           audio.volume = 0.5;
           audio.play().catch(() => {});
         } catch {
@@ -288,12 +294,11 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     if (!socket?.connected || !state.selectedRoomId) return;
 
     const trimmed = text.trim();
-    // Allow sending a file with no text, but require at least one of them
     if (!trimmed && !file) return;
 
     socket.emit('sendMessage', {
       chatRoomId: state.selectedRoomId,
-      message: trimmed,
+      message: trimmed || (file ? '📎' : ''),
       ...(file && {
         fileUrl: file.fileUrl,
         fileName: file.fileName,
@@ -373,5 +378,12 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       });
   },
 
-  toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled }))
+  toggleSound: () =>
+    set((s) => {
+      const next = !s.soundEnabled;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('chat_sound_enabled', String(next));
+      }
+      return { soundEnabled: next };
+    })
 }));

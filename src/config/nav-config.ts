@@ -182,7 +182,16 @@ export const navGroups: NavGroup[] = [
         icon: 'chat',
         shortcut: ['c', 'c'],
         isActive: false,
-        items: []
+        items: [
+          {
+            title: 'Tin nhắn',
+            url: '/dashboard/chat'
+          },
+          {
+            title: 'Cài đặt',
+            url: '/dashboard/chat/settings'
+          }
+        ]
       }
     ]
   },

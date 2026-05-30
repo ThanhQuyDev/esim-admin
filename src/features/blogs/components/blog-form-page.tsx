@@ -33,6 +33,70 @@ import {
 import { cn } from '@/lib/utils';
 import type { MiniTag } from '@/features/mini-tags/api/types';
 
+function FaqSelector({
+  faqs,
+  selectedIds,
+  onChange
+}: {
+  faqs: Faq[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [search, setSearch] = useState('');
+
+  const filtered = faqs.filter(
+    (faq) => !search.trim() || faq.question.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggle = (id: string) => {
+    if (selectedIds.includes(id)) {
+      onChange(selectedIds.filter((i) => i !== id));
+    } else {
+      onChange([...selectedIds, id]);
+    }
+  };
+
+  return (
+    <div className='space-y-2'>
+      <Label>Chọn câu hỏi FAQ</Label>
+      <Input
+        placeholder='Tìm câu hỏi FAQ...'
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className='h-8'
+      />
+      <div className='max-h-60 space-y-1 overflow-y-auto rounded-md border p-3'>
+        {filtered.map((faq) => {
+          const faqIdStr = String(faq.id);
+          const selected = selectedIds.includes(faqIdStr);
+          return (
+            <label
+              key={faq.id}
+              className='flex cursor-pointer items-center gap-2 rounded p-1.5 hover:bg-muted'
+            >
+              <input
+                type='checkbox'
+                checked={selected}
+                onChange={() => toggle(faqIdStr)}
+                className='h-4 w-4 rounded border-gray-300'
+              />
+              <span className='text-sm'>{faq.question}</span>
+            </label>
+          );
+        })}
+        {filtered.length === 0 && (
+          <p className='text-muted-foreground text-sm'>
+            {faqs.length === 0 ? 'Chưa có câu hỏi FAQ nào.' : 'Không tìm thấy FAQ phù hợp.'}
+          </p>
+        )}
+      </div>
+      {selectedIds.length > 0 && (
+        <p className='text-muted-foreground text-xs'>{selectedIds.length} FAQ đã chọn</p>
+      )}
+    </div>
+  );
+}
+
 const LANG_OPTIONS = [
   { value: 'vi', label: 'Vietnamese' },
   { value: 'en', label: 'English' }
@@ -491,40 +555,11 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
                   enabledField.state.value ? (
                     <form.AppField name='faqIds'>
                       {(faqIdsField) => (
-                        <div className='space-y-2'>
-                          <Label>Chọn câu hỏi FAQ</Label>
-                          <div className='max-h-60 space-y-2 overflow-y-auto rounded-md border p-3'>
-                            {faqs.map((faq) => {
-                              const faqIdStr = String(faq.id);
-                              const selected = (faqIdsField.state.value ?? []).includes(faqIdStr);
-                              return (
-                                <label
-                                  key={faq.id}
-                                  className='flex cursor-pointer items-center gap-2 rounded p-1 hover:bg-muted'
-                                >
-                                  <input
-                                    type='checkbox'
-                                    checked={selected}
-                                    onChange={() => {
-                                      const current = faqIdsField.state.value ?? [];
-                                      const next = selected
-                                        ? current.filter((id) => id !== faqIdStr)
-                                        : [...current, faqIdStr];
-                                      faqIdsField.handleChange(next);
-                                    }}
-                                    className='h-4 w-4 rounded border-gray-300'
-                                  />
-                                  <span className='text-sm'>{faq.question}</span>
-                                </label>
-                              );
-                            })}
-                            {faqs.length === 0 && (
-                              <p className='text-muted-foreground text-sm'>
-                                Chưa có câu hỏi FAQ nào.
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                        <FaqSelector
+                          faqs={faqs}
+                          selectedIds={faqIdsField.state.value ?? []}
+                          onChange={(next) => faqIdsField.handleChange(next)}
+                        />
                       )}
                     </form.AppField>
                   ) : null

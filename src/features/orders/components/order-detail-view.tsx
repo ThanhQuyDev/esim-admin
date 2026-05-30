@@ -333,7 +333,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               value={<span className='font-mono text-xs font-medium'>{order.orderNumber}</span>}
             />
             <InfoRow label='Tổng tiền' value={formatCurrency(order.totalAmount, order.currency)} />
-            <InfoRow label='Giá VND' value={formatCurrency(order.vndPrice, 'VND')} />
+            <InfoRow label='Giá bán VND' value={formatCurrency(order.vndPrice, 'VND')} />
             <InfoRow label='Giá vốn VND' value={formatCurrency(order.vndCostPrice, 'VND')} />
           </div>
           <div className='space-y-3'>

@@ -68,11 +68,17 @@ export const columns: ColumnDef<Coupon>[] = [
     id: 'isActive',
     accessorKey: 'isActive',
     header: 'Trạng thái',
-    cell: ({ row }) => (
-      <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
-        {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const isExpired = row.original.expiresAt && new Date(row.original.expiresAt) < new Date();
+      if (isExpired) {
+        return <Badge variant='destructive'>Hết hạn</Badge>;
+      }
+      return (
+        <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
+          {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
+        </Badge>
+      );
+    },
     enableSorting: false
   },
   {

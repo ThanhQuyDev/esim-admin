@@ -19,13 +19,14 @@ export const profitMarginTierSchema = z
     minVnd: numericField('Min price is required'),
     maxVnd: numericField('Max price is required'),
     percentage: numericField('Percentage is required'),
+    fixedAmountVnd: z.union([z.string(), z.number()]).optional(),
     isActive: z.boolean()
   })
   .refine(
     (data) => {
       const min = Number(data.minVnd);
       const max = Number(data.maxVnd);
-      if (isNaN(min) || isNaN(max)) return true; // let other validations catch NaN
+      if (isNaN(min) || isNaN(max)) return true;
       return min <= max;
     },
     {

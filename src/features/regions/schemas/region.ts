@@ -9,7 +9,8 @@ export const createRegionSchema = z.object({
   titleVi: z.string().optional(),
   description: z.string().optional(),
   descriptionVi: z.string().optional(),
-  providers: z.string().optional()
+  providers: z.string().optional(),
+  destinationIds: z.array(z.number()).optional()
 });
 
 export type CreateRegionFormValues = z.infer<typeof createRegionSchema>;
@@ -23,7 +24,8 @@ export const updateRegionSchema = z.object({
   titleVi: z.string().optional(),
   description: z.string().optional(),
   descriptionVi: z.string().optional(),
-  providers: z.string().optional()
+  providers: z.string().optional(),
+  destinationIds: z.array(z.number()).optional()
 });
 
 export type UpdateRegionFormValues = z.infer<typeof updateRegionSchema>;

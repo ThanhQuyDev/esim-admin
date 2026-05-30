@@ -53,6 +53,7 @@ export type CreateRegionPayload = {
   description?: string | null;
   descriptionVi?: string | null;
   providers?: string | null;
+  destinationIds?: number[];
 };
 
 export type UpdateRegionPayload = {
@@ -68,4 +69,5 @@ export type UpdateRegionPayload = {
   description?: string | null;
   descriptionVi?: string | null;
   providers?: string | null;
+  destinationIds?: number[];
 };

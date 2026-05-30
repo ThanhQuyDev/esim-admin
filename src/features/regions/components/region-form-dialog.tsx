@@ -17,6 +17,7 @@ import {
   type UpdateRegionFormValues
 } from '../schemas/region';
 import { FormDialog } from '@/components/ui/form-dialog';
+import { DestinationSelector } from './destination-selector';
 
 interface RegionFormDialogProps {
   region?: Region;
@@ -91,6 +92,7 @@ function CreateDialog({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedDestinationIds, setSelectedDestinationIds] = useState<number[]>([]);
 
   const createMutation = useMutation({
     ...createRegionMutation,
@@ -100,6 +102,7 @@ function CreateDialog({
       form.reset();
       setAvatarFile(null);
       setIconFile(null);
+      setSelectedDestinationIds([]);
     },
     onError: (error) => toast.error(error.message || 'Tạo khu vực thất bại')
   });
@@ -114,7 +117,8 @@ function CreateDialog({
       titleVi: '',
       description: '',
       descriptionVi: '',
-      providers: ''
+      providers: '',
+      destinationIds: []
     } as CreateRegionFormValues,
     validators: {
       onSubmit: createRegionSchema
@@ -143,7 +147,8 @@ function CreateDialog({
           ...(value.titleVi && { titleVi: value.titleVi }),
           ...(value.description && { description: value.description }),
           ...(value.descriptionVi && { descriptionVi: value.descriptionVi }),
-          ...(value.providers && { providers: value.providers })
+          ...(value.providers && { providers: value.providers }),
+          ...(selectedDestinationIds.length > 0 && { destinationIds: selectedDestinationIds })
         };
 
         await createMutation.mutateAsync(payload);
@@ -202,6 +207,11 @@ function CreateDialog({
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 
+          <DestinationSelector
+            selectedIds={selectedDestinationIds}
+            onChange={setSelectedDestinationIds}
+          />
+
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <FormTextField name='title' label='Tiêu đề (EN)' placeholder='Title in English' />
             <FormTextField name='titleVi' label='Tiêu đề (VI)' placeholder='Tiêu đề tiếng Việt' />
@@ -236,6 +246,9 @@ function EditDialog({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedDestinationIds, setSelectedDestinationIds] = useState<number[]>(
+    region.destinations?.map((d) => d.id) ?? []
+  );
 
   const updateMutation = useMutation({
     ...updateRegionMutation,
@@ -256,7 +269,8 @@ function EditDialog({
       titleVi: region.titleVi ?? '',
       description: region.description ?? '',
       descriptionVi: region.descriptionVi ?? '',
-      providers: region.providers ?? ''
+      providers: region.providers ?? '',
+      destinationIds: region.destinations?.map((d) => d.id) ?? []
     } as UpdateRegionFormValues,
     validators: {
       onSubmit: updateRegionSchema
@@ -285,7 +299,8 @@ function EditDialog({
           titleVi: value.titleVi || undefined,
           description: value.description || undefined,
           descriptionVi: value.descriptionVi || undefined,
-          providers: value.providers || undefined
+          providers: value.providers || undefined,
+          destinationIds: selectedDestinationIds
         };
 
         await updateMutation.mutateAsync({
@@ -356,6 +371,12 @@ function EditDialog({
           </div>
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
+
+          <DestinationSelector
+            selectedIds={selectedDestinationIds}
+            onChange={setSelectedDestinationIds}
+            initialDestinations={region.destinations}
+          />
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <FormTextField name='title' label='Tiêu đề (EN)' placeholder='Title in English' />

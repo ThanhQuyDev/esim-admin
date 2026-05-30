@@ -70,7 +70,11 @@ export function ChatOrderWidget() {
     }
 
     setLoading(true);
-    apiClient<OrdersResponse>(`/orders?userId=${roomOwnerId}&limit=5&sort=createdAt:DESC`)
+    const filters = JSON.stringify({ userId: roomOwnerId });
+    const sort = JSON.stringify([{ orderBy: 'createdAt', order: 'DESC' }]);
+    apiClient<OrdersResponse>(
+      `/orders?filters=${encodeURIComponent(filters)}&limit=5&sort=${encodeURIComponent(sort)}`
+    )
       .then((res) => {
         setOrders(res.data ?? []);
       })

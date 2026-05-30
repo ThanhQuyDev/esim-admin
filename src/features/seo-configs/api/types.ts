@@ -7,6 +7,7 @@ export type SeoConfig = {
   ogImage: string;
   ogTitle: string;
   ogDescription: string;
+  structuredData: string | null;
   destinationId: number | null;
   regionId: number | null;
   planId: number | null;
@@ -37,6 +38,7 @@ export type CreateSeoConfigPayload = {
   ogImage?: string;
   ogTitle?: string;
   ogDescription?: string;
+  structuredData?: string;
   destinationId?: number | null;
   regionId?: number | null;
   planId?: number | null;
