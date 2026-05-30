@@ -24,7 +24,12 @@ export async function GET(request: NextRequest) {
 
   if (page) params.set('page', page);
   if (limit) params.set('limit', limit);
-  if (filters) params.set('filters', filters);
+
+  // Admin always sees all statuses including refunded
+  const parsedFilters = filters ? JSON.parse(filters) : {};
+  parsedFilters.includeAll = true;
+  params.set('filters', JSON.stringify(parsedFilters));
+
   if (sort) params.set('sort', sort);
 
   const res = await fetch(`${API_URL}/api/v1/esims?${params}`, { headers });
