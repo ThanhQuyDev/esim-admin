@@ -9,6 +9,7 @@ export const blogSchema = z.object({
   language: z.enum(LANG_OPTIONS),
   slug: z.string().optional(),
   category: z.string().optional(),
+  parent: z.string().optional(),
   excerpt: z.string().optional(),
   isPublished: z.boolean().optional(),
   miniTagId: z.string().optional(),
@@ -18,7 +19,8 @@ export const blogSchema = z.object({
   seoDescription: z.string().optional(),
   seoKeywords: z.string().optional(),
   faqEnabled: z.boolean().optional(),
-  faqIds: z.array(z.string()).optional()
+  faqIds: z.array(z.string()).optional(),
+  isPopular: z.boolean().optional()
 });
 
 export type BlogFormValues = z.infer<typeof blogSchema>;

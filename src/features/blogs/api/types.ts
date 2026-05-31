@@ -19,6 +19,7 @@ export type Blog = {
   author: string;
   authorAvatar?: string | null;
   category: string;
+  parent?: string | null;
   coverImage: string | null;
   excerpt: string | null;
   content: string;
@@ -35,6 +36,7 @@ export type Blog = {
   faqEnabled?: boolean;
   faqIds?: string[];
   faqs?: Faq[];
+  isPopular?: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -60,6 +62,7 @@ export type CreateBlogPayload = {
   isPublished?: boolean;
   author: string;
   category?: string;
+  parent?: string;
   coverImage?: string | null;
   excerpt?: string | null;
   content: string;
@@ -73,6 +76,7 @@ export type CreateBlogPayload = {
   seoKeywords?: string;
   faqEnabled?: boolean;
   faqIds?: string[];
+  isPopular?: boolean;
 };
 
 export type UpdateBlogPayload = Partial<CreateBlogPayload>;

@@ -83,7 +83,17 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
           </CardHeader>
           <CardContent className='flex flex-col items-center gap-4'>
             <div className='rounded-lg border bg-white p-4'>
-              <QRCodeSVG value={esim.lpa} size={200} level='M' />
+              <QRCodeSVG
+                value={esim.lpa}
+                size={200}
+                level='H'
+                imageSettings={{
+                  src: 'https://res.cloudinary.com/drozbviwb/image/upload/v1780067058/logo_esimvn_zycejk.png',
+                  height: 40,
+                  width: 40,
+                  excavate: true
+                }}
+              />
             </div>
             <p className='text-muted-foreground max-w-md text-center text-xs'>
               Quét mã QR này bằng camera điện thoại để cài đặt eSIM. Mã được tạo từ LPA:{' '}

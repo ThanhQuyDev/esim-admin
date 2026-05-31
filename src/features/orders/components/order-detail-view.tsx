@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { OrderItemEsim, OrderItemPlan } from '../api/types';
 import { Icons } from '@/components/icons';
+import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { RefundOrderModal } from './refund-order-modal';
@@ -164,13 +165,19 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
           Kích hoạt & Cài đặt
         </h6>
         <div className='grid gap-4 md:grid-cols-2'>
-          {esim.qrcode && (
+          {esim.lpa && (
             <div className='flex flex-col items-center gap-2 rounded-md border p-3'>
               <span className='text-xs font-medium text-muted-foreground'>Mã QR kích hoạt</span>
-              <img
-                src={esim.qrcode}
-                alt='QR Code kích hoạt eSIM'
-                className='h-32 w-32 rounded object-contain'
+              <QRCodeSVG
+                value={esim.lpa}
+                size={128}
+                level='H'
+                imageSettings={{
+                  src: 'https://res.cloudinary.com/drozbviwb/image/upload/v1780067058/logo_esimvn_zycejk.png',
+                  height: 24,
+                  width: 24,
+                  excavate: true
+                }}
               />
             </div>
           )}

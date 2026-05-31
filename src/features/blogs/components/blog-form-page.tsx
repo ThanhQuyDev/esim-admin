@@ -282,8 +282,10 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
       language: (blog?.language as 'vi' | 'en') ?? 'en',
       slug: blog?.slug ?? '',
       category: blog?.category ?? '',
+      parent: blog?.parent ?? '',
       excerpt: blog?.excerpt ?? '',
       isPublished: blog?.isPublished ?? false,
+      isPopular: blog?.isPopular ?? false,
       miniTagId: initialMiniTagId ? String(initialMiniTagId) : '',
       planIdsText: initialPlanIds.length ? initialPlanIds.join(', ') : '',
       timeRead: blog?.timeRead ?? undefined,
@@ -328,9 +330,11 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             language: value.language,
             slug: value.slug || undefined,
             category: value.category || undefined,
+            parent: value.parent || undefined,
             excerpt: value.excerpt || undefined,
             ...(coverImage && { coverImage }),
             isPublished: value.isPublished,
+            isPopular: value.isPopular ?? false,
             miniTagId: value.miniTagId || undefined,
             planIds,
             timeRead: value.timeRead || undefined,
@@ -371,6 +375,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             language: value.language,
             ...(value.slug && { slug: value.slug }),
             ...(value.category && { category: value.category }),
+            ...(value.parent && { parent: value.parent }),
             ...(value.excerpt && { excerpt: value.excerpt }),
             ...(coverImage && { coverImage }),
             isPublished: value.isPublished ?? false,
@@ -446,9 +451,10 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
                 <FormTextField name='author' label='Tác giả' required placeholder='Tên tác giả' />
                 <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
               </div>
-              <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
                 <FormTextField name='slug' label='Slug' placeholder='duong-dan-bai-viet' />
                 <FormTextField name='category' label='Danh mục' placeholder='danh mục bài viết' />
+                <FormTextField name='parent' label='Danh mục con' placeholder='danh mục con' />
               </div>
               <form.AppField name='timeRead'>
                 {(field) => (
@@ -497,6 +503,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
               />
 
               <FormSwitchField name='isPublished' label='Xuất bản' />
+              <FormSwitchField name='isPopular' label='Nổi bật' />
             </CardContent>
           </Card>
 
