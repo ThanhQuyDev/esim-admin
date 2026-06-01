@@ -174,8 +174,8 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
                 level='H'
                 imageSettings={{
                   src: 'https://res.cloudinary.com/drozbviwb/image/upload/v1780067058/logo_esimvn_zycejk.png',
-                  height: 24,
-                  width: 24,
+                  height: 12,
+                  width: 58,
                   excavate: true
                 }}
               />

@@ -47,7 +47,7 @@ export function RefundOrderModal({
   const [adminNote, setAdminNote] = useState('');
 
   const amountVnd = parseInt(amount, 10);
-  const isValidAmount = !isNaN(amountVnd) && amountVnd > 0 && amountVnd <= payableVndPrice;
+  const isValidAmount = !isNaN(amountVnd) && amountVnd >= 0 && amountVnd <= payableVndPrice;
 
   function handleSubmit() {
     if (!isValidAmount) return;
