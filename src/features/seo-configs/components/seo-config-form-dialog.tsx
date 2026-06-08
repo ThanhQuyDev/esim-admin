@@ -203,6 +203,7 @@ function CreateSeoConfigDialog({
       formId={FORM_ID}
       isLoading={mutation.isPending}
       submitLabel='Tạo mới'
+      className='max-w-5xl'
     >
       <form.AppForm>
         <form.Form id={FORM_ID} className='space-y-4'>
@@ -284,7 +285,7 @@ function CreateSeoConfigDialog({
               <field.TextareaField
                 label='Structured Data (Schema/Script)'
                 placeholder='<script type="application/ld+json">...</script>'
-                rows={6}
+                rows={12}
               />
             )}
           </form.AppField>
@@ -392,6 +393,7 @@ function EditSeoConfigDialog({
       formId={FORM_ID}
       isLoading={mutation.isPending}
       submitLabel='Cập nhật'
+      className='max-w-5xl'
     >
       <form.AppForm>
         <form.Form id={FORM_ID} className='space-y-4'>
@@ -473,7 +475,7 @@ function EditSeoConfigDialog({
               <field.TextareaField
                 label='Structured Data (Schema/Script)'
                 placeholder='<script type="application/ld+json">...</script>'
-                rows={6}
+                rows={12}
               />
             )}
           </form.AppField>

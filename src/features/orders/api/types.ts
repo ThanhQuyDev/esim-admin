@@ -32,6 +32,7 @@ export type Order = {
   vndPrice: number;
   vndCostPrice: number;
   walletSpentVndAmount: number | null;
+  refundedAmountVnd?: number | null;
   cashbackAmountVnd: number | null;
   hasInvoice?: boolean;
   isInvoice?: boolean;

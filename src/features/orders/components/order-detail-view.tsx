@@ -264,6 +264,8 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         orderId={order.id}
         orderNumber={order.orderNumber}
         payableVndPrice={order.vndPrice}
+        walletSpentVndAmount={order.walletSpentVndAmount}
+        refundedAmountVnd={order.refundedAmountVnd}
         open={refundOpen}
         onOpenChange={setRefundOpen}
         onSubmit={(data) => refundMutation.mutate({ id: order.id, data })}
@@ -340,7 +342,13 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               value={<span className='font-mono text-xs font-medium'>{order.orderNumber}</span>}
             />
             <InfoRow label='Tổng tiền' value={formatCurrency(order.totalAmount, order.currency)} />
-            <InfoRow label='Giá bán VND' value={formatCurrency(order.vndPrice, 'VND')} />
+            <InfoRow
+              label='Giá bán VND'
+              value={formatCurrency(
+                Number(order.vndPrice ?? 0) + Number(order.walletSpentVndAmount ?? 0),
+                'VND'
+              )}
+            />
             <InfoRow label='Giá vốn VND' value={formatCurrency(order.vndCostPrice, 'VND')} />
           </div>
           <div className='space-y-3'>

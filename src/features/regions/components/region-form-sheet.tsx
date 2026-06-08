@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,8 +12,9 @@ import {
   SheetTitle
 } from '@/components/ui/sheet';
 import { Icons } from '@/components/icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createRegionMutation, updateRegionMutation } from '../api/mutations';
+import { regionQueryOptions } from '../api/queries';
 import { uploadToCloudinary } from '../api/service';
 import type { Region, CreateRegionPayload, UpdateRegionPayload } from '../api/types';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ import {
   type CreateRegionFormValues,
   type UpdateRegionFormValues
 } from '../schemas/region';
+import { DestinationSelector } from './destination-selector';
 
 interface RegionFormSheetProps {
   region?: Region;
@@ -228,6 +230,37 @@ function EditRegionSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  // Fetch full region detail to get destinations (list endpoint may not include them)
+  const { data: regionDetail, isLoading } = useQuery({
+    ...regionQueryOptions(region.id),
+    enabled: open
+  });
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className='flex flex-col'>
+        <SheetHeader>
+          <SheetTitle>Chỉnh sửa khu vực</SheetTitle>
+          <SheetDescription>Cập nhật thông tin khu vực bên dưới.</SheetDescription>
+        </SheetHeader>
+
+        {isLoading || !regionDetail ? (
+          <div className='flex flex-1 items-center justify-center'>
+            <Icons.spinner className='h-6 w-6 animate-spin text-muted-foreground' />
+          </div>
+        ) : (
+          <EditRegionForm
+            key={regionDetail.id}
+            region={regionDetail}
+            onClose={() => onOpenChange(false)}
+          />
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function EditRegionForm({ region, onClose }: { region: Region; onClose: () => void }) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -235,7 +268,7 @@ function EditRegionSheet({
     ...updateRegionMutation,
     onSuccess: () => {
       toast.success('Cập nhật khu vực thành công');
-      onOpenChange(false);
+      onClose();
     },
     onError: (error) => toast.error(error.message || 'Cập nhật khu vực thất bại')
   });
@@ -247,7 +280,8 @@ function EditRegionSheet({
       isPopular: region.isPopular,
       isActive: region.isActive,
       title: region.title ?? '',
-      titleVi: region.titleVi ?? ''
+      titleVi: region.titleVi ?? '',
+      destinationIds: region.destinations?.map((d) => d.id) ?? []
     } as UpdateRegionFormValues,
     validators: {
       onSubmit: updateRegionSchema
@@ -268,7 +302,8 @@ function EditRegionSheet({
           isPopular: value.isPopular,
           isActive: value.isActive,
           ...(value.title && { title: value.title }),
-          ...(value.titleVi && { titleVi: value.titleVi })
+          ...(value.titleVi && { titleVi: value.titleVi }),
+          destinationIds: value.destinationIds ?? []
         };
 
         await updateMutation.mutateAsync({
@@ -288,64 +323,67 @@ function EditRegionSheet({
   const isPending = updateMutation.isPending || uploading;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className='flex flex-col'>
-        <SheetHeader>
-          <SheetTitle>Chỉnh sửa khu vực</SheetTitle>
-          <SheetDescription>Cập nhật thông tin khu vực bên dưới.</SheetDescription>
-        </SheetHeader>
+    <>
+      <div className='flex-1 overflow-auto'>
+        <form.AppForm>
+          <form.Form id='region-form-sheet' className='space-y-4'>
+            <FormTextField
+              name='name'
+              label='Tên'
+              required
+              placeholder='Liên minh Châu Âu'
+              validators={{
+                onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
+              }}
+            />
 
-        <div className='flex-1 overflow-auto'>
-          <form.AppForm>
-            <form.Form id='region-form-sheet' className='space-y-4'>
-              <FormTextField
-                name='name'
-                label='Tên'
-                required
-                placeholder='Liên minh Châu Âu'
-                validators={{
-                  onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
-                }}
-              />
+            <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
 
-              <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
+            <ImageUploadField
+              label='Ảnh đại diện'
+              currentUrl={region.avatarUrl}
+              onFileSelect={setAvatarFile}
+              file={avatarFile}
+            />
 
-              <ImageUploadField
-                label='Ảnh đại diện'
-                currentUrl={region.avatarUrl}
-                onFileSelect={setAvatarFile}
-                file={avatarFile}
-              />
+            <FormTextField
+              name='title'
+              label='Title (EN) — SEO'
+              placeholder='eSIM Europe - Multi-Country Data Plans'
+            />
+            <FormTextField
+              name='titleVi'
+              label='Title (VI) — SEO'
+              placeholder='eSIM Châu Âu - Gói Data Đa Quốc Gia'
+            />
 
-              <FormTextField
-                name='title'
-                label='Title (EN) — SEO'
-                placeholder='eSIM Europe - Multi-Country Data Plans'
-              />
-              <FormTextField
-                name='titleVi'
-                label='Title (VI) — SEO'
-                placeholder='eSIM Châu Âu - Gói Data Đa Quốc Gia'
-              />
+            <form.AppField name='destinationIds'>
+              {(field) => (
+                <DestinationSelector
+                  selectedIds={field.state.value ?? []}
+                  onChange={(ids) => field.handleChange(ids)}
+                  initialDestinations={region.destinations ?? []}
+                />
+              )}
+            </form.AppField>
 
-              <div className='grid grid-cols-2 gap-4'>
-                <FormSwitchField name='isPopular' label='Nổi bật' />
-                <FormSwitchField name='isActive' label='Hoạt động' />
-              </div>
-            </form.Form>
-          </form.AppForm>
-        </div>
+            <div className='grid grid-cols-2 gap-4'>
+              <FormSwitchField name='isPopular' label='Nổi bật' />
+              <FormSwitchField name='isActive' label='Hoạt động' />
+            </div>
+          </form.Form>
+        </form.AppForm>
+      </div>
 
-        <SheetFooter>
-          <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-            Hủy
-          </Button>
-          <Button type='submit' form='region-form-sheet' isLoading={isPending}>
-            <Icons.check /> Cập nhật
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      <SheetFooter>
+        <Button type='button' variant='outline' onClick={onClose}>
+          Hủy
+        </Button>
+        <Button type='submit' form='region-form-sheet' isLoading={isPending}>
+          <Icons.check /> Cập nhật
+        </Button>
+      </SheetFooter>
+    </>
   );
 }
 

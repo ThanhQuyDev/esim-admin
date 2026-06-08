@@ -26,6 +26,8 @@ interface RefundOrderModalProps {
   orderId: number;
   orderNumber: string;
   payableVndPrice: number;
+  walletSpentVndAmount?: number | null;
+  refundedAmountVnd?: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: RefundOrderRequest) => void;
@@ -36,18 +38,23 @@ export function RefundOrderModal({
   orderId,
   orderNumber,
   payableVndPrice,
+  walletSpentVndAmount,
+  refundedAmountVnd,
   open,
   onOpenChange,
   onSubmit,
   isSubmitting
 }: RefundOrderModalProps) {
   const [mode, setMode] = useState<RefundMode>('wallet');
-  const [amount, setAmount] = useState(String(payableVndPrice));
+  const totalOrderValue = Number(payableVndPrice ?? 0) + Number(walletSpentVndAmount ?? 0);
+  const alreadyRefunded = Number(refundedAmountVnd ?? 0);
+  const maxRefundable = Math.max(0, totalOrderValue - alreadyRefunded);
+  const [amount, setAmount] = useState(String(maxRefundable));
   const [reason, setReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
 
   const amountVnd = parseInt(amount, 10);
-  const isValidAmount = !isNaN(amountVnd) && amountVnd >= 0 && amountVnd <= payableVndPrice;
+  const isValidAmount = !isNaN(amountVnd) && amountVnd >= 0 && amountVnd <= maxRefundable;
 
   function handleSubmit() {
     if (!isValidAmount) return;
@@ -62,7 +69,7 @@ export function RefundOrderModal({
   function handleOpenChange(newOpen: boolean) {
     if (!newOpen) {
       setMode('wallet');
-      setAmount(String(payableVndPrice));
+      setAmount(String(maxRefundable));
       setReason('');
       setAdminNote('');
     }
@@ -82,14 +89,34 @@ export function RefundOrderModal({
 
         <div className='space-y-4'>
           {/* Order Summary */}
-          <div className='rounded-lg border p-4'>
+          <div className='rounded-lg border p-4 space-y-2'>
             <div className='flex items-center justify-between'>
               <span className='text-muted-foreground text-sm'>Đơn hàng</span>
               <span className='font-mono text-sm font-medium'>{orderNumber}</span>
             </div>
-            <div className='mt-2 flex items-center justify-between'>
-              <span className='text-muted-foreground text-sm'>Số tiền đã thanh toán</span>
-              <span className='text-sm font-bold'>{formatVnd(payableVndPrice)}</span>
+            <div className='flex items-center justify-between'>
+              <span className='text-muted-foreground text-sm'>Tiền mặt đã thanh toán</span>
+              <span className='text-sm font-medium'>{formatVnd(payableVndPrice)}</span>
+            </div>
+            {Number(walletSpentVndAmount ?? 0) > 0 && (
+              <div className='flex items-center justify-between'>
+                <span className='text-muted-foreground text-sm'>eXU đã sử dụng</span>
+                <span className='text-sm font-medium'>
+                  {formatVnd(Number(walletSpentVndAmount ?? 0))}
+                </span>
+              </div>
+            )}
+            {alreadyRefunded > 0 && (
+              <div className='flex items-center justify-between'>
+                <span className='text-muted-foreground text-sm'>Đã hoàn trước đó</span>
+                <span className='text-sm font-medium text-amber-600'>
+                  -{formatVnd(alreadyRefunded)}
+                </span>
+              </div>
+            )}
+            <div className='flex items-center justify-between border-t pt-2'>
+              <span className='text-sm font-semibold'>Tối đa có thể hoàn</span>
+              <span className='text-sm font-bold'>{formatVnd(maxRefundable)}</span>
             </div>
           </div>
 
@@ -120,11 +147,11 @@ export function RefundOrderModal({
               type='number'
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              max={payableVndPrice}
+              max={maxRefundable}
             />
             {!isValidAmount && amount && (
               <p className='text-destructive text-xs'>
-                Số tiền không hợp lệ. Tối đa: {formatVnd(payableVndPrice)}
+                Số tiền không hợp lệ. Tối đa: {formatVnd(maxRefundable)}
               </p>
             )}
           </div>

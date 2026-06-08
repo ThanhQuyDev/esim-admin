@@ -262,8 +262,12 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
   const { data: faqsData } = useQuery(faqsQueryOptions({ page: 1, limit: 100 }));
   const faqs: Faq[] = faqsData?.data ?? [];
 
-  // Fetch existing SEO config by URL when editing
-  const seoUrlForLookup = blog?.slug ? `/blog/${blog.slug.replace(/^\/+|\/+$/g, '')}` : '';
+  // Fetch existing SEO config by URL when editing.
+  // SEO config URLs follow the landing-page locale convention: Vietnamese
+  // (default locale) has no prefix, English is prefixed with `/en`.
+  const seoUrlForLookup = blog?.slug
+    ? `${blog.language === 'en' ? '/en' : ''}/blog/${blog.slug.replace(/^\/+|\/+$/g, '')}`
+    : '';
   const { data: existingSeo } = useQuery(seoConfigByUrlQueryOptions(seoUrlForLookup));
 
   // Derive ids from nested objects (API returns miniTag/plans/faqs nested)
@@ -349,7 +353,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
           // Sync SEO config record (update if exists, else create)
           if (value.seoTitle || value.seoDescription || value.seoKeywords) {
             const finalSlug = (updatedBlog.slug || blog.slug || '').replace(/^\/+|\/+$/g, '');
-            const seoUrl = `/blog/${finalSlug}`;
+            const seoUrl = `${value.language === 'en' ? '/en' : ''}/blog/${finalSlug}`;
             const seoPayload = {
               url: seoUrl,
               metaTitle: value.seoTitle || value.title,
@@ -393,7 +397,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
           // Sync SEO config record
           if (value.seoTitle || value.seoDescription || value.seoKeywords) {
             const finalSlug = (createdBlog.slug || value.slug || '').replace(/^\/+|\/+$/g, '');
-            const seoUrl = `/blog/${finalSlug}`;
+            const seoUrl = `${value.language === 'en' ? '/en' : ''}/blog/${finalSlug}`;
             const seoPayload = {
               url: seoUrl,
               metaTitle: value.seoTitle || value.title,

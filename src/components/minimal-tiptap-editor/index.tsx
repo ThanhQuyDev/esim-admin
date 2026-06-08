@@ -19,7 +19,15 @@ interface MinimalTiptapEditorProps {
   placeholder?: string;
 }
 
-const Toolbar = memo(function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+const Toolbar = memo(function Toolbar({
+  editor,
+  htmlMode,
+  onToggleHtmlMode
+}: {
+  editor: ReturnType<typeof useEditor>;
+  htmlMode: boolean;
+  onToggleHtmlMode: () => void;
+}) {
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
 
@@ -63,6 +71,7 @@ const Toolbar = memo(function Toolbar({ editor }: { editor: ReturnType<typeof us
         <ToggleGroupItem
           value='bold'
           aria-label='Bold'
+          disabled={htmlMode}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <Icons.bold className='h-4 w-4' />
@@ -70,6 +79,7 @@ const Toolbar = memo(function Toolbar({ editor }: { editor: ReturnType<typeof us
         <ToggleGroupItem
           value='italic'
           aria-label='Italic'
+          disabled={htmlMode}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <Icons.italic className='h-4 w-4' />
@@ -77,6 +87,7 @@ const Toolbar = memo(function Toolbar({ editor }: { editor: ReturnType<typeof us
         <ToggleGroupItem
           value='underline'
           aria-label='Underline'
+          disabled={htmlMode}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
           <Icons.underline className='h-4 w-4' />
@@ -89,6 +100,7 @@ const Toolbar = memo(function Toolbar({ editor }: { editor: ReturnType<typeof us
             variant={editor.isActive('link') ? 'default' : 'ghost'}
             size='icon'
             className='h-8 w-8'
+            disabled={htmlMode}
             onClick={openLinkPopover}
             aria-label='Link'
           >
@@ -119,11 +131,31 @@ const Toolbar = memo(function Toolbar({ editor }: { editor: ReturnType<typeof us
           </div>
         </PopoverContent>
       </Popover>
+
+      <div className='ml-auto'>
+        <Button
+          type='button'
+          variant={htmlMode ? 'default' : 'ghost'}
+          size='icon'
+          className='h-8 w-8'
+          onClick={onToggleHtmlMode}
+          aria-label='Chỉnh sửa HTML'
+          title='Chỉnh sửa HTML'
+        >
+          <Icons.code className='h-4 w-4' />
+        </Button>
+      </div>
     </div>
   );
 });
 
 import { useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+
+/** Strip `rel` attributes from all `<a>` tags — matches the blog editor behaviour. */
+function stripRelAttributes(html: string): string {
+  return html.replace(/(<a\b[^>]*?)\s+rel=(?:"[^"]*"|'[^']*'|[^\s>]+)([^>]*>)/gi, '$1$2');
+}
 
 export function MinimalTiptapEditor({
   content,
@@ -134,6 +166,9 @@ export function MinimalTiptapEditor({
   onChangeRef.current = onChange;
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const [htmlMode, setHtmlMode] = useState(false);
+  const [htmlDraft, setHtmlDraft] = useState('');
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -172,24 +207,50 @@ export function MinimalTiptapEditor({
     return () => clearTimeout(debounceTimer.current);
   }, []);
 
+  const toggleHtmlMode = useCallback(() => {
+    if (!editor) return;
+    if (!htmlMode) {
+      // Entering HTML mode — seed the textarea with the current HTML.
+      setHtmlDraft(editor.getHTML());
+      setHtmlMode(true);
+    } else {
+      // Leaving HTML mode — strip `rel`, push back into the editor and notify.
+      const cleaned = stripRelAttributes(htmlDraft);
+      editor.commands.setContent(cleaned, { emitUpdate: false });
+      clearTimeout(debounceTimer.current);
+      onChangeRef.current(cleaned);
+      setHtmlMode(false);
+    }
+  }, [editor, htmlMode, htmlDraft]);
+
   if (!editor) return null;
 
   return (
     <div className='mx-1 overflow-hidden rounded-[0.5rem] bg-background shadow outline outline-1 outline-border'>
-      <Toolbar editor={editor} />
-      <EditorContent
-        editor={editor}
-        className={cn(
-          'prose prose-sm max-w-none',
-          '[&_.ProseMirror]:min-h-[80px] [&_.ProseMirror]:px-3 [&_.ProseMirror]:py-2',
-          '[&_.ProseMirror]:outline-none',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
-          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]'
-        )}
-      />
+      <Toolbar editor={editor} htmlMode={htmlMode} onToggleHtmlMode={toggleHtmlMode} />
+      {htmlMode ? (
+        <Textarea
+          value={htmlDraft}
+          onChange={(e) => setHtmlDraft(e.target.value)}
+          spellCheck={false}
+          className='min-h-[160px] resize-y rounded-none border-0 font-mono text-xs focus-visible:ring-0'
+          placeholder='<p>HTML...</p>'
+        />
+      ) : (
+        <EditorContent
+          editor={editor}
+          className={cn(
+            'prose prose-sm max-w-none',
+            '[&_.ProseMirror]:min-h-[80px] [&_.ProseMirror]:px-3 [&_.ProseMirror]:py-2',
+            '[&_.ProseMirror]:outline-none',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]'
+          )}
+        />
+      )}
     </div>
   );
 }

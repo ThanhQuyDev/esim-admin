@@ -26,7 +26,7 @@ import {
 import { FormDialog } from '@/components/ui/form-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -81,7 +81,7 @@ function CreatableManufacturerField({
     <div className='space-y-2'>
       <Label>Nhà sản xuất *</Label>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+        <PopoverAnchor asChild>
           <div className='relative'>
             <Input
               value={inputValue}
@@ -94,9 +94,17 @@ function CreatableManufacturerField({
               placeholder='Nhập hoặc chọn nhà sản xuất...'
               className='w-full'
             />
-            <Icons.chevronsUpDown className='absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 opacity-50' />
+            <button
+              type='button'
+              onClick={() => setOpen((prev) => !prev)}
+              className='absolute top-1/2 right-3 -translate-y-1/2'
+              aria-label='Mở danh sách nhà sản xuất'
+              tabIndex={-1}
+            >
+              <Icons.chevronsUpDown className='h-4 w-4 opacity-50' />
+            </button>
           </div>
-        </PopoverTrigger>
+        </PopoverAnchor>
         <PopoverContent className='w-full p-0' align='start'>
           <Command>
             <CommandInput

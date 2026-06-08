@@ -4,8 +4,9 @@ import { useState, useRef } from 'react';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createRegionMutation, updateRegionMutation } from '../api/mutations';
+import { regionQueryOptions } from '../api/queries';
 import { uploadToCloudinary } from '../api/service';
 import type { Region, CreateRegionPayload, UpdateRegionPayload } from '../api/types';
 import { toast } from 'sonner';
@@ -235,6 +236,49 @@ function CreateDialog({
 }
 
 function EditDialog({
+  region,
+  open,
+  onOpenChange
+}: {
+  region: Region;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  // Fetch full region detail to get destinations (list endpoint may not include them)
+  const { data: regionDetail, isLoading } = useQuery({
+    ...regionQueryOptions(region.id),
+    enabled: open
+  });
+
+  if (isLoading || !regionDetail) {
+    return (
+      <FormDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title='Chỉnh sửa khu vực'
+        description='Đang tải dữ liệu...'
+        formId='region-form-dialog-loading'
+        isLoading={true}
+        submitLabel='Cập nhật'
+      >
+        <div className='flex items-center justify-center py-10'>
+          <Icons.spinner className='h-6 w-6 animate-spin text-muted-foreground' />
+        </div>
+      </FormDialog>
+    );
+  }
+
+  return (
+    <EditDialogForm
+      key={regionDetail.id}
+      region={regionDetail}
+      open={open}
+      onOpenChange={onOpenChange}
+    />
+  );
+}
+
+function EditDialogForm({
   region,
   open,
   onOpenChange

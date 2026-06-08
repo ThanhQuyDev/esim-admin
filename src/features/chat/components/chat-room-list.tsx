@@ -26,13 +26,21 @@ export function ChatRoomList() {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return rooms;
-    const q = search.toLowerCase();
-    return rooms.filter((r) => {
-      const user = userCache[r.userId];
-      const displayName = user?.email ?? `Người dùng #${r.userId}`;
-      return displayName.toLowerCase().includes(q);
-    });
+    const q = search.trim().toLowerCase();
+    const matched = q
+      ? rooms.filter((r) => {
+          const user = userCache[r.userId];
+          const displayName = user?.email ?? `Người dùng #${r.userId}`;
+          return displayName.toLowerCase().includes(q);
+        })
+      : rooms;
+
+    // Sort by most recent activity (newest message first). Fall back to the
+    // room's updatedAt/createdAt when a room has no messages yet.
+    const activityTime = (r: ChatRoomWithMeta) =>
+      new Date(r.lastMessage?.createdAt ?? r.updatedAt ?? r.createdAt).getTime();
+
+    return [...matched].sort((a, b) => activityTime(b) - activityTime(a));
   }, [rooms, search, userCache]);
 
   return (

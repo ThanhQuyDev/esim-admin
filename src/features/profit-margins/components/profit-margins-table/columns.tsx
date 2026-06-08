@@ -42,6 +42,22 @@ export const columns: ColumnDef<ProfitMarginTier>[] = [
     meta: { label: 'Profit %', variant: 'text' as const }
   },
   {
+    id: 'fixedAmountVnd',
+    accessorKey: 'fixedAmountVnd',
+    header: ({ column }: { column: Column<ProfitMarginTier, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Phụ thu cố định' />
+    ),
+    cell: ({ row }) => {
+      const amount = row.original.fixedAmountVnd;
+      return amount && amount > 0 ? (
+        <div className='tabular-nums font-medium'>{formatVnd(amount)}</div>
+      ) : (
+        <span className='text-muted-foreground'>—</span>
+      );
+    },
+    meta: { label: 'Phụ thu cố định', variant: 'text' as const }
+  },
+  {
     id: 'isActive',
     accessorKey: 'isActive',
     header: 'Status',
