@@ -232,7 +232,8 @@ export const columns: ColumnDef<Plan>[] = [
     cell: ({ row }) => (
       <div className='flex flex-col'>
         <span className='font-medium'>
-          ${row.original.price} {row.original.currency}
+          ${row.original.price} {row.original.currency} -{' '}
+          {Number(row.original.vndPrice).toLocaleString('vi-VN')}đ
         </span>
         <span className='text-muted-foreground text-xs'>
           Giá gốc: ${row.original.costPrice} · Giá bán: ${row.original.retailPrice}

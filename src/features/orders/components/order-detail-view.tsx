@@ -363,7 +363,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             />
             <InfoRow
               label='Giảm giá'
-              value={formatCurrency(order.discountAmount, order.currency)}
+              value={formatCurrency(order.couponDiscountVndAmount, 'VND')}
             />
             {order.referralCode && (
               <>

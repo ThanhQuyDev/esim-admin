@@ -7,7 +7,8 @@ export const createCouponSchema = z.object({
   maxUsagePerUser: z.number().min(1, 'Số lần sử dụng/người tối thiểu là 1'),
   minOrderAmount: z.number().min(0, 'Giá trị đơn hàng tối thiểu không được âm'),
   expiresAt: z.string().min(1, 'Ngày hết hạn là bắt buộc'),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  isPopular: z.boolean().optional()
 });
 
 export type CreateCouponFormValues = z.infer<typeof createCouponSchema>;
@@ -19,7 +20,8 @@ export const updateCouponSchema = z.object({
   maxUsagePerUser: z.number().min(1, 'Số lần sử dụng/người tối thiểu là 1'),
   minOrderAmount: z.number().min(0, 'Giá trị đơn hàng tối thiểu không được âm'),
   expiresAt: z.string().min(1, 'Ngày hết hạn là bắt buộc'),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  isPopular: z.boolean().optional()
 });
 
 export type UpdateCouponFormValues = z.infer<typeof updateCouponSchema>;

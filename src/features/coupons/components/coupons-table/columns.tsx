@@ -82,6 +82,18 @@ export const columns: ColumnDef<Coupon>[] = [
     enableSorting: false
   },
   {
+    id: 'isPopular',
+    accessorKey: 'isPopular',
+    header: 'Nổi bật',
+    cell: ({ row }) =>
+      row.original.isPopular ? (
+        <Badge variant='default'>Nổi bật</Badge>
+      ) : (
+        <Badge variant='secondary'>—</Badge>
+      ),
+    enableSorting: false
+  },
+  {
     id: 'actions',
     cell: ({ row }) => <CellAction data={row.original} />
   }

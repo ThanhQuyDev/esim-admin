@@ -17,6 +17,7 @@ export type Plan = {
   sms: number | null;
   call: number | null;
   costPrice: string;
+  vndPrice: string;
   price: string;
   retailPrice: string;
   currency: string;

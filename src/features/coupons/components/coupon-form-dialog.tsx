@@ -120,7 +120,8 @@ function CreateCouponDialog({
       maxUsagePerUser: 1,
       minOrderAmount: 0,
       expiresAt: '',
-      isActive: true
+      isActive: true,
+      isPopular: false
     } as CreateCouponFormValues,
     validators: {
       onSubmit: createCouponSchema
@@ -133,7 +134,8 @@ function CreateCouponDialog({
         maxUsagePerUser: value.maxUsagePerUser,
         minOrderAmount: value.minOrderAmount,
         expiresAt: new Date(value.expiresAt).toISOString(),
-        isActive: value.isActive ?? true
+        isActive: value.isActive ?? true,
+        isPopular: value.isPopular ?? false
       };
 
       await createMutation.mutateAsync(payload);
@@ -216,6 +218,10 @@ function CreateCouponDialog({
           </form.Field>
 
           <FormSwitchField name='isActive' label='Hoạt động' />
+          <FormSwitchField
+            name='isPopular'
+            label='Mã nổi bật (hiển thị khi nhấn "Lấy mã" trên web)'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -256,7 +262,8 @@ function EditCouponDialog({
       maxUsagePerUser: coupon.maxUsagePerUser,
       minOrderAmount: coupon.minOrderAmount,
       expiresAt: expiresAtLocal,
-      isActive: coupon.isActive
+      isActive: coupon.isActive,
+      isPopular: coupon.isPopular
     } as UpdateCouponFormValues,
     validators: {
       onSubmit: updateCouponSchema
@@ -269,7 +276,8 @@ function EditCouponDialog({
         maxUsagePerUser: value.maxUsagePerUser,
         minOrderAmount: value.minOrderAmount,
         expiresAt: new Date(value.expiresAt).toISOString(),
-        isActive: value.isActive
+        isActive: value.isActive,
+        isPopular: value.isPopular
       };
 
       await updateMutation.mutateAsync({ id: coupon.id, values: payload });
@@ -352,6 +360,10 @@ function EditCouponDialog({
           </form.Field>
 
           <FormSwitchField name='isActive' label='Hoạt động' />
+          <FormSwitchField
+            name='isPopular'
+            label='Mã nổi bật (hiển thị khi nhấn "Lấy mã" trên web)'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>

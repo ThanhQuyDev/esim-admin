@@ -7,6 +7,7 @@ export type Coupon = {
   minOrderAmount: number;
   expiresAt: string;
   isActive: boolean;
+  isPopular: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -32,6 +33,7 @@ export type CreateCouponPayload = {
   minOrderAmount: number;
   expiresAt: string;
   isActive?: boolean;
+  isPopular?: boolean;
 };
 
 export type UpdateCouponPayload = {
@@ -42,4 +44,5 @@ export type UpdateCouponPayload = {
   minOrderAmount?: number;
   expiresAt?: string;
   isActive?: boolean;
+  isPopular?: boolean;
 };

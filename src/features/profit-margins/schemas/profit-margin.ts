@@ -18,7 +18,7 @@ export const profitMarginTierSchema = z
   .object({
     minVnd: numericField('Min price is required'),
     maxVnd: numericField('Max price is required'),
-    percentage: numericField('Percentage is required'),
+    percentage: z.union([z.string(), z.number()]).optional(),
     fixedAmountVnd: z.union([z.string(), z.number()]).optional(),
     isActive: z.boolean()
   })
