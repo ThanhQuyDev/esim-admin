@@ -38,7 +38,12 @@ export const columns: ColumnDef<ProfitMarginTier>[] = [
     header: ({ column }: { column: Column<ProfitMarginTier, unknown> }) => (
       <DataTableColumnHeader column={column} title='Profit %' />
     ),
-    cell: ({ row }) => <div className='tabular-nums'>{row.original.percentage}%</div>,
+    cell: ({ row }) =>
+      row.original.percentage && Number(row.original.percentage) ? (
+        <div className='tabular-nums'>{row.original.percentage} % </div>
+      ) : (
+        <span className='text-muted-foreground'>—</span>
+      ),
     meta: { label: 'Profit %', variant: 'text' as const }
   },
   {

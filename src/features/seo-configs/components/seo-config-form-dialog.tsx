@@ -203,7 +203,7 @@ function CreateSeoConfigDialog({
       formId={FORM_ID}
       isLoading={mutation.isPending}
       submitLabel='Tạo mới'
-      className='max-w-5xl'
+      className='!max-w-3xl'
     >
       <form.AppForm>
         <form.Form id={FORM_ID} className='space-y-4'>
@@ -393,7 +393,7 @@ function EditSeoConfigDialog({
       formId={FORM_ID}
       isLoading={mutation.isPending}
       submitLabel='Cập nhật'
-      className='max-w-5xl'
+      className='!max-w-3xl'
     >
       <form.AppForm>
         <form.Form id={FORM_ID} className='space-y-4'>
