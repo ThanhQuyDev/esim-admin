@@ -71,10 +71,9 @@ function CreatableManufacturerField({
   onChange: (val: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(value);
 
   const filteredSuggestions = MANUFACTURER_SUGGESTIONS.filter((m) =>
-    m.toLowerCase().includes(inputValue.toLowerCase())
+    m.toLowerCase().includes(value.toLowerCase())
   );
 
   return (
@@ -84,9 +83,8 @@ function CreatableManufacturerField({
         <PopoverAnchor asChild>
           <div className='relative'>
             <Input
-              value={inputValue}
+              value={value}
               onChange={(e) => {
-                setInputValue(e.target.value);
                 onChange(e.target.value);
                 if (!open) setOpen(true);
               }}
@@ -109,17 +107,16 @@ function CreatableManufacturerField({
           <Command>
             <CommandInput
               placeholder='Tìm nhà sản xuất...'
-              value={inputValue}
+              value={value}
               onValueChange={(val) => {
-                setInputValue(val);
                 onChange(val);
               }}
             />
             <CommandList>
               <CommandEmpty>
-                {inputValue ? (
+                {value ? (
                   <div className='p-2 text-sm'>
-                    Sử dụng &quot;{inputValue}&quot; làm nhà sản xuất mới
+                    Sử dụng &quot;{value}&quot; làm nhà sản xuất mới
                   </div>
                 ) : (
                   'Không tìm thấy.'
@@ -130,7 +127,6 @@ function CreatableManufacturerField({
                   <CommandItem
                     key={manufacturer}
                     onSelect={() => {
-                      setInputValue(manufacturer);
                       onChange(manufacturer);
                       setOpen(false);
                     }}
