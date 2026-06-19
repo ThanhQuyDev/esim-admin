@@ -4,7 +4,7 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { supportedDevicesQueryOptions } from '../../api/queries';
 import { columns } from './columns';
@@ -20,11 +20,9 @@ export function SupportedDevicesTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    type: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
-
-  const apiFilters: Record<string, unknown> = {};
-  if (params.name) apiFilters.search = params.name;
 
   const apiSort = params.sort.map((s) => ({
     orderBy: sortIdToApiField[s.id] ?? s.id,
@@ -34,7 +32,8 @@ export function SupportedDevicesTable() {
   const filters = {
     page: params.page,
     limit: params.perPage,
-    ...(Object.keys(apiFilters).length > 0 && { filters: JSON.stringify(apiFilters) }),
+    ...(params.name && { search: params.name }),
+    ...(params.type && params.type.length > 0 && { type: params.type.join(',') }),
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
 

@@ -25,7 +25,6 @@ export interface SupportedDeviceFilters {
   limit?: number;
   page?: number;
   sort?: string;
-  filters?: string;
 }
 
 export interface SupportedDevicesResponse {

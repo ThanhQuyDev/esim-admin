@@ -6,6 +6,13 @@ import { CellAction } from './cell-action';
 import { Icons } from '@/components/icons';
 import type { SupportedDevice } from '../../api/types';
 
+const DEVICE_TYPE_OPTIONS = [
+  { label: 'Smart Phones', value: 'Smart Phones' },
+  { label: 'Smart Watches', value: 'Smart Watches' },
+  { label: 'Tablets', value: 'Tablets' },
+  { label: 'Laptops', value: 'Laptops' }
+];
+
 export const columns: ColumnDef<SupportedDevice>[] = [
   {
     id: 'name',
@@ -39,7 +46,13 @@ export const columns: ColumnDef<SupportedDevice>[] = [
         </div>
       );
     },
-    enableSorting: true
+    enableSorting: true,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Loại thiết bị',
+      variant: 'multiSelect' as const,
+      options: DEVICE_TYPE_OPTIONS
+    }
   },
   {
     accessorKey: 'createdAt',

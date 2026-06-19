@@ -13,7 +13,8 @@ export async function getSupportedDevices(
   const params = new URLSearchParams();
   if (filters?.page) params.set('page', String(filters.page));
   if (filters?.limit) params.set('limit', String(filters.limit));
-  if (filters?.filters) params.set('filters', filters.filters);
+  if (filters?.search) params.set('search', filters.search);
+  if (filters?.type) params.set('type', filters.type);
   if (filters?.sort) params.set('sort', filters.sort);
 
   const queryString = params.toString();
