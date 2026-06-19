@@ -46,19 +46,20 @@ function generateSlug(title: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-/** Build the canonical SEO URL for a help-center article. */
-function buildHelpCenterSeoUrl(args: {
-  language?: string | null;
-  category: string;
-  parent: string;
-  slug?: string | null;
-}): string {
-  const locale = args.language || 'en';
-  const categorySlug = getCategoryApiKey(args.category, locale);
-  const parentSlug = getParentApiKey(args.parent, locale);
+/**
+ * Build the canonical SEO URL for a help-center article.
+ *
+ * Correct URL shapes (no category/parent segments, no `/vi/` prefix):
+ *   English:     /en/help-center/{slug}
+ *   Vietnamese:  /ho-tro/{slug}
+ */
+function buildHelpCenterSeoUrl(args: { language?: string | null; slug?: string | null }): string {
+  const isVi = args.language === 'vi';
+  const basePath = isVi ? 'ho-tro' : 'help-center';
   const cleanSlug = (args.slug ?? '').replace(/^\/+|\/+$/g, '');
-  const basePath = locale === 'vi' ? 'tro-giup' : 'help-center';
-  return `/${locale}/${basePath}/${categorySlug}/${parentSlug}/${cleanSlug}`;
+  // Vietnamese uses the localized base path directly (no locale segment);
+  // English keeps the /en/ locale segment.
+  return isVi ? `/${basePath}/${cleanSlug}` : `/en/${basePath}/${cleanSlug}`;
 }
 
 export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
@@ -72,8 +73,6 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
   const seoUrlForLookup = article
     ? buildHelpCenterSeoUrl({
         language: article.language,
-        category: article.category,
-        parent: article.parent,
         slug: article.slug || generateSlug(article.title)
       })
     : '';
@@ -84,8 +83,6 @@ export function HelpCenterFormPage({ article }: HelpCenterFormPageProps) {
     try {
       const seoUrl = buildHelpCenterSeoUrl({
         language: value.language,
-        category: value.category,
-        parent: value.parent,
         slug
       });
       const seoPayload = {
