@@ -1,4 +1,9 @@
-export type OverviewProvider = 'airalo' | 'esimaccess' | 'gadgetkorea';
+export type OverviewProvider =
+  | 'airalo'
+  | 'esimaccess'
+  | 'gadgetkorea'
+  | 'japantravelsim'
+  | 'viettel';
 
 export type OverviewPreset = 'today' | 'yesterday' | 'last7days' | 'last30days';
 export type OverviewGroupBy = 'day' | 'week' | 'month' | 'year';

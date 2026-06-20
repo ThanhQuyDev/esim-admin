@@ -40,7 +40,9 @@ const providerComparisonConfig = {
 const providerLabels: Record<string, string> = {
   airalo: 'Airalo',
   esimaccess: 'eSIM Access',
-  gadgetkorea: 'Gadget Korea'
+  gadgetkorea: 'Gadget Korea',
+  japantravelsim: 'Japan',
+  viettel: 'Viettel'
 };
 
 function isProviderComparisonByProvider(

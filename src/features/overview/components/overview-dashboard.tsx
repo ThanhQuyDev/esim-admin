@@ -77,7 +77,9 @@ export function OverviewDashboard() {
               Dữ liệu thống kê từ backend overview API.
             </p>
           </div>
-          <Badge variant='outline'>airalo · esimaccess · gadgetkorea</Badge>
+          <Badge variant='outline'>
+            airalo · esimaccess · gadgetkorea · japantravelsim · viettel
+          </Badge>
         </div>
 
         <OverviewFilters value={filters} onChange={setFilters} />

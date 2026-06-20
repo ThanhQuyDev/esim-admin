@@ -41,7 +41,9 @@ const providerOptions: { value: OverviewProvider | 'all'; label: string }[] = [
   { value: 'all', label: 'Tất cả provider' },
   { value: 'airalo', label: 'Airalo' },
   { value: 'esimaccess', label: 'eSIM Access' },
-  { value: 'gadgetkorea', label: 'Gadget Korea' }
+  { value: 'gadgetkorea', label: 'Gadget Korea' },
+  { value: 'japantravelsim', label: 'Japan' },
+  { value: 'viettel', label: 'Viettel' }
 ];
 
 export function OverviewFilters({ value, onChange }: OverviewFiltersProps) {
