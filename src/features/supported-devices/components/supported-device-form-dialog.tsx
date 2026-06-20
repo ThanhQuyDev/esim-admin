@@ -60,7 +60,15 @@ const MANUFACTURER_SUGGESTIONS = [
   'Lenovo',
   'Microsoft',
   'Dell',
-  'HP'
+  'HP',
+  'iPhone',
+  'Zebra',
+  'ZTE',
+  'Realme',
+  'Honor',
+  'Sharp',
+  'TCL',
+  'Surface'
 ];
 
 function CreatableManufacturerField({
