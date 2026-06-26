@@ -315,7 +315,7 @@ function CreateDestinationDialog({
               required
               placeholder='JP'
               validators={{
-                onBlur: z.string().min(2, 'Phải có 2-3 ký tự').max(3, 'Phải có 2-3 ký tự')
+                onBlur: z.string().min(2, 'Phải có ít nhất 2 ký tự').max(10, 'Tối đa 10 ký tự')
               }}
             />
             <FormTextField name='slug' label='Slug' placeholder='nhat-ban' />
@@ -490,7 +490,7 @@ function EditDestinationDialog({
               required
               placeholder='JP'
               validators={{
-                onBlur: z.string().min(2, 'Phải có 2-3 ký tự').max(3, 'Phải có 2-3 ký tự')
+                onBlur: z.string().min(2, 'Phải có ít nhất 2 ký tự').max(10, 'Tối đa 10 ký tự')
               }}
             />
             <FormTextField name='slug' label='Slug' placeholder='nhat-ban' />
