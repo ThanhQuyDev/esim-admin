@@ -55,6 +55,7 @@ interface ChatState {
   disconnect: () => void;
   joinRoom: (userId?: number) => void;
   selectRoom: (roomId: number, userId: number) => void;
+  clearSelection: () => void;
   sendMessage: (text: string, file?: ChatFileAttachment) => void;
   loadMoreMessages: () => void;
   markAsRead: () => void;
@@ -286,6 +287,18 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     });
 
     socket.emit('joinRoom', { userId });
+  },
+
+  clearSelection: () => {
+    set({
+      selectedRoomId: null,
+      roomOwnerId: null,
+      messages: [],
+      messagesPage: 1,
+      hasMoreMessages: true,
+      isLoadingMessages: false,
+      draft: ''
+    });
   },
 
   sendMessage: (text: string, file?: ChatFileAttachment) => {

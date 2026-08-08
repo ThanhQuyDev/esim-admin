@@ -31,6 +31,7 @@ export function ChatRoomHeader() {
   const rooms = useChatStore((s) => s.rooms);
   const connectionStatus = useChatStore((s) => s.connectionStatus);
   const userCache = useChatStore((s) => s.userCache);
+  const clearSelection = useChatStore((s) => s.clearSelection);
 
   const activeRoom = rooms.find((r) => r.id === selectedRoomId);
   const user = activeRoom ? userCache[activeRoom.userId] : undefined;
@@ -50,6 +51,16 @@ export function ChatRoomHeader() {
   return (
     <header className='flex flex-wrap items-center justify-between gap-3 sm:gap-4'>
       <div className='flex items-center gap-2 sm:gap-3'>
+        <Button
+          type='button'
+          variant='ghost'
+          size='icon'
+          onClick={clearSelection}
+          className='border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 shrink-0 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 lg:hidden'
+          aria-label='Quay lại danh sách trò chuyện'
+        >
+          <Icons.chevronLeft className='h-4 w-4' />
+        </Button>
         <div className='relative'>
           <Avatar className='border-border/40 bg-card/80 text-foreground h-10 w-10 rounded-2xl border sm:h-12 sm:w-12 sm:rounded-3xl'>
             <AvatarFallback className='bg-primary/20 text-primary rounded-2xl text-sm font-semibold sm:rounded-3xl sm:text-base'>

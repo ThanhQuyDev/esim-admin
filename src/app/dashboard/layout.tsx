@@ -28,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <InfobarProvider>
           <SidebarProvider defaultOpen={defaultOpen}>
             <AppSidebar />
-            <SidebarInset className='overflow-hidden'>
+            <SidebarInset className='overflow-x-hidden overflow-y-auto lg:overflow-hidden'>
               <Header />
               {/* page main content */}
               {children}

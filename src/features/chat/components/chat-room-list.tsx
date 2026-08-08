@@ -44,7 +44,12 @@ export function ChatRoomList() {
   }, [rooms, search, userCache]);
 
   return (
-    <div className='border-border/40 bg-background/75 hidden h-full flex-col gap-4 overflow-hidden rounded-2xl border p-3 backdrop-blur lg:col-start-1 lg:col-end-2 lg:flex lg:rounded-3xl lg:p-4'>
+    <div
+      className={cn(
+        'border-border/40 bg-background/75 h-full flex-col gap-4 overflow-hidden rounded-2xl border p-3 backdrop-blur lg:col-start-1 lg:col-end-2 lg:flex lg:rounded-3xl lg:p-4',
+        selectedRoomId ? 'hidden lg:flex' : 'flex'
+      )}
+    >
       <div className='flex items-center justify-between gap-3'>
         <div>
           <p className='text-foreground text-sm font-semibold'>Trò chuyện</p>
