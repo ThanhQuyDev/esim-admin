@@ -23,6 +23,7 @@ export type Esim = {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  plan: EsimPlan | null;
 };
 
 export type EsimUser = {

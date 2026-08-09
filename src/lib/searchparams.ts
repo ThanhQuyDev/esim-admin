@@ -10,6 +10,7 @@ export const searchParams = {
   page: parseAsInteger.withDefault(1),
   perPage: parseAsInteger.withDefault(10),
   name: parseAsString,
+  planName: parseAsString,
   provider: parseAsArrayOf(parseAsString, ','),
   gender: parseAsString,
   category: parseAsString,

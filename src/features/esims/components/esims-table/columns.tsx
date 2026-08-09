@@ -1,5 +1,6 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Esim } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
@@ -15,7 +16,38 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
   refunded: 'destructive'
 };
 
+const packageTypeOptions = [
+  { value: 'fixed', label: 'Cố định' },
+  { value: 'daily', label: 'Theo ngày' },
+  { value: 'unlimited', label: 'Không giới hạn' },
+  { value: 'unlimited-reduce', label: 'Không giới hạn giảm tốc' }
+];
+
+const packageTypeLabel = new Map(packageTypeOptions.map((option) => [option.value, option.label]));
+
 export const columns: ColumnDef<Esim>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label='Chọn tất cả'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label='Chọn hàng'
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+    size: 40
+  },
   {
     id: 'name',
     accessorKey: 'iccid',
@@ -30,6 +62,40 @@ export const columns: ColumnDef<Esim>[] = [
       icon: Icons.search
     },
     enableColumnFilter: true
+  },
+  {
+    id: 'planName',
+    accessorFn: (row) => row.plan?.name ?? '',
+    header: 'Tên gói',
+    cell: ({ row }) => row.original.plan?.name || '—',
+    meta: {
+      label: 'Tên gói',
+      placeholder: 'Tìm kiếm tên gói...',
+      variant: 'text' as const,
+      icon: Icons.search
+    },
+    enableColumnFilter: true,
+    enableSorting: false
+  },
+  {
+    id: 'duration',
+    accessorFn: (row) => row.plan?.durationDays,
+    header: 'Thời hạn',
+    cell: ({ row }) => {
+      const durationDays = row.original.plan?.durationDays;
+      return durationDays == null ? '—' : `${durationDays} ngày`;
+    },
+    enableSorting: false
+  },
+  {
+    id: 'packageType',
+    accessorFn: (row) => row.plan?.type ?? '',
+    header: 'Loại gói',
+    cell: ({ row }) => {
+      const type = row.original.plan?.type;
+      return type ? <Badge variant='outline'>{packageTypeLabel.get(type) ?? type}</Badge> : '—';
+    },
+    enableSorting: false
   },
   {
     id: 'status',

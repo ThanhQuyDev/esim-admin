@@ -1,6 +1,6 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { createEsim, updateEsim, deleteEsim, importEsimsExcel } from './service';
+import { bulkDeleteEsims, createEsim, updateEsim, deleteEsim, importEsimsExcel } from './service';
 import { esimKeys } from './queries';
 import type { CreateEsimPayload, UpdateEsimPayload, ImportEsimsExcelPayload } from './types';
 
@@ -20,6 +20,11 @@ export const updateEsimMutation = mutationOptions({
 
 export const deleteEsimMutation = mutationOptions({
   mutationFn: (id: number) => deleteEsim(id),
+  onSettled: invalidateEsims
+});
+
+export const bulkDeleteEsimsMutation = mutationOptions({
+  mutationFn: (ids: number[]) => bulkDeleteEsims(ids),
   onSettled: invalidateEsims
 });
 

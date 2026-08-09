@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery, useMutation } from '@tanstack/react-query';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { esimsQueryOptions } from '../../api/queries';
 import { exportEsimsExcel } from '../../api/service';
+import { AlertModal } from '@/components/modal/alert-modal';
+import { toast } from 'sonner';
+import { bulkDeleteEsimsMutation } from '../../api/mutations';
 import { ImportEsimExcelDialog } from '../import-esim-excel-dialog';
 import { EsimFormDialog } from '../esim-form-dialog';
 import { columns } from './columns';
@@ -22,11 +25,13 @@ export function EsimsTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    planName: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
   const apiFilters: Record<string, unknown> = {};
   if (params.name) apiFilters.search = params.name;
+  if (params.planName) apiFilters.planName = params.planName;
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,
@@ -56,9 +61,23 @@ export function EsimsTable() {
     }
   });
 
-  const [exporting, setExporting] = useState(false);
+  const selectedIds = table.getSelectedRowModel().rows.map((row) => row.original.id);
 
-  const handleExport = useCallback(async () => {
+  const [exporting, setExporting] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const { mutate: bulkDelete, isPending: isBulkDeleting } = useMutation({
+    ...bulkDeleteEsimsMutation,
+    onSuccess: ({ deleted }) => {
+      toast.success(`Đã xoá ${deleted} eSIM`);
+      table.resetRowSelection();
+      setBulkDeleteOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Xoá eSIM thất bại');
+    }
+  });
+
+  const handleExport = async () => {
     setExporting(true);
     try {
       await exportEsimsExcel(filters);
@@ -68,19 +87,38 @@ export function EsimsTable() {
     } finally {
       setExporting(false);
     }
-  }, [filters]);
+  };
 
   return (
-    <DataTable table={table} totalRowCount={data.totalCount}>
-      <DataTableToolbar table={table}>
-        <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
-          {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
-          Export Excel
-        </Button>
-        <EsimFormDialog />
-        <ImportEsimExcelDialog />
-      </DataTableToolbar>
-    </DataTable>
+    <>
+      <AlertModal
+        isOpen={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={() => bulkDelete(selectedIds)}
+        loading={isBulkDeleting}
+      />
+      <DataTable table={table} totalRowCount={data.totalCount}>
+        <DataTableToolbar table={table}>
+          {selectedIds.length > 0 ? (
+            <Button
+              variant='destructive'
+              size='sm'
+              onClick={() => setBulkDeleteOpen(true)}
+              disabled={isBulkDeleting}
+            >
+              {isBulkDeleting ? <Icons.spinner className='animate-spin' /> : <Icons.trash />}
+              Xoá {selectedIds.length} eSIM
+            </Button>
+          ) : null}
+          <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
+            {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
+            Export Excel
+          </Button>
+          <EsimFormDialog />
+          <ImportEsimExcelDialog />
+        </DataTableToolbar>
+      </DataTable>
+    </>
   );
 }
 

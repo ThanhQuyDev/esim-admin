@@ -45,6 +45,13 @@ export async function deleteEsim(id: number): Promise<void> {
   await apiClient(`${BASE}/${id}`, { method: 'DELETE' });
 }
 
+export async function bulkDeleteEsims(ids: number[]): Promise<{ deleted: number }> {
+  return apiClient<{ deleted: number }>(`${BASE}/bulk`, {
+    method: 'DELETE',
+    body: JSON.stringify({ ids })
+  });
+}
+
 export async function importEsimsExcel(
   payload: ImportEsimsExcelPayload
 ): Promise<ImportEsimsExcelResponse> {
