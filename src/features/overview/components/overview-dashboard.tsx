@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import PageContainer from '@/components/layout/page-container';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -14,26 +15,72 @@ import {
 } from '@/components/ui/card';
 import { Icons } from '@/components/icons';
 import { formatNumber, formatVnd } from '@/lib/format';
-import { useQuery } from '@tanstack/react-query';
 import { AreaGraph } from './area-graph';
 import { BarGraph } from './bar-graph';
 import { PieGraph } from './pie-graph';
 import { RecentSales } from './recent-sales';
 import { OverviewFilters, type OverviewFiltersValue } from './overview-filters';
 import { overviewSummaryQueryOptions } from '../api/queries';
-import type { OverviewFilters as OverviewFiltersType } from '../api/types';
+import type {
+  OverviewFilters as OverviewFiltersType,
+  OverviewGroupBy,
+  OverviewPreset,
+  OverviewProvider
+} from '../api/types';
+
+const presets = ['today', 'yesterday', 'last7days', 'last30days'] as const;
+const groupings = ['day', 'week', 'month', 'year'] as const;
+const providers = ['airalo', 'esimaccess', 'gadgetkorea', 'japantravelsim', 'viettel'] as const;
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+function vnDateBoundary(value: string, endOfDay: boolean) {
+  const [year, month, day] = value.split('-').map(Number);
+  const hour = endOfDay ? 23 : 0;
+  const minute = endOfDay ? 59 : 0;
+  const second = endOfDay ? 59 : 0;
+  const millisecond = endOfDay ? 999 : 0;
+
+  return new Date(
+    Date.UTC(year, month - 1, day, hour, minute, second, millisecond) - VN_OFFSET_MS
+  ).toISOString();
+}
 
 export function OverviewDashboard() {
-  const [filters, setFilters] = useState<OverviewFiltersValue>({
-    preset: 'last7days',
-    groupBy: 'day',
-    provider: undefined
-  });
+  const [urlFilters, setUrlFilters] = useQueryStates(
+    {
+      preset: parseAsStringLiteral(presets).withDefault('last7days'),
+      groupBy: parseAsStringLiteral(groupings).withDefault('day'),
+      provider: parseAsStringLiteral(providers),
+      from: parseAsString,
+      to: parseAsString
+    },
+    { history: 'replace', shallow: true }
+  );
+
+  const filters: OverviewFiltersValue = {
+    preset: urlFilters.from ? undefined : (urlFilters.preset as OverviewPreset),
+    groupBy: urlFilters.groupBy as OverviewGroupBy,
+    provider: (urlFilters.provider ?? undefined) as OverviewProvider | undefined,
+    from: urlFilters.from ?? undefined,
+    to: urlFilters.to ?? undefined
+  };
 
   const queryFilters: OverviewFiltersType = {
     preset: filters.preset,
     groupBy: filters.groupBy,
-    provider: filters.provider
+    provider: filters.provider,
+    from: filters.from ? vnDateBoundary(filters.from, false) : undefined,
+    to: filters.from ? vnDateBoundary(filters.to ?? filters.from, true) : undefined
+  };
+
+  const handleFiltersChange = (next: OverviewFiltersValue) => {
+    void setUrlFilters({
+      preset: next.preset ?? null,
+      groupBy: next.groupBy,
+      provider: next.provider ?? null,
+      from: next.from ?? null,
+      to: next.to ?? null
+    });
   };
 
   const { data: summary, isLoading, error } = useQuery(overviewSummaryQueryOptions(queryFilters));
@@ -82,7 +129,7 @@ export function OverviewDashboard() {
           </Badge>
         </div>
 
-        <OverviewFilters value={filters} onChange={setFilters} />
+        <OverviewFilters value={filters} onChange={handleFiltersChange} />
 
         {error ? (
           <Alert variant='destructive'>
