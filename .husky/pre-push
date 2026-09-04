@@ -1,1 +1,8 @@
-bun run build
+#!/usr/bin/env sh
+# Build must pass before pushing. Prefer bun (the project's primary runtime),
+# fall back to npm so the check still runs on machines without bun installed.
+if command -v bun >/dev/null 2>&1; then
+  bun run build
+else
+  npm run build
+fi
