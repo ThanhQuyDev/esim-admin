@@ -14,6 +14,8 @@ export default function PlanListingPage() {
   const tags = searchParamsCache.get('tags');
   const duration = searchParamsCache.get('duration');
   const dataFilter = searchParamsCache.get('data');
+  const country = searchParamsCache.get('country');
+  const hasCallSms = searchParamsCache.get('hasCallSms');
   const pageLimit = searchParamsCache.get('perPage');
   const sort = searchParamsCache.get('sort');
 
@@ -40,6 +42,12 @@ export default function PlanListingPage() {
   }
   if (dataFilter) {
     apiFilters.data = dataFilter;
+  }
+  if (country) {
+    apiFilters.country = country;
+  }
+  if (hasCallSms && hasCallSms.length === 1) {
+    apiFilters.hasCallSms = hasCallSms[0] === 'true';
   }
 
   const filters = {

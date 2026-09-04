@@ -14,13 +14,21 @@ async function getAuthHeaders() {
   };
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+/**
+ * Update one invoice (used by the "Phát hành hóa đơn" button, which flips the
+ * status to ISSUED and triggers the invoice email).
+ *
+ * The upstream NestJS route is `@Patch(':id')` — forwarding the browser's PUT
+ * as PUT made Nest answer 404, so the button silently failed. Always forward
+ * as PATCH, and accept either verb from the client.
+ */
+async function updateInvoice(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const body = await request.json();
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${API_URL}/api/v1/invoices/${id}`, {
-    method: 'PUT',
+  const res = await fetch(`${API_URL}/api/v1/invoices/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
     headers,
     body: JSON.stringify(body)
   });
@@ -36,3 +44,6 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   return NextResponse.json(data);
 }
+
+export const PUT = updateInvoice;
+export const PATCH = updateInvoice;

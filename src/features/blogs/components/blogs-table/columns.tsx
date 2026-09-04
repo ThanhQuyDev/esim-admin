@@ -78,7 +78,14 @@ export const columns: ColumnDef<Blog>[] = [
     header: ({ column }: { column: Column<Blog, unknown> }) => (
       <DataTableColumnHeader column={column} title='Ngày đăng' />
     ),
-    cell: ({ row }) => <span className='text-sm'>{formatDate(row.original.publishedAt)}</span>
+    cell: ({ row }) => (
+      <div className='flex flex-col'>
+        <span className='text-sm'>{formatDate(row.original.publishedAt)}</span>
+        {row.original.isPublished && !row.original.publishedAt && (
+          <span className='text-destructive text-xs'>Thiếu ngày đăng</span>
+        )}
+      </div>
+    )
   },
   {
     id: 'updatedAt',

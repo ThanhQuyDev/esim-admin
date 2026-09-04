@@ -18,7 +18,7 @@ export const columns: ColumnDef<Faq>[] = [
     ),
     meta: {
       label: 'Câu hỏi',
-      placeholder: 'Tìm kiếm câu hỏi...',
+      placeholder: 'Tìm câu hỏi hoặc trang (vd: /home)...',
       variant: 'text' as const,
       icon: Icons.text
     },

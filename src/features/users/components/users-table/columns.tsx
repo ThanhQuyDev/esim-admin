@@ -5,6 +5,21 @@ import type { User } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
+import { formatVnd } from '@/lib/format';
+
+const TIER_LABELS: Record<User['membershipTier'], string> = {
+  traveler: 'Du khách',
+  silver: 'Du khách bạc',
+  gold: 'Du khách vàng',
+  platinum: 'Du khách bạch kim'
+};
+
+const TIER_STYLES: Record<User['membershipTier'], string> = {
+  traveler: 'border-sky-200 bg-sky-50 text-sky-700',
+  silver: 'border-slate-300 bg-slate-100 text-slate-700',
+  gold: 'border-amber-300 bg-amber-50 text-amber-700',
+  platinum: 'border-violet-300 bg-violet-50 text-violet-700'
+};
 
 export const columns: ColumnDef<User>[] = [
   {
@@ -23,11 +38,64 @@ export const columns: ColumnDef<User>[] = [
     ),
     meta: {
       label: 'Tên',
-      placeholder: 'Tìm kiếm người dùng...',
+      placeholder: 'Tìm theo tên, email, số điện thoại...',
       variant: 'text' as const,
       icon: Icons.text
     },
     enableColumnFilter: true
+  },
+  {
+    id: 'phoneNumber',
+    accessorKey: 'phoneNumber',
+    enableSorting: false,
+    header: ({ column }: { column: Column<User, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Số điện thoại' />
+    ),
+    cell: ({ row }) => {
+      const phone = row.original.phoneNumber;
+      if (!phone) return <span className='text-muted-foreground'>—</span>;
+      return (
+        <a href={`tel:${phone}`} className='hover:underline'>
+          {phone}
+        </a>
+      );
+    },
+    meta: {
+      label: 'Số điện thoại',
+      icon: Icons.phone
+    },
+    enableColumnFilter: false
+  },
+  {
+    id: 'membershipTier',
+    accessorKey: 'membershipTier',
+    enableSorting: false,
+    header: ({ column }: { column: Column<User, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Hạng thành viên' />
+    ),
+    cell: ({ row }) => {
+      const tier = row.original.membershipTier;
+      return (
+        <div className='flex flex-col items-start gap-1'>
+          <Badge variant='outline' className={TIER_STYLES[tier]}>
+            {TIER_LABELS[tier]}
+          </Badge>
+          {row.original.tierSource === 'override' && (
+            <span className='text-muted-foreground text-xs'>Đã điều chỉnh</span>
+          )}
+        </div>
+      );
+    }
+  },
+  {
+    id: 'lifetimeSpendVnd',
+    accessorKey: 'lifetimeSpendVnd',
+    header: ({ column }: { column: Column<User, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Tổng chi tiêu' />
+    ),
+    cell: ({ row }) => (
+      <span className='font-medium tabular-nums'>{formatVnd(row.original.lifetimeSpendVnd)}</span>
+    )
   },
   {
     id: 'role',

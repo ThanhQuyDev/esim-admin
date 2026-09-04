@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/sidebar';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { navGroups } from '@/config/nav-config';
+import { portalNavGroups } from '@/config/portal-nav-config';
+import { useFilteredNavGroups } from '@/hooks/use-nav';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useQuery } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
@@ -35,6 +37,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '../icons';
 import { SidebarTicketsBadge } from '@/features/tickets/components/sidebar-tickets-badge';
+
+// Same source deployed twice under different env vars (see docs/nav-rbac.md):
+// the admin subdomain sets NEXT_PUBLIC_APP_MODE=admin (or leaves it unset),
+// the partner-portal subdomain sets NEXT_PUBLIC_APP_MODE=partner.
+const IS_PARTNER_PORTAL = process.env.NEXT_PUBLIC_APP_MODE === 'partner';
 
 function NavBadge({ id }: { id: string }) {
   if (id === 'tickets-open') return <SidebarTicketsBadge />;
@@ -46,6 +53,7 @@ export default function AppSidebar() {
   const { isOpen } = useMediaQuery();
   const { data: user } = useQuery(authMeQueryOptions);
   const router = useRouter();
+  const filteredNavGroups = useFilteredNavGroups(IS_PARTNER_PORTAL ? portalNavGroups : navGroups);
 
   const handleLogout = async () => {
     await logout();
@@ -77,7 +85,7 @@ export default function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className='overflow-x-hidden'>
-        {navGroups.map((group) => (
+        {filteredNavGroups.map((group) => (
           <SidebarGroup key={group.label || 'ungrouped'} className='py-0'>
             {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
             <SidebarMenu>

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -64,7 +65,7 @@ export const columns: ColumnDef<Plan>[] = [
     size: 40
   },
   {
-    id: 'destination',
+    id: 'country',
     accessorFn: (row) => row.region?.name ?? row.destination?.name ?? row.countryCode,
     header: 'Điểm đến',
     cell: ({ row }) => {
@@ -127,7 +128,13 @@ export const columns: ColumnDef<Plan>[] = [
         </div>
       );
     },
-    enableSorting: false
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Quốc gia / khu vực',
+      placeholder: 'Tìm quốc gia hoặc khu vực...',
+      variant: 'text' as const
+    }
   },
   {
     id: 'provider',
@@ -207,6 +214,27 @@ export const columns: ColumnDef<Plan>[] = [
       label: 'Dữ liệu',
       placeholder: 'VD: 1GB, 50GB...',
       variant: 'text' as const
+    }
+  },
+  {
+    id: 'hasCallSms',
+    accessorFn: (row) => (Number(row.sms ?? 0) > 0 || Number(row.call ?? 0) > 0 ? 'true' : 'false'),
+    header: 'Gọi / SMS',
+    cell: ({ row }) => {
+      const hasCallSms = Number(row.original.sms ?? 0) > 0 || Number(row.original.call ?? 0) > 0;
+      return (
+        <Badge variant={hasCallSms ? 'default' : 'secondary'}>{hasCallSms ? 'Có' : 'Không'}</Badge>
+      );
+    },
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Chức năng gọi / SMS',
+      variant: 'multiSelect' as const,
+      options: [
+        { value: 'true', label: 'Có' },
+        { value: 'false', label: 'Không' }
+      ]
     }
   },
   {

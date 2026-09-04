@@ -112,6 +112,7 @@ function CreateDialog({
     defaultValues: {
       name: '',
       slug: '',
+      slugVi: '',
       isPopular: false,
       isActive: true,
       title: '',
@@ -140,6 +141,7 @@ function CreateDialog({
         const payload: CreateRegionPayload = {
           name: value.name,
           ...(value.slug && { slug: value.slug }),
+          ...(value.slugVi && { slugVi: value.slugVi }),
           ...(avatarUrl && { avatarUrl }),
           ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular ?? false,
@@ -194,7 +196,9 @@ function CreateDialog({
             }}
           />
 
-          <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
+          <FormTextField name='slug' label='Slug (EN)' placeholder='europe' />
+
+          <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='chau-au' />
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <ImageUploadField label='Ảnh đại diện' onFileSelect={setAvatarFile} file={avatarFile} />
@@ -307,6 +311,7 @@ function EditDialogForm({
     defaultValues: {
       name: region.name,
       slug: region.slug ?? '',
+      slugVi: region.slugVi ?? '',
       isPopular: region.isPopular,
       isActive: region.isActive,
       title: region.title ?? '',
@@ -335,6 +340,7 @@ function EditDialogForm({
         const payload: UpdateRegionPayload = {
           name: value.name,
           slug: value.slug || undefined,
+          slugVi: value.slugVi || undefined,
           ...(avatarUrl && { avatarUrl }),
           ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular,
@@ -392,7 +398,9 @@ function EditDialogForm({
             }}
           />
 
-          <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
+          <FormTextField name='slug' label='Slug (EN)' placeholder='europe' />
+
+          <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='chau-au' />
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <ImageUploadField

@@ -9,10 +9,12 @@ export default function WcuListingPage() {
   const search = searchParamsCache.get('name');
   const pageLimit = searchParamsCache.get('perPage');
   const sort = searchParamsCache.get('sort');
+  const type = searchParamsCache.get('type');
   const filters = {
     page,
     limit: pageLimit,
     ...(search && { search }),
+    ...(type?.[0] && { type: type[0] }),
     ...(sort && { sort })
   };
   const queryClient = getQueryClient();

@@ -11,6 +11,15 @@ export type BlogMiniTag = {
 
 export type BlogPlan = { id: number; [key: string]: unknown };
 
+export type BlogAuthor = {
+  id: number;
+  userId: number;
+  name: string;
+  slug: string;
+  avatar?: string | null;
+  description?: string | null;
+};
+
 export type Blog = {
   id: string;
   language: string;
@@ -18,6 +27,9 @@ export type Blog = {
   isPublished: boolean;
   author: string;
   authorAvatar?: string | null;
+  authorSlug?: string | null;
+  authorBio?: string | null;
+  authorProfile?: BlogAuthor | null;
   category: string;
   parent?: string | null;
   coverImage: string | null;
@@ -58,9 +70,9 @@ export type BlogsResponse = {
 
 export type CreateBlogPayload = {
   language: string;
+  author?: string;
   publishedAt?: string | null;
   isPublished?: boolean;
-  author: string;
   category?: string;
   parent?: string;
   coverImage?: string | null;

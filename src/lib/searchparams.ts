@@ -21,6 +21,8 @@ export const searchParams = {
   tags: parseAsArrayOf(parseAsString, ','),
   duration: parseAsString,
   data: parseAsString,
+  country: parseAsString,
+  hasCallSms: parseAsArrayOf(parseAsString, ','),
   sort: parseAsString,
   // tickets module
   search: parseAsString,

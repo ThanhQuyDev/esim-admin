@@ -4,7 +4,8 @@ export interface PermissionCheck {
   permission?: string;
   plan?: string;
   feature?: string;
-  role?: string;
+  /** Role IDs allowed to see this item (matches AuthUser.role.id from the backend RoleEnum). Omit to allow everyone. */
+  role?: number[];
   requireOrg?: boolean;
 }
 

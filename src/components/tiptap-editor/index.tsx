@@ -101,7 +101,13 @@ function buildExtensions(options?: {
     Indent,
     LineHeight,
     TaskList,
-    Link,
+    Link.configure({
+      // Plain domains (for example "esim.vn") are content, not implicit
+      // anchors. Editors can still add a deliberate, complete URL via the
+      // link toolbar/bubble.
+      autolink: false,
+      linkOnPaste: false
+    }),
     Image.configure({
       upload: options?.onImageUpload
         ? (file: File) => options.onImageUpload!(file)

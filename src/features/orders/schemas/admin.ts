@@ -11,6 +11,10 @@ export const createInvoiceSchema = z.object({
     .max(255, 'Tên công ty tối đa 255 ký tự'),
   taxCode: z.string().min(1, 'Mã số thuế là bắt buộc').max(32, 'Mã số thuế tối đa 32 ký tự'),
   address: z.string().min(1, 'Địa chỉ là bắt buộc').max(500, 'Địa chỉ tối đa 500 ký tự'),
+  invoicePhone: z
+    .string()
+    .min(1, 'Số điện thoại là bắt buộc')
+    .regex(/^\+?\d{8,20}$/, 'Số điện thoại không hợp lệ'),
   invoiceEmail: z.string().min(1, 'Email là bắt buộc').email('Email không hợp lệ')
 });
 

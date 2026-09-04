@@ -17,11 +17,20 @@ interface CellActionProps {
 }
 
 export function WalletCellAction({ data }: CellActionProps) {
-  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailUserId, setDetailUserId] = useState<number | null>(null);
+  const detailOpen = detailUserId !== null;
 
   return (
     <>
-      <WalletDetailSheet userId={data.userId} open={detailOpen} onOpenChange={setDetailOpen} />
+      {detailUserId !== null && (
+        <WalletDetailSheet
+          userId={detailUserId}
+          open={detailOpen}
+          onOpenChange={(open) => {
+            if (!open) setDetailUserId(null);
+          }}
+        />
+      )}
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='h-8 w-8 p-0'>
@@ -31,7 +40,7 @@ export function WalletCellAction({ data }: CellActionProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => setDetailOpen(true)}>
+          <DropdownMenuItem onClick={() => setDetailUserId(data.userId)}>
             <Icons.eye className='mr-2 h-4 w-4' /> Xem chi tiết
           </DropdownMenuItem>
         </DropdownMenuContent>

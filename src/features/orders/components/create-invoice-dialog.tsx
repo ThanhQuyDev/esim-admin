@@ -47,6 +47,7 @@ export function CreateInvoiceDialog({
       companyName: '',
       taxCode: '',
       address: '',
+      invoicePhone: '',
       invoiceEmail: defaultEmail ?? ''
     } as CreateInvoiceFormValues,
     validators: { onSubmit: createInvoiceSchema },
@@ -55,6 +56,7 @@ export function CreateInvoiceDialog({
         companyName: value.companyName.trim(),
         taxCode: value.taxCode.trim(),
         address: value.address.trim(),
+        invoicePhone: value.invoicePhone.trim(),
         invoiceEmail: value.invoiceEmail.trim()
       };
       await mutation.mutateAsync({ orderId, data: payload });
@@ -104,13 +106,22 @@ export function CreateInvoiceDialog({
             />
             <FormTextField name='taxCode' label='Mã số thuế' required placeholder='0312345678' />
           </div>
-          <FormTextField
-            name='invoiceEmail'
-            label='Email nhận hóa đơn'
-            required
-            type='email'
-            placeholder='finance@example.com'
-          />
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <FormTextField
+              name='invoiceEmail'
+              label='Email nhận hóa đơn'
+              required
+              type='email'
+              placeholder='finance@example.com'
+            />
+            <FormTextField
+              name='invoicePhone'
+              label='Số điện thoại nhận hóa đơn'
+              required
+              type='tel'
+              placeholder='+84901234567'
+            />
+          </div>
           <FormTextareaField
             name='address'
             label='Địa chỉ công ty'

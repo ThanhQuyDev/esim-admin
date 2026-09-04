@@ -41,6 +41,14 @@ export const columns: ColumnDef<Footer>[] = [
     )
   },
   {
+    id: 'sortOrder',
+    accessorKey: 'sortOrder',
+    header: ({ column }: { column: Column<Footer, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Thứ tự' />
+    ),
+    cell: ({ row }) => <div className='font-mono'>{row.original.sortOrder ?? 0}</div>
+  },
+  {
     id: 'language',
     accessorKey: 'language',
     header: 'Ngôn ngữ',

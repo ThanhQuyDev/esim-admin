@@ -120,6 +120,7 @@ function CreateRegionSheet({
     defaultValues: {
       name: '',
       slug: '',
+      slugVi: '',
       isPopular: false,
       isActive: true,
       title: '',
@@ -140,6 +141,7 @@ function CreateRegionSheet({
         const payload: CreateRegionPayload = {
           name: value.name,
           ...(value.slug && { slug: value.slug }),
+          ...(value.slugVi && { slugVi: value.slugVi }),
           ...(avatarUrl && { avatarUrl }),
           isPopular: value.isPopular ?? false,
           isActive: value.isActive ?? true,
@@ -181,7 +183,9 @@ function CreateRegionSheet({
                 }}
               />
 
-              <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
+              <FormTextField name='slug' label='Slug (EN)' placeholder='europe' />
+
+              <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='chau-au' />
 
               <ImageUploadField
                 label='Ảnh đại diện'
@@ -277,6 +281,7 @@ function EditRegionForm({ region, onClose }: { region: Region; onClose: () => vo
     defaultValues: {
       name: region.name,
       slug: region.slug ?? '',
+      slugVi: region.slugVi ?? '',
       isPopular: region.isPopular,
       isActive: region.isActive,
       title: region.title ?? '',
@@ -298,6 +303,7 @@ function EditRegionForm({ region, onClose }: { region: Region; onClose: () => vo
         const payload: UpdateRegionPayload = {
           name: value.name,
           slug: value.slug || undefined,
+          slugVi: value.slugVi || undefined,
           ...(avatarUrl && { avatarUrl }),
           isPopular: value.isPopular,
           isActive: value.isActive,
@@ -337,7 +343,9 @@ function EditRegionForm({ region, onClose }: { region: Region; onClose: () => vo
               }}
             />
 
-            <FormTextField name='slug' label='Slug' placeholder='lien-minh-chau-au' />
+            <FormTextField name='slug' label='Slug (EN)' placeholder='europe' />
+
+            <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='chau-au' />
 
             <ImageUploadField
               label='Ảnh đại diện'

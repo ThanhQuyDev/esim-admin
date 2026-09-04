@@ -107,6 +107,7 @@ function CreateDialog({
       titleVi: '',
       url: '',
       language: 'en',
+      sortOrder: 0,
       categories: '',
       iconUrl: ''
     } as FooterFormValues,
@@ -121,6 +122,7 @@ function CreateDialog({
         titleVi: value.titleVi,
         url: value.url,
         language: value.language,
+        sortOrder: value.sortOrder,
         categories: value.categories || null,
         iconUrl
       };
@@ -160,6 +162,12 @@ function CreateDialog({
             label='Ngôn ngữ'
             placeholder='Chọn ngôn ngữ'
             options={LANG_OPTIONS}
+          />
+          <FormTextField
+            name='sortOrder'
+            label='Thứ tự hiển thị'
+            type='number'
+            placeholder='0 (số nhỏ hiển thị trước)'
           />
           <FormTextareaField
             name='categories'
@@ -209,6 +217,7 @@ function EditDialog({
       titleVi: item.titleVi,
       url: item.url,
       language: item.language || 'en',
+      sortOrder: item.sortOrder ?? 0,
       categories: item.categories || '',
       iconUrl: item.iconUrl || ''
     } as FooterFormValues,
@@ -223,6 +232,7 @@ function EditDialog({
         titleVi: value.titleVi,
         url: value.url,
         language: value.language,
+        sortOrder: value.sortOrder,
         categories: value.categories || null,
         iconUrl
       };
@@ -256,6 +266,12 @@ function EditDialog({
             label='Ngôn ngữ'
             placeholder='Chọn ngôn ngữ'
             options={LANG_OPTIONS}
+          />
+          <FormTextField
+            name='sortOrder'
+            label='Thứ tự hiển thị'
+            type='number'
+            placeholder='0 (số nhỏ hiển thị trước)'
           />
           <FormTextareaField
             name='categories'

@@ -98,6 +98,7 @@ export function InvoiceViewDialog({
             value={<span className='font-mono'>{invoice.taxCode}</span>}
           />
           <InvoiceField label='Email nhận' value={invoice.invoiceEmail} />
+          <InvoiceField label='Số điện thoại' value={invoice.invoicePhone} />
           <InvoiceField label='Địa chỉ' value={invoice.address} />
           <InvoiceField label='Tạo lúc' value={formatDate(invoice.createdAt)} />
           <InvoiceField label='Cập nhật' value={formatDate(invoice.updatedAt)} />

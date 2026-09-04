@@ -3,7 +3,7 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { wcuQueryOptions } from '../../api/queries';
 import { columns } from './columns';
@@ -15,6 +15,7 @@ export function WcuTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    type: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
   const apiSort = params.sort.map((s) => ({ orderBy: s.id, order: s.desc ? 'DESC' : 'ASC' }));
@@ -22,6 +23,9 @@ export function WcuTable() {
     page: params.page,
     limit: params.perPage,
     ...(params.name && { search: params.name }),
+    // The API matches a single type per request, so only the first selection
+    // is sent even though the filter param is array-shaped.
+    ...(params.type?.[0] && { type: params.type[0] }),
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
   const { data } = useSuspenseQuery(wcuQueryOptions(filters));

@@ -228,6 +228,7 @@ function CreateDestinationSheet({
       name: '',
       countryCode: '',
       slug: '',
+      slugVi: '',
       parentId: '',
       keySearch: '',
       isPopular: false,
@@ -257,6 +258,7 @@ function CreateDestinationSheet({
           name: value.name,
           countryCode: value.countryCode,
           ...(value.slug && { slug: value.slug }),
+          ...(value.slugVi && { slugVi: value.slugVi }),
           ...(value.parentId && { parentId: Number(value.parentId) }),
           ...(flagUrl && { flagUrl }),
           ...(avatarUrl && { avatarUrl }),
@@ -314,8 +316,10 @@ function CreateDestinationSheet({
                     onBlur: z.string().min(2, 'Phải có ít nhất 2 ký tự').max(10, 'Tối đa 10 ký tự')
                   }}
                 />
-                <FormTextField name='slug' label='Slug' placeholder='nhat-ban' />
+                <FormTextField name='slug' label='Slug (EN)' placeholder='japan' />
               </div>
+
+              <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='nhat-ban' />
 
               <SearchableCountrySelect
                 value={form.getFieldValue('parentId') ?? ''}
@@ -408,6 +412,7 @@ function EditDestinationSheet({
       name: destination.name,
       countryCode: destination.countryCode,
       slug: destination.slug ?? '',
+      slugVi: destination.slugVi ?? '',
       parentId: destination.parentId ? String(destination.parentId) : '',
       keySearch: destination.keySearch ?? '',
       isPopular: destination.isPopular,
@@ -437,6 +442,7 @@ function EditDestinationSheet({
           name: value.name,
           countryCode: value.countryCode,
           slug: value.slug || undefined,
+          slugVi: value.slugVi || undefined,
           parentId: value.parentId ? Number(value.parentId) : null,
           ...(flagUrl && { flagUrl }),
           ...(avatarUrl && { avatarUrl }),
@@ -497,8 +503,10 @@ function EditDestinationSheet({
                     onBlur: z.string().min(2, 'Phải có ít nhất 2 ký tự').max(10, 'Tối đa 10 ký tự')
                   }}
                 />
-                <FormTextField name='slug' label='Slug' placeholder='nhat-ban' />
+                <FormTextField name='slug' label='Slug (EN)' placeholder='japan' />
               </div>
+
+              <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='nhat-ban' />
 
               <SearchableCountrySelect
                 value={form.getFieldValue('parentId') ?? ''}

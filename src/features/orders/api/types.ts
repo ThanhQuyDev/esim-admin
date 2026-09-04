@@ -136,6 +136,7 @@ export type AdminOrderInvoice = {
   companyName: string;
   taxCode: string;
   address: string;
+  invoicePhone: string;
   invoiceEmail: string;
   createdAt: string;
   updatedAt: string;
@@ -202,6 +203,7 @@ export type CreateInvoiceForOrderPayload = {
   companyName: string;
   taxCode: string;
   address: string;
+  invoicePhone: string;
   invoiceEmail: string;
 };
 
@@ -211,6 +213,7 @@ export type Invoice = {
   companyName: string;
   taxCode: string;
   address: string;
+  invoicePhone: string;
   invoiceEmail: string;
   orderId: number;
   order?: Order;

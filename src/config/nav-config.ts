@@ -177,6 +177,45 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Quản lý đối tác',
+        url: '#',
+        icon: 'teams',
+        isActive: false,
+        access: { role: [1] },
+        items: [
+          {
+            title: 'Đối tác & KOL',
+            url: '/dashboard/partners',
+            access: { role: [1] }
+          },
+          {
+            title: 'Duyệt đăng ký',
+            url: '/dashboard/partners/approvals',
+            access: { role: [1] }
+          },
+          {
+            title: 'Yêu cầu nạp ký quỹ',
+            url: '/dashboard/partners/deposit-requests',
+            access: { role: [1] }
+          },
+          {
+            title: 'Hoa hồng',
+            url: '/dashboard/partners/commissions',
+            access: { role: [1] }
+          },
+          {
+            title: 'Yêu cầu rút tiền',
+            url: '/dashboard/partners/payouts',
+            access: { role: [1] }
+          },
+          {
+            title: 'Hạng đối tác',
+            url: '/dashboard/partners/tiers',
+            access: { role: [1] }
+          }
+        ]
+      },
+      {
         title: 'Trò chuyện',
         url: '/dashboard/chat',
         icon: 'chat',

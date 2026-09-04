@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/sheet';
 import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AdjustBalanceModal } from './adjust-balance-modal';
 import { CancelBalanceModal } from './cancel-balance-modal';
@@ -49,6 +49,15 @@ export function WalletDetailSheet({ userId, open, onOpenChange }: WalletDetailSh
   const [cancelOpen, setCancelOpen] = useState(false);
   const [lockUnlockOpen, setLockUnlockOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'history'>('info');
+
+  // Every selected user starts from a clean detail state. This also prevents
+  // modal/tab state from leaking if the table updates while the sheet is open.
+  useEffect(() => {
+    setAdjustOpen(false);
+    setCancelOpen(false);
+    setLockUnlockOpen(false);
+    setActiveTab('info');
+  }, [userId]);
 
   const { data: wallet } = useSuspenseQuery(walletQueryOptions(userId));
   const { data: transactions = [], isLoading: txLoading } = useQuery({

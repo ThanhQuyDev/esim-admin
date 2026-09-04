@@ -4,6 +4,7 @@ export type Footer = {
   titleVi: string;
   url: string;
   language: string;
+  sortOrder: number;
   categories?: string | null;
   iconUrl?: string | null;
   createdAt: string;
@@ -24,6 +25,7 @@ export type CreateFooterPayload = {
   titleVi: string;
   url: string;
   language: string;
+  sortOrder?: number;
   categories?: string | null;
   iconUrl?: string | null;
 };

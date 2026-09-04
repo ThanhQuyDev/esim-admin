@@ -28,6 +28,8 @@ export function PlansTable() {
     tags: parseAsArrayOf(parseAsString, ','),
     duration: parseAsString,
     data: parseAsString,
+    country: parseAsString,
+    hasCallSms: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
@@ -54,6 +56,12 @@ export function PlansTable() {
   }
   if (params.data) {
     apiFilters.data = params.data;
+  }
+  if (params.country) {
+    apiFilters.country = params.country;
+  }
+  if (params.hasCallSms && params.hasCallSms.length === 1) {
+    apiFilters.hasCallSms = params.hasCallSms[0] === 'true';
   }
 
   const apiSort = params.sort.map((s) => ({

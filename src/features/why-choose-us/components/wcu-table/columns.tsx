@@ -89,6 +89,13 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
         </div>
       );
     },
+    meta: {
+      label: 'Trang',
+      // Single-select: the API matches one type per request.
+      variant: 'select' as const,
+      options: WCU_TYPE_OPTIONS.map((o) => ({ label: o.label, value: o.value }))
+    },
+    enableColumnFilter: true,
     enableSorting: false
   },
   {

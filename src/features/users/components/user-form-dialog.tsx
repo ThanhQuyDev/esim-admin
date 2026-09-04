@@ -9,10 +9,12 @@ import { useMutation } from '@tanstack/react-query';
 import { createUserMutation, updateUserMutation } from '../api/mutations';
 import type { User, CreateUserPayload, UpdateUserPayload } from '../api/types';
 import { toast } from 'sonner';
+import { formatVnd } from '@/lib/format';
 import * as z from 'zod';
 import {
   createUserSchema,
   updateUserSchema,
+  phoneNumberSchema,
   type CreateUserFormValues,
   type UpdateUserFormValues
 } from '../schemas/user';
@@ -26,6 +28,21 @@ const API_STATUS_OPTIONS = [
   { value: '1', label: 'Hoạt động' },
   { value: '2', label: 'Không hoạt động' }
 ];
+
+const TIER_OPTIONS = [
+  { value: 'auto', label: 'Tự động theo chi tiêu' },
+  { value: 'traveler', label: 'Du khách' },
+  { value: 'silver', label: 'Du khách bạc' },
+  { value: 'gold', label: 'Du khách vàng' },
+  { value: 'platinum', label: 'Du khách bạch kim' }
+];
+
+const TIER_LABELS = {
+  traveler: 'Du khách',
+  silver: 'Du khách bạc',
+  gold: 'Du khách vàng',
+  platinum: 'Du khách bạch kim'
+} as const;
 
 interface UserFormDialogProps {
   user?: User;
@@ -65,6 +82,7 @@ function CreateUserDialog({
       firstName: '',
       lastName: '',
       email: '',
+      phoneNumber: '',
       password: '',
       roleId: '',
       statusId: '1'
@@ -78,6 +96,7 @@ function CreateUserDialog({
         password: value.password,
         firstName: value.firstName,
         lastName: value.lastName,
+        phoneNumber: value.phoneNumber.trim() || null,
         role: { id: Number(value.roleId) },
         status: { id: Number(value.statusId) }
       };
@@ -126,16 +145,25 @@ function CreateUserDialog({
             />
           </div>
 
-          <FormTextField
-            name='email'
-            label='Email'
-            required
-            type='email'
-            placeholder='nguyen@example.com'
-            validators={{
-              onBlur: z.string().email('Vui lòng nhập email hợp lệ')
-            }}
-          />
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField
+              name='email'
+              label='Email'
+              required
+              type='email'
+              placeholder='nguyen@example.com'
+              validators={{
+                onBlur: z.string().email('Vui lòng nhập email hợp lệ')
+              }}
+            />
+            <FormTextField
+              name='phoneNumber'
+              label='Số điện thoại'
+              type='tel'
+              placeholder='0901234567'
+              validators={{ onBlur: phoneNumberSchema }}
+            />
+          </div>
 
           <FormTextField
             name='password'
@@ -200,8 +228,11 @@ function EditUserDialog({
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      phoneNumber: user.phoneNumber ?? '',
       roleId: String(user.role?.id ?? ''),
-      statusId: String(user.status?.id ?? '')
+      statusId: String(user.status?.id ?? ''),
+      tierOverride: user.tierOverride ?? 'auto',
+      tierOverrideReason: user.tierOverrideReason ?? ''
     } as UpdateUserFormValues,
     validators: {
       onSubmit: updateUserSchema
@@ -211,6 +242,9 @@ function EditUserDialog({
         email: value.email,
         firstName: value.firstName,
         lastName: value.lastName,
+        phoneNumber: value.phoneNumber.trim() || null,
+        tierOverride: value.tierOverride === 'auto' ? null : value.tierOverride,
+        tierOverrideReason: value.tierOverride === 'auto' ? null : value.tierOverrideReason.trim(),
         role: { id: Number(value.roleId) },
         status: { id: Number(value.statusId) }
       };
@@ -218,7 +252,8 @@ function EditUserDialog({
     }
   });
 
-  const { FormTextField, FormSelectField } = useFormFields<UpdateUserFormValues>();
+  const { FormTextField, FormSelectField, FormTextareaField } =
+    useFormFields<UpdateUserFormValues>();
 
   return (
     <FormDialog
@@ -259,16 +294,25 @@ function EditUserDialog({
             />
           </div>
 
-          <FormTextField
-            name='email'
-            label='Email'
-            required
-            type='email'
-            placeholder='nguyen@example.com'
-            validators={{
-              onBlur: z.string().email('Vui lòng nhập email hợp lệ')
-            }}
-          />
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField
+              name='email'
+              label='Email'
+              required
+              type='email'
+              placeholder='nguyen@example.com'
+              validators={{
+                onBlur: z.string().email('Vui lòng nhập email hợp lệ')
+              }}
+            />
+            <FormTextField
+              name='phoneNumber'
+              label='Số điện thoại'
+              type='tel'
+              placeholder='0901234567'
+              validators={{ onBlur: phoneNumberSchema }}
+            />
+          </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormSelectField
@@ -293,6 +337,34 @@ function EditUserDialog({
               }}
             />
           </div>
+
+          <div className='rounded-xl border bg-muted/40 p-4'>
+            <p className='text-sm font-medium'>Hạng tự động: {TIER_LABELS[user.automaticTier]}</p>
+            <p className='text-muted-foreground mt-1 text-sm'>
+              Tổng chi tiêu: {formatVnd(user.lifetimeSpendVnd)}
+            </p>
+          </div>
+
+          <FormSelectField
+            name='tierOverride'
+            label='Hạng thành viên'
+            options={TIER_OPTIONS}
+            description='Hạng thủ công thay thế toàn bộ quyền lợi tự động.'
+          />
+
+          <form.Subscribe selector={(state) => state.values.tierOverride}>
+            {(tierOverride) =>
+              tierOverride !== 'auto' ? (
+                <FormTextareaField
+                  name='tierOverrideReason'
+                  label='Lý do điều chỉnh'
+                  required
+                  placeholder='Nhập lý do điều chỉnh hạng thành viên...'
+                  maxLength={500}
+                />
+              ) : null
+            }
+          </form.Subscribe>
         </form.Form>
       </form.AppForm>
     </FormDialog>

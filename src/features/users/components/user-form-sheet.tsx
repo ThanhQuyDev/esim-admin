@@ -20,6 +20,7 @@ import * as z from 'zod';
 import {
   createUserSchema,
   updateUserSchema,
+  phoneNumberSchema,
   type CreateUserFormValues,
   type UpdateUserFormValues
 } from '../schemas/user';
@@ -72,6 +73,7 @@ function CreateUserSheet({
       firstName: '',
       lastName: '',
       email: '',
+      phoneNumber: '',
       password: '',
       roleId: '',
       statusId: '1'
@@ -85,6 +87,7 @@ function CreateUserSheet({
         password: value.password,
         firstName: value.firstName,
         lastName: value.lastName,
+        phoneNumber: value.phoneNumber.trim() || null,
         role: { id: Number(value.roleId) },
         status: { id: Number(value.statusId) }
       };
@@ -135,6 +138,14 @@ function CreateUserSheet({
                 validators={{
                   onBlur: z.string().email('Vui lòng nhập email hợp lệ')
                 }}
+              />
+
+              <FormTextField
+                name='phoneNumber'
+                label='Số điện thoại'
+                type='tel'
+                placeholder='0901234567'
+                validators={{ onBlur: phoneNumberSchema }}
               />
 
               <FormTextField
@@ -209,6 +220,7 @@ function EditUserSheet({
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      phoneNumber: user.phoneNumber ?? '',
       roleId: String(user.role?.id ?? ''),
       statusId: String(user.status?.id ?? '')
     } as UpdateUserFormValues,
@@ -220,6 +232,7 @@ function EditUserSheet({
         email: value.email,
         firstName: value.firstName,
         lastName: value.lastName,
+        phoneNumber: value.phoneNumber.trim() || null,
         role: { id: Number(value.roleId) },
         status: { id: Number(value.statusId) }
       };
@@ -270,6 +283,14 @@ function EditUserSheet({
                 validators={{
                   onBlur: z.string().email('Vui lòng nhập email hợp lệ')
                 }}
+              />
+
+              <FormTextField
+                name='phoneNumber'
+                label='Số điện thoại'
+                type='tel'
+                placeholder='0901234567'
+                validators={{ onBlur: phoneNumberSchema }}
               />
 
               <FormSelectField

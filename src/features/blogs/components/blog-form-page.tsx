@@ -282,7 +282,6 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
     defaultValues: {
       title: blog?.title ?? '',
       content: blog?.content ?? '',
-      author: blog?.author ?? '',
       language: (blog?.language as 'vi' | 'en') ?? 'en',
       slug: blog?.slug ?? '',
       category: blog?.category ?? '',
@@ -330,7 +329,6 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
           const payload: UpdateBlogPayload = {
             title: value.title,
             content: contentRef.current || value.content || '',
-            author: value.author,
             language: value.language,
             slug: value.slug || undefined,
             category: value.category || undefined,
@@ -375,7 +373,6 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
           const payload: CreateBlogPayload = {
             title: value.title,
             content: contentRef.current || value.content || '',
-            author: value.author,
             language: value.language,
             ...(value.slug && { slug: value.slug }),
             ...(value.category && { category: value.category }),
@@ -452,7 +449,9 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
                 validators={{ onBlur: z.string().min(2) }}
               />
               <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                <FormTextField name='author' label='Tác giả' required placeholder='Tên tác giả' />
+                <div className='rounded-md border bg-muted/40 px-3 py-2 text-sm'>
+                  Tác giả: {blog?.authorProfile?.name ?? blog?.author ?? 'Tài khoản đang đăng nhập'}
+                </div>
                 <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
               </div>
               <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>

@@ -12,6 +12,7 @@ export type Region = {
   id: number;
   name: string;
   slug: string;
+  slugVi: string | null;
   destinationCount: number;
   destinations: Destination[];
   avatarUrl: string | null;
@@ -44,6 +45,7 @@ export type RegionsResponse = {
 export type CreateRegionPayload = {
   name: string;
   slug?: string;
+  slugVi?: string | null;
   avatarUrl?: string | null;
   iconUrl?: string | null;
   isPopular?: boolean;
@@ -59,6 +61,7 @@ export type CreateRegionPayload = {
 export type UpdateRegionPayload = {
   name?: string;
   slug?: string;
+  slugVi?: string | null;
   parentId?: number | null;
   avatarUrl?: string | null;
   iconUrl?: string | null;

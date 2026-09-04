@@ -188,6 +188,10 @@ export function MinimalTiptapEditor({
       Underline,
       Link.configure({
         openOnClick: false,
+        // Do not turn plain text such as "esim.vn" into an anchor. Links must
+        // be explicitly added with the toolbar so a complete href is provided.
+        autolink: false,
+        linkOnPaste: false,
         HTMLAttributes: {
           class: 'text-primary underline underline-offset-4'
         }
