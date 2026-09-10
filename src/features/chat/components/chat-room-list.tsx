@@ -18,16 +18,44 @@ function getRoomInitials(email: string | undefined, userId: number): string {
   return `U${userId}`;
 }
 
+/**
+ * A conversation nobody has answered yet (#072).
+ *
+ * Compared against the room OWNER rather than the signed-in admin: when a
+ * colleague replies the room is answered, and treating their reply as
+ * unanswered would have every admin chasing the same conversations.
+ */
+function isAwaitingReply(room: ChatRoomWithMeta): boolean {
+  return room.lastMessage ? room.lastMessage.senderId === room.userId : false;
+}
+
+type RoomFilter = 'all' | 'unread' | 'awaiting';
+
+const FILTER_LABELS: Record<RoomFilter, string> = {
+  all: 'Tất cả',
+  unread: 'Chưa đọc',
+  awaiting: 'Chưa phản hồi'
+};
 export function ChatRoomList() {
   const rooms = useChatStore((s) => s.rooms);
   const selectedRoomId = useChatStore((s) => s.selectedRoomId);
   const selectRoom = useChatStore((s) => s.selectRoom);
   const userCache = useChatStore((s) => s.userCache);
   const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<RoomFilter>('all');
+
+  const counts = useMemo(
+    () => ({
+      all: rooms.length,
+      unread: rooms.filter((r) => r.unreadCount > 0).length,
+      awaiting: rooms.filter(isAwaitingReply).length
+    }),
+    [rooms]
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const matched = q
+    const byName = q
       ? rooms.filter((r) => {
           const user = userCache[r.userId];
           const displayName = user?.email ?? `Người dùng #${r.userId}`;
@@ -35,13 +63,20 @@ export function ChatRoomList() {
         })
       : rooms;
 
+    const matched =
+      filter === 'unread'
+        ? byName.filter((r) => r.unreadCount > 0)
+        : filter === 'awaiting'
+          ? byName.filter(isAwaitingReply)
+          : byName;
+
     // Sort by most recent activity (newest message first). Fall back to the
     // room's updatedAt/createdAt when a room has no messages yet.
     const activityTime = (r: ChatRoomWithMeta) =>
       new Date(r.lastMessage?.createdAt ?? r.updatedAt ?? r.createdAt).getTime();
 
     return [...matched].sort((a, b) => activityTime(b) - activityTime(a));
-  }, [rooms, search, userCache]);
+  }, [rooms, search, userCache, filter]);
 
   return (
     <div
@@ -81,6 +116,32 @@ export function ChatRoomList() {
         />
       </div>
 
+      {/* Unread / awaiting-reply filters (#072) — the counts make it obvious
+          how much is outstanding before anything is clicked. */}
+      <div className='flex flex-wrap gap-1.5' role='group' aria-label='Lọc cuộc trò chuyện'>
+        {(Object.keys(FILTER_LABELS) as RoomFilter[]).map((key) => {
+          const isActive = filter === key;
+          const count = counts[key];
+          return (
+            <button
+              key={key}
+              type='button'
+              onClick={() => setFilter(key)}
+              aria-pressed={isActive}
+              data-testid={`chat-filter-${key}`}
+              className={cn(
+                'focus-visible:ring-primary/40 rounded-full border px-2.5 py-1 text-[0.7rem] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                isActive
+                  ? 'border-primary/40 bg-primary/15 text-primary'
+                  : 'border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/50'
+              )}
+            >
+              {FILTER_LABELS[key]}
+              {count > 0 && key !== 'all' ? ` (${count})` : ''}
+            </button>
+          );
+        })}
+      </div>
       <div
         className='flex-1 space-y-2 overflow-y-auto pr-1'
         aria-label='Danh sách cuộc trò chuyện'
@@ -88,7 +149,11 @@ export function ChatRoomList() {
       >
         {filtered.length === 0 ? (
           <p className='text-muted-foreground py-8 text-center text-xs'>
-            Không tìm thấy cuộc trò chuyện
+            {filter === 'unread'
+              ? 'Không có tin nhắn chưa đọc'
+              : filter === 'awaiting'
+                ? 'Không có cuộc trò chuyện nào đang chờ trả lời'
+                : 'Không tìm thấy cuộc trò chuyện'}
           </p>
         ) : null}
         {filtered.map((room) => {

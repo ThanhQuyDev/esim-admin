@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/select';
 import { formatVnd } from '@/lib/format';
 import { useState } from 'react';
-import type { RefundOrderRequest, RefundMode } from '../api/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import type { OrderItem, RefundOrderRequest, RefundMode } from '../api/types';
 
 interface RefundOrderModalProps {
   orderId: number;
@@ -28,6 +29,8 @@ interface RefundOrderModalProps {
   payableVndPrice: number;
   walletSpentVndAmount?: number | null;
   refundedAmountVnd?: number | null;
+  /** Lines of the order, so part of it can be refunded on its own. */
+  items?: OrderItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: RefundOrderRequest) => void;
@@ -40,6 +43,7 @@ export function RefundOrderModal({
   payableVndPrice,
   walletSpentVndAmount,
   refundedAmountVnd,
+  items = [],
   open,
   onOpenChange,
   onSubmit,
@@ -52,9 +56,37 @@ export function RefundOrderModal({
   const [amount, setAmount] = useState(String(maxRefundable));
   const [reason, setReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
+  // Empty = refund the whole order, as before.
+  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+
+  // Only lines still live can be refunded; an already-refunded one has nothing
+  // left to give back.
+  const refundableItems = items.filter((item) => item.status !== 'refunded');
+  const isPartial = selectedItemIds.length > 0;
+
+  const selectedValue = refundableItems
+    .filter((item) => selectedItemIds.includes(item.id))
+    .reduce((sum, item) => sum + Number(item.vndPrice ?? 0), 0);
+
+  // A per-item refund can never exceed what those lines were worth.
+  const cap = isPartial ? Math.min(selectedValue, maxRefundable) : maxRefundable;
 
   const amountVnd = parseInt(amount, 10);
-  const isValidAmount = !isNaN(amountVnd) && amountVnd >= 0 && amountVnd <= maxRefundable;
+  const isValidAmount = !isNaN(amountVnd) && amountVnd >= 0 && amountVnd <= cap;
+
+  function toggleItem(id: number, value: boolean) {
+    const next = value
+      ? [...selectedItemIds, id]
+      : selectedItemIds.filter((itemId) => itemId !== id);
+    setSelectedItemIds(next);
+
+    // Keep the amount in step with the selection so the admin does not have to
+    // add the lines up by hand.
+    const nextValue = refundableItems
+      .filter((item) => next.includes(item.id))
+      .reduce((sum, item) => sum + Number(item.vndPrice ?? 0), 0);
+    setAmount(String(next.length > 0 ? Math.min(nextValue, maxRefundable) : maxRefundable));
+  }
 
   function handleSubmit() {
     if (!isValidAmount) return;
@@ -62,7 +94,8 @@ export function RefundOrderModal({
       mode,
       amountVnd,
       reason: reason.trim() || undefined,
-      adminNote: adminNote.trim() || undefined
+      adminNote: adminNote.trim() || undefined,
+      orderItemIds: isPartial ? selectedItemIds : undefined
     });
   }
 
@@ -72,6 +105,7 @@ export function RefundOrderModal({
       setAmount(String(maxRefundable));
       setReason('');
       setAdminNote('');
+      setSelectedItemIds([]);
     }
     onOpenChange(newOpen);
   }
@@ -120,6 +154,38 @@ export function RefundOrderModal({
             </div>
           </div>
 
+          {/* Which lines to refund (#027) */}
+          {refundableItems.length > 1 && (
+            <div className='space-y-2'>
+              <Label>Hoàn theo từng sản phẩm</Label>
+              <div className='space-y-2 rounded-lg border p-3'>
+                {refundableItems.map((item) => (
+                  <label key={item.id} className='flex cursor-pointer items-center gap-3 text-sm'>
+                    <Checkbox
+                      checked={selectedItemIds.includes(item.id)}
+                      onCheckedChange={(v) => toggleItem(item.id, !!v)}
+                    />
+                    <span className='min-w-0 flex-1 truncate'>
+                      {item.plan?.name ?? `Sản phẩm #${item.id}`}
+                      {item.plan?.provider ? (
+                        <span className='text-muted-foreground'> · {item.plan.provider}</span>
+                      ) : null}
+                      {item.quantity > 1 ? (
+                        <span className='text-muted-foreground'> · x{item.quantity}</span>
+                      ) : null}
+                    </span>
+                    <span className='font-mono text-sm'>{formatVnd(item.vndPrice)}</span>
+                  </label>
+                ))}
+              </div>
+              <p className='text-muted-foreground text-xs'>
+                {isPartial
+                  ? 'Chỉ những sản phẩm được chọn bị huỷ với nhà cung cấp và đánh dấu đã hoàn tiền. Các sản phẩm còn lại giữ nguyên.'
+                  : 'Không chọn sản phẩm nào = hoàn tiền cho toàn bộ đơn hàng (huỷ với tất cả nhà cung cấp).'}
+              </p>
+            </div>
+          )}
+
           {/* Refund Mode */}
           <div className='space-y-2'>
             <Label htmlFor='refund-mode'>Phương thức hoàn tiền</Label>
@@ -147,11 +213,11 @@ export function RefundOrderModal({
               type='number'
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              max={maxRefundable}
+              max={cap}
             />
             {!isValidAmount && amount && (
               <p className='text-destructive text-xs'>
-                Số tiền không hợp lệ. Tối đa: {formatVnd(maxRefundable)}
+                Số tiền không hợp lệ. Tối đa: {formatVnd(cap)}
               </p>
             )}
           </div>
@@ -195,7 +261,11 @@ export function RefundOrderModal({
                   • +{formatVnd(amountVnd || 0)} sẽ được hoàn vào ví eXu (365 ngày)
                 </li>
               )}
-              <li className='text-muted-foreground'>• Trạng thái đơn hàng → refunded</li>
+              <li className='text-muted-foreground'>
+                {isPartial
+                  ? `• ${selectedItemIds.length} sản phẩm được chọn → refunded; đơn chỉ chuyển sang refunded khi đã hoàn hết giá trị`
+                  : '• Trạng thái đơn hàng → refunded'}
+              </li>
             </ul>
           </div>
         </div>

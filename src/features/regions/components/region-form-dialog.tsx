@@ -226,12 +226,14 @@ function CreateDialog({
             name='description'
             label='Mô tả (EN)'
             placeholder='Mô tả tiếng Anh...'
+            description='Dùng được biến giá: ${fromPrice} (tự đổi sang USD ở bản tiếng Anh), ${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}, ${name}.'
           />
 
           <FormTextareaField
             name='descriptionVi'
             label='Mô tả (VI)'
             placeholder='Mô tả tiếng Việt...'
+            description='Dùng được biến giá: ${fromPrice} (hiện tiền Việt ở bản tiếng Việt), ${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}, ${name}.'
           />
         </form.Form>
       </form.AppForm>
@@ -439,12 +441,14 @@ function EditDialogForm({
             name='description'
             label='Mô tả (EN)'
             placeholder='Mô tả tiếng Anh...'
+            description='Dùng được biến giá: ${fromPrice} (tự đổi sang USD ở bản tiếng Anh), ${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}, ${name}.'
           />
 
           <FormTextareaField
             name='descriptionVi'
             label='Mô tả (VI)'
             placeholder='Mô tả tiếng Việt...'
+            description='Dùng được biến giá: ${fromPrice} (hiện tiền Việt ở bản tiếng Việt), ${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}, ${name}.'
           />
         </form.Form>
       </form.AppForm>

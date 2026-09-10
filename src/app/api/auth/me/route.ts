@@ -8,10 +8,7 @@ export async function GET() {
   const token = cookieStore.get('token')?.value;
 
   if (!token) {
-    return NextResponse.json(
-      { message: 'Not authenticated' },
-      { status: 401 }
-    );
+    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
   const res = await fetch(`${API_URL}/api/v1/auth/me`, {
@@ -21,10 +18,7 @@ export async function GET() {
   });
 
   if (!res.ok) {
-    return NextResponse.json(
-      { message: 'Not authenticated' },
-      { status: 401 }
-    );
+    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
   const data = await res.json();

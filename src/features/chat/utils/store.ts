@@ -44,11 +44,16 @@ interface ChatState {
 
   // UI
   draft: string;
+  /** The message the admin is quoting, if any (#073). */
+  replyTo: ChatMessage | null;
   isLoadingMessages: boolean;
   error: string | null;
 
   // Sound notification
   soundEnabled: boolean;
+
+  /** Desktop (browser) notifications — the sound alone is easy to miss (#070). */
+  desktopNotifyEnabled: boolean;
 
   // Actions
   connect: (token: string, myUserId: number) => void;
@@ -61,9 +66,11 @@ interface ChatState {
   markAsRead: () => void;
   fetchRooms: () => void;
   setDraft: (text: string) => void;
+  setReplyTo: (message: ChatMessage | null) => void;
   clearError: () => void;
   fetchUserInfo: (userId: number) => void;
   toggleSound: () => void;
+  toggleDesktopNotify: () => void;
 
   // Internal
   _socket: ChatSocket | null;
@@ -74,6 +81,50 @@ interface ChatState {
 const MESSAGES_PER_PAGE = 50;
 
 // ─── Store ──────────────────────────────────────────────────────────────────
+
+/**
+ * Ask the browser for permission to show notifications (#070).
+ *
+ * Admins reported missing chats because the notification sound is easy to miss
+ * — or muted entirely — so a desktop notification is the reliable signal.
+ */
+export async function requestDesktopPermission(): Promise<boolean> {
+  if (typeof window === 'undefined' || !('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try {
+    return (await Notification.requestPermission()) === 'granted';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Show a desktop notification for a customer message.
+ *
+ * Skipped when the admin is already looking at that conversation — a
+ * notification for the message on screen is noise.
+ */
+function notifyDesktop(title: string, body: string): void {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    const notification = new Notification(title, {
+      body,
+      icon: '/app/logo.png',
+      // One notification per conversation: a burst of messages replaces the
+      // previous card instead of stacking up.
+      tag: 'esim-chat'
+    });
+    notification.onclick = () => {
+      window.focus();
+      window.location.href = '/dashboard/chat';
+      notification.close();
+    };
+  } catch {
+    // Notifications unavailable — the badge in the sidebar still shows the count.
+  }
+}
 
 export const useChatStore = create<ChatState>()((set, get) => ({
   // Initial state
@@ -87,11 +138,17 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   messagesPage: 1,
   hasMoreMessages: true,
   draft: '',
+  replyTo: null,
   isLoadingMessages: false,
   error: null,
   soundEnabled: (() => {
     if (typeof window === 'undefined') return true;
     const stored = localStorage.getItem('chat_sound_enabled');
+    return stored !== null ? stored === 'true' : true;
+  })(),
+  desktopNotifyEnabled: (() => {
+    if (typeof window === 'undefined') return true;
+    const stored = localStorage.getItem('chat_desktop_notify');
     return stored !== null ? stored === 'true' : true;
   })(),
   _socket: null,
@@ -130,7 +187,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         messages: [],
         messagesPage: 1,
         hasMoreMessages: true,
-        isLoadingMessages: true
+        isLoadingMessages: true,
+        replyTo: null
       });
 
       // Fetch user info for the room owner
@@ -187,8 +245,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         get().fetchUserInfo(msg.senderId);
       }
 
+      const fromCustomer = msg.senderId !== state.myUserId;
+
       // Play notification sound if enabled and message is from customer
-      if (state.soundEnabled && msg.senderId !== state.myUserId) {
+      if (state.soundEnabled && fromCustomer) {
         try {
           const audio = new Audio('/app/sound/notification.mp3');
           audio.volume = 0.5;
@@ -196,6 +256,27 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         } catch {
           // Audio playback not available
         }
+      }
+
+      // A desktop notification too: the sound is easy to miss, and admins were
+      // not noticing waiting customers at all (#070). Not for the conversation
+      // already open on screen.
+      const isViewing =
+        msg.chatRoomId === state.selectedRoomId &&
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'visible';
+      if (state.desktopNotifyEnabled && fromCustomer && !isViewing) {
+        const sender = state.userCache[msg.senderId];
+        const fallbackName = `Khách #${msg.senderId}`;
+        const name = sender
+          ? [sender.firstName, sender.lastName].filter(Boolean).join(' ') ||
+            sender.email ||
+            fallbackName
+          : fallbackName;
+        notifyDesktop(
+          `Tin nhắn mới từ ${name}`,
+          msg.message?.slice(0, 120) || 'Đã gửi một tệp đính kèm'
+        );
       }
 
       // Append to current chat if it's the active room
@@ -262,6 +343,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       messages: [],
       messagesPage: 1,
       draft: '',
+      replyTo: null,
       error: null
     });
   },
@@ -283,7 +365,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       messagesPage: 1,
       hasMoreMessages: true,
       isLoadingMessages: true,
-      draft: ''
+      draft: '',
+      replyTo: null
     });
 
     socket.emit('joinRoom', { userId });
@@ -297,7 +380,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       messagesPage: 1,
       hasMoreMessages: true,
       isLoadingMessages: false,
-      draft: ''
+      draft: '',
+      replyTo: null
     });
   },
 
@@ -317,10 +401,12 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         fileName: file.fileName,
         fileType: file.fileType,
         fileSize: file.fileSize
-      })
+      }),
+      // The quote is consumed by this one message, like every messenger (#073)
+      ...(state.replyTo && { replyToId: state.replyTo.id })
     });
 
-    set({ draft: '' });
+    set({ draft: '', replyTo: null });
   },
 
   loadMoreMessages: () => {
@@ -361,6 +447,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
   setDraft: (text: string) => set({ draft: text }),
 
+  setReplyTo: (message: ChatMessage | null) => set({ replyTo: message }),
+
   clearError: () => set({ error: null }),
 
   fetchUserInfo: (userId: number) => {
@@ -398,5 +486,17 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         localStorage.setItem('chat_sound_enabled', String(next));
       }
       return { soundEnabled: next };
+    }),
+
+  toggleDesktopNotify: () =>
+    set((s) => {
+      const next = !s.desktopNotifyEnabled;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('chat_desktop_notify', String(next));
+        // Asking only when it is switched ON keeps the browser prompt tied to a
+        // deliberate click, which is what browsers expect.
+        if (next) void requestDesktopPermission();
+      }
+      return { desktopNotifyEnabled: next };
     })
 }));

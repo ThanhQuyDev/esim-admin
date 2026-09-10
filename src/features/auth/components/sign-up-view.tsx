@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { register } from '../api/service';
 import { InteractiveGridPattern } from './interactive-grid';
+import { HOME_PATH } from '@/config/app-mode';
 
 export const metadata: Metadata = {
   title: 'Đăng ký',
@@ -33,7 +34,7 @@ export default function SignUpViewPage() {
     mutationFn: register,
     onSuccess: () => {
       toast.success('Tạo tài khoản thành công!');
-      router.push('/dashboard/overview');
+      router.push(HOME_PATH);
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Đăng ký thất bại');

@@ -17,7 +17,7 @@ import {
   SheetTitle
 } from '@/components/ui/sheet';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AdjustBalanceModal } from './adjust-balance-modal';
@@ -181,7 +181,7 @@ export function WalletDetailSheet({ userId, open, onOpenChange }: WalletDetailSh
                 <p className='text-muted-foreground text-xs font-medium'>Thời hạn</p>
                 {wallet.expiresAt ? (
                   <p className='text-sm'>
-                    {new Date(wallet.expiresAt).toLocaleDateString('vi-VN')}
+                    {formatDateVn(wallet.expiresAt)}
                     {wallet.daysLeft !== null && (
                       <span className='text-muted-foreground ml-2'>
                         (Còn {wallet.daysLeft} ngày)
@@ -248,7 +248,7 @@ export function WalletDetailSheet({ userId, open, onOpenChange }: WalletDetailSh
                           <p className='text-muted-foreground truncate text-xs'>{tx.reason}</p>
                         )}
                         <p className='text-muted-foreground text-xs'>
-                          {new Date(tx.createdAt).toLocaleString('vi-VN')}
+                          {formatDateTimeVn(tx.createdAt)}
                         </p>
                       </div>
                       <div className='text-right shrink-0'>

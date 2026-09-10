@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateVn } from '@/lib/format';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { TopBar } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
@@ -60,7 +61,7 @@ export const columns: ColumnDef<TopBar>[] = [
     header: ({ column }: { column: Column<TopBar, unknown> }) => (
       <DataTableColumnHeader column={column} title='Ngày tạo' />
     ),
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('vi-VN')
+    cell: ({ row }) => formatDateVn(row.original.createdAt)
   },
   { id: 'actions', cell: ({ row }) => <CellAction data={row.original} /> }
 ];

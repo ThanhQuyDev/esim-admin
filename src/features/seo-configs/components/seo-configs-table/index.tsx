@@ -4,7 +4,7 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { seoConfigsQueryOptions } from '../../api/queries';
 import { columns } from './columns';
@@ -16,11 +16,15 @@ export function SeoConfigsTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    pageType: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
   const apiFilters: Record<string, unknown> = {};
   if (params.name) apiFilters.search = params.name;
+  // The API matches a single page type per request, so only the first
+  // selection is sent.
+  if (params.pageType?.[0]) apiFilters.pageType = params.pageType[0];
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,

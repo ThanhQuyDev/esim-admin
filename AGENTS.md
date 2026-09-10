@@ -543,6 +543,29 @@ Recommended test locations:
 
 ## Deployment
 
+### Two deployments, one codebase: admin vs partner portal
+
+This app ships twice, to two hostnames:
+
+| Deployment | Hostname | Env | Serves |
+| --- | --- | --- | --- |
+| Admin console | `admin.esim.vn` | `NEXT_PUBLIC_APP_MODE=admin` (or unset) | everything except `/dashboard/portal/*` and `/api/partner-portal/*` |
+| Partner portal | `doitac.esim.vn` | `NEXT_PUBLIC_APP_MODE=partner` | only `/dashboard/portal/*` and `/api/partner-portal/*`, plus the shared `/auth/*` and `/register/partner` |
+
+`src/config/app-mode.ts` holds the mode, the landing route, the branding and the
+route lists; `src/proxy.ts` enforces them — the other deployment's routes return
+404, they are not merely hidden from the sidebar. The mode comes from the request
+hostname when it is recognizable (`doitac.` / `admin.` prefix) and falls back to
+`NEXT_PUBLIC_APP_MODE`, so a partner deployment shipped with the wrong env var
+still refuses to serve admin screens.
+
+Authorization itself stays with the backend: every admin endpoint is
+`@Roles(admin)` and answers 403 to a partner token. This split is the second
+layer, so a partner never reaches an admin screen at all.
+
+Adding a route: put it under `/dashboard/portal/*` (partner) or anywhere else
+(admin). Anything both sides need goes in `SHARED_PREFIXES`.
+
 ### Vercel (Recommended)
 
 1. Connect repository to Vercel

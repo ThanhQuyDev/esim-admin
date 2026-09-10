@@ -8,6 +8,9 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { ordersQueryOptions } from '../../api/queries';
+import { exportOrdersExcel } from '../../api/service';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { columns } from './columns';
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
@@ -78,6 +81,20 @@ export function OrdersTable() {
     orderBy: s.id,
     order: s.desc ? 'DESC' : 'ASC'
   }));
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // Same filters as the table, so the sheet matches the screen.
+      await exportOrdersExcel(filters);
+    } catch (err) {
+      toast.error((err as Error).message || 'Xuất Excel thất bại');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const filters = {
     page: params.page,
@@ -183,7 +200,12 @@ export function OrdersTable() {
       </div>
 
       <DataTable table={table} totalRowCount={totalCount}>
-        <DataTableToolbar table={table} />
+        <DataTableToolbar table={table}>
+          <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
+            {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
+            Xuất Excel đối soát
+          </Button>
+        </DataTableToolbar>
       </DataTable>
     </div>
   );

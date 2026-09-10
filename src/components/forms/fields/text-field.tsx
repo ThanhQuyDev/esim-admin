@@ -11,6 +11,7 @@ import {
   createFormField
 } from '@/components/ui/form-context';
 import { Spinner } from '@/components/ui/spinner';
+import { CharCounter } from './char-counter';
 
 interface TextFieldProps extends Omit<
   React.ComponentProps<'input'>,
@@ -20,6 +21,9 @@ interface TextFieldProps extends Omit<
   description?: string;
   required?: boolean;
   type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'number';
+  /** Soft length limit — shows a character counter, blocks nothing (#048). */
+  recommendedLength?: number;
+  showCount?: boolean;
 }
 
 export function TextField({
@@ -27,6 +31,8 @@ export function TextField({
   description,
   required,
   type = 'text',
+  recommendedLength,
+  showCount = recommendedLength != null,
   className,
   ...inputProps
 }: TextFieldProps) {
@@ -67,6 +73,13 @@ export function TextField({
             </div>
           )}
         </div>
+        {showCount && (
+          <CharCounter
+            length={String(value ?? '').length}
+            recommendedLength={recommendedLength}
+            maxLength={inputProps.maxLength}
+          />
+        )}
         {description && <FieldDescription>{description}</FieldDescription>}
       </FormField>
       <FormFieldError />

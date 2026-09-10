@@ -18,6 +18,10 @@ export type User = {
   lastName: string;
   phoneNumber: string | null;
   lifetimeSpendVnd: number;
+  /** The customer's own referral code — the one they hand out (#056). */
+  referralCode?: string | null;
+  /** Orders this customer has paid for; refunded orders are not counted (#056). */
+  paidOrderCount?: number;
   automaticTier: MembershipTier;
   membershipTier: MembershipTier;
   tierOverride: MembershipTier | null;

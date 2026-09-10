@@ -9,6 +9,20 @@ import { useMutation } from '@tanstack/react-query';
 import { createCouponMutation, updateCouponMutation } from '../api/mutations';
 import type { Coupon, CreateCouponPayload, UpdateCouponPayload } from '../api/types';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { partnersQueryOptions } from '@/features/partners/api/queries';
+import { Badge } from '@/components/ui/badge';
+import { couponUsage } from '../utils/usage';
+
+/** Radix Select has no empty-string value, so "no owner" needs a sentinel. */
+const NO_PARTNER = 'none';
 import * as z from 'zod';
 import {
   createCouponSchema,
@@ -23,6 +37,11 @@ interface CouponFormDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/** Kinds of discount a code can carry (#082). */
+const DISCOUNT_TYPE_OPTIONS = [
+  { value: 'percent', label: 'Phần trăm (%)' },
+  { value: 'fixed', label: 'Số tiền cụ thể (VNĐ)' }
+];
 export function CouponFormDialog({ coupon, open, onOpenChange }: CouponFormDialogProps) {
   const isEdit = !!coupon;
 
@@ -95,6 +114,52 @@ function DateTimeField({
   );
 }
 
+/**
+ * Owner picker. A coupon with no partner is a house-wide code; picking a
+ * partner makes it that KOL's code and surfaces its performance in their
+ * portal. It does not change how the discount behaves for the buyer.
+ */
+function PartnerField({
+  value,
+  onChange
+}: {
+  value: number | null | undefined;
+  onChange: (val: number | null) => void;
+}) {
+  const { data, isLoading } = useQuery(partnersQueryOptions({ limit: 50, status: 'active' }));
+  const partners = data?.data ?? [];
+
+  return (
+    <div className='space-y-2'>
+      <label htmlFor='coupon-partner' className='text-sm font-medium'>
+        Đối tác sở hữu mã
+      </label>
+      <Select
+        value={value == null ? NO_PARTNER : String(value)}
+        onValueChange={(v) => onChange(v === NO_PARTNER ? null : Number(v))}
+      >
+        <SelectTrigger id='coupon-partner'>
+          <SelectValue placeholder='Không gắn đối tác' />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NO_PARTNER}>Không gắn đối tác (mã chung)</SelectItem>
+          {partners.map((p) => (
+            <SelectItem key={p.id} value={String(p.id)}>
+              {p.contactName}
+              {p.tierCode ? ` · ${p.tierCode}` : ''} — {p.contactEmail}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className='text-muted-foreground text-xs'>
+        {isLoading
+          ? 'Đang tải danh sách đối tác…'
+          : 'Để trống nếu đây là mã dùng chung. Hoa hồng của đối tác vẫn tính trên giá trị đơn sau khi trừ mã.'}
+      </p>
+    </div>
+  );
+}
+
 function CreateCouponDialog({
   open,
   onOpenChange
@@ -121,7 +186,12 @@ function CreateCouponDialog({
       minOrderAmount: 0,
       expiresAt: '',
       isActive: true,
-      isPopular: false
+      isPopular: false,
+      isPublic: true,
+      discountType: 'percent' as const,
+      discountAmount: 0,
+      maxDiscountAmount: null,
+      partnerId: null
     } as CreateCouponFormValues,
     validators: {
       onSubmit: createCouponSchema
@@ -130,19 +200,25 @@ function CreateCouponDialog({
       const payload: CreateCouponPayload = {
         code: value.code,
         discountPercent: value.discountPercent,
+        discountType: value.discountType ?? 'percent',
+        discountAmount: value.discountAmount ?? 0,
+        maxDiscountAmount: value.maxDiscountAmount ?? null,
         maxUsage: value.maxUsage,
         maxUsagePerUser: value.maxUsagePerUser,
         minOrderAmount: value.minOrderAmount,
         expiresAt: new Date(value.expiresAt).toISOString(),
         isActive: value.isActive ?? true,
-        isPopular: value.isPopular ?? false
+        isPopular: value.isPopular ?? false,
+        isPublic: value.isPublic ?? true,
+        partnerId: value.partnerId ?? null
       };
 
       await createMutation.mutateAsync(payload);
     }
   });
 
-  const { FormTextField, FormSwitchField } = useFormFields<CreateCouponFormValues>();
+  const { FormTextField, FormSelectField, FormSwitchField } =
+    useFormFields<CreateCouponFormValues>();
 
   return (
     <FormDialog
@@ -172,6 +248,12 @@ function CreateCouponDialog({
             }}
           />
 
+          <FormSelectField
+            name='discountType'
+            label='Kiểu giảm giá'
+            options={DISCOUNT_TYPE_OPTIONS}
+          />
+
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormTextField
               name='discountPercent'
@@ -185,6 +267,23 @@ function CreateCouponDialog({
               label='Đơn tối thiểu (VNĐ)'
               required
               placeholder='5'
+              type='number'
+            />
+          </div>
+
+          {/* One of the two applies, depending on the kind of code (#082):
+              a flat amount, or a ceiling on the percentage above. */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField
+              name='discountAmount'
+              label='Số tiền giảm (VNĐ) — dùng khi chọn kiểu Số tiền cụ thể'
+              placeholder='50000'
+              type='number'
+            />
+            <FormTextField
+              name='maxDiscountAmount'
+              label='Giảm tối đa (VNĐ) — để trống là không giới hạn'
+              placeholder='50000'
               type='number'
             />
           </div>
@@ -217,10 +316,22 @@ function CreateCouponDialog({
             )}
           </form.Field>
 
+          <form.Field name='partnerId'>
+            {(field) => (
+              <PartnerField value={field.state.value} onChange={(val) => field.handleChange(val)} />
+            )}
+          </form.Field>
+
           <FormSwitchField name='isActive' label='Hoạt động' />
           <FormSwitchField
             name='isPopular'
             label='Mã nổi bật (hiển thị khi nhấn "Lấy mã" trên web)'
+          />
+          {/* Private codes still work when typed in — they are just never
+              listed on the cart page (#081). */}
+          <FormSwitchField
+            name='isPublic'
+            label='Công khai (hiện trong danh sách mã ở trang giỏ hàng)'
           />
         </form.Form>
       </form.AppForm>
@@ -263,7 +374,12 @@ function EditCouponDialog({
       minOrderAmount: coupon.minOrderAmount,
       expiresAt: expiresAtLocal,
       isActive: coupon.isActive,
-      isPopular: coupon.isPopular
+      isPopular: coupon.isPopular,
+      isPublic: coupon.isPublic ?? true,
+      discountType: coupon.discountType ?? ('percent' as const),
+      discountAmount: coupon.discountAmount ?? 0,
+      maxDiscountAmount: coupon.maxDiscountAmount ?? null,
+      partnerId: coupon.partnerId ?? null
     } as UpdateCouponFormValues,
     validators: {
       onSubmit: updateCouponSchema
@@ -272,19 +388,27 @@ function EditCouponDialog({
       const payload: UpdateCouponPayload = {
         code: value.code,
         discountPercent: value.discountPercent,
+        discountType: value.discountType ?? 'percent',
+        discountAmount: value.discountAmount ?? 0,
+        maxDiscountAmount: value.maxDiscountAmount ?? null,
         maxUsage: value.maxUsage,
         maxUsagePerUser: value.maxUsagePerUser,
         minOrderAmount: value.minOrderAmount,
         expiresAt: new Date(value.expiresAt).toISOString(),
         isActive: value.isActive,
-        isPopular: value.isPopular
+        isPopular: value.isPopular,
+        isPublic: value.isPublic,
+        partnerId: value.partnerId ?? null
       };
 
       await updateMutation.mutateAsync({ id: coupon.id, values: payload });
     }
   });
 
-  const { FormTextField, FormSwitchField } = useFormFields<UpdateCouponFormValues>();
+  const { FormTextField, FormSelectField, FormSwitchField } =
+    useFormFields<UpdateCouponFormValues>();
+
+  const usage = couponUsage(coupon);
 
   return (
     <FormDialog
@@ -304,6 +428,16 @@ function EditCouponDialog({
     >
       <form.AppForm>
         <form.Form id='coupon-edit-form-dialog' className='space-y-6'>
+          {/* Read-only: how much of this code is already spent (#083). The
+              admin is usually here to raise or lower the limit. */}
+          <div className='bg-muted/40 flex items-center justify-between rounded-md border px-3 py-2 text-sm'>
+            <span className='text-muted-foreground'>Lượt đã sử dụng</span>
+            <span className='flex items-center gap-2 font-medium tabular-nums'>
+              {usage.label}
+              {usage.isExhausted && <Badge variant='destructive'>Hết lượt</Badge>}
+              {usage.isRunningOut && <Badge variant='outline'>Sắp hết</Badge>}
+            </span>
+          </div>
           <FormTextField
             name='code'
             label='Mã coupon'
@@ -312,6 +446,12 @@ function EditCouponDialog({
             validators={{
               onBlur: z.string().min(2, 'Mã coupon phải có ít nhất 2 ký tự')
             }}
+          />
+
+          <FormSelectField
+            name='discountType'
+            label='Kiểu giảm giá'
+            options={DISCOUNT_TYPE_OPTIONS}
           />
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -327,6 +467,23 @@ function EditCouponDialog({
               label='Đơn tối thiểu (VNĐ)'
               required
               placeholder='100.000'
+              type='number'
+            />
+          </div>
+
+          {/* One of the two applies, depending on the kind of code (#082):
+              a flat amount, or a ceiling on the percentage above. */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField
+              name='discountAmount'
+              label='Số tiền giảm (VNĐ) — dùng khi chọn kiểu Số tiền cụ thể'
+              placeholder='50000'
+              type='number'
+            />
+            <FormTextField
+              name='maxDiscountAmount'
+              label='Giảm tối đa (VNĐ) — để trống là không giới hạn'
+              placeholder='50000'
               type='number'
             />
           </div>
@@ -359,10 +516,22 @@ function EditCouponDialog({
             )}
           </form.Field>
 
+          <form.Field name='partnerId'>
+            {(field) => (
+              <PartnerField value={field.state.value} onChange={(val) => field.handleChange(val)} />
+            )}
+          </form.Field>
+
           <FormSwitchField name='isActive' label='Hoạt động' />
           <FormSwitchField
             name='isPopular'
             label='Mã nổi bật (hiển thị khi nhấn "Lấy mã" trên web)'
+          />
+          {/* Private codes still work when typed in — they are just never
+              listed on the cart page (#081). */}
+          <FormSwitchField
+            name='isPublic'
+            label='Công khai (hiện trong danh sách mã ở trang giỏ hàng)'
           />
         </form.Form>
       </form.AppForm>

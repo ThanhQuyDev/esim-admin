@@ -8,9 +8,23 @@ interface AlertModalProps {
   onClose: () => void;
   onConfirm: () => void;
   loading: boolean;
+  /**
+   * Override the generic copy. Worth doing for bulk actions: "Xoá 37 eSIM?"
+   * tells the admin what they are about to lose, "Bạn có chắc chắn không?"
+   * does not.
+   */
+  title?: string;
+  description?: string;
 }
 
-export function AlertModal({ isOpen, onClose, onConfirm, loading }: AlertModalProps) {
+export function AlertModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  loading,
+  title,
+  description
+}: AlertModalProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -23,8 +37,8 @@ export function AlertModal({ isOpen, onClose, onConfirm, loading }: AlertModalPr
 
   return (
     <Modal
-      title='Bạn có chắc chắn không?'
-      description='Hành động này không thể hoàn tác.'
+      title={title ?? 'Bạn có chắc chắn không?'}
+      description={description ?? 'Hành động này không thể hoàn tác.'}
       isOpen={isOpen}
       onClose={onClose}
     >

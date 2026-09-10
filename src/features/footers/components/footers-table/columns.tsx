@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateVn } from '@/lib/format';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Footer } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
@@ -57,14 +58,28 @@ export const columns: ColumnDef<Footer>[] = [
       return <div>{lang === 'vi' ? 'Tiếng Việt' : lang === 'en' ? 'English' : lang}</div>;
     }
   },
-  { id: 'categories', accessorKey: 'categories', header: 'Categories' },
+  {
+    id: 'categories',
+    accessorKey: 'categories',
+    header: 'Tiêu đề cột',
+    // Both headings, so an admin can see at a glance which rows still
+    // need the Vietnamese one filled in (#088).
+    cell: ({ row }) => (
+      <div className='text-sm'>
+        <div>{row.original.categories || '—'}</div>
+        <div className='text-muted-foreground text-xs'>
+          {row.original.categoriesVi || 'Chưa có tiếng Việt'}
+        </div>
+      </div>
+    )
+  },
   {
     id: 'createdAt',
     accessorKey: 'createdAt',
     header: ({ column }: { column: Column<Footer, unknown> }) => (
       <DataTableColumnHeader column={column} title='Ngày tạo' />
     ),
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('vi-VN')
+    cell: ({ row }) => formatDateVn(row.original.createdAt)
   },
   { id: 'actions', cell: ({ row }) => <CellAction data={row.original} /> }
 ];

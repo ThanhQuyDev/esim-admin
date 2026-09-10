@@ -21,7 +21,23 @@ const TIER_STYLES: Record<User['membershipTier'], string> = {
   platinum: 'border-violet-300 bg-violet-50 text-violet-700'
 };
 
+/** Customer code shown to staff: the user id, zero-padded (#056). */
+export function customerCode(id: number): string {
+  return `KH-${String(id).padStart(6, '0')}`;
+}
+
 export const columns: ColumnDef<User>[] = [
+  {
+    id: 'customerCode',
+    accessorKey: 'id',
+    header: ({ column }: { column: Column<User, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Mã KH' />
+    ),
+    cell: ({ row }) => (
+      <span className='font-mono text-xs whitespace-nowrap'>{customerCode(row.original.id)}</span>
+    ),
+    enableColumnFilter: false
+  },
   {
     id: 'name',
     accessorFn: (row) => `${row.firstName} ${row.lastName}`,
@@ -67,6 +83,26 @@ export const columns: ColumnDef<User>[] = [
     enableColumnFilter: false
   },
   {
+    id: 'referralCode',
+    accessorKey: 'referralCode',
+    enableSorting: false,
+    header: ({ column }: { column: Column<User, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Mã giới thiệu' />
+    ),
+    cell: ({ row }) => {
+      const code = row.original.referralCode;
+      // Empty until the customer opens their referral page, which is when the
+      // code is generated — not an error.
+      if (!code) return <span className='text-muted-foreground'>—</span>;
+      return (
+        <Badge variant='outline' className='font-mono'>
+          {code}
+        </Badge>
+      );
+    },
+    enableColumnFilter: false
+  },
+  {
     id: 'membershipTier',
     accessorKey: 'membershipTier',
     enableSorting: false,
@@ -96,6 +132,25 @@ export const columns: ColumnDef<User>[] = [
     cell: ({ row }) => (
       <span className='font-medium tabular-nums'>{formatVnd(row.original.lifetimeSpendVnd)}</span>
     )
+  },
+  {
+    id: 'paidOrderCount',
+    accessorKey: 'paidOrderCount',
+    enableSorting: false,
+    header: ({ column }: { column: Column<User, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Tổng đơn' />
+    ),
+    cell: ({ row }) => {
+      const count = row.original.paidOrderCount ?? 0;
+      return (
+        <span
+          className={count > 0 ? 'font-medium tabular-nums' : 'text-muted-foreground tabular-nums'}
+        >
+          {count}
+        </span>
+      );
+    },
+    enableColumnFilter: false
   },
   {
     id: 'role',

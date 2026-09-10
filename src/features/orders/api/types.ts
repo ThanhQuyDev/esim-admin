@@ -1,3 +1,16 @@
+/** Affiliate behind an order, and what it earned them (#095). */
+export type OrderPartnerCommission = {
+  partnerId: number;
+  partnerName?: string | null;
+  partnerStatus?: string | null;
+  /** Referral link the buyer arrived through, when there was one. */
+  linkCode?: string | null;
+  commissionVnd: number;
+  /** Share of the order value, derived by the API. */
+  commissionPercent: number;
+  status: string;
+  tierSnapshot?: string | null;
+};
 export type OrderUser = {
   id: number;
   email: string;
@@ -27,6 +40,8 @@ export type Order = {
   paymentId: string;
   couponCode: string | null;
   referralCode?: string | null;
+  /** Set when the order came through an affiliate (#095). */
+  partnerCommission?: OrderPartnerCommission | null;
   referralDiscountVndAmount?: number | null;
   discountAmount: number;
   vndPrice: number;
@@ -78,6 +93,8 @@ export type OrderItemPlan = {
   vndPrice: number;
   currency: string;
   speed: string;
+  /** Throttled speed after the high-speed allowance runs out. */
+  fupSpeed?: string | null;
   operatorName: string;
   countryCode: string;
   provider: string;
@@ -169,6 +186,11 @@ export type RefundOrderRequest = {
   amountVnd: number;
   reason?: string;
   adminNote?: string;
+  /**
+   * Refund only these order items. Omit to refund the whole order.
+   * Only the selected items are cancelled with their supplier.
+   */
+  orderItemIds?: number[];
 };
 
 export type OrderRefundResponse = {

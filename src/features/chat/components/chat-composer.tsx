@@ -14,11 +14,17 @@ import {
   uploadChatFileToCloudinary,
   type ChatUploadResult
 } from '../api/upload';
+import type { ChatMessage } from '../api/types';
+import { ChatQuotePreview } from './chat-quote-preview';
 
 interface ChatComposerProps {
   draft: string;
   onDraftChange: (text: string) => void;
   onSubmit: (e: FormEvent<HTMLFormElement>, attachment?: ChatUploadResult) => void;
+  /** The message being replied to, shown above the input (#073). */
+  replyTo?: ChatMessage | null;
+  replyToAuthorName?: string;
+  onCancelReply?: () => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -27,8 +33,16 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ChatComposer({ draft, onDraftChange, onSubmit }: ChatComposerProps) {
+export function ChatComposer({
+  draft,
+  onDraftChange,
+  onSubmit,
+  replyTo,
+  replyToAuthorName,
+  onCancelReply
+}: ChatComposerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -46,6 +60,12 @@ export function ChatComposer({ draft, onDraftChange, onSubmit }: ChatComposerPro
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [pendingFile]);
+
+  // Picking a message to reply to should put the cursor where the answer goes,
+  // and Esc backs out of the quote — the usual messenger keyboard flow (#073).
+  useEffect(() => {
+    if (replyTo) textareaRef.current?.focus();
+  }, [replyTo]);
 
   const resetAttachment = () => {
     setPendingFile(null);
@@ -115,6 +135,23 @@ export function ChatComposer({ draft, onDraftChange, onSubmit }: ChatComposerPro
         Viết tin nhắn
       </label>
 
+      {replyTo && (
+        <div
+          className='border-border/40 bg-muted/40 flex items-center gap-2 rounded-2xl border p-2 sm:p-3'
+          role='group'
+          aria-label='Đang trả lời tin nhắn'
+        >
+          <Icons.reply className='text-muted-foreground h-4 w-4 shrink-0' aria-hidden='true' />
+          <ChatQuotePreview
+            className='min-w-0 flex-1 border-none bg-transparent pl-0'
+            data-testid='chat-composer-reply'
+            authorName={`Đang trả lời ${replyToAuthorName ?? ''}`.trim()}
+            quote={replyTo}
+            onCancel={onCancelReply}
+          />
+        </div>
+      )}
+
       {pendingFile && (
         <div
           className='border-border/40 bg-muted/40 flex items-center gap-3 rounded-2xl border p-2 sm:p-3'
@@ -183,9 +220,15 @@ export function ChatComposer({ draft, onDraftChange, onSubmit }: ChatComposerPro
         <div className='min-w-0 flex-1'>
           <Textarea
             id='messenger-editor'
+            ref={textareaRef}
             value={draft}
             onChange={(e) => onDraftChange(e.target.value)}
             onKeyDown={(e) => {
+              if (e.key === 'Escape' && replyTo && onCancelReply) {
+                e.preventDefault();
+                onCancelReply();
+                return;
+              }
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 if (canSubmit) {

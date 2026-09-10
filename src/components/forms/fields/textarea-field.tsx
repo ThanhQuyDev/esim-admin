@@ -10,6 +10,7 @@ import {
   FormFieldError,
   createFormField
 } from '@/components/ui/form-context';
+import { CharCounter } from './char-counter';
 
 interface TextareaFieldProps extends Omit<
   React.ComponentProps<'textarea'>,
@@ -19,6 +20,8 @@ interface TextareaFieldProps extends Omit<
   description?: string;
   required?: boolean;
   maxLength?: number;
+  /** Soft length limit — counts and warns, but never blocks typing (#048). */
+  recommendedLength?: number;
   showCount?: boolean;
 }
 
@@ -27,7 +30,8 @@ export function TextareaField({
   description,
   required,
   maxLength,
-  showCount = !!maxLength,
+  recommendedLength,
+  showCount = !!maxLength || recommendedLength != null,
   className,
   ...textareaProps
 }: TextareaFieldProps) {
@@ -54,10 +58,11 @@ export function TextareaField({
           {...textareaProps}
         />
         {showCount && (
-          <div className='text-muted-foreground text-right text-xs tabular-nums'>
-            {value.length}
-            {maxLength ? ` / ${maxLength}` : ''}
-          </div>
+          <CharCounter
+            length={value.length}
+            recommendedLength={recommendedLength}
+            maxLength={maxLength}
+          />
         )}
         {description && <FieldDescription>{description}</FieldDescription>}
       </FormField>

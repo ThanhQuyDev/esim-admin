@@ -31,6 +31,59 @@ export type Partner = {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Aggregates returned with each admin list row. */
+  revenue30dVnd?: number;
+  walletBalanceVnd?: number;
+  lastActivityAt?: string | null;
+  /** Lifetime paid/completed orders attributed to this partner (#095). */
+  totalOrders?: number;
+  /** Lifetime value of those orders. */
+  totalRevenueVnd?: number;
+  /** Revenue less cost of goods less the commission we paid them; can be negative. */
+  profitVnd?: number;
+  /** Lifetime commission credited to this partner — what we have paid them. */
+  totalCommissionVnd?: number;
+  /** Share of their orders that ended up refunded, 0–100 by order count. */
+  refundRatePercent?: number;
+};
+
+/** Aggregates behind the admin partner overview screen. */
+export type PartnerOverview = {
+  partners: {
+    total: number;
+    active: number;
+    pendingApprovals: number;
+    hold: number;
+    disabled: number;
+    kol: number;
+    distribution: number;
+  };
+  queue: {
+    pendingApprovals: number;
+    pendingPayouts: number;
+    pendingPayoutVnd: number;
+    pendingDeposits: number;
+    pendingCommissionVnd: number;
+    pendingCommissions: number;
+  };
+  money: {
+    revenue30dVnd: number;
+    orders30d: number;
+    commission30dVnd: number;
+    commissionTotalVnd: number;
+  };
+  policy: {
+    payoutMinVnd: number;
+    depositMinVnd: number;
+  };
+  topPartners: {
+    id: number;
+    contactName: string;
+    partnerType: PartnerType;
+    tierCode: string | null;
+    revenue30dVnd: number;
+    orders30d: number;
+  }[];
 };
 
 export type PartnerListResponse = {
@@ -120,3 +173,33 @@ export type CreateTierPayload = {
   isActive?: boolean;
 };
 export type UpdateTierPayload = Partial<Omit<CreateTierPayload, 'partnerType' | 'tierCode'>>;
+
+/** A marketing link the partner created (#095). */
+export type PartnerLinkRow = {
+  id: number;
+  code: string;
+  label: string;
+  targetPath: string | null;
+  status: string;
+  clickCount: number;
+  conversionCount: number;
+  totalCommissionVnd: number | string;
+  createdAt: string;
+};
+
+/** A discount code owned by the partner, with how much it has been used. */
+export type PartnerCouponRow = {
+  id: number;
+  code: string;
+  discountPercent: number | null;
+  usageCount: number;
+  maxUsage: number | null;
+  isActive: boolean;
+  myOrders: number;
+  discountGivenVnd: number;
+};
+
+export type PartnerMarketing = {
+  links: PartnerLinkRow[];
+  coupons: PartnerCouponRow[];
+};

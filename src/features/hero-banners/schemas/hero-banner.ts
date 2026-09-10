@@ -8,6 +8,7 @@ export const heroBannerSchema = z.object({
   secondContent: z.string().optional(),
   description: z.string().min(1, 'Description is required'),
   language: z.string().min(1, 'Language is required'),
+  image: z.string().optional(),
   active: z.boolean().optional()
 });
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateVn } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import { Icons } from '@/components/icons';
@@ -84,7 +85,7 @@ export const columns: ColumnDef<ProfitMarginTier>[] = [
     header: ({ column }: { column: Column<ProfitMarginTier, unknown> }) => (
       <DataTableColumnHeader column={column} title='Created' />
     ),
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('vi-VN')
+    cell: ({ row }) => formatDateVn(row.original.createdAt)
   },
   { id: 'actions', cell: ({ row }) => <CellAction data={row.original} /> }
 ];

@@ -4,6 +4,7 @@ import {
   createInvoiceForOrder,
   refundOrder,
   resendEsimEmail,
+  retryOrderProvisioning,
   submitManualOrder,
   updateInvoiceStatus
 } from './service';
@@ -43,4 +44,11 @@ export const updateInvoiceStatusMutation = mutationOptions({
   mutationFn: ({ invoiceId, status }: { invoiceId: string; status: InvoiceStatus }) =>
     updateInvoiceStatus(invoiceId, status),
   onSettled: invalidateOrders
+});
+
+export const retryOrderProvisioningMutation = mutationOptions({
+  mutationFn: (orderId: number) => retryOrderProvisioning(orderId),
+  onSettled: () => {
+    getQueryClient().invalidateQueries({ queryKey: orderKeys.all });
+  }
 });

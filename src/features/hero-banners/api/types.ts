@@ -7,6 +7,8 @@ export type HeroBanner = {
   secondContent: string;
   description: string;
   language: string;
+  /** Hero picture; empty keeps the built-in one (#089). */
+  image?: string | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +31,8 @@ export type CreateHeroBannerPayload = {
   secondContent: string;
   description: string;
   language: string;
+  /** Hero picture; empty keeps the built-in one (#089). */
+  image?: string | null;
   active: boolean;
 };
 

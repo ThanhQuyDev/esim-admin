@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api-client';
 import type {
   Partner,
   PartnerListResponse,
+  PartnerOverview,
   PartnerFilters,
   PartnerWalletTransaction,
   PartnerDepositRequest,
@@ -14,7 +15,8 @@ import type {
   AdjustWalletPayload,
   ProcessPayoutPayload,
   CreateTierPayload,
-  UpdateTierPayload
+  UpdateTierPayload,
+  PartnerMarketing
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -129,4 +131,16 @@ export async function updateTier(id: number, data: UpdateTierPayload): Promise<P
     method: 'PATCH',
     body: JSON.stringify(data)
   });
+}
+
+export async function getPartnerOverview(): Promise<PartnerOverview> {
+  return apiClient<PartnerOverview>('/partners/overview');
+}
+
+/**
+ * One partner's marketing links and discount codes (#095) — "bấm xem chi tiết
+ * đối tác để xem các mã/liên kết đối tác đã tạo".
+ */
+export async function getPartnerMarketing(id: number): Promise<PartnerMarketing> {
+  return apiClient<PartnerMarketing>(`/partners/${id}/marketing`);
 }

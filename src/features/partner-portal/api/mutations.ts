@@ -6,7 +6,8 @@ import {
   createMyLink,
   updateMyLink,
   createMyPayout,
-  applyAsPartner
+  applyAsPartner,
+  createMyTicket
 } from './service';
 import { partnerPortalKeys } from './queries';
 import type {
@@ -15,7 +16,8 @@ import type {
   CreateLinkPayload,
   UpdateLinkPayload,
   CreatePayoutPayload,
-  PartnerApplyPayload
+  PartnerApplyPayload,
+  CreateTicketPayload
 } from './types';
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: partnerPortalKeys.all });
@@ -47,4 +49,9 @@ export const createPayoutRequestMutation = mutationOptions({
 
 export const applyAsPartnerMutation = mutationOptions({
   mutationFn: (data: PartnerApplyPayload) => applyAsPartner(data)
+});
+
+export const createTicketMutation = mutationOptions({
+  mutationFn: (data: CreateTicketPayload) => createMyTicket(data),
+  onSettled: invalidateAll
 });

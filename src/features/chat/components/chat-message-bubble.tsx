@@ -5,16 +5,30 @@ import { motion, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '../api/types';
 import { formatMessageTime } from '../utils/format';
+import { ChatQuotePreview } from './chat-quote-preview';
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
   senderName: string;
+  /** Display name for the author of a quoted message (#073). */
+  quoteAuthorName?: string;
+  /** Start a reply quoting this message; omitted where replying is unavailable. */
+  onReply?: (message: ChatMessage) => void;
+  /** Scroll to the quoted original. */
+  onJumpToQuoted?: (messageId: number) => void;
 }
 
 const BOT_SENDER_ID = 0;
 
-export function ChatMessageBubble({ message, isOwn, senderName }: ChatMessageBubbleProps) {
+export function ChatMessageBubble({
+  message,
+  isOwn,
+  senderName,
+  quoteAuthorName,
+  onReply,
+  onJumpToQuoted
+}: ChatMessageBubbleProps) {
   const shouldReduceMotion = useReducedMotion();
   const time = formatMessageTime(message.createdAt);
   const isBot = message.senderId === BOT_SENDER_ID;
@@ -23,13 +37,15 @@ export function ChatMessageBubble({ message, isOwn, senderName }: ChatMessageBub
 
   return (
     <motion.div
+      id={`chat-message-${message.id}`}
       initial={shouldReduceMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
       animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 0 }}
       transition={{ duration: 0.28, ease: 'easeOut' }}
-      className='flex flex-col gap-1'
+      className='group/message flex flex-col gap-1 scroll-mt-4 target:rounded-xl'
       role='group'
       aria-label={`${displayName} lúc ${time}`}
+      data-testid={`chat-message-${message.id}`}
     >
       <div
         className={cn(
@@ -43,17 +59,51 @@ export function ChatMessageBubble({ message, isOwn, senderName }: ChatMessageBub
       >
         <p
           className={cn(
-            'font-medium sm:text-sm',
+            'flex items-center gap-1.5 font-medium sm:text-sm',
             isBot
-              ? 'text-amber-700 dark:text-amber-300'
+              ? 'justify-center text-amber-700 dark:text-amber-300'
               : isOwn
                 ? 'text-primary-foreground/80'
                 : 'text-foreground/80'
           )}
         >
-          {isBot && <Icons.info className='mr-1 inline-block h-3.5 w-3.5' />}
-          {displayName}
+          {isBot && <Icons.info className='inline-block h-3.5 w-3.5' />}
+          <span className='truncate'>{displayName}</span>
+          {/* Reply lives on the bubble itself, the way every messenger puts it —
+              the admin picks the message being answered, not a menu (#073). */}
+          {!isBot && onReply && (
+            <button
+              type='button'
+              onClick={() => onReply(message)}
+              data-testid={`chat-reply-${message.id}`}
+              className={cn(
+                'ml-auto shrink-0 rounded-full p-1 opacity-0 transition group-focus-within/message:opacity-100 group-hover/message:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none',
+                isOwn
+                  ? 'text-primary-foreground/80 hover:bg-black/15 focus-visible:ring-primary-foreground/50'
+                  : 'text-muted-foreground hover:bg-background/70 hover:text-foreground focus-visible:ring-primary/40'
+              )}
+              aria-label={`Trả lời tin nhắn của ${displayName}`}
+              title='Trả lời tin nhắn này'
+            >
+              <Icons.reply className='h-3.5 w-3.5' />
+            </button>
+          )}
         </p>
+
+        {message.replyTo && (
+          <ChatQuotePreview
+            className='mt-1.5'
+            data-testid={`chat-quote-${message.id}`}
+            authorName={quoteAuthorName ?? 'Tin nhắn được trả lời'}
+            quote={message.replyTo}
+            tone={isOwn ? 'own' : 'default'}
+            onJump={
+              onJumpToQuoted && message.replyTo
+                ? () => onJumpToQuoted(message.replyTo!.id)
+                : undefined
+            }
+          />
+        )}
         {message.fileUrl && message.fileType?.startsWith('image/') && (
           <a
             href={message.fileUrl}

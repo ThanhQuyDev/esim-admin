@@ -27,10 +27,11 @@ import type {
   OverviewPreset,
   OverviewProvider
 } from '../api/types';
+import { OVERVIEW_PROVIDERS, providerCodeLabel } from '../api/constants';
 
 const presets = ['today', 'yesterday', 'last7days', 'last30days'] as const;
 const groupings = ['day', 'week', 'month', 'year'] as const;
-const providers = ['airalo', 'esimaccess', 'gadgetkorea', 'japantravelsim', 'viettel'] as const;
+const providers = OVERVIEW_PROVIDERS;
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 function vnDateBoundary(value: string, endOfDay: boolean) {
@@ -124,9 +125,9 @@ export function OverviewDashboard() {
               Dữ liệu thống kê từ backend overview API.
             </p>
           </div>
-          <Badge variant='outline'>
-            airalo · esimaccess · gadgetkorea · japantravelsim · viettel
-          </Badge>
+          {/* Masked codes, not slugs: this badge is the most screenshotted
+              part of the dashboard. */}
+          <Badge variant='outline'>{providers.map(providerCodeLabel).join(' · ')}</Badge>
         </div>
 
         <OverviewFilters value={filters} onChange={handleFiltersChange} />

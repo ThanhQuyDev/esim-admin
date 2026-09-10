@@ -1,6 +1,14 @@
 'use client';
+import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { partnerQueryOptions, tiersQueryOptions } from '../api/queries';
+import {
+  partnerMarketingQueryOptions,
+  partnerQueryOptions,
+  tiersQueryOptions
+} from '../api/queries';
+
+/** Where a partner's links point, matching the partner portal's own display. */
+const PUBLIC_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL || 'https://esim.vn';
 import {
   approvePartnerMutation,
   rejectPartnerMutation,
@@ -42,12 +50,29 @@ const STATUS_VARIANTS: Record<PartnerStatus, 'default' | 'secondary' | 'destruct
     rejected: 'destructive'
   };
 
+/** Vietnamese labels for the free-form `channelInfo` keys the apply form sends. */
+const CHANNEL_INFO_LABELS: Record<string, string> = {
+  url: 'Đường dẫn kênh',
+  followers: 'Số người theo dõi'
+};
+
+/** `followers` is a count; everything else is shown as-is. */
+function formatChannelValue(key: string, value: unknown): string {
+  if (key === 'followers' && typeof value === 'number') {
+    return formatDateTimeVn(value);
+  }
+  return typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '');
+}
+
 export function PartnerDetailView({ partnerId }: { partnerId: number }) {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
 
   const { data: partner, refetch } = useSuspenseQuery(partnerQueryOptions(partnerId));
   const { data: tiers = [] } = useQuery(tiersQueryOptions());
+  // Not suspense: the partner's own details should render even if this extra
+  // call is slow or fails.
+  const { data: marketing } = useQuery(partnerMarketingQueryOptions(partnerId));
 
   const approveMutation = useMutation({
     ...approvePartnerMutation,
@@ -191,9 +216,7 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
         )}
         <div className='rounded-lg border p-4'>
           <p className='text-muted-foreground text-xs font-medium'>Ngày đăng ký</p>
-          <p className='text-sm font-medium'>
-            {new Date(partner.createdAt).toLocaleDateString('vi-VN')}
-          </p>
+          <p className='text-sm font-medium'>{formatDateVn(partner.createdAt)}</p>
         </div>
       </div>
 
@@ -218,6 +241,77 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
         </div>
       </div>
 
+      {/*
+        "bấm xem chi tiết đối tác để xem các mã/liên kết đối tác đã tạo" (#095).
+        Without this an admin chasing a reconciliation query or a suspicious
+        order could not tell which codes belong to which partner without opening
+        the database.
+      */}
+      <div className='rounded-lg border p-4' data-testid='partner-marketing'>
+        <p className='mb-3 text-sm font-medium'>Liên kết & mã giới thiệu</p>
+        {marketing === undefined ? (
+          <p className='text-muted-foreground text-sm'>Đang tải...</p>
+        ) : marketing.links.length === 0 && marketing.coupons.length === 0 ? (
+          <p className='text-muted-foreground text-sm'>
+            Đối tác này chưa tạo liên kết hoặc mã giảm giá nào.
+          </p>
+        ) : (
+          <div className='space-y-4'>
+            {marketing.links.length > 0 && (
+              <div className='space-y-2'>
+                {marketing.links.map((link) => (
+                  <div
+                    key={link.id}
+                    className='flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2'
+                  >
+                    <div className='min-w-0'>
+                      <p className='text-sm font-medium'>{link.label}</p>
+                      <p className='text-muted-foreground font-mono text-xs'>
+                        {PUBLIC_ORIGIN}/go/{link.code}
+                        {link.status !== 'active' && ' · đã tắt'}
+                      </p>
+                    </div>
+                    <div className='text-muted-foreground flex gap-3 text-xs tabular-nums'>
+                      <span>{link.clickCount} lượt bấm</span>
+                      <span>{link.conversionCount} đơn</span>
+                      <span>{formatVnd(Number(link.totalCommissionVnd) || 0)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {marketing.coupons.length > 0 && (
+              <div className='space-y-2'>
+                <p className='text-muted-foreground text-xs font-medium'>Mã giảm giá</p>
+                {marketing.coupons.map((coupon) => (
+                  <div
+                    key={coupon.id}
+                    className='flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2'
+                  >
+                    <div>
+                      <span className='font-mono text-sm font-medium'>{coupon.code}</span>
+                      {coupon.discountPercent ? (
+                        <span className='text-muted-foreground ml-2 text-xs'>
+                          -{coupon.discountPercent}%
+                        </span>
+                      ) : null}
+                      {!coupon.isActive && (
+                        <span className='text-muted-foreground ml-2 text-xs'>· đã tắt</span>
+                      )}
+                    </div>
+                    <div className='text-muted-foreground flex gap-3 text-xs tabular-nums'>
+                      <span>{coupon.myOrders} đơn của đối tác</span>
+                      <span>đã giảm {formatVnd(coupon.discountGivenVnd)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {partner.businessAddress && (
         <div className='rounded-lg border p-4'>
           <p className='text-muted-foreground text-xs font-medium'>Địa chỉ</p>
@@ -227,10 +321,15 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
 
       {partner.channelInfo && Object.keys(partner.channelInfo).length > 0 && (
         <div className='rounded-lg border p-4'>
-          <p className='text-muted-foreground mb-2 text-xs font-medium'>Thông tin kênh</p>
-          <pre className='overflow-x-auto text-xs'>
-            {JSON.stringify(partner.channelInfo, null, 2)}
-          </pre>
+          <p className='text-muted-foreground mb-3 text-xs font-medium'>Thông tin kênh</p>
+          <dl className='grid gap-2 sm:grid-cols-2'>
+            {Object.entries(partner.channelInfo).map(([key, value]) => (
+              <div key={key} className='min-w-0'>
+                <dt className='text-muted-foreground text-xs'>{CHANNEL_INFO_LABELS[key] ?? key}</dt>
+                <dd className='truncate text-sm'>{formatChannelValue(key, value)}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       )}
 

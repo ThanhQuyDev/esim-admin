@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChatStore } from '../utils/store';
+import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
+import { formatVnd } from '@/lib/format';
 
 interface CustomerOrder {
   id: number;
@@ -15,6 +17,8 @@ interface CustomerOrder {
   status: string;
   totalAmount: number;
   currency: string;
+  /** What the customer actually pays, in dong — the figure admins work with. */
+  vndPrice: number;
   createdAt: string;
 }
 
@@ -110,26 +114,37 @@ export function ChatOrderWidget() {
 
         {!loading &&
           orders.map((order) => (
-            <div key={order.id} className='bg-muted/30 rounded-lg border p-2.5 text-xs space-y-1'>
-              <div className='flex items-center justify-between'>
-                <span className='font-medium'>#{order.orderNumber}</span>
+            /* Opens in a new tab so the admin keeps the conversation on screen
+               while reading the order (#071). */
+            <Link
+              key={order.id}
+              href={`/dashboard/orders/${order.id}`}
+              target='_blank'
+              rel='noopener noreferrer'
+              data-testid={`chat-order-${order.id}`}
+              className='bg-muted/30 hover:bg-muted/60 focus-visible:ring-primary/40 block space-y-1 rounded-lg border p-2.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none'
+              title={`Mở chi tiết đơn ${order.orderNumber} ở tab mới`}
+            >
+              <div className='flex items-center justify-between gap-2'>
+                <span className='flex items-center gap-1 font-medium'>
+                  #{order.orderNumber}
+                  <Icons.externalLink className='h-3 w-3 opacity-60' />
+                </span>
                 <Badge variant={getStatusBadgeVariant(order.status)} className='text-[10px]'>
                   {getStatusLabel(order.status)}
                 </Badge>
               </div>
               <p className='text-muted-foreground truncate'>{order.planName}</p>
               <div className='flex items-center justify-between'>
-                <span className='font-semibold'>
-                  {new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: order.currency || 'VND'
-                  }).format(order.totalAmount)}
-                </span>
+                {/* Dong, not dollars: `totalAmount`/`currency` carry the provider
+                    side of the sale, while `vndPrice` is what the customer pays —
+                    the same figure the orders table shows (#071). */}
+                <span className='font-semibold'>{formatVnd(order.vndPrice)}</span>
                 <span className='text-muted-foreground'>
                   {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
       </CardContent>
     </Card>

@@ -70,3 +70,47 @@ export async function updateInvoiceStatus(
     body: JSON.stringify({ status })
   });
 }
+
+/**
+ * Download the supplier-reconciliation sheet (#028). The file name comes from
+ * the backend, which stamps it with the export time in Vietnam time.
+ */
+export async function exportOrdersExcel(filters: OrderFilters): Promise<void> {
+  const params = new URLSearchParams();
+  if (filters.filters) params.set('filters', filters.filters);
+  if (filters.sort) params.set('sort', filters.sort);
+
+  const query = params.toString();
+  const res = await fetch(`/api/orders/export-excel${query ? `?${query}` : ''}`);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Export failed: ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition');
+  const filename = disposition?.match(/filename="?([^"]+)"?/)?.[1] || 'don-hang-doi-soat.xlsx';
+
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
+/**
+ * Ask the supplier again for the eSIMs an order never received (#030).
+ * Lines that already have an eSIM are skipped server-side.
+ */
+export async function retryOrderProvisioning(orderId: number): Promise<{
+  retriedItemIds: number[];
+  skippedItemIds: number[];
+  message: string;
+}> {
+  return apiClient(`/orders/${orderId}/retry-provisioning`, {
+    method: 'POST'
+  });
+}

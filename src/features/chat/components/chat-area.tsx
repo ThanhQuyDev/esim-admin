@@ -20,6 +20,8 @@ export function ChatArea() {
   const loadMoreMessages = useChatStore((s) => s.loadMoreMessages);
   const myUserId = useChatStore((s) => s.myUserId);
   const userCache = useChatStore((s) => s.userCache);
+  const replyTo = useChatStore((s) => s.replyTo);
+  const setReplyTo = useChatStore((s) => s.setReplyTo);
 
   const shouldReduceMotion = useReducedMotion();
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -63,6 +65,30 @@ export function ChatArea() {
     },
     [draft, sendMessage]
   );
+
+  const senderLabel = useCallback(
+    (senderId: number | null) => {
+      if (senderId === null) return 'Hệ thống';
+      if (senderId === myUserId) return 'Bạn';
+      return userCache[senderId]?.email ?? `Người dùng #${senderId}`;
+    },
+    [myUserId, userCache]
+  );
+
+  /**
+   * Scroll the quoted original into view and flash it (#073). The original may
+   * be older than the loaded page — nothing to scroll to then, so the quote
+   * simply does not move the view rather than jumping somewhere wrong.
+   */
+  const handleJumpToQuoted = useCallback((messageId: number) => {
+    const target = document.getElementById(`chat-message-${messageId}`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.add('ring-primary/60', 'ring-2', 'rounded-xl');
+    window.setTimeout(() => {
+      target.classList.remove('ring-primary/60', 'ring-2', 'rounded-xl');
+    }, 1600);
+  }, []);
 
   // Infinite scroll — load older messages when scrolling to top
   const handleScroll = useCallback(() => {
@@ -121,17 +147,23 @@ export function ChatArea() {
                   key={msg.id}
                   message={msg}
                   isOwn={msg.senderId === myUserId}
-                  senderName={
-                    msg.senderId === myUserId
-                      ? 'Bạn'
-                      : (userCache[msg.senderId]?.email ?? `Người dùng #${msg.senderId}`)
-                  }
+                  senderName={senderLabel(msg.senderId)}
+                  quoteAuthorName={msg.replyTo ? senderLabel(msg.replyTo.senderId) : undefined}
+                  onReply={setReplyTo}
+                  onJumpToQuoted={handleJumpToQuoted}
                 />
               ))}
             </AnimatePresence>
           </div>
 
-          <ChatComposer draft={draft} onDraftChange={setDraft} onSubmit={handleSubmit} />
+          <ChatComposer
+            draft={draft}
+            onDraftChange={setDraft}
+            onSubmit={handleSubmit}
+            replyTo={replyTo}
+            replyToAuthorName={replyTo ? senderLabel(replyTo.senderId) : undefined}
+            onCancelReply={() => setReplyTo(null)}
+          />
         </motion.div>
       </AnimatePresence>
       <div ref={liveRegionRef} className='sr-only' aria-live='polite' aria-atomic='true' />

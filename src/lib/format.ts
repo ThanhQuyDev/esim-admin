@@ -1,3 +1,12 @@
+/**
+ * esim.vn runs its books on Vietnam time, while the API stores timestamps in
+ * UTC and the CMS renders them in both server and browser components. Without
+ * pinning the zone, anything formatted on the server came out in the server's
+ * zone (UTC on the VPS) — seven hours behind, which is what admins saw as
+ * "giờ bị chậm". Every date shown in the CMS goes through the helpers below.
+ */
+export const VN_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
 export function formatDate(
   date: Date | string | number | undefined,
   opts: Intl.DateTimeFormatOptions = {}
@@ -9,8 +18,43 @@ export function formatDate(
       month: opts.month ?? 'long',
       day: opts.day ?? 'numeric',
       year: opts.year ?? 'numeric',
+      timeZone: opts.timeZone ?? VN_TIME_ZONE,
       ...opts
     }).format(new Date(date));
+  } catch {
+    return '';
+  }
+}
+
+/** Date only, Vietnam time — "09/09/2026". */
+export function formatDateVn(
+  date: Date | string | number | null | undefined,
+  opts: Intl.DateTimeFormatOptions = {}
+): string {
+  if (!date) return '';
+
+  try {
+    return new Date(date).toLocaleDateString('vi-VN', {
+      timeZone: VN_TIME_ZONE,
+      ...opts
+    });
+  } catch {
+    return '';
+  }
+}
+
+/** Date + time, Vietnam time — "09/09/2026 10:30:00". */
+export function formatDateTimeVn(
+  date: Date | string | number | null | undefined,
+  opts: Intl.DateTimeFormatOptions = {}
+): string {
+  if (!date) return '';
+
+  try {
+    return new Date(date).toLocaleString('vi-VN', {
+      timeZone: VN_TIME_ZONE,
+      ...opts
+    });
   } catch {
     return '';
   }

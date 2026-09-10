@@ -3,6 +3,8 @@ export type OverviewProvider =
   | 'esimaccess'
   | 'gadgetkorea'
   | 'japantravelsim'
+  | 'microesim'
+  | 'billion'
   | 'viettel';
 
 export type OverviewPreset = 'today' | 'yesterday' | 'last7days' | 'last30days';

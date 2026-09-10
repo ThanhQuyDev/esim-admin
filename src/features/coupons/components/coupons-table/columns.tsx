@@ -1,7 +1,10 @@
 'use client';
+import { formatDateVn } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Coupon } from '../../api/types';
+import { couponDiscountLabel } from '../../utils/discount';
+import { couponUsage } from '../../utils/usage';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
@@ -25,16 +28,28 @@ export const columns: ColumnDef<Coupon>[] = [
   {
     id: 'discountPercent',
     accessorKey: 'discountPercent',
-    header: ({ column }: { column: Column<Coupon, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Giảm giá (%)' />
-    ),
-    cell: ({ row }) => <Badge variant='outline'>{row.original.discountPercent}%</Badge>
+    header: 'Giảm giá',
+    // A flat-amount code has no meaningful percentage, and a capped one
+    // gives less than its percentage on a big order (#082).
+    cell: ({ row }) => <span>{couponDiscountLabel(row.original)}</span>,
+    enableSorting: false
   },
   {
-    id: 'maxUsage',
-    accessorKey: 'maxUsage',
-    header: 'Lượt dùng tối đa',
-    cell: ({ row }) => <span>{row.original.maxUsage}</span>,
+    id: 'usageCount',
+    accessorKey: 'usageCount',
+    header: 'Đã dùng / Tối đa',
+    // The limit on its own said nothing about whether the code is spent
+    // (#083), so the two numbers are shown together.
+    cell: ({ row }) => {
+      const usage = couponUsage(row.original);
+      return (
+        <div className='flex items-center gap-2'>
+          <span className='tabular-nums'>{usage.label}</span>
+          {usage.isExhausted && <Badge variant='destructive'>Hết lượt</Badge>}
+          {usage.isRunningOut && <Badge variant='outline'>Sắp hết</Badge>}
+        </div>
+      );
+    },
     enableSorting: false
   },
   {
@@ -58,11 +73,7 @@ export const columns: ColumnDef<Coupon>[] = [
     header: ({ column }: { column: Column<Coupon, unknown> }) => (
       <DataTableColumnHeader column={column} title='Hết hạn' />
     ),
-    cell: ({ row }) => (
-      <span className='text-sm'>
-        {new Date(row.original.expiresAt).toLocaleDateString('vi-VN')}
-      </span>
-    )
+    cell: ({ row }) => <span className='text-sm'>{formatDateVn(row.original.expiresAt)}</span>
   },
   {
     id: 'isActive',
@@ -79,6 +90,30 @@ export const columns: ColumnDef<Coupon>[] = [
         </Badge>
       );
     },
+    enableSorting: false
+  },
+  {
+    id: 'partnerId',
+    accessorKey: 'partnerId',
+    header: 'Đối tác',
+    cell: ({ row }) =>
+      row.original.partnerId ? (
+        <Badge variant='outline'>{row.original.partnerName ?? `#${row.original.partnerId}`}</Badge>
+      ) : (
+        <span className='text-muted-foreground text-sm'>Mã chung</span>
+      ),
+    enableSorting: false
+  },
+  {
+    id: 'isPublic',
+    accessorKey: 'isPublic',
+    header: 'Hiển thị',
+    cell: ({ row }) =>
+      row.original.isPublic === false ? (
+        <Badge variant='outline'>Riêng tư</Badge>
+      ) : (
+        <Badge variant='secondary'>Công khai</Badge>
+      ),
     enableSorting: false
   },
   {

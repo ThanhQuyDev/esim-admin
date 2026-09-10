@@ -24,6 +24,7 @@ import {
   CommandList
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { SeoTemplateVarsHint } from './seo-template-vars-hint';
 
 interface SeoConfigFormDialogProps {
   seoConfig?: SeoConfig;
@@ -152,6 +153,9 @@ function CreateSeoConfigDialog({
       metaTitle: '',
       metaDescription: '',
       metaKeywords: '',
+      ogTitle: '',
+      ogDescription: '',
+      ogImage: '',
       structuredData: '',
       destinationId: null as number | null,
       regionId: null as number | null,
@@ -164,6 +168,9 @@ function CreateSeoConfigDialog({
         metaTitle: value.metaTitle,
         metaDescription: value.metaDescription || undefined,
         metaKeywords: value.metaKeywords || undefined,
+        ogTitle: value.ogTitle || undefined,
+        ogDescription: value.ogDescription || undefined,
+        ogImage: value.ogImage || undefined,
         structuredData: value.structuredData || undefined,
         destinationId: value.destinationId,
         regionId: value.regionId,
@@ -264,14 +271,28 @@ function CreateSeoConfigDialog({
             {(field) => <field.TextField label='URL' placeholder='/destinations/japan' />}
           </form.AppField>
 
+          <SeoTemplateVarsHint />
+
           <form.AppField name='metaTitle'>
             {(field) => (
-              <field.TextField label='Meta Title' placeholder='Buy Japan eSIM - Best Plans' />
+              <field.TextField
+                label='Meta Title'
+                placeholder='Buy Japan eSIM - Best Plans'
+                recommendedLength={60}
+                description='Google thường cắt tiêu đề sau khoảng 60 ký tự.'
+              />
             )}
           </form.AppField>
 
           <form.AppField name='metaDescription'>
-            {(field) => <field.TextareaField label='Meta Description' placeholder='Mô tả SEO...' />}
+            {(field) => (
+              <field.TextareaField
+                label='Meta Description'
+                placeholder='Mô tả SEO...'
+                recommendedLength={160}
+                description='Google thường cắt mô tả sau khoảng 160 ký tự.'
+              />
+            )}
           </form.AppField>
 
           <form.AppField name='metaKeywords'>
@@ -280,12 +301,66 @@ function CreateSeoConfigDialog({
             )}
           </form.AppField>
 
+          {/* Open Graph — what Facebook / Zalo / X show when the link is shared.
+              Stored on the record all along, but the form never exposed them (#048). */}
+          <div className='space-y-4 rounded-md border p-3'>
+            <div className='space-y-1'>
+              <p className='text-sm font-medium'>Thẻ Open Graph (chia sẻ link)</p>
+              <p className='text-muted-foreground text-xs'>
+                Để trống thì hệ thống tự dùng Meta Title / Meta Description ở trên.
+              </p>
+            </div>
+
+            <form.AppField name='ogTitle'>
+              {(field) => (
+                <field.TextField
+                  label='OG Title'
+                  placeholder='eSIM Nhật Bản - Nhận mã QR ngay'
+                  recommendedLength={60}
+                />
+              )}
+            </form.AppField>
+
+            <form.AppField name='ogDescription'>
+              {(field) => (
+                <field.TextareaField
+                  label='OG Description'
+                  placeholder='Mô tả hiện khi chia sẻ link...'
+                  recommendedLength={160}
+                  rows={3}
+                />
+              )}
+            </form.AppField>
+
+            <form.AppField name='ogImage'>
+              {(field) => (
+                <div className='space-y-2'>
+                  <field.TextField
+                    label='OG Image (URL)'
+                    placeholder='https://cdn.esim.vn/og/japan.jpg'
+                    type='url'
+                    description='Ảnh hiện kèm link khi chia sẻ. Nên dùng ảnh tỉ lệ 1200×630.'
+                  />
+                  {field.state.value ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={field.state.value as string}
+                      alt='Xem trước ảnh OG'
+                      className='h-32 w-auto rounded border object-cover'
+                    />
+                  ) : null}
+                </div>
+              )}
+            </form.AppField>
+          </div>
+
           <form.AppField name='structuredData'>
             {(field) => (
               <field.TextareaField
-                label='Structured Data (Schema/Script)'
-                placeholder='<script type="application/ld+json">...</script>'
+                label='Schema / Script (JSON-LD, gtag, Google Ads...)'
+                placeholder='<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXX"></script>'
                 rows={12}
+                description='Dán được nhiều loại: schema JSON-LD, mã đo lường Google Analytics (gtag.js), mã Google Ads/chuyển đổi. Giữ nguyên thứ tự dán; dòng chú thích <!-- ... --> được bỏ qua. Không cần tự thêm type: chỉ khối JSON mới được gắn application/ld+json, script thường vẫn chạy như script.'
               />
             )}
           </form.AppField>
@@ -342,6 +417,9 @@ function EditSeoConfigDialog({
       metaTitle: seoConfig.metaTitle,
       metaDescription: seoConfig.metaDescription || '',
       metaKeywords: seoConfig.metaKeywords || '',
+      ogTitle: seoConfig.ogTitle || '',
+      ogDescription: seoConfig.ogDescription || '',
+      ogImage: seoConfig.ogImage || '',
       structuredData: seoConfig.structuredData || '',
       destinationId: seoConfig.destinationId,
       regionId: seoConfig.regionId,
@@ -354,6 +432,9 @@ function EditSeoConfigDialog({
         metaTitle: value.metaTitle,
         metaDescription: value.metaDescription || undefined,
         metaKeywords: value.metaKeywords || undefined,
+        ogTitle: value.ogTitle || undefined,
+        ogDescription: value.ogDescription || undefined,
+        ogImage: value.ogImage || undefined,
         structuredData: value.structuredData || undefined,
         destinationId: value.destinationId,
         regionId: value.regionId,
@@ -454,14 +535,28 @@ function EditSeoConfigDialog({
             {(field) => <field.TextField label='URL' placeholder='/destinations/japan' />}
           </form.AppField>
 
+          <SeoTemplateVarsHint />
+
           <form.AppField name='metaTitle'>
             {(field) => (
-              <field.TextField label='Meta Title' placeholder='Buy Japan eSIM - Best Plans' />
+              <field.TextField
+                label='Meta Title'
+                placeholder='Buy Japan eSIM - Best Plans'
+                recommendedLength={60}
+                description='Google thường cắt tiêu đề sau khoảng 60 ký tự.'
+              />
             )}
           </form.AppField>
 
           <form.AppField name='metaDescription'>
-            {(field) => <field.TextareaField label='Meta Description' placeholder='Mô tả SEO...' />}
+            {(field) => (
+              <field.TextareaField
+                label='Meta Description'
+                placeholder='Mô tả SEO...'
+                recommendedLength={160}
+                description='Google thường cắt mô tả sau khoảng 160 ký tự.'
+              />
+            )}
           </form.AppField>
 
           <form.AppField name='metaKeywords'>
@@ -470,12 +565,66 @@ function EditSeoConfigDialog({
             )}
           </form.AppField>
 
+          {/* Open Graph — what Facebook / Zalo / X show when the link is shared.
+              Stored on the record all along, but the form never exposed them (#048). */}
+          <div className='space-y-4 rounded-md border p-3'>
+            <div className='space-y-1'>
+              <p className='text-sm font-medium'>Thẻ Open Graph (chia sẻ link)</p>
+              <p className='text-muted-foreground text-xs'>
+                Để trống thì hệ thống tự dùng Meta Title / Meta Description ở trên.
+              </p>
+            </div>
+
+            <form.AppField name='ogTitle'>
+              {(field) => (
+                <field.TextField
+                  label='OG Title'
+                  placeholder='eSIM Nhật Bản - Nhận mã QR ngay'
+                  recommendedLength={60}
+                />
+              )}
+            </form.AppField>
+
+            <form.AppField name='ogDescription'>
+              {(field) => (
+                <field.TextareaField
+                  label='OG Description'
+                  placeholder='Mô tả hiện khi chia sẻ link...'
+                  recommendedLength={160}
+                  rows={3}
+                />
+              )}
+            </form.AppField>
+
+            <form.AppField name='ogImage'>
+              {(field) => (
+                <div className='space-y-2'>
+                  <field.TextField
+                    label='OG Image (URL)'
+                    placeholder='https://cdn.esim.vn/og/japan.jpg'
+                    type='url'
+                    description='Ảnh hiện kèm link khi chia sẻ. Nên dùng ảnh tỉ lệ 1200×630.'
+                  />
+                  {field.state.value ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={field.state.value as string}
+                      alt='Xem trước ảnh OG'
+                      className='h-32 w-auto rounded border object-cover'
+                    />
+                  ) : null}
+                </div>
+              )}
+            </form.AppField>
+          </div>
+
           <form.AppField name='structuredData'>
             {(field) => (
               <field.TextareaField
-                label='Structured Data (Schema/Script)'
-                placeholder='<script type="application/ld+json">...</script>'
+                label='Schema / Script (JSON-LD, gtag, Google Ads...)'
+                placeholder='<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXX"></script>'
                 rows={12}
+                description='Dán được nhiều loại: schema JSON-LD, mã đo lường Google Analytics (gtag.js), mã Google Ads/chuyển đổi. Giữ nguyên thứ tự dán; dòng chú thích <!-- ... --> được bỏ qua. Không cần tự thêm type: chỉ khối JSON mới được gắn application/ld+json, script thường vẫn chạy như script.'
               />
             )}
           </form.AppField>

@@ -1,4 +1,5 @@
 'use client';
+import { formatDateVn } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
@@ -6,15 +7,7 @@ import type { Esim } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
-
-const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  available: 'outline',
-  active: 'default',
-  expired: 'destructive',
-  deactivated: 'secondary',
-  sold: 'default',
-  refunded: 'destructive'
-};
+import { esimStatusLabel, esimStatusVariant } from '../../lib/esim-status';
 
 const packageTypeOptions = [
   { value: 'fixed', label: 'Cố định' },
@@ -102,7 +95,9 @@ export const columns: ColumnDef<Esim>[] = [
     accessorKey: 'status',
     header: 'Trạng thái',
     cell: ({ row }) => (
-      <Badge variant={statusVariant[row.original.status] ?? 'outline'}>{row.original.status}</Badge>
+      <Badge variant={esimStatusVariant(row.original.status)}>
+        {esimStatusLabel(row.original.status)}
+      </Badge>
     ),
     enableSorting: false
   },
@@ -148,7 +143,7 @@ export const columns: ColumnDef<Esim>[] = [
     ),
     cell: ({ row }) => {
       const date = row.original.expiresAt;
-      return date ? new Date(date).toLocaleDateString('vi-VN') : '—';
+      return date ? formatDateVn(date) : '—';
     }
   },
   {
@@ -159,7 +154,7 @@ export const columns: ColumnDef<Esim>[] = [
     ),
     cell: ({ row }) => {
       const date = row.original.createdAt;
-      return date ? new Date(date).toLocaleDateString('vi-VN') : '—';
+      return date ? formatDateVn(date) : '—';
     }
   },
   {

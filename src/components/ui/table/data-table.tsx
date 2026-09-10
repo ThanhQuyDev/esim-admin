@@ -1,4 +1,4 @@
-import { type Table as TanstackTable, flexRender } from '@tanstack/react-table';
+import { type Row, type Table as TanstackTable, flexRender } from '@tanstack/react-table';
 import type * as React from 'react';
 
 import { DataTablePagination } from '@/components/ui/table/data-table-pagination';
@@ -17,19 +17,39 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
   totalRowCount?: number;
+  /**
+   * Extra classes for one row, by its data — for rows that are still worth
+   * listing but should not read as live (a rejected partner, say). Optional, so
+   * every existing table renders exactly as before.
+   */
+  rowClassName?: (row: Row<TData>) => string | undefined;
 }
 
 export function DataTable<TData>({
   table,
   actionBar,
   children,
-  totalRowCount
+  totalRowCount,
+  rowClassName
 }: DataTableProps<TData>) {
   return (
     <div className='flex flex-1 flex-col space-y-4'>
       {children}
+      {/*
+        Desktop pins the table to the remaining space and scrolls INSIDE the
+        ScrollArea (`lg:absolute inset-0` + `lg:h-full`).
+
+        Mobile must not do that. The ScrollArea has no bounded height below
+        `lg`, so it grows to its content — clipping the wrapper at a fixed
+        height with `overflow-hidden` (as this used to do with
+        `max-h-[70vh]`) simply cut the rows off with no way to reach them.
+        Instead the table keeps its natural height on mobile and the page
+        itself scrolls, which is also the friendlier gesture on touch: no
+        nested vertical scroll area to fight with. Horizontal scrolling for
+        wide tables still happens inside the ScrollArea's own viewport.
+      */}
       <div className='relative flex flex-1 lg:min-h-0'>
-        <div className='flex max-h-[70vh] w-full overflow-hidden rounded-lg border lg:absolute lg:inset-0 lg:max-h-none'>
+        <div className='flex w-full rounded-lg border lg:absolute lg:inset-0 lg:overflow-hidden'>
           <ScrollArea className='w-full lg:h-full'>
             <Table>
               <TableHeader className='bg-muted sticky top-0 z-10'>
@@ -54,7 +74,11 @@ export function DataTable<TData>({
               <TableBody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && 'selected'}
+                      className={rowClassName?.(row)}
+                    >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           key={cell.id}

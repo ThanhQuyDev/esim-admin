@@ -5,7 +5,7 @@ import type { WalletListItem } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { WalletCellAction } from './cell-action';
-import { formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 
 export const columns: ColumnDef<WalletListItem>[] = [
   {
@@ -65,7 +65,7 @@ export const columns: ColumnDef<WalletListItem>[] = [
 
       return (
         <div className='flex flex-col'>
-          <span className='text-sm'>{expiryDate.toLocaleDateString('vi-VN')}</span>
+          <span className='text-sm'>{formatDateVn(expiryDate)}</span>
           <span className='text-muted-foreground text-xs'>Còn {daysLeft} ngày</span>
         </div>
       );
@@ -79,7 +79,7 @@ export const columns: ColumnDef<WalletListItem>[] = [
     ),
     cell: ({ row }) => {
       const date = row.original.updatedAt;
-      return date ? <span className='text-sm'>{new Date(date).toLocaleString('vi-VN')}</span> : '—';
+      return date ? <span className='text-sm'>{formatDateTimeVn(date)}</span> : '—';
     }
   },
   {

@@ -25,6 +25,54 @@ export function HeroBannerFormDialog({ item, open, onOpenChange }: HeroBannerFor
   return <CreateDialog open={open} onOpenChange={onOpenChange} />;
 }
 
+function ImageUploadField({
+  label,
+  currentUrl,
+  file,
+  onFileSelect
+}: {
+  label: string;
+  currentUrl?: string;
+  file: File | null;
+  onFileSelect: (file: File | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = file ? URL.createObjectURL(file) : currentUrl;
+
+  return (
+    <div className='space-y-2'>
+      <label className='text-sm font-medium'>{label}</label>
+      {previewUrl && (
+        <div className='bg-muted/30 relative aspect-[16/9] w-full overflow-hidden rounded-lg border'>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={previewUrl} alt={label} className='h-full w-full object-contain' />
+        </div>
+      )}
+      <div className='flex items-center gap-2'>
+        <Button type='button' variant='outline' size='sm' onClick={() => inputRef.current?.click()}>
+          <Icons.upload className='mr-2 h-4 w-4' />
+          {previewUrl ? 'Đổi ảnh' : 'Tải ảnh lên'}
+        </Button>
+        {file && (
+          <Button type='button' variant='ghost' size='sm' onClick={() => onFileSelect(null)}>
+            <Icons.close className='mr-2 h-4 w-4' />
+            Bỏ ảnh vừa chọn
+          </Button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type='file'
+        accept='image/*'
+        className='hidden'
+        onChange={(event) => {
+          onFileSelect(event.target.files?.[0] ?? null);
+          event.target.value = '';
+        }}
+      />
+    </div>
+  );
+}
 function IconUploadField({
   label,
   currentUrl,
@@ -84,6 +132,9 @@ function CreateDialog({
 }) {
   const [firstIconFile, setFirstIconFile] = useState<File | null>(null);
   const [secondIconFile, setSecondIconFile] = useState<File | null>(null);
+  /** The hero picture the admin uploads (#089). */
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const imageUrl = undefined;
   const [uploading, setUploading] = useState(false);
 
   const mutation = useMutation({
@@ -107,18 +158,21 @@ function CreateDialog({
       secondContent: '',
       description: '',
       language: 'en',
+      image: '',
       active: true
     } as HeroBannerFormValues,
     validators: { onSubmit: heroBannerSchema },
     onSubmit: async ({ value }) => {
       let firstIcon = value.firstIcon;
       let secondIcon = value.secondIcon;
+      let image = value.image;
 
-      if (firstIconFile || secondIconFile) {
+      if (firstIconFile || secondIconFile || imageFile) {
         setUploading(true);
         try {
           if (firstIconFile) firstIcon = await uploadToCloudinary(firstIconFile);
           if (secondIconFile) secondIcon = await uploadToCloudinary(secondIconFile);
+          if (imageFile) image = await uploadToCloudinary(imageFile);
         } catch (error) {
           toast.error(error instanceof Error ? error.message : 'Tải icon lên thất bại');
           return;
@@ -135,6 +189,8 @@ function CreateDialog({
         secondContent: value.secondContent ?? '',
         description: value.description,
         language: value.language,
+        // Empty means "keep the built-in picture" (#089).
+        image: image || null,
         active: value.active ?? true
       };
       await mutation.mutateAsync(payload);
@@ -162,6 +218,21 @@ function CreateDialog({
       <form.AppForm>
         <form.Form id='hero-banner-form-dialog' className='space-y-6'>
           <FormTextField name='title' label='Tiêu đề' placeholder='Nhập tiêu đề' />
+          {/* Hero picture — the whole point of #089: change it without a deploy. */}
+          <div className='space-y-3 rounded-lg border p-3'>
+            <ImageUploadField
+              label='Ảnh hero'
+              file={imageFile}
+              currentUrl={imageUrl}
+              onFileSelect={setImageFile}
+            />
+            <FormTextField
+              name='image'
+              label='Hoặc dán URL ảnh'
+              placeholder='https://... (để trống dùng ảnh mặc định)'
+              description='Bỏ trống thì trang chủ dùng ảnh hero mặc định của giao diện.'
+            />
+          </div>
           <div className='grid grid-cols-2 gap-4'>
             <div className='space-y-4'>
               <IconUploadField
@@ -228,6 +299,9 @@ function EditDialog({
 }) {
   const [firstIconFile, setFirstIconFile] = useState<File | null>(null);
   const [secondIconFile, setSecondIconFile] = useState<File | null>(null);
+  /** The hero picture the admin uploads (#089). */
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const imageUrl = item.image || undefined;
   const [uploading, setUploading] = useState(false);
 
   const mutation = useMutation({
@@ -250,18 +324,21 @@ function EditDialog({
       secondContent: item.secondContent,
       description: item.description,
       language: item.language,
+      image: item.image || '',
       active: item.active
     } as HeroBannerFormValues,
     validators: { onSubmit: heroBannerSchema },
     onSubmit: async ({ value }) => {
       let firstIcon = value.firstIcon;
       let secondIcon = value.secondIcon;
+      let image = value.image;
 
-      if (firstIconFile || secondIconFile) {
+      if (firstIconFile || secondIconFile || imageFile) {
         setUploading(true);
         try {
           if (firstIconFile) firstIcon = await uploadToCloudinary(firstIconFile);
           if (secondIconFile) secondIcon = await uploadToCloudinary(secondIconFile);
+          if (imageFile) image = await uploadToCloudinary(imageFile);
         } catch (error) {
           toast.error(error instanceof Error ? error.message : 'Tải icon lên thất bại');
           return;
@@ -278,6 +355,8 @@ function EditDialog({
         secondContent: value.secondContent,
         description: value.description,
         language: value.language,
+        // Empty means "keep the built-in picture" (#089).
+        image: image || null,
         active: value.active ?? false
       };
       await mutation.mutateAsync({ id: item.id, values: payload });
@@ -299,6 +378,21 @@ function EditDialog({
       <form.AppForm>
         <form.Form id='hero-banner-form-dialog' className='space-y-6'>
           <FormTextField name='title' label='Tiêu đề' placeholder='Nhập tiêu đề' />
+          {/* Hero picture — the whole point of #089: change it without a deploy. */}
+          <div className='space-y-3 rounded-lg border p-3'>
+            <ImageUploadField
+              label='Ảnh hero'
+              file={imageFile}
+              currentUrl={imageUrl}
+              onFileSelect={setImageFile}
+            />
+            <FormTextField
+              name='image'
+              label='Hoặc dán URL ảnh'
+              placeholder='https://... (để trống dùng ảnh mặc định)'
+              description='Bỏ trống thì trang chủ dùng ảnh hero mặc định của giao diện.'
+            />
+          </div>
           <div className='grid grid-cols-2 gap-4'>
             <div className='space-y-4'>
               <IconUploadField

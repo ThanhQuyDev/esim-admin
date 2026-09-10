@@ -9,7 +9,7 @@ import { createDepositRequestMutation } from '../api/mutations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { CreateDepositRequestModal } from './create-deposit-request-modal';
@@ -92,8 +92,7 @@ export function PortalWalletView() {
               <div>
                 <p className='text-sm font-medium'>{formatVnd(req.amountVnd)}</p>
                 <p className='text-muted-foreground text-xs'>
-                  Mã CK: {req.bankTransferCode} ·{' '}
-                  {new Date(req.createdAt).toLocaleDateString('vi-VN')}
+                  Mã CK: {req.bankTransferCode} · {formatDateVn(req.createdAt)}
                 </p>
               </div>
               <Badge variant={STATUS_VARIANT[req.status]}>{STATUS_LABEL[req.status]}</Badge>
@@ -128,9 +127,7 @@ export function PortalWalletView() {
                 </div>
                 <div className='min-w-0 flex-1'>
                   <p className='text-sm font-medium'>{tx.reason || tx.type}</p>
-                  <p className='text-muted-foreground text-xs'>
-                    {new Date(tx.createdAt).toLocaleString('vi-VN')}
-                  </p>
+                  <p className='text-muted-foreground text-xs'>{formatDateTimeVn(tx.createdAt)}</p>
                 </div>
                 <div className='shrink-0 text-right'>
                   <p

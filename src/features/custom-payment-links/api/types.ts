@@ -29,3 +29,19 @@ export type CreateCustomPaymentLinkPayload = {
   currency?: 'VND';
   description: string;
 };
+
+/** Query for the saved history of payment orders (#084). */
+export type CustomPaymentLinkFilters = {
+  page?: number;
+  limit?: number;
+  status?: CustomPaymentLinkStatus;
+  /** Matches customer email, description or order number. */
+  search?: string;
+};
+
+export type CustomPaymentLinksResponse = {
+  data: CustomPaymentLink[];
+  hasNextPage: boolean;
+  /** Total rows behind the current filter, when the API reports one. */
+  totalCount?: number;
+};

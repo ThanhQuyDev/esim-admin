@@ -19,6 +19,12 @@ export type MyPartner = {
   rejectionReason: string | null;
   notes: string | null;
   createdAt: string;
+  /** Saved payout account; each withdrawal snapshots it at request time. */
+  brandInfo: Record<string, unknown> | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
+  bankBranch: string | null;
 };
 
 export type UpdateMyProfilePayload = {
@@ -28,6 +34,11 @@ export type UpdateMyProfilePayload = {
   taxCode?: string;
   businessAddress?: string;
   channelInfo?: Record<string, unknown>;
+  brandInfo?: Record<string, unknown>;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountHolder?: string;
+  bankBranch?: string;
 };
 
 export type MyWalletSummary = {
@@ -108,4 +119,102 @@ export type PartnerApplyPayload = {
   businessAddress?: string;
   channelInfo?: Record<string, unknown>;
   notes?: string;
+};
+
+export type PartnerTier = {
+  id: number;
+  partnerType: PartnerType;
+  tierCode: string;
+  tierName: string;
+  minVolumeVnd: string | number;
+  commissionPercent: string | number;
+  maxDiscountPercent: string | number;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+/** Read model behind the portal overview screen. */
+export type MySummary = {
+  performance30d: {
+    clicks: number;
+    orders: number;
+    revenueVnd: number;
+    commissionVnd: number;
+  };
+  lifetime: {
+    clicks: number;
+    orders: number;
+    revenueVnd: number;
+    commissionVnd: number;
+  };
+  commissionPendingVnd: number;
+  wallet: MyWalletSummary;
+  tier: {
+    current: PartnerTier | null;
+    next: PartnerTier | null;
+    toNextTierVnd: number;
+    progressPercent: number;
+  };
+};
+
+export type MyOrderItem = { planName: string; quantity: number };
+
+export type MyOrder = {
+  orderNumber: string;
+  status: string;
+  vndPrice: number;
+  createdAt: string;
+  commissionVnd: number | null;
+  commissionStatus: 'pending' | 'credited' | 'reversed' | null;
+  linkCode: string | null;
+  esimCount: number;
+  items: MyOrderItem[];
+};
+
+export type MyTicket = {
+  id: number;
+  customerEmail: string;
+  subject: string;
+  description: string;
+  orderId: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateTicketPayload = {
+  customerEmail: string;
+  subject: string;
+  description: string;
+  orderId?: string;
+};
+
+export type MyCoupon = {
+  id: number;
+  code: string;
+  discountPercent: number;
+  usageCount: number;
+  maxUsage: number | null;
+  expiresAt: string | null;
+  isActive: boolean;
+  /** Paid orders of THIS partner that used the code. */
+  myOrders: number;
+  discountGivenVnd: number;
+};
+
+export type MyTierEvaluation = {
+  id: number;
+  evaluatedAt: string;
+  revenueVnd: string | number;
+  validOrders: number;
+  tierBefore: string | null;
+  tierAfter: string | null;
+  result: 'promoted' | 'unchanged';
+};
+
+/** Branding a partner sets for their own portal page. */
+export type PartnerBrandInfo = {
+  displayName?: string;
+  logoUrl?: string;
+  tagline?: string;
 };

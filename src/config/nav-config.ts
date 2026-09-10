@@ -162,6 +162,13 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Ký quỹ đối tác',
+        url: '/dashboard/provider-deposits',
+        icon: 'wallet',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Lệnh thanh toán tùy ý',
         url: '/dashboard/custom-payment-links',
         icon: 'creditCard',
@@ -183,6 +190,16 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         access: { role: [1] },
         items: [
+          {
+            title: 'Tổng quan',
+            url: '/dashboard/partners/overview',
+            access: { role: [1] }
+          },
+          {
+            title: 'Cài đặt chương trình',
+            url: '/dashboard/partners/settings',
+            access: { role: [1] }
+          },
           {
             title: 'Đối tác & KOL',
             url: '/dashboard/partners',
@@ -221,6 +238,7 @@ export const navGroups: NavGroup[] = [
         icon: 'chat',
         shortcut: ['c', 'c'],
         isActive: false,
+        badge: 'chat-waiting',
         items: [
           {
             title: 'Tin nhắn',

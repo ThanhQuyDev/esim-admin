@@ -12,7 +12,14 @@ import type {
   MyCommission,
   MyPayout,
   CreatePayoutPayload,
-  PartnerApplyPayload
+  PartnerApplyPayload,
+  MySummary,
+  MyOrder,
+  PartnerTier,
+  MyTicket,
+  CreateTicketPayload,
+  MyCoupon,
+  MyTierEvaluation
 } from './types';
 
 export async function applyAsPartner(
@@ -81,4 +88,36 @@ export async function createMyPayout(data: CreatePayoutPayload): Promise<MyPayou
     method: 'POST',
     body: JSON.stringify(data)
   });
+}
+
+export async function getMySummary(): Promise<MySummary> {
+  return apiClient<MySummary>('/partner-portal/summary');
+}
+
+export async function getMyOrders(): Promise<MyOrder[]> {
+  return apiClient<MyOrder[]>('/partner-portal/orders');
+}
+
+export async function getMyTiers(): Promise<PartnerTier[]> {
+  return apiClient<PartnerTier[]>('/partner-portal/tiers');
+}
+
+export async function getMyTickets(): Promise<MyTicket[]> {
+  const res = await apiClient<{ data: MyTicket[] }>('/tickets/mine?limit=50');
+  return res?.data ?? [];
+}
+
+export async function createMyTicket(data: CreateTicketPayload): Promise<MyTicket> {
+  return apiClient<MyTicket>('/tickets/mine', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function getMyCoupons(): Promise<MyCoupon[]> {
+  return apiClient<MyCoupon[]>('/partner-portal/coupons');
+}
+
+export async function getMyTierEvaluations(): Promise<MyTierEvaluation[]> {
+  return apiClient<MyTierEvaluation[]>('/partner-portal/tier-evaluations');
 }

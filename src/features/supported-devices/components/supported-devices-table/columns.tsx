@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateVn } from '@/lib/format';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import { CellAction } from './cell-action';
@@ -59,9 +60,29 @@ export const columns: ColumnDef<SupportedDevice>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title='Ngày tạo' />,
     cell: ({ row }) => {
       const date = new Date(row.getValue('createdAt') as string);
-      return <div>{date.toLocaleDateString('vi-VN')}</div>;
+      return <div>{formatDateVn(date)}</div>;
     },
     enableSorting: true
+  },
+  {
+    id: 'displayOrder',
+    header: 'Thứ tự hiển thị',
+    // 0 means the row keeps its alphabetical place, so say that rather than
+    // showing a bare 0 an admin has to interpret (#090).
+    cell: ({ row }) => {
+      const brand = row.original.manufacturerOrder ?? 0;
+      const model = row.original.sortOrder ?? 0;
+      if (!brand && !model) {
+        return <span className='text-muted-foreground text-xs'>Theo A–Z</span>;
+      }
+      return (
+        <div className='text-xs tabular-nums'>
+          <div>Hãng: {brand || 'A–Z'}</div>
+          <div className='text-muted-foreground'>Thiết bị: {model || 'A–Z'}</div>
+        </div>
+      );
+    },
+    enableSorting: false
   },
   {
     id: 'actions',

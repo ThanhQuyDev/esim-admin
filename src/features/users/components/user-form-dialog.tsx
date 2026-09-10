@@ -9,6 +9,7 @@ import { useMutation } from '@tanstack/react-query';
 import { createUserMutation, updateUserMutation } from '../api/mutations';
 import type { User, CreateUserPayload, UpdateUserPayload } from '../api/types';
 import { toast } from 'sonner';
+import { AuthorAvatarField, authorProfilePayload } from './author-profile-fields';
 import { formatVnd } from '@/lib/format';
 import * as z from 'zod';
 import {
@@ -16,12 +17,16 @@ import {
   updateUserSchema,
   phoneNumberSchema,
   type CreateUserFormValues,
-  type UpdateUserFormValues
+  type UpdateUserFormValues,
+  AUTHOR_ROLE_ID
 } from '../schemas/user';
 
 const API_ROLE_OPTIONS = [
   { value: '1', label: 'Admin' },
-  { value: '2', label: 'User' }
+  { value: '2', label: 'User' },
+  // Role 3 exists in the backend and has its own tab in this list, but was
+  // never selectable here — so no author could be created (#059).
+  { value: AUTHOR_ROLE_ID, label: 'Tác giả' }
 ];
 
 const API_STATUS_OPTIONS = [
@@ -85,7 +90,11 @@ function CreateUserDialog({
       phoneNumber: '',
       password: '',
       roleId: '',
-      statusId: '1'
+      statusId: '1',
+      authorName: '',
+      authorSlug: '',
+      authorAvatar: '',
+      authorDescription: ''
     } as CreateUserFormValues,
     validators: {
       onSubmit: createUserSchema
@@ -98,13 +107,15 @@ function CreateUserDialog({
         lastName: value.lastName,
         phoneNumber: value.phoneNumber.trim() || null,
         role: { id: Number(value.roleId) },
-        status: { id: Number(value.statusId) }
+        status: { id: Number(value.statusId) },
+        ...(value.roleId === AUTHOR_ROLE_ID ? { authorProfile: authorProfilePayload(value) } : {})
       };
       await createMutation.mutateAsync(payload);
     }
   });
 
-  const { FormTextField, FormSelectField } = useFormFields<CreateUserFormValues>();
+  const { FormTextField, FormSelectField, FormTextareaField } =
+    useFormFields<CreateUserFormValues>();
 
   return (
     <FormDialog
@@ -199,6 +210,54 @@ function CreateUserDialog({
               }}
             />
           </div>
+
+          {/* Author profile — required by the API for the Tác giả role (#059) */}
+          <form.Subscribe selector={(state) => state.values.roleId}>
+            {(roleId) =>
+              roleId === AUTHOR_ROLE_ID ? (
+                <div className='space-y-4 rounded-md border p-4'>
+                  <p className='text-sm font-medium'>Thông tin tác giả</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Hiện ở phần tác giả cuối mỗi bài viết; bấm vào tên tác giả sẽ ra trang tổng hợp
+                    bài viết của người này.
+                  </p>
+
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <FormTextField
+                      name='authorName'
+                      label='Tên tác giả'
+                      required
+                      placeholder='Nguyễn Văn A'
+                    />
+                    <FormTextField
+                      name='authorSlug'
+                      label='Slug tác giả'
+                      required
+                      placeholder='nguyen-van-a'
+                      description='Dùng cho địa chỉ trang tác giả. Để trống sẽ tự tạo từ tên.'
+                    />
+                  </div>
+
+                  <form.Field name='authorAvatar'>
+                    {(field) => (
+                      <AuthorAvatarField
+                        value={field.state.value as string}
+                        onChange={(url) => field.handleChange(url)}
+                      />
+                    )}
+                  </form.Field>
+
+                  <FormTextareaField
+                    name='authorDescription'
+                    label='Nội dung tóm tắt'
+                    placeholder='Giới thiệu ngắn về tác giả...'
+                    rows={4}
+                    recommendedLength={300}
+                  />
+                </div>
+              ) : null
+            }
+          </form.Subscribe>
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -232,7 +291,11 @@ function EditUserDialog({
       roleId: String(user.role?.id ?? ''),
       statusId: String(user.status?.id ?? ''),
       tierOverride: user.tierOverride ?? 'auto',
-      tierOverrideReason: user.tierOverrideReason ?? ''
+      tierOverrideReason: user.tierOverrideReason ?? '',
+      authorName: user.authorProfile?.name ?? '',
+      authorSlug: user.authorProfile?.slug ?? '',
+      authorAvatar: user.authorProfile?.avatar ?? '',
+      authorDescription: user.authorProfile?.description ?? ''
     } as UpdateUserFormValues,
     validators: {
       onSubmit: updateUserSchema
@@ -246,7 +309,8 @@ function EditUserDialog({
         tierOverride: value.tierOverride === 'auto' ? null : value.tierOverride,
         tierOverrideReason: value.tierOverride === 'auto' ? null : value.tierOverrideReason.trim(),
         role: { id: Number(value.roleId) },
-        status: { id: Number(value.statusId) }
+        status: { id: Number(value.statusId) },
+        ...(value.roleId === AUTHOR_ROLE_ID ? { authorProfile: authorProfilePayload(value) } : {})
       };
       await updateMutation.mutateAsync({ id: user.id, values: payload });
     }
@@ -362,6 +426,54 @@ function EditUserDialog({
                   placeholder='Nhập lý do điều chỉnh hạng thành viên...'
                   maxLength={500}
                 />
+              ) : null
+            }
+          </form.Subscribe>
+
+          {/* Author profile — required by the API for the Tác giả role (#059) */}
+          <form.Subscribe selector={(state) => state.values.roleId}>
+            {(roleId) =>
+              roleId === AUTHOR_ROLE_ID ? (
+                <div className='space-y-4 rounded-md border p-4'>
+                  <p className='text-sm font-medium'>Thông tin tác giả</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Hiện ở phần tác giả cuối mỗi bài viết; bấm vào tên tác giả sẽ ra trang tổng hợp
+                    bài viết của người này.
+                  </p>
+
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <FormTextField
+                      name='authorName'
+                      label='Tên tác giả'
+                      required
+                      placeholder='Nguyễn Văn A'
+                    />
+                    <FormTextField
+                      name='authorSlug'
+                      label='Slug tác giả'
+                      required
+                      placeholder='nguyen-van-a'
+                      description='Dùng cho địa chỉ trang tác giả. Để trống sẽ tự tạo từ tên.'
+                    />
+                  </div>
+
+                  <form.Field name='authorAvatar'>
+                    {(field) => (
+                      <AuthorAvatarField
+                        value={field.state.value as string}
+                        onChange={(url) => field.handleChange(url)}
+                      />
+                    )}
+                  </form.Field>
+
+                  <FormTextareaField
+                    name='authorDescription'
+                    label='Nội dung tóm tắt'
+                    placeholder='Giới thiệu ngắn về tác giả...'
+                    rows={4}
+                    recommendedLength={300}
+                  />
+                </div>
               ) : null
             }
           </form.Subscribe>

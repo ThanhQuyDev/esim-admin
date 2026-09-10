@@ -1,8 +1,9 @@
 'use client';
 
+import { esimQrLogoSettings } from '@/features/esims/lib/esim-qr';
 import { useSuspenseQuery, useMutation } from '@tanstack/react-query';
 import { orderQueryOptions } from '../api/queries';
-import { refundOrderMutation } from '../api/mutations';
+import { refundOrderMutation, retryOrderProvisioningMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import { RefundOrderModal } from './refund-order-modal';
 import { ResendEsimEmailButton } from './resend-esim-email-button';
 import { CreateInvoiceDialog } from './create-invoice-dialog';
 import { InvoiceViewDialog } from './invoice-view-dialog';
-import { formatCountry } from '@/lib/format';
+import { formatCountry, formatDateTimeVn } from '@/lib/format';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -48,7 +49,35 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 function formatDate(date: string | null | undefined) {
   if (!date) return '—';
-  return new Date(date).toLocaleString('vi-VN');
+  return formatDateTimeVn(date);
+}
+
+/** Usage counters arrive as strings of MB from the provider sync. */
+function toMb(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatDataMb(value: string | number | null | undefined): string {
+  const mb = toMb(value);
+  if (mb === null) return '—';
+  return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb} MB`;
+}
+
+/**
+ * Remaining allowance. Shown explicitly rather than leaving the admin to
+ * subtract "used / total" in their head while a customer waits on the phone.
+ */
+function remainingData(
+  used: string | number | null | undefined,
+  total: string | number | null | undefined
+): string {
+  const usedMb = toMb(used);
+  const totalMb = toMb(total);
+  if (usedMb === null || totalMb === null) return '—';
+  if (totalMb <= 0) return 'Không giới hạn';
+  return formatDataMb(Math.max(totalMb - usedMb, 0));
 }
 
 function formatCurrency(amount: number, currency: string) {
@@ -142,9 +171,12 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
             <>
               <InfoRow label='Nhà mạng' value={plan.operatorName || '—'} />
               <InfoRow label='Tốc độ' value={plan.speed || '—'} />
+              <InfoRow label='Tốc độ sau khi hết data' value={plan.fupSpeed || '—'} />
             </>
           )}
-          <InfoRow label='Dữ liệu' value={`${esim.dataUsed} / ${esim.dataTotal}`} />
+          <InfoRow label='Đã dùng' value={formatDataMb(esim.dataUsed)} />
+          <InfoRow label='Còn lại' value={remainingData(esim.dataUsed, esim.dataTotal)} />
+          <InfoRow label='Tổng dung lượng' value={formatDataMb(esim.dataTotal)} />
           <InfoRow label='SĐT' value={esim.phoneNumber || '—'} />
           <InfoRow
             label='Roaming'
@@ -172,12 +204,7 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
                 value={esim.lpa}
                 size={128}
                 level='H'
-                imageSettings={{
-                  src: 'https://res.cloudinary.com/drozbviwb/image/upload/v1780067058/logo_esimvn_zycejk.png',
-                  height: 12,
-                  width: 58,
-                  excavate: true
-                }}
+                imageSettings={esimQrLogoSettings(128)}
               />
             </div>
           )}
@@ -238,11 +265,40 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
   );
 }
 
+/** Commission lifecycle as an admin reads it (#095). */
+function commissionStatusLabel(status: string): string {
+  if (status === 'credited') return 'Đã ghi có';
+  if (status === 'reversed') return 'Đã hoàn lại';
+  return 'Chờ đối soát';
+}
+
+function commissionStatusVariant(
+  status: string
+): 'default' | 'secondary' | 'destructive' | 'outline' {
+  if (status === 'credited') return 'default';
+  if (status === 'reversed') return 'destructive';
+  return 'secondary';
+}
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
   const [refundOpen, setRefundOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceViewOpen, setInvoiceViewOpen] = useState(false);
+
+  const retryMutation = useMutation({
+    ...retryOrderProvisioningMutation,
+    onSuccess: (result) => {
+      if (result.retriedItemIds.length === 0) {
+        // Nothing was re-ordered — say so plainly instead of a green tick.
+        toast.info(result.message);
+      } else {
+        toast.success(
+          `${result.message} Nhà cung cấp giao bất đồng bộ có thể mất vài phút mới trả eSIM về.`
+        );
+      }
+    },
+    onError: (e) => toast.error(e.message || 'Gọi lại nhà cung cấp thất bại')
+  });
 
   const refundMutation = useMutation({
     ...refundOrderMutation,
@@ -266,6 +322,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         payableVndPrice={order.vndPrice}
         walletSpentVndAmount={order.walletSpentVndAmount}
         refundedAmountVnd={order.refundedAmountVnd}
+        items={order.items}
         open={refundOpen}
         onOpenChange={setRefundOpen}
         onSubmit={(data) => refundMutation.mutate({ id: order.id, data })}
@@ -301,6 +358,24 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             orderStatus={canResendEmail ? 'paid' : order.status}
             size='sm'
           />
+          {/* #030: re-ask the supplier for eSIMs this order never received,
+              e.g. after the deposit with them ran dry mid-order. */}
+          {order.status === 'paid' && (
+            <Button
+              type='button'
+              size='sm'
+              variant='outline'
+              disabled={retryMutation.isPending}
+              onClick={() => retryMutation.mutate(order.id)}
+            >
+              {retryMutation.isPending ? (
+                <Icons.spinner className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <Icons.send className='mr-2 h-4 w-4' />
+              )}
+              Gọi lại API lấy eSIM
+            </Button>
+          )}
           {order.invoice ? (
             <Button
               type='button'
@@ -466,6 +541,58 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         </Card>
       )}
 
+      {/* Affiliate: who earned on this order, and how much (#095). The list
+          used to show only the referral code, which named nobody. */}
+      {order.partnerCommission && (
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-3'>
+              Đối tác Affiliate
+              <Badge variant={commissionStatusVariant(order.partnerCommission.status)}>
+                {commissionStatusLabel(order.partnerCommission.status)}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='grid gap-4 md:grid-cols-2'>
+            <div className='space-y-3'>
+              <InfoRow
+                label='Đối tác'
+                value={
+                  order.partnerCommission.partnerName || `#${order.partnerCommission.partnerId}`
+                }
+              />
+              <InfoRow
+                label='Mã liên kết'
+                value={
+                  order.partnerCommission.linkCode ? (
+                    <Badge variant='outline'>{order.partnerCommission.linkCode}</Badge>
+                  ) : (
+                    order.referralCode || '—'
+                  )
+                }
+              />
+              <InfoRow
+                label='Hạng lúc phát sinh'
+                value={order.partnerCommission.tierSnapshot || '—'}
+              />
+            </div>
+            <div className='space-y-3'>
+              <InfoRow
+                label='Hoa hồng trả đối tác'
+                value={formatCurrency(order.partnerCommission.commissionVnd, 'VND')}
+              />
+              <InfoRow
+                label='Tỷ lệ trên giá trị đơn'
+                value={
+                  order.partnerCommission.commissionPercent > 0
+                    ? `${order.partnerCommission.commissionPercent}%`
+                    : '—'
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Coupon Info */}
       {order.coupon && (
         <Card>

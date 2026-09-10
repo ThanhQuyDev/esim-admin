@@ -5,7 +5,7 @@ import { confirmDepositRequestMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatVnd } from '@/lib/format';
 import { toast } from 'sonner';
 
 export function DepositRequestsView() {
@@ -48,7 +48,7 @@ export function DepositRequestsView() {
                 </div>
                 <p className='text-lg font-semibold'>{formatVnd(req.amountVnd)}</p>
                 <p className='text-muted-foreground text-xs'>
-                  Tạo {new Date(req.createdAt).toLocaleString('vi-VN')}
+                  Tạo {formatDateTimeVn(req.createdAt)}
                 </p>
               </div>
               <Button

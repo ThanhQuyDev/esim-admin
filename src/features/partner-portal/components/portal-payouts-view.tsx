@@ -1,11 +1,12 @@
 'use client';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { myPayoutsQueryOptions, myWalletQueryOptions } from '../api/queries';
+import Link from 'next/link';
+import { myPayoutsQueryOptions, myProfileQueryOptions, myWalletQueryOptions } from '../api/queries';
 import { createPayoutRequestMutation } from '../api/mutations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
+import { formatDateVn, formatVnd } from '@/lib/format';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { CreatePayoutModal } from './create-payout-modal';
@@ -27,6 +28,7 @@ export function PortalPayoutsView() {
   const [createOpen, setCreateOpen] = useState(false);
   const { data: wallet } = useQuery(myWalletQueryOptions());
   const { data: payouts = [], isLoading, refetch } = useQuery(myPayoutsQueryOptions());
+  const { data: partner } = useQuery(myProfileQueryOptions());
 
   const createMutation = useMutation({
     ...createPayoutRequestMutation,
@@ -47,6 +49,37 @@ export function PortalPayoutsView() {
         onSubmit={(data) => createMutation.mutate(data)}
         isSubmitting={createMutation.isPending}
       />
+
+      {/* Saved payout account — prefilled into every new request. */}
+      <div className='rounded-lg border p-4'>
+        <div className='flex flex-wrap items-start justify-between gap-2'>
+          <div>
+            <p className='text-sm font-medium'>Tài khoản thanh toán</p>
+            {partner?.bankAccountNumber ? (
+              <p className='text-muted-foreground mt-1 text-sm'>
+                {[
+                  partner.bankName,
+                  partner.bankAccountNumber,
+                  partner.bankAccountHolder,
+                  partner.bankBranch
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            ) : (
+              <p className='text-muted-foreground mt-1 text-sm'>
+                Chưa lưu tài khoản nhận tiền — bạn sẽ phải nhập tay mỗi lần rút.
+              </p>
+            )}
+          </div>
+          <Link
+            href='/dashboard/portal/profile'
+            className='text-sm font-medium underline underline-offset-4'
+          >
+            {partner?.bankAccountNumber ? 'Đổi tài khoản' : 'Thêm tài khoản'}
+          </Link>
+        </div>
+      </div>
 
       <div className='flex items-center justify-between'>
         <p className='text-muted-foreground text-sm'>
@@ -76,7 +109,7 @@ export function PortalPayoutsView() {
               <div>
                 <p className='text-sm font-medium'>{formatVnd(p.amountVnd)}</p>
                 <p className='text-muted-foreground text-xs'>
-                  {new Date(p.createdAt).toLocaleDateString('vi-VN')}
+                  {formatDateVn(p.createdAt)}
                   {p.bankAccountInfo ? ` · ${p.bankAccountInfo}` : ''}
                 </p>
               </div>

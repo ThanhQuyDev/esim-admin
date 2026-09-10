@@ -8,10 +8,14 @@ import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CreateLinkModal } from './create-link-modal';
 
 export function PortalLinksView() {
   const [createOpen, setCreateOpen] = useState(false);
+  /** Link whose QR is being shown — offline channels need a scannable code. */
+  const [qrCode, setQrCode] = useState<string | null>(null);
   const { data: links = [], isLoading, refetch } = useQuery(myLinksQueryOptions());
 
   const createMutation = useMutation({
@@ -41,8 +45,26 @@ export function PortalLinksView() {
     toast.success('Đã sao chép link.');
   }
 
+  const qrUrl = qrCode ? `${publicOrigin}/go/${qrCode}` : '';
+
   return (
     <div className='space-y-4'>
+      <Dialog open={!!qrCode} onOpenChange={(o) => !o && setQrCode(null)}>
+        <DialogContent className='sm:max-w-sm'>
+          <DialogHeader>
+            <DialogTitle>Mã QR cho liên kết</DialogTitle>
+          </DialogHeader>
+          <div className='flex flex-col items-center gap-3 py-2'>
+            {qrCode && <QRCodeSVG value={qrUrl} size={200} includeMargin />}
+            <p className='text-muted-foreground font-mono text-xs break-all'>{qrUrl}</p>
+            <p className='text-muted-foreground text-center text-xs'>
+              Dùng cho standee, tờ rơi hoặc màn hình tại điểm bán — mọi lượt quét đều được ghi nhận
+              về liên kết này.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <CreateLinkModal
         open={createOpen}
         onOpenChange={setCreateOpen}
@@ -83,6 +105,9 @@ export function PortalLinksView() {
                 <div className='flex gap-2'>
                   <Button variant='outline' size='sm' onClick={() => copyLink(link.code)}>
                     <Icons.copy className='mr-2 h-4 w-4' /> Sao chép
+                  </Button>
+                  <Button variant='outline' size='sm' onClick={() => setQrCode(link.code)}>
+                    <Icons.media className='mr-2 h-4 w-4' /> Mã QR
                   </Button>
                   <Button
                     variant='outline'

@@ -17,6 +17,7 @@ import {
 import { formatNumber, formatPercent, formatVnd } from '@/lib/format';
 import { providerComparisonQueryOptions } from '../api/queries';
 import type { ProviderMetric, ProviderComparisonByProviderResponse } from '../api/types';
+import { providerCodeLabel } from '../api/constants';
 
 const providerComparisonConfig = {
   orders: {
@@ -36,14 +37,6 @@ const providerComparisonConfig = {
     color: 'var(--chart-4)'
   }
 } satisfies ChartConfig;
-
-const providerLabels: Record<string, string> = {
-  airalo: 'Airalo',
-  esimaccess: 'eSIM Access',
-  gadgetkorea: 'Gadget Korea',
-  japantravelsim: 'Japan',
-  viettel: 'Viettel'
-};
 
 function isProviderComparisonByProvider(
   data: unknown
@@ -72,7 +65,8 @@ export function BarGraph({ filters }: BarGraphProps) {
 
     return data.data.map((item) => ({
       ...item,
-      providerLabel: providerLabels[item.provider] ?? item.provider
+      // Masked supplier code — the overview screen never shows real names.
+      providerLabel: providerCodeLabel(item.provider)
     }));
   }, [data]);
 
@@ -98,9 +92,7 @@ export function BarGraph({ filters }: BarGraphProps) {
           So sánh provider
           <Badge variant='outline'>{formatMetricValue(metric, total)}</Badge>
         </CardTitle>
-        <CardDescription>
-          So sánh Airalo, eSIM Access và Gadget Korea theo số đơn hàng
-        </CardDescription>
+        <CardDescription>So sánh các nhà cung cấp theo số đơn hàng</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={providerComparisonConfig} className='h-[280px] w-full'>

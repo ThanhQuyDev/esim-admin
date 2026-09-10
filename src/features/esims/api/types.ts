@@ -133,6 +133,8 @@ export type ImportEsimsExcelResponse = {
   created: number;
   skipped: number;
   planCreated: number;
+  /** Existing plans whose prices were refreshed from the uploaded file. */
+  planUpdated: number;
   errors: ImportEsimsExcelError[];
   message?: string;
 };

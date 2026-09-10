@@ -109,6 +109,7 @@ function CreateDialog({
       language: 'en',
       sortOrder: 0,
       categories: '',
+      categoriesVi: '',
       iconUrl: ''
     } as FooterFormValues,
     validators: { onSubmit: footerSchema },
@@ -124,13 +125,14 @@ function CreateDialog({
         language: value.language,
         sortOrder: value.sortOrder,
         categories: value.categories || null,
+        categoriesVi: value.categoriesVi || null,
         iconUrl
       };
       await mutation.mutateAsync(payload);
     }
   });
 
-  const { FormTextField, FormTextareaField, FormSelectField } = useFormFields<FooterFormValues>();
+  const { FormTextField, FormSelectField } = useFormFields<FooterFormValues>();
 
   return (
     <FormDialog
@@ -169,10 +171,20 @@ function CreateDialog({
             type='number'
             placeholder='0 (số nhỏ hiển thị trước)'
           />
-          <FormTextareaField
+          {/* The heading this link sits under. `categories` doubles as the
+              grouping key, so rows that belong together must share it
+              exactly; the Vietnamese heading is display-only (#088). */}
+          <FormTextField
             name='categories'
-            label='Categories'
-            placeholder='Nhập category (tuỳ chọn)'
+            label='Tiêu đề cột (mặc định / tiếng Anh)'
+            placeholder='VD: Support'
+            description='Các link cùng một tiêu đề này sẽ nằm chung một cột.'
+          />
+          <FormTextField
+            name='categoriesVi'
+            label='Tiêu đề cột (tiếng Việt)'
+            placeholder='VD: Hỗ trợ'
+            description='Bỏ trống thì bản tiếng Việt dùng tiêu đề mặc định.'
           />
           <IconUploadField
             label='Icon'
@@ -219,6 +231,7 @@ function EditDialog({
       language: item.language || 'en',
       sortOrder: item.sortOrder ?? 0,
       categories: item.categories || '',
+      categoriesVi: item.categoriesVi || '',
       iconUrl: item.iconUrl || ''
     } as FooterFormValues,
     validators: { onSubmit: footerSchema },
@@ -234,13 +247,14 @@ function EditDialog({
         language: value.language,
         sortOrder: value.sortOrder,
         categories: value.categories || null,
+        categoriesVi: value.categoriesVi || null,
         iconUrl
       };
       await mutation.mutateAsync({ id: item.id, values: payload });
     }
   });
 
-  const { FormTextField, FormTextareaField, FormSelectField } = useFormFields<FooterFormValues>();
+  const { FormTextField, FormSelectField } = useFormFields<FooterFormValues>();
 
   return (
     <FormDialog
@@ -273,10 +287,20 @@ function EditDialog({
             type='number'
             placeholder='0 (số nhỏ hiển thị trước)'
           />
-          <FormTextareaField
+          {/* The heading this link sits under. `categories` doubles as the
+              grouping key, so rows that belong together must share it
+              exactly; the Vietnamese heading is display-only (#088). */}
+          <FormTextField
             name='categories'
-            label='Categories'
-            placeholder='Nhập category (tuỳ chọn)'
+            label='Tiêu đề cột (mặc định / tiếng Anh)'
+            placeholder='VD: Support'
+            description='Các link cùng một tiêu đề này sẽ nằm chung một cột.'
+          />
+          <FormTextField
+            name='categoriesVi'
+            label='Tiêu đề cột (tiếng Việt)'
+            placeholder='VD: Hỗ trợ'
+            description='Bỏ trống thì bản tiếng Việt dùng tiêu đề mặc định.'
           />
           <IconUploadField
             label='Icon'

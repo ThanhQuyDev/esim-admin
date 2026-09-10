@@ -6,7 +6,13 @@ import {
   getMyDepositRequests,
   getMyLinks,
   getMyCommissions,
-  getMyPayouts
+  getMyPayouts,
+  getMySummary,
+  getMyOrders,
+  getMyTiers,
+  getMyTickets,
+  getMyCoupons,
+  getMyTierEvaluations
 } from './service';
 
 export const partnerPortalKeys = {
@@ -17,7 +23,13 @@ export const partnerPortalKeys = {
   depositRequests: () => [...partnerPortalKeys.all, 'deposit-requests'] as const,
   links: () => [...partnerPortalKeys.all, 'links'] as const,
   commissions: () => [...partnerPortalKeys.all, 'commissions'] as const,
-  payouts: () => [...partnerPortalKeys.all, 'payouts'] as const
+  payouts: () => [...partnerPortalKeys.all, 'payouts'] as const,
+  summary: () => [...partnerPortalKeys.all, 'summary'] as const,
+  orders: () => [...partnerPortalKeys.all, 'orders'] as const,
+  tiers: () => [...partnerPortalKeys.all, 'tiers'] as const,
+  tickets: () => [...partnerPortalKeys.all, 'tickets'] as const,
+  coupons: () => [...partnerPortalKeys.all, 'coupons'] as const,
+  tierEvaluations: () => [...partnerPortalKeys.all, 'tier-evaluations'] as const
 };
 
 export const myProfileQueryOptions = () =>
@@ -43,3 +55,24 @@ export const myCommissionsQueryOptions = () =>
 
 export const myPayoutsQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.payouts(), queryFn: getMyPayouts });
+
+export const mySummaryQueryOptions = () =>
+  queryOptions({ queryKey: partnerPortalKeys.summary(), queryFn: getMySummary });
+
+export const myOrdersQueryOptions = () =>
+  queryOptions({ queryKey: partnerPortalKeys.orders(), queryFn: getMyOrders });
+
+export const myTiersQueryOptions = () =>
+  queryOptions({ queryKey: partnerPortalKeys.tiers(), queryFn: getMyTiers });
+
+export const myTicketsQueryOptions = () =>
+  queryOptions({ queryKey: partnerPortalKeys.tickets(), queryFn: getMyTickets });
+
+export const myCouponsQueryOptions = () =>
+  queryOptions({ queryKey: partnerPortalKeys.coupons(), queryFn: getMyCoupons });
+
+export const myTierEvaluationsQueryOptions = () =>
+  queryOptions({
+    queryKey: partnerPortalKeys.tierEvaluations(),
+    queryFn: getMyTierEvaluations
+  });

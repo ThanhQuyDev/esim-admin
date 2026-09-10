@@ -6,14 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { formatNumber, formatPercent, formatVnd } from '@/lib/format';
 import { financialComparisonQueryOptions } from '../api/queries';
 import type { FinancialComparisonGroupedResponse } from '../api/types';
-
-const providerLabels: Record<string, string> = {
-  airalo: 'Airalo',
-  esimaccess: 'eSIM Access',
-  gadgetkorea: 'Gadget Korea',
-  japantravelsim: 'Japan',
-  viettel: 'Viettel'
-};
+import { providerCodeLabel } from '../api/constants';
 
 function isFinancialGrouped(data: unknown): data is FinancialComparisonGroupedResponse {
   return typeof data === 'object' && data !== null && 'data' in data;
@@ -58,9 +51,7 @@ export function RecentSales({ filters }: RecentSalesProps) {
             <div key={row.group} className='space-y-2'>
               <div className='flex items-center justify-between gap-3'>
                 <div>
-                  <p className='text-sm leading-none font-medium'>
-                    {providerLabels[row.group] ?? row.group}
-                  </p>
+                  <p className='text-sm leading-none font-medium'>{providerCodeLabel(row.group)}</p>
                   <p className='text-muted-foreground mt-1 text-xs'>
                     Cost {formatVnd(row.costPrice)} · Revenue {formatVnd(row.totalRevenue)}
                   </p>

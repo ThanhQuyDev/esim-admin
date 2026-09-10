@@ -36,7 +36,19 @@ export function PartnersTable() {
   });
 
   return (
-    <DataTable table={table} totalRowCount={data.totalCount}>
+    <DataTable
+      table={table}
+      totalRowCount={data.totalCount}
+      // "nếu từ chối thì ẩn/làm mờ" (#095). Dimmed rather than hidden: an admin
+      // still needs to find a rejected application — to see why it was turned
+      // down, or when that person applies again — but its revenue and profit
+      // figures must not read like those of a partner who is actually selling.
+      rowClassName={(row) =>
+        row.original.status === 'rejected' || row.original.status === 'disabled'
+          ? 'opacity-50'
+          : undefined
+      }
+    >
       <DataTableToolbar table={table} />
     </DataTable>
   );

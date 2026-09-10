@@ -158,6 +158,8 @@ export const columns: ColumnDef<Plan>[] = [
         { value: 'airalo', label: 'Airalo' },
         { value: 'gadgetkorea', label: 'Gadget Korea' },
         { value: 'japantravelsim', label: 'Japan Travel SIM' },
+        { value: 'microesim', label: 'MicroEsim' },
+        { value: 'billion', label: 'Billion Connect' },
         { value: 'viettel', label: 'Viettel' }
       ]
     }

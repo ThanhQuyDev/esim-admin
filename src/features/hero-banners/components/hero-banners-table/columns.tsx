@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateVn } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import { Icons } from '@/components/icons';
@@ -17,6 +18,26 @@ export const columns: ColumnDef<HeroBanner>[] = [
     cell: ({ row }) => <div className='font-medium'>{row.original.title}</div>,
     meta: { label: 'Tiêu đề', placeholder: 'Tìm kiếm...', variant: 'text' as const },
     enableColumnFilter: true
+  },
+  {
+    id: 'image',
+    accessorKey: 'image',
+    header: 'Ảnh hero',
+    // A hero without its own picture falls back to the built-in one (#089).
+    cell: ({ row }) =>
+      row.original.image ? (
+        <div className='bg-muted/30 h-10 w-20 overflow-hidden rounded border'>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={row.original.image}
+            alt={row.original.title ?? 'Hero'}
+            className='h-full w-full object-cover'
+          />
+        </div>
+      ) : (
+        <span className='text-muted-foreground text-xs'>Ảnh mặc định</span>
+      ),
+    enableSorting: false
   },
   {
     id: 'firstContent',
@@ -100,7 +121,7 @@ export const columns: ColumnDef<HeroBanner>[] = [
     header: ({ column }: { column: Column<HeroBanner, unknown> }) => (
       <DataTableColumnHeader column={column} title='Ngày tạo' />
     ),
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('vi-VN')
+    cell: ({ row }) => formatDateVn(row.original.createdAt)
   },
   { id: 'actions', cell: ({ row }) => <CellAction data={row.original} /> }
 ];

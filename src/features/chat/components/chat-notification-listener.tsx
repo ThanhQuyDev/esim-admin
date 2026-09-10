@@ -1,12 +1,20 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useChatStore } from '../utils/store';
+import { requestDesktopPermission, useChatStore } from '../utils/store';
 
 export function ChatNotificationListener() {
   const connectionStatus = useChatStore((s) => s.connectionStatus);
   const connect = useChatStore((s) => s.connect);
+  const desktopNotifyEnabled = useChatStore((s) => s.desktopNotifyEnabled);
   const didInit = useRef(false);
+
+  // Ask once, quietly: a browser that refuses without a click simply leaves the
+  // sidebar badge as the signal, and the toggle in the chat header asks again
+  // from a real click (#070).
+  useEffect(() => {
+    if (desktopNotifyEnabled) void requestDesktopPermission();
+  }, [desktopNotifyEnabled]);
 
   useEffect(() => {
     if (didInit.current) return;

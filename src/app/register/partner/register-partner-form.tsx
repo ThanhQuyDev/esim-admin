@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Icons } from '@/components/icons';
 import { toast } from 'sonner';
+import { ApiError } from '@/lib/api-client';
 import { applyAsPartnerMutation } from '@/features/partner-portal/api/mutations';
 import type { PartnerLegalType, PartnerType } from '@/features/partner-portal/api/types';
 
@@ -46,6 +47,20 @@ const EMPTY_FORM: FormState = {
 const PHONE_REGEX = /^\+?\d{8,20}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * The backend answers a rejected application with bare codes and no message
+ * (`{ errors: { contactEmail: 'emailAlreadyExists' } }`), so an applicant whose
+ * email was already registered used to get a toast reading "API error: 422"
+ * and no way to work out what to change.
+ */
+const API_ERROR_MESSAGES: Record<string, string> = {
+  emailAlreadyExists: 'Email này đã có tài khoản. Hãy đăng nhập hoặc dùng email khác.'
+};
+
+function describeApiError(code: string): string {
+  return API_ERROR_MESSAGES[code] ?? code;
+}
+
 export function RegisterPartnerForm() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -58,6 +73,18 @@ export function RegisterPartnerForm() {
       setSubmitted(true);
     },
     onError: (error: Error) => {
+      // Put a field error where the applicant is looking, not only in a toast
+      // that disappears.
+      const fieldErrors = error instanceof ApiError ? error.errors : undefined;
+      if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+        const mapped: Record<string, string> = {};
+        for (const [field, code] of Object.entries(fieldErrors)) {
+          mapped[field] = describeApiError(code);
+        }
+        setErrors((prev) => ({ ...prev, ...mapped }));
+        toast.error(Object.values(mapped)[0]);
+        return;
+      }
       toast.error(error.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     }
   });

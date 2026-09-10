@@ -96,6 +96,10 @@ export function EsimsTable() {
         onClose={() => setBulkDeleteOpen(false)}
         onConfirm={() => bulkDelete(selectedIds)}
         loading={isBulkDeleting}
+        // Spell out the count: the whole point of bulk delete is selecting a
+        // lot of rows, so "are you sure?" alone hides what is at stake.
+        title={`Xoá ${selectedIds.length} eSIM đã chọn?`}
+        description='Các eSIM này sẽ biến mất khỏi danh sách quản lý. Hãy kiểm tra lại số lượng trước khi xác nhận.'
       />
       <DataTable table={table} totalRowCount={data.totalCount}>
         <DataTableToolbar table={table}>

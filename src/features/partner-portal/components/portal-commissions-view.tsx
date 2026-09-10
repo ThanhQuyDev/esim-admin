@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { myCommissionsQueryOptions } from '../api/queries';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
+import { formatDateVn, formatVnd } from '@/lib/format';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Chờ xử lý',
@@ -46,7 +46,7 @@ export function PortalCommissionsView() {
           <div>
             <p className='text-sm font-medium'>Đơn hàng #{c.orderId}</p>
             <p className='text-muted-foreground text-xs'>
-              {new Date(c.createdAt).toLocaleDateString('vi-VN')}
+              {formatDateVn(c.createdAt)}
               {c.tierSnapshot ? ` · Hạng ${c.tierSnapshot}` : ''}
             </p>
           </div>

@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { login } from '../api/service';
 import { InteractiveGridPattern } from './interactive-grid';
+import { HOME_PATH } from '@/config/app-mode';
 
 export const metadata: Metadata = {
   title: 'Đăng nhập',
@@ -30,7 +31,7 @@ export default function SignInViewPage() {
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: () => {
-      router.push('/dashboard/overview');
+      router.push(HOME_PATH);
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Đăng nhập thất bại');

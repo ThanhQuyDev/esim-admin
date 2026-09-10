@@ -1,5 +1,6 @@
 'use client';
 
+import { VN_TIME_ZONE } from '@/lib/format';
 import type { FC } from 'react';
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ const formatDate = (date: string | Date): string => {
   if (diffDays < 7) return `${diffDays}d ago`;
 
   return d.toLocaleDateString('en-US', {
+    timeZone: VN_TIME_ZONE,
     month: 'short',
     day: 'numeric'
   });

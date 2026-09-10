@@ -26,6 +26,29 @@ function SoundToggleButton() {
   );
 }
 
+/** Desktop notifications are the signal that survives a muted laptop (#070). */
+function DesktopNotifyToggleButton() {
+  const enabled = useChatStore((s) => s.desktopNotifyEnabled);
+  const toggle = useChatStore((s) => s.toggleDesktopNotify);
+  const label = enabled ? 'Tắt thông báo trên trình duyệt' : 'Bật thông báo trên trình duyệt';
+
+  return (
+    <Button
+      type='button'
+      variant='ghost'
+      size='icon'
+      onClick={toggle}
+      className={`border-border/40 bg-background/60 hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10 ${
+        enabled ? 'text-primary' : 'text-muted-foreground'
+      }`}
+      aria-label={label}
+      title={label}
+    >
+      <Icons.laptop className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+    </Button>
+  );
+}
+
 export function ChatRoomHeader() {
   const selectedRoomId = useChatStore((s) => s.selectedRoomId);
   const rooms = useChatStore((s) => s.rooms);
@@ -81,6 +104,7 @@ export function ChatRoomHeader() {
 
       <div className='flex items-center gap-1.5 sm:gap-2'>
         <SoundToggleButton />
+        <DesktopNotifyToggleButton />
         <Button
           type='button'
           variant='ghost'

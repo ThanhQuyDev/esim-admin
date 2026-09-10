@@ -1,4 +1,5 @@
 'use client';
+import { formatDateVn } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Order } from '../../api/types';
@@ -145,6 +146,26 @@ export const columns: ColumnDef<Order>[] = [
     enableSorting: false
   },
   {
+    id: 'affiliate',
+    accessorKey: 'partnerCommission',
+    header: 'Affiliate',
+    cell: ({ row }) => {
+      const commission = row.original.partnerCommission;
+      if (!commission) return <span className='text-muted-foreground'>—</span>;
+      return (
+        <div className='space-y-1'>
+          <Badge variant='default'>Affiliate</Badge>
+          <div className='text-xs'>{commission.partnerName ?? `#${commission.partnerId}`}</div>
+          <div className='text-muted-foreground text-xs tabular-nums'>
+            {commission.commissionVnd.toLocaleString('vi-VN')}đ
+            {commission.commissionPercent > 0 && ` · ${commission.commissionPercent}%`}
+          </div>
+        </div>
+      );
+    },
+    enableSorting: false
+  },
+  {
     id: 'createdAt',
     accessorKey: 'createdAt',
     header: ({ column }: { column: Column<Order, unknown> }) => (
@@ -152,7 +173,7 @@ export const columns: ColumnDef<Order>[] = [
     ),
     cell: ({ row }) => {
       const date = row.original.createdAt;
-      return date ? new Date(date).toLocaleDateString('vi-VN') : '—';
+      return date ? formatDateVn(date) : '—';
     }
   },
   {

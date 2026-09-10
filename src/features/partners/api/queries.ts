@@ -2,10 +2,12 @@ import { queryOptions } from '@tanstack/react-query';
 import {
   getPartners,
   getPartner,
+  getPartnerMarketing,
   getDepositRequests,
   getCommissions,
   getPayouts,
-  getTiers
+  getTiers,
+  getPartnerOverview
 } from './service';
 import type { PartnerFilters } from './types';
 
@@ -59,4 +61,14 @@ export const tiersQueryOptions = () =>
   queryOptions({
     queryKey: partnerKeys.tiers(),
     queryFn: () => getTiers()
+  });
+
+export const partnerOverviewQueryOptions = () =>
+  queryOptions({ queryKey: [...partnerKeys.all, 'overview'], queryFn: getPartnerOverview });
+
+/** One partner's links and discount codes, for the admin detail screen (#095). */
+export const partnerMarketingQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: [...partnerKeys.detail(id), 'marketing'],
+    queryFn: () => getPartnerMarketing(id)
   });

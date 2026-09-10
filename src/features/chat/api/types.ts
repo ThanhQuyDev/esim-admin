@@ -7,6 +7,16 @@ export interface ChatRoom {
   updatedAt: string;
 }
 
+/** The snippet the server sends along with a reply, to draw the quote (#073). */
+export interface ChatMessageQuote {
+  id: number;
+  senderId: number | null;
+  message: string;
+  fileUrl?: string | null;
+  fileName?: string | null;
+  fileType?: string | null;
+}
+
 export interface ChatMessage {
   id: number;
   chatRoomId: number;
@@ -20,6 +30,9 @@ export interface ChatMessage {
   fileName?: string;
   fileType?: string;
   fileSize?: number;
+  // Set when this message quotes an earlier one in the same room (#073)
+  replyToId?: number | null;
+  replyTo?: ChatMessageQuote | null;
 }
 
 export interface ChatRoomWithMeta extends ChatRoom {
@@ -36,6 +49,7 @@ export interface SendMessagePayload {
   fileName?: string;
   fileType?: string;
   fileSize?: number;
+  replyToId?: number;
 }
 
 export interface ClientToServerEvents {

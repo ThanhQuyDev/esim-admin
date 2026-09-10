@@ -1,7 +1,12 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
-import type { SeoConfig } from '../../api/types';
+import {
+  SEO_PAGE_TYPE_LABELS,
+  SEO_PAGE_TYPE_OPTIONS,
+  seoConfigPageType,
+  type SeoConfig
+} from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
@@ -21,6 +26,28 @@ export const columns: ColumnDef<SeoConfig>[] = [
       icon: Icons.search
     },
     enableColumnFilter: true
+  },
+  {
+    // Not a column on the record: derived from which entity the config points
+    // at. Filterable so the mixed list can be read one page type at a time (#046).
+    id: 'pageType',
+    header: 'Loại trang',
+    cell: ({ row }) => {
+      const type = seoConfigPageType(row.original);
+      return (
+        <Badge variant={type === 'other' ? 'outline' : 'secondary'}>
+          {SEO_PAGE_TYPE_LABELS[type]}
+        </Badge>
+      );
+    },
+    meta: {
+      label: 'Loại trang',
+      // Single-select: the API matches one page type per request.
+      variant: 'select' as const,
+      options: SEO_PAGE_TYPE_OPTIONS
+    },
+    enableColumnFilter: true,
+    enableSorting: false
   },
   {
     id: 'metaTitle',

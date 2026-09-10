@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { commissionsQueryOptions } from '../api/queries';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Chờ đơn thanh toán',
@@ -41,9 +41,7 @@ export function CommissionsView() {
                   <Badge variant='outline'>Đơn #{c.orderId}</Badge>
                   {c.tierSnapshot && <Badge variant='outline'>{c.tierSnapshot}</Badge>}
                 </div>
-                <p className='text-muted-foreground text-xs'>
-                  {new Date(c.createdAt).toLocaleString('vi-VN')}
-                </p>
+                <p className='text-muted-foreground text-xs'>{formatDateTimeVn(c.createdAt)}</p>
               </div>
               <div className='flex items-center gap-3'>
                 <span className='text-lg font-semibold'>{formatVnd(c.commissionVnd)}</span>

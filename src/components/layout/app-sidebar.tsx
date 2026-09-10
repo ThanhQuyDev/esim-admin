@@ -37,14 +37,16 @@ import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '../icons';
 import { SidebarTicketsBadge } from '@/features/tickets/components/sidebar-tickets-badge';
+import { SidebarChatBadge } from '@/features/chat/components/sidebar-chat-badge';
+import { APP_BRAND, HOME_PATH, IS_PARTNER_PORTAL } from '@/config/app-mode';
 
 // Same source deployed twice under different env vars (see docs/nav-rbac.md):
-// the admin subdomain sets NEXT_PUBLIC_APP_MODE=admin (or leaves it unset),
-// the partner-portal subdomain sets NEXT_PUBLIC_APP_MODE=partner.
-const IS_PARTNER_PORTAL = process.env.NEXT_PUBLIC_APP_MODE === 'partner';
+// Mode + the routes each deployment may serve live in one place; the
+// middleware enforces the same split. See src/config/app-mode.ts.
 
 function NavBadge({ id }: { id: string }) {
   if (id === 'tickets-open') return <SidebarTicketsBadge />;
+  if (id === 'chat-waiting') return <SidebarChatBadge />;
   return null;
 }
 
@@ -71,13 +73,15 @@ export default function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size='lg' asChild>
-              <Link href='/dashboard/overview'>
+              <Link href={HOME_PATH}>
                 <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg'>
                   <Icons.galleryVerticalEnd className='size-4' />
                 </div>
                 <div className='grid flex-1 text-left text-sm leading-tight'>
-                  <span className='truncate font-medium'>Dashboard</span>
-                  <span className='text-muted-foreground truncate text-xs'>Admin</span>
+                  <span className='truncate font-medium'>{APP_BRAND.title}</span>
+                  <span className='text-muted-foreground truncate text-xs'>
+                    {APP_BRAND.subtitle}
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -103,6 +107,9 @@ export default function AppSidebar() {
                         <SidebarMenuButton tooltip={item.title} isActive={pathname === item.url}>
                           {item.icon && <Icon />}
                           <span>{item.title}</span>
+                          {/* A parent item can carry a counter too — the chat menu
+                              has sub-items and still needs its waiting badge (#070). */}
+                          {item.badge && <NavBadge id={item.badge} />}
                           <Icons.chevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>

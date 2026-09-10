@@ -42,11 +42,13 @@ export function ImportEsimResultDialog({
 
         <div className='grid gap-4 py-4'>
           {/* Stats summary */}
-          <div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>
+          <div className='grid grid-cols-2 gap-3 sm:grid-cols-5'>
             <StatCard label='Tổng' value={result.total} variant='default' />
             <StatCard label='Tạo mới' value={result.created} variant='success' />
             <StatCard label='Bỏ qua' value={result.skipped} variant='warning' />
-            <StatCard label='Plan tạo mới' value={result.planCreated} variant='info' />
+            <StatCard label='Gói tạo mới' value={result.planCreated} variant='info' />
+            {/* Prices picked up from the file on a re-upload — see #024. */}
+            <StatCard label='Gói cập nhật giá' value={result.planUpdated ?? 0} variant='info' />
           </div>
 
           {/* Errors */}

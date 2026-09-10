@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatVnd } from '@/lib/format';
 import { toast } from 'sonner';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -81,9 +81,7 @@ export function PayoutsView() {
                 {p.bankAccountInfo && (
                   <p className='text-muted-foreground text-xs'>{p.bankAccountInfo}</p>
                 )}
-                <p className='text-muted-foreground text-xs'>
-                  Tạo {new Date(p.createdAt).toLocaleString('vi-VN')}
-                </p>
+                <p className='text-muted-foreground text-xs'>Tạo {formatDateTimeVn(p.createdAt)}</p>
               </div>
               <div className='flex gap-2'>
                 {p.status === 'pending' && (

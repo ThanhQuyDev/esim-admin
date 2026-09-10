@@ -103,6 +103,7 @@ import {
   IconRosetteDiscountCheck,
   IconRowInsertBottom,
   IconRowRemove,
+  IconRefresh,
   IconSearch,
   IconSelector,
   IconSend,
@@ -144,6 +145,7 @@ import {
   IconWorldMap,
   IconArticle,
   IconAward,
+  IconQrcode,
   IconQuestionMark,
   IconDeviceSim,
   IconWallet,
@@ -171,6 +173,8 @@ export const Icons = {
   info: IconInfoCircle,
   spinner: IconLoader2,
   search: IconSearch,
+  refresh: IconRefresh,
+  qrCode: IconQrcode,
   settings: IconSettings,
   trash: IconTrash,
   global: IconWorld,
@@ -215,6 +219,7 @@ export const Icons = {
   miniTag: IconTag,
   mail: IconMail,
   paperclip: IconPaperclip,
+  reply: IconArrowBackUp,
 
   // Files
   page: IconFile,

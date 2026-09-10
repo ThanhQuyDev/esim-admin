@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateTimeVn } from '@/lib/format';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -37,7 +38,7 @@ const statusLabel: Record<InvoiceStatus, string> = {
 
 function formatDate(date: string | Date | null | undefined) {
   if (!date) return '—';
-  return new Date(date).toLocaleString('vi-VN');
+  return formatDateTimeVn(date);
 }
 
 function InvoiceField({ label, value }: { label: string; value: React.ReactNode }) {

@@ -208,7 +208,9 @@ function CreateDialog({
     defaultValues: {
       device: '',
       manufacturer: '',
-      type: ''
+      type: '',
+      manufacturerOrder: '0',
+      sortOrder: '0'
     } as CreateSupportedDeviceFormValues,
     validators: {
       onSubmit: createSupportedDeviceSchema
@@ -217,7 +219,9 @@ function CreateDialog({
       const payload: CreateSupportedDevicePayload = {
         device: value.device,
         manufacturer: value.manufacturer,
-        type: value.type as 'Smart Phones' | 'Smart Watches' | 'Tablets' | 'Laptops'
+        type: value.type as 'Smart Phones' | 'Smart Watches' | 'Tablets' | 'Laptops',
+        manufacturerOrder: Number(value.manufacturerOrder) || 0,
+        sortOrder: Number(value.sortOrder) || 0
       };
       await createMut.mutateAsync(payload);
     }
@@ -287,6 +291,24 @@ function CreateDialog({
             options={DEVICE_TYPE_OPTIONS}
             placeholder='Chọn loại thiết bị'
           />
+
+          {/* Display order (#090). 0 anywhere means "leave it alphabetical". */}
+          <div className='grid grid-cols-2 gap-4'>
+            <FormTextField
+              name='manufacturerOrder'
+              label='Thứ tự hãng'
+              type='number'
+              placeholder='0'
+              description='Áp dụng cho toàn bộ thiết bị của hãng này. 0 = xếp theo A–Z.'
+            />
+            <FormTextField
+              name='sortOrder'
+              label='Thứ tự thiết bị'
+              type='number'
+              placeholder='0'
+              description='Vị trí của model trong hãng. 0 = xếp theo A–Z.'
+            />
+          </div>
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -318,7 +340,9 @@ function EditDialog({
     defaultValues: {
       device: device.device,
       manufacturer: device.manufacturer,
-      type: device.type
+      type: device.type,
+      manufacturerOrder: String(device.manufacturerOrder ?? 0),
+      sortOrder: String(device.sortOrder ?? 0)
     } as UpdateSupportedDeviceFormValues,
     validators: {
       onSubmit: updateSupportedDeviceSchema
@@ -327,7 +351,9 @@ function EditDialog({
       const payload: UpdateSupportedDevicePayload = {
         device: value.device,
         manufacturer: value.manufacturer,
-        type: value.type as 'Smart Phones' | 'Smart Watches' | 'Tablets' | 'Laptops'
+        type: value.type as 'Smart Phones' | 'Smart Watches' | 'Tablets' | 'Laptops',
+        manufacturerOrder: Number(value.manufacturerOrder) || 0,
+        sortOrder: Number(value.sortOrder) || 0
       };
       await updateMut.mutateAsync({ id: device.id, values: payload });
     }
@@ -371,6 +397,24 @@ function EditDialog({
             options={DEVICE_TYPE_OPTIONS}
             placeholder='Chọn loại thiết bị'
           />
+
+          {/* Display order (#090). 0 anywhere means "leave it alphabetical". */}
+          <div className='grid grid-cols-2 gap-4'>
+            <FormTextField
+              name='manufacturerOrder'
+              label='Thứ tự hãng'
+              type='number'
+              placeholder='0'
+              description='Áp dụng cho toàn bộ thiết bị của hãng này. 0 = xếp theo A–Z.'
+            />
+            <FormTextField
+              name='sortOrder'
+              label='Thứ tự thiết bị'
+              type='number'
+              placeholder='0'
+              description='Vị trí của model trong hãng. 0 = xếp theo A–Z.'
+            />
+          </div>
         </form.Form>
       </form.AppForm>
     </FormDialog>

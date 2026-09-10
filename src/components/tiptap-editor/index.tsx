@@ -61,6 +61,7 @@ import { TextUnderline, RichTextUnderline } from 'reactjs-tiptap-editor/textunde
 import { Video, RichTextVideo } from 'reactjs-tiptap-editor/video';
 
 import 'reactjs-tiptap-editor/style.css';
+import { normalizeEditorHtml } from './normalize-html';
 
 const DocumentColumn = Document.extend({ content: '(block|columns)+' });
 
@@ -208,7 +209,9 @@ export function TiptapEditor({ content, onChange, placeholder, onImageUpload }: 
     onUpdate: ({ editor }) => {
       clearTimeout(debounceTimer.current);
       debounceTimer.current = setTimeout(() => {
-        onChangeRef.current(editor.getHTML());
+        // Strip the blank paragraphs the editor parks in the document, so the
+        // gap between sections stops growing with every save (#069).
+        onChangeRef.current(normalizeEditorHtml(editor.getHTML()));
       }, 500);
     }
   });

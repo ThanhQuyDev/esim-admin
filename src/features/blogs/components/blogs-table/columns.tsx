@@ -1,4 +1,5 @@
 'use client';
+import { VN_TIME_ZONE } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Blog } from '../../api/types';
@@ -9,6 +10,7 @@ import { CellAction } from './cell-action';
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('vi-VN', {
+    timeZone: VN_TIME_ZONE,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
+import { ChangePasswordCard } from './change-password-card';
 
 export default function ProfileViewPage() {
   const { data: user } = useQuery(authMeQueryOptions);
@@ -34,6 +35,9 @@ export default function ProfileViewPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Let staff rotate their own login password (#066) */}
+      <ChangePasswordCard />
     </div>
   );
 }

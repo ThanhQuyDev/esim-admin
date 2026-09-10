@@ -5,7 +5,10 @@ export type Footer = {
   url: string;
   language: string;
   sortOrder: number;
+  /** Column heading, default/English — also the grouping key (#088). */
   categories?: string | null;
+  /** Column heading in Vietnamese; falls back to categories. */
+  categoriesVi?: string | null;
   iconUrl?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -26,7 +29,10 @@ export type CreateFooterPayload = {
   url: string;
   language: string;
   sortOrder?: number;
+  /** Column heading, default/English — also the grouping key (#088). */
   categories?: string | null;
+  /** Column heading in Vietnamese; falls back to categories. */
+  categoriesVi?: string | null;
   iconUrl?: string | null;
 };
 

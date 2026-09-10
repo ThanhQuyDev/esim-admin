@@ -1,5 +1,12 @@
 'use client';
 
+import { useState } from 'react';
+import { esimQrLogoSettings } from '../lib/esim-qr';
+import { AdminTopupDialog } from './admin-topup-dialog';
+import { Button } from '@/components/ui/button';
+import { Icons } from '@/components/icons';
+import { esimStatusLabel, esimStatusVariant } from '../lib/esim-status';
+import { formatDateTimeVn } from '@/lib/format';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { esimQueryOptions } from '../api/queries';
@@ -10,13 +17,6 @@ import { Separator } from '@/components/ui/separator';
 interface EsimDetailViewProps {
   esimId: number;
 }
-
-const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  available: 'outline',
-  active: 'default',
-  expired: 'destructive',
-  deactivated: 'secondary'
-};
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -29,11 +29,12 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 function formatDate(date: string | null | undefined) {
   if (!date) return '—';
-  return new Date(date).toLocaleString('vi-VN');
+  return formatDateTimeVn(date);
 }
 
 export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   const { data: esim } = useSuspenseQuery(esimQueryOptions(esimId));
+  const [topupOpen, setTopupOpen] = useState(false);
 
   return (
     <div className='grid gap-6 md:grid-cols-2'>
@@ -42,7 +43,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
         <CardHeader>
           <CardTitle className='flex items-center gap-3'>
             Thông tin eSIM
-            <Badge variant={statusVariant[esim.status] ?? 'outline'}>{esim.status}</Badge>
+            <Badge variant={esimStatusVariant(esim.status)}>{esimStatusLabel(esim.status)}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className='grid gap-4 md:grid-cols-2'>
@@ -75,6 +76,26 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
         </CardContent>
       </Card>
 
+      {/* Admin actions */}
+      {esim.iccid && (
+        <Card className='md:col-span-2'>
+          <CardHeader>
+            <CardTitle>Thao tác quản trị</CardTitle>
+          </CardHeader>
+          <CardContent className='flex flex-wrap items-center gap-3'>
+            <Button variant='outline' onClick={() => setTopupOpen(true)}>
+              <Icons.wallet className='mr-2 h-4 w-4' />
+              Topup hộ khách
+            </Button>
+            <span className='text-muted-foreground text-xs'>
+              Nạp thêm dung lượng cho khách mà không qua cổng thanh toán.
+            </span>
+          </CardContent>
+        </Card>
+      )}
+
+      <AdminTopupDialog iccid={esim.iccid} open={topupOpen} onOpenChange={setTopupOpen} />
+
       {/* QR Code from LPA */}
       {esim.lpa && (
         <Card className='md:col-span-2'>
@@ -87,12 +108,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                 value={esim.lpa}
                 size={200}
                 level='H'
-                imageSettings={{
-                  src: 'https://res.cloudinary.com/drozbviwb/image/upload/v1780067058/logo_esimvn_zycejk.png',
-                  height: 40,
-                  width: 40,
-                  excavate: true
-                }}
+                imageSettings={esimQrLogoSettings(200)}
               />
             </div>
             <p className='text-muted-foreground max-w-md text-center text-xs'>
