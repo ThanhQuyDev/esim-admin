@@ -21,7 +21,7 @@ export default function EmailTemplatesPage() {
     <PageContainer
       scrollable
       pageTitle='Email Template'
-      pageDescription='Chỉnh sửa mẫu email gửi eSIM cho khách hàng.'
+      pageDescription='Chỉnh sửa các mẫu email hệ thống gửi cho khách hàng và đối tác.'
     >
       <Suspense fallback={<EmailTemplateEditorSkeleton />}>
         <EmailTemplateFormPage />

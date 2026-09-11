@@ -6,12 +6,13 @@ import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { BreadcrumbProvider } from '@/hooks/use-breadcrumb-context';
 import { ChatNotificationListener } from '@/features/chat/components/chat-notification-listener';
+import { IS_PARTNER_PORTAL } from '@/config/app-mode';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
 export const metadata: Metadata = {
-  title: 'Next Shadcn Dashboard Starter',
-  description: 'Basic dashboard with Next.js and Shadcn',
+  title: IS_PARTNER_PORTAL ? 'Cổng đối tác esim.vn' : 'Quản trị esim.vn',
+  description: IS_PARTNER_PORTAL ? 'Cổng dành cho đối tác esim.vn' : 'Trang quản trị esim.vn',
   robots: {
     index: false,
     follow: false

@@ -193,7 +193,9 @@ export function OrdersTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value='all'>Tất cả</SelectItem>
+            <SelectItem value='pending'>Pending</SelectItem>
             <SelectItem value='paid'>Paid</SelectItem>
+            <SelectItem value='failed'>Failed</SelectItem>
             <SelectItem value='refunded'>Refunded</SelectItem>
           </SelectContent>
         </Select>

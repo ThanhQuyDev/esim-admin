@@ -28,10 +28,34 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * The session cookie to forward on a server-side call, if any.
+ *
+ * During an RSC prefetch this module calls the app's own `/api/*` proxy over
+ * HTTP, and that request carries no cookies unless we attach them. Without it
+ * the proxy has no token, the backend answers 401, and the rejected prefetch
+ * surfaces mid-stream as a 500 / React #419 on every listing page.
+ */
+async function serverCookieHeader(): Promise<Record<string, string>> {
+  if (typeof window !== 'undefined') return {};
+  try {
+    const { cookies } = await import('next/headers');
+    const token = (await cookies()).get('token')?.value;
+    return token ? { Cookie: `token=${token}` } : {};
+  } catch {
+    // Outside a request scope (build time) there is no session to forward.
+    return {};
+  }
+}
+
 export async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${getBaseUrl()}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(await serverCookieHeader()),
+      ...(options?.headers as Record<string, string> | undefined)
+    }
   });
 
   if (!res.ok) {
