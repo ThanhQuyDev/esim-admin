@@ -160,7 +160,7 @@ export function ProviderDepositFormDialog({
           <FormTextareaField
             name='note'
             label='Ghi chú'
-            placeholder='VD: Chuyển khoản Techcombank 12/09'
+            placeholder='VD: Chuyển khoản VietinBank 12/09'
           />
         </form.Form>
       </form.AppForm>
