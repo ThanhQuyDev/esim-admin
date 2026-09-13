@@ -57,6 +57,7 @@ export async function importEsimsExcel(
 ): Promise<ImportEsimsExcelResponse> {
   const formData = new FormData();
   formData.append('file', payload.file);
+  formData.append('provider', payload.provider);
 
   const res = await fetch('/api/esims/import-excel', {
     method: 'POST',

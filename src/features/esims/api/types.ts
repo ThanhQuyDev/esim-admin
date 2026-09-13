@@ -117,6 +117,8 @@ export type UpdateEsimPayload = Partial<CreateEsimPayload>;
 
 export type ImportEsimsExcelPayload = {
   file: File;
+  /** Local carrier for every row, e.g. "Viettel". Overrides the file's Carrier column. */
+  provider: string;
 };
 
 export type ImportEsimsExcelError =
