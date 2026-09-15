@@ -162,7 +162,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Ký quỹ đối tác',
+        title: 'Ký quỹ nhà cung cấp',
         url: '/dashboard/provider-deposits',
         icon: 'wallet',
         isActive: false,

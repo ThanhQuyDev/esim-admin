@@ -13,6 +13,7 @@ import { createProviderDepositEntryMutation } from '../api/mutations';
 import { ENTRY_TYPE_OPTIONS } from '../api/types';
 import type { CreateProviderDepositEntryPayload } from '../api/types';
 import {
+  parseVndAmount,
   providerDepositEntrySchema,
   type ProviderDepositEntryFormValues
 } from '../schemas/provider-deposit';
@@ -27,11 +28,6 @@ function parseOccurredAt(value: string): string | undefined {
   if (!trimmed) return undefined;
   const parsed = new Date(trimmed);
   return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
-}
-
-function toNumber(value: string): number {
-  const parsed = Number(String(value).replace(/[^\d.-]/g, ''));
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 interface ProviderDepositFormDialogProps {
@@ -72,9 +68,8 @@ export function ProviderDepositFormDialog({
         type: value.type,
         // A reconciliation only records what the supplier said, so it must not
         // move money even if the amount box was left filled in.
-        amountVnd: value.type === 'reconciliation' ? 0 : toNumber(value.amountVnd),
-        reportedBalanceVnd:
-          value.reportedBalanceVnd.trim() === '' ? null : toNumber(value.reportedBalanceVnd),
+        amountVnd: value.type === 'reconciliation' ? 0 : (parseVndAmount(value.amountVnd) ?? 0),
+        reportedBalanceVnd: parseVndAmount(value.reportedBalanceVnd),
         note: value.note.trim() || null,
         ...(parseOccurredAt(value.occurredAt)
           ? { occurredAt: parseOccurredAt(value.occurredAt) }
@@ -99,7 +94,7 @@ export function ProviderDepositFormDialog({
       metaInfo={
         <>
           <Icons.wallet className='h-4 w-4' />
-          <span>Ký quỹ đối tác</span>
+          <span>Ký quỹ nhà cung cấp</span>
         </>
       }
     >
@@ -109,7 +104,7 @@ export function ProviderDepositFormDialog({
             <Icons.info className='h-4 w-4' />
             <AlertDescription>
               Số đã dùng KHÔNG nhập tay — hệ thống tự cộng từ các đơn đã hoàn tất của nhà cung cấp
-              đó. Ở đây chỉ nhập tiền nạp vào và số dư đối tác báo, để so xem có lệch không.
+              đó. Ở đây chỉ nhập tiền nạp vào và số dư nhà cung cấp báo, để so xem có lệch không.
             </AlertDescription>
           </Alert>
 
@@ -137,14 +132,15 @@ export function ProviderDepositFormDialog({
             <FormTextField
               name='amountVnd'
               label='Số tiền (VNĐ)'
-              placeholder='50000000'
-              type='number'
+              placeholder='VD: 78,330,000'
+              autoComplete='off'
             />
             <FormTextField
               name='reportedBalanceVnd'
-              label='Số dư đối tác báo (VNĐ)'
+              label='Số dư nhà cung cấp báo (VNĐ)'
               placeholder='Bỏ trống nếu chưa kiểm tra'
-              type='number'
+              inputMode='numeric'
+              autoComplete='off'
             />
           </div>
 

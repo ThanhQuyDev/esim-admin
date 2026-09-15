@@ -70,7 +70,7 @@ export function ProviderDepositEntriesDialog({
                 <TableHead>Thời điểm</TableHead>
                 <TableHead>Loại</TableHead>
                 <TableHead className='text-right'>Số tiền</TableHead>
-                <TableHead className='text-right'>Đối tác báo</TableHead>
+                <TableHead className='text-right'>Nhà cung cấp báo</TableHead>
                 <TableHead>Ghi chú</TableHead>
                 <TableHead className='w-10' />
               </TableRow>

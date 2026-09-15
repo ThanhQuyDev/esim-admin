@@ -74,7 +74,7 @@ export function ProviderDepositsTable() {
                   <TableHead className='text-right'>Đã ký quỹ</TableHead>
                   <TableHead className='text-right'>Đã dùng</TableHead>
                   <TableHead className='text-right'>Số dư dự kiến</TableHead>
-                  <TableHead className='text-right'>Đối tác báo</TableHead>
+                  <TableHead className='text-right'>Nhà cung cấp báo</TableHead>
                   <TableHead>Chênh lệch</TableHead>
                   <TableHead>Đối soát lúc</TableHead>
                   <TableHead className='text-right'>Thao tác</TableHead>

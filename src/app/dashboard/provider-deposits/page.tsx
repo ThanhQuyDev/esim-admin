@@ -4,14 +4,14 @@ import ProviderDepositsListingPage from '@/features/provider-deposits/components
 import { ProviderDepositFormDialogTrigger } from '@/features/provider-deposits/components/provider-deposit-form-dialog';
 import { ProviderDepositsTableSkeleton } from '@/features/provider-deposits/components/provider-deposits-table';
 
-export const metadata = { title: 'Dashboard: Ký quỹ đối tác' };
+export const metadata = { title: 'Dashboard: Ký quỹ nhà cung cấp' };
 
 export default function ProviderDepositsPage() {
   return (
     <PageContainer
       scrollable={false}
-      pageTitle='Ký quỹ đối tác'
-      pageDescription='Nhập số tiền đã ký quỹ với từng nhà cung cấp và theo dõi số dư còn lại xem có lệch so với số đối tác báo không.'
+      pageTitle='Ký quỹ nhà cung cấp'
+      pageDescription='Nhập số tiền đã ký quỹ với từng nhà cung cấp và theo dõi số dư còn lại xem có lệch so với số nhà cung cấp báo không.'
       pageHeaderAction={<ProviderDepositFormDialogTrigger />}
     >
       <Suspense fallback={<ProviderDepositsTableSkeleton />}>
