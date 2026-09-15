@@ -26,6 +26,10 @@ export function brandQrLogoSettings(size: number) {
     src: BRAND_QR_LOGO_SRC,
     width,
     height: Math.round(width * LOGO_ASPECT),
-    excavate: true
+    excavate: true,
+    // The logo comes from another origin (Cloudinary, which answers with
+    // `Access-Control-Allow-Origin: *`). Without requesting it through CORS the
+    // canvas is tainted and `toDataURL` throws, so "Tải ảnh QR" always failed (#041).
+    crossOrigin: 'anonymous' as const
   };
 }
