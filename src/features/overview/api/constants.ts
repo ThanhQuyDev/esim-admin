@@ -35,18 +35,21 @@ export const PROVIDER_LABELS: Record<string, string> = {
  * can be opened, screenshared or screenshotted without revealing which
  * wholesalers esim.vn buys from.
  *
- * ⚠️ These codes are PLACEHOLDERS. Replace the values with the exact names
- * from the end of Thọ's spreadsheet — the keys (provider slugs) must stay
- * exactly as they are, they are what the API sends and expects back.
+ * Short abbreviations rather than numbered codes: "NCC-01…NCC-07" could not be
+ * told apart at a glance (#008). BC and ME are the codes the business already
+ * uses for Billion Connect and MicroEsim; the others follow the same
+ * two-letter convention and are pending confirmation against the list at the
+ * end of Thọ's spreadsheet. Change only the values — the keys (provider slugs)
+ * are what the API sends and expects back.
  */
 export const PROVIDER_CODE_LABELS: Record<string, string> = {
-  airalo: 'NCC-01',
-  esimaccess: 'NCC-02',
-  gadgetkorea: 'NCC-03',
-  japantravelsim: 'NCC-04',
-  microesim: 'NCC-05',
-  billion: 'NCC-06',
-  viettel: 'NCC-07'
+  airalo: 'AL',
+  esimaccess: 'EA',
+  gadgetkorea: 'GK',
+  japantravelsim: 'JT',
+  microesim: 'ME',
+  billion: 'BC',
+  viettel: 'VT'
 };
 
 /**
