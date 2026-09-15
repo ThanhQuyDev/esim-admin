@@ -27,6 +27,8 @@ export const searchParams = {
   // tickets module
   search: parseAsString,
   status: parseAsString,
+  // orders: VAT invoice filter (#051)
+  invoice: parseAsString,
   // tabs (e.g. users page: 'user' | 'admin')
   tab: parseAsString
   // advanced filter

@@ -22,6 +22,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
+import { INVOICE_FILTER_OPTIONS, invoiceFilterToApi } from '../../utils/invoice-filter';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
@@ -36,6 +37,7 @@ export function OrdersTable() {
     iccid: parseAsString,
     planName: parseAsString,
     status: parseAsString,
+    invoice: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
@@ -76,6 +78,8 @@ export function OrdersTable() {
   if (params.iccid) apiFilters.iccid = params.iccid;
   if (params.planName) apiFilters.planName = params.planName;
   if (params.status) apiFilters.status = params.status;
+  // VAT invoice request / status (#051); also applied to the Excel export.
+  Object.assign(apiFilters, invoiceFilterToApi(params.invoice));
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,
@@ -197,6 +201,25 @@ export function OrdersTable() {
             <SelectItem value='paid'>Paid</SelectItem>
             <SelectItem value='failed'>Failed</SelectItem>
             <SelectItem value='refunded'>Refunded</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={params.invoice ?? 'all'}
+          onValueChange={(value) =>
+            startTransition(() => {
+              setParams({ invoice: value === 'all' ? null : value, page: 1 });
+            })
+          }
+        >
+          <SelectTrigger className='w-56' aria-label='Lọc theo hóa đơn'>
+            <SelectValue placeholder='Hóa đơn' />
+          </SelectTrigger>
+          <SelectContent>
+            {INVOICE_FILTER_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
