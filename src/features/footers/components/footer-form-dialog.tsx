@@ -106,6 +106,7 @@ function CreateDialog({
       title: '',
       titleVi: '',
       url: '',
+      urlEn: '',
       language: 'en',
       sortOrder: 0,
       categories: '',
@@ -122,6 +123,7 @@ function CreateDialog({
         title: value.title,
         titleVi: value.titleVi,
         url: value.url,
+        urlEn: value.urlEn?.trim() || null,
         language: value.language,
         sortOrder: value.sortOrder,
         categories: value.categories || null,
@@ -158,7 +160,14 @@ function CreateDialog({
             label='Tiêu đề tiếng Việt'
             placeholder='Nhập tiêu đề tiếng Việt'
           />
-          <FormTextField name='url' label='URL' placeholder='https://...' />
+          {/* One URL per language: the English site links elsewhere (#043). */}
+          <FormTextField name='url' label='URL tiếng Việt' placeholder='https://esim.vn/...' />
+          <FormTextField
+            name='urlEn'
+            label='URL tiếng Anh'
+            placeholder='https://esim.vn/en/...'
+            description='Bỏ trống thì bản tiếng Anh dùng URL tiếng Việt.'
+          />
           <FormSelectField
             name='language'
             label='Ngôn ngữ'
@@ -228,6 +237,7 @@ function EditDialog({
       title: item.title,
       titleVi: item.titleVi,
       url: item.url,
+      urlEn: item.urlEn || '',
       language: item.language || 'en',
       sortOrder: item.sortOrder ?? 0,
       categories: item.categories || '',
@@ -244,6 +254,7 @@ function EditDialog({
         title: value.title,
         titleVi: value.titleVi,
         url: value.url,
+        urlEn: value.urlEn?.trim() || null,
         language: value.language,
         sortOrder: value.sortOrder,
         categories: value.categories || null,
@@ -274,7 +285,14 @@ function EditDialog({
             label='Tiêu đề tiếng Việt'
             placeholder='Nhập tiêu đề tiếng Việt'
           />
-          <FormTextField name='url' label='URL' placeholder='https://...' />
+          {/* One URL per language: the English site links elsewhere (#043). */}
+          <FormTextField name='url' label='URL tiếng Việt' placeholder='https://esim.vn/...' />
+          <FormTextField
+            name='urlEn'
+            label='URL tiếng Anh'
+            placeholder='https://esim.vn/en/...'
+            description='Bỏ trống thì bản tiếng Anh dùng URL tiếng Việt.'
+          />
           <FormSelectField
             name='language'
             label='Ngôn ngữ'
