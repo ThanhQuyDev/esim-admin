@@ -9,7 +9,12 @@ import { useMutation } from '@tanstack/react-query';
 import { createUserMutation, updateUserMutation } from '../api/mutations';
 import type { User, CreateUserPayload, UpdateUserPayload } from '../api/types';
 import { toast } from 'sonner';
-import { AuthorAvatarField, authorProfilePayload } from './author-profile-fields';
+import {
+  AUTHOR_DESCRIPTION_MAX_LENGTH,
+  AuthorAvatarField,
+  authorProfilePayload,
+  describeUserSaveError
+} from './author-profile-fields';
 import { formatVnd } from '@/lib/format';
 import * as z from 'zod';
 import {
@@ -79,7 +84,7 @@ function CreateUserDialog({
       onOpenChange(false);
       form.reset();
     },
-    onError: (error) => toast.error(error.message || 'Tạo người dùng thất bại')
+    onError: (error) => toast.error(describeUserSaveError(error, 'Tạo người dùng thất bại'))
   });
 
   const form = useAppForm({
@@ -92,9 +97,11 @@ function CreateUserDialog({
       roleId: '',
       statusId: '1',
       authorName: '',
+      authorNameEn: '',
       authorSlug: '',
       authorAvatar: '',
-      authorDescription: ''
+      authorDescription: '',
+      authorDescriptionEn: ''
     } as CreateUserFormValues,
     validators: {
       onSubmit: createUserSchema
@@ -225,18 +232,25 @@ function CreateUserDialog({
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <FormTextField
                       name='authorName'
-                      label='Tên tác giả'
+                      label='Tên tác giả (Tiếng Việt)'
                       required
                       placeholder='Nguyễn Văn A'
                     />
                     <FormTextField
-                      name='authorSlug'
-                      label='Slug tác giả'
-                      required
-                      placeholder='nguyen-van-a'
-                      description='Dùng cho địa chỉ trang tác giả. Để trống sẽ tự tạo từ tên.'
+                      name='authorNameEn'
+                      label='Tên tác giả (English)'
+                      placeholder='Nguyen Van A'
+                      description='Để trống sẽ dùng tên tiếng Việt.'
                     />
                   </div>
+
+                  <FormTextField
+                    name='authorSlug'
+                    label='Slug tác giả'
+                    required
+                    placeholder='nguyen-van-a'
+                    description='Dùng cho địa chỉ trang tác giả. Để trống sẽ tự tạo từ tên.'
+                  />
 
                   <form.Field name='authorAvatar'>
                     {(field) => (
@@ -247,13 +261,23 @@ function CreateUserDialog({
                     )}
                   </form.Field>
 
-                  <FormTextareaField
-                    name='authorDescription'
-                    label='Nội dung tóm tắt'
-                    placeholder='Giới thiệu ngắn về tác giả...'
-                    rows={4}
-                    recommendedLength={300}
-                  />
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <FormTextareaField
+                      name='authorDescription'
+                      label='Nội dung tóm tắt (Tiếng Việt)'
+                      placeholder='Giới thiệu ngắn về tác giả...'
+                      rows={6}
+                      maxLength={AUTHOR_DESCRIPTION_MAX_LENGTH}
+                    />
+                    <FormTextareaField
+                      name='authorDescriptionEn'
+                      label='Nội dung tóm tắt (English)'
+                      placeholder='A short introduction to the author...'
+                      rows={6}
+                      maxLength={AUTHOR_DESCRIPTION_MAX_LENGTH}
+                      description='Để trống sẽ dùng tóm tắt tiếng Việt.'
+                    />
+                  </div>
                 </div>
               ) : null
             }
@@ -279,7 +303,7 @@ function EditUserDialog({
       toast.success('Cập nhật người dùng thành công');
       onOpenChange(false);
     },
-    onError: (error) => toast.error(error.message || 'Cập nhật người dùng thất bại')
+    onError: (error) => toast.error(describeUserSaveError(error, 'Cập nhật người dùng thất bại'))
   });
 
   const form = useAppForm({
@@ -293,9 +317,11 @@ function EditUserDialog({
       tierOverride: user.tierOverride ?? 'auto',
       tierOverrideReason: user.tierOverrideReason ?? '',
       authorName: user.authorProfile?.name ?? '',
+      authorNameEn: user.authorProfile?.nameEn ?? '',
       authorSlug: user.authorProfile?.slug ?? '',
       authorAvatar: user.authorProfile?.avatar ?? '',
-      authorDescription: user.authorProfile?.description ?? ''
+      authorDescription: user.authorProfile?.description ?? '',
+      authorDescriptionEn: user.authorProfile?.descriptionEn ?? ''
     } as UpdateUserFormValues,
     validators: {
       onSubmit: updateUserSchema
@@ -444,18 +470,25 @@ function EditUserDialog({
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <FormTextField
                       name='authorName'
-                      label='Tên tác giả'
+                      label='Tên tác giả (Tiếng Việt)'
                       required
                       placeholder='Nguyễn Văn A'
                     />
                     <FormTextField
-                      name='authorSlug'
-                      label='Slug tác giả'
-                      required
-                      placeholder='nguyen-van-a'
-                      description='Dùng cho địa chỉ trang tác giả. Để trống sẽ tự tạo từ tên.'
+                      name='authorNameEn'
+                      label='Tên tác giả (English)'
+                      placeholder='Nguyen Van A'
+                      description='Để trống sẽ dùng tên tiếng Việt.'
                     />
                   </div>
+
+                  <FormTextField
+                    name='authorSlug'
+                    label='Slug tác giả'
+                    required
+                    placeholder='nguyen-van-a'
+                    description='Dùng cho địa chỉ trang tác giả. Để trống sẽ tự tạo từ tên.'
+                  />
 
                   <form.Field name='authorAvatar'>
                     {(field) => (
@@ -466,13 +499,23 @@ function EditUserDialog({
                     )}
                   </form.Field>
 
-                  <FormTextareaField
-                    name='authorDescription'
-                    label='Nội dung tóm tắt'
-                    placeholder='Giới thiệu ngắn về tác giả...'
-                    rows={4}
-                    recommendedLength={300}
-                  />
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <FormTextareaField
+                      name='authorDescription'
+                      label='Nội dung tóm tắt (Tiếng Việt)'
+                      placeholder='Giới thiệu ngắn về tác giả...'
+                      rows={6}
+                      maxLength={AUTHOR_DESCRIPTION_MAX_LENGTH}
+                    />
+                    <FormTextareaField
+                      name='authorDescriptionEn'
+                      label='Nội dung tóm tắt (English)'
+                      placeholder='A short introduction to the author...'
+                      rows={6}
+                      maxLength={AUTHOR_DESCRIPTION_MAX_LENGTH}
+                      description='Để trống sẽ dùng tóm tắt tiếng Việt.'
+                    />
+                  </div>
                 </div>
               ) : null
             }

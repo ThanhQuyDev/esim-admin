@@ -6,17 +6,24 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
+import { ApiError } from '@/lib/api-client';
 import { uploadToCloudinary } from '@/features/destinations/api/service';
 
 /**
- * Author profile fields on the user form (#059).
+ * Author profile fields on the user form (#059, #025).
  *
  * The backend has held an author profile (name, slug, avatar, summary) all along
  * and refuses the "Tác giả" role without one — but the form never exposed the
  * fields, and role 3 was not even selectable, so no author could be created at
  * all. The storefront already renders this profile under every article and links
  * it to the author's post list; it just had nothing to render.
+ *
+ * Name and summary come in Vietnamese and English; an English article shows the
+ * Vietnamese text until the English one is filled in.
  */
+
+/** Longest author summary the backend accepts, in either language. */
+export const AUTHOR_DESCRIPTION_MAX_LENGTH = 600;
 
 /** Slug the way the backend normalizes it, so what you see is what is saved. */
 export function authorSlugFromName(name: string): string {
@@ -32,18 +39,52 @@ export function authorSlugFromName(name: string): string {
 
 export type AuthorFormValues = {
   authorName: string;
+  authorNameEn: string;
   authorSlug: string;
   authorAvatar: string;
   authorDescription: string;
+  authorDescriptionEn: string;
 };
 
 export function authorProfilePayload(value: AuthorFormValues) {
   return {
     name: value.authorName.trim(),
+    nameEn: value.authorNameEn.trim() || null,
     slug: value.authorSlug.trim() || authorSlugFromName(value.authorName),
     avatar: value.authorAvatar.trim() || null,
-    description: value.authorDescription.trim() || null
+    description: value.authorDescription.trim() || null,
+    descriptionEn: value.authorDescriptionEn.trim() || null
   };
+}
+
+/** Backend error codes on a user save → what the admin should read. */
+const USER_ERROR_MESSAGES: Record<string, string> = {
+  emailAlreadyExists: 'Email này đã thuộc về người dùng khác.',
+  authorSlugAlreadyExists: 'Slug tác giả đã có người dùng. Hãy đổi slug khác.',
+  authorProfileRequired: 'Vai trò Tác giả cần có tên tác giả.',
+  roleNotExists: 'Vai trò không hợp lệ.',
+  statusNotExists: 'Trạng thái không hợp lệ.'
+};
+
+function firstErrorCode(errors: unknown): string | null {
+  if (typeof errors === 'string') return errors;
+  if (errors && typeof errors === 'object') {
+    for (const value of Object.values(errors)) {
+      const code = firstErrorCode(value);
+      if (code) return code;
+    }
+  }
+  return null;
+}
+
+/**
+ * The reason a user save failed. The API answers a 422 with error codes and no
+ * message, so without this every refusal read "Failed to update user".
+ */
+export function describeUserSaveError(error: Error, fallback: string): string {
+  const code = error instanceof ApiError ? firstErrorCode(error.errors) : null;
+  if (code) return USER_ERROR_MESSAGES[code] ?? `${fallback}: ${code}`;
+  return error.message || fallback;
 }
 
 interface AuthorAvatarFieldProps {

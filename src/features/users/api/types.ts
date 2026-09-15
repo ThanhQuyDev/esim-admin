@@ -33,9 +33,11 @@ export type User = {
     id: number;
     userId: number;
     name: string;
+    nameEn?: string | null;
     slug: string;
     avatar?: string | null;
     description?: string | null;
+    descriptionEn?: string | null;
   } | null;
   role: { id: number; name: string };
   status: { id: number; name: string };
@@ -67,9 +69,11 @@ export type CreateUserPayload = {
   photo?: { id: string };
   authorProfile?: {
     name: string;
+    nameEn?: string | null;
     slug: string;
     avatar?: string | null;
     description?: string | null;
+    descriptionEn?: string | null;
   };
   role?: { id: number };
   status?: { id: number };
@@ -86,9 +90,11 @@ export type UpdateUserPayload = {
   photo?: { id: string };
   authorProfile?: {
     name: string;
+    nameEn?: string | null;
     slug: string;
     avatar?: string | null;
     description?: string | null;
+    descriptionEn?: string | null;
   };
   role?: { id: number };
   status?: { id: number };

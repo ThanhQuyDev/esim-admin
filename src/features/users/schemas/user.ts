@@ -14,7 +14,9 @@ export const authorProfileSchema = z.object({
   name: z.string().min(2, 'Tên tác giả phải có ít nhất 2 ký tự'),
   slug: z.string().min(2, 'Slug tác giả là bắt buộc'),
   avatar: z.string().optional(),
-  description: z.string().max(2000).optional()
+  nameEn: z.string().optional(),
+  description: z.string().max(600).optional(),
+  descriptionEn: z.string().max(600).optional()
 });
 /** Role id 3 = Tác giả. The backend refuses that role without a profile. */
 export const AUTHOR_ROLE_ID = '3';
@@ -22,9 +24,11 @@ export const AUTHOR_ROLE_ID = '3';
 /** Author fields live on the same form; only required when the role is Tác giả. */
 const authorFormFields = {
   authorName: z.string().trim(),
+  authorNameEn: z.string().trim(),
   authorSlug: z.string().trim(),
   authorAvatar: z.string().trim(),
-  authorDescription: z.string().trim().max(2000, 'Tóm tắt tối đa 2000 ký tự')
+  authorDescription: z.string().trim().max(600, 'Tóm tắt tối đa 600 ký tự'),
+  authorDescriptionEn: z.string().trim().max(600, 'Tóm tắt tiếng Anh tối đa 600 ký tự')
 };
 
 function requireAuthorProfile(
