@@ -62,6 +62,11 @@ interface ChatState {
   selectRoom: (roomId: number, userId: number) => void;
   clearSelection: () => void;
   sendMessage: (text: string, file?: ChatFileAttachment) => void;
+  /**
+   * Send a ready-made message (e.g. a destination link, #050) without touching
+   * what the admin is typing or the message they are replying to.
+   */
+  sendQuickMessage: (text: string) => boolean;
   loadMoreMessages: () => void;
   markAsRead: () => void;
   fetchRooms: () => void;
@@ -425,6 +430,19 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     });
 
     set({ draft: '', replyTo: null });
+  },
+
+  sendQuickMessage: (text: string) => {
+    const state = get();
+    const socket = state._socket;
+    const trimmed = text.trim();
+    if (!socket?.connected || !state.selectedRoomId || !trimmed) return false;
+
+    socket.emit('sendMessage', {
+      chatRoomId: state.selectedRoomId,
+      message: trimmed
+    });
+    return true;
   },
 
   loadMoreMessages: () => {

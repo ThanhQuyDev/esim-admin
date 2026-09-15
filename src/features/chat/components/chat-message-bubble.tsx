@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { ChatMessage } from '../api/types';
 import { formatMessageTime } from '../utils/format';
 import { ChatQuotePreview } from './chat-quote-preview';
+import { ChatLinkifiedText } from './chat-linkified-text';
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -161,7 +162,8 @@ export function ChatMessageBubble({
                   : 'text-foreground/90'
             )}
           >
-            {message.message}
+            {/* URLs clickable, e.g. a destination link sent from the chat (#050). */}
+            <ChatLinkifiedText text={message.message} />
           </p>
         )}
         <div className='mt-2 flex items-center justify-end gap-1.5 text-[0.65rem] sm:mt-3 sm:gap-2 sm:text-[0.7rem]'>

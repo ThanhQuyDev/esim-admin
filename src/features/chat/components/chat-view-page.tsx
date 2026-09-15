@@ -7,6 +7,7 @@ import { ChatArea } from './chat-area';
 import { ChatEmptyState } from './chat-empty-state';
 import { ChatConnectionStatus } from './chat-connection-status';
 import { ChatOrderWidget } from './chat-order-widget';
+import { ChatDestinationSearch } from './chat-destination-search';
 
 export default function ChatViewPage() {
   const connect = useChatStore((s) => s.connect);
@@ -61,7 +62,9 @@ export default function ChatViewPage() {
         <ChatRoomList />
         {selectedRoomId ? <ChatArea /> : <ChatEmptyState />}
         {selectedRoomId && (
-          <aside className='hidden overflow-y-auto lg:block'>
+          <aside className='hidden space-y-3 overflow-y-auto lg:block'>
+            {/* Search a destination and send its link into the chat (#050). */}
+            <ChatDestinationSearch />
             <ChatOrderWidget />
           </aside>
         )}
