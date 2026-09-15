@@ -16,6 +16,7 @@ export function FooterTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    category: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
   const apiSort = params.sort.map((s) => ({ orderBy: s.id, order: s.desc ? 'DESC' : 'ASC' }));
@@ -23,6 +24,7 @@ export function FooterTable() {
     page: params.page,
     limit: params.perPage,
     ...(params.name && { search: params.name }),
+    ...(params.category && { category: params.category }),
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
   const { data } = useSuspenseQuery(footerQueryOptions(filters));

@@ -21,6 +21,8 @@ export type FooterFilters = {
   page?: number;
   limit?: number;
   search?: string;
+  /** Column heading, either language (#045). */
+  category?: string;
   filters?: string;
   sort?: string;
 };
