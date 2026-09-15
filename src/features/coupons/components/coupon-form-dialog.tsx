@@ -27,6 +27,7 @@ import * as z from 'zod';
 import {
   createCouponSchema,
   updateCouponSchema,
+  discountPayload,
   type CreateCouponFormValues,
   type UpdateCouponFormValues
 } from '../schemas/coupon';
@@ -39,8 +40,8 @@ interface CouponFormDialogProps {
 
 /** Kinds of discount a code can carry (#082). */
 const DISCOUNT_TYPE_OPTIONS = [
-  { value: 'percent', label: 'Phần trăm (%)' },
-  { value: 'fixed', label: 'Số tiền cụ thể (VNĐ)' }
+  { value: 'percent', label: 'Theo phần trăm (%)' },
+  { value: 'fixed', label: 'Theo số tiền' }
 ];
 export function CouponFormDialog({ coupon, open, onOpenChange }: CouponFormDialogProps) {
   const isEdit = !!coupon;
@@ -199,10 +200,7 @@ function CreateCouponDialog({
     onSubmit: async ({ value }) => {
       const payload: CreateCouponPayload = {
         code: value.code,
-        discountPercent: value.discountPercent,
-        discountType: value.discountType ?? 'percent',
-        discountAmount: value.discountAmount ?? 0,
-        maxDiscountAmount: value.maxDiscountAmount ?? null,
+        ...discountPayload(value),
         maxUsage: value.maxUsage,
         maxUsagePerUser: value.maxUsagePerUser,
         minOrderAmount: value.minOrderAmount,
@@ -254,39 +252,56 @@ function CreateCouponDialog({
             options={DISCOUNT_TYPE_OPTIONS}
           />
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <FormTextField
-              name='discountPercent'
-              label='Giảm giá (%)'
-              required
-              placeholder='10'
-              type='number'
-            />
-            <FormTextField
-              name='minOrderAmount'
-              label='Đơn tối thiểu (VNĐ)'
-              required
-              placeholder='5'
-              type='number'
-            />
-          </div>
-
-          {/* One of the two applies, depending on the kind of code (#082):
-              a flat amount, or a ceiling on the percentage above. */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <FormTextField
-              name='discountAmount'
-              label='Số tiền giảm (VNĐ) — dùng khi chọn kiểu Số tiền cụ thể'
-              placeholder='50000'
-              type='number'
-            />
-            <FormTextField
-              name='maxDiscountAmount'
-              label='Giảm tối đa (VNĐ) — để trống là không giới hạn'
-              placeholder='50000'
-              type='number'
-            />
-          </div>
+          {/* Only the fields of the chosen kind of code are shown (#038):
+              a percentage with an optional cap, or a flat amount. */}
+          <form.Subscribe selector={(state) => state.values.discountType ?? 'percent'}>
+            {(discountType) =>
+              discountType === 'fixed' ? (
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <FormTextField
+                    name='discountAmount'
+                    label='Giảm giá số tiền (VNĐ)'
+                    required
+                    placeholder='50000'
+                    type='number'
+                  />
+                  <FormTextField
+                    name='minOrderAmount'
+                    label='Đơn tối thiểu (VNĐ)'
+                    required
+                    placeholder='100000'
+                    type='number'
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <FormTextField
+                      name='discountPercent'
+                      label='Giảm giá theo %'
+                      required
+                      placeholder='10'
+                      type='number'
+                    />
+                    <FormTextField
+                      name='minOrderAmount'
+                      label='Đơn tối thiểu (VNĐ)'
+                      required
+                      placeholder='100000'
+                      type='number'
+                    />
+                  </div>
+                  <FormTextField
+                    name='maxDiscountAmount'
+                    label='Giảm tối đa (VNĐ)'
+                    placeholder='50000'
+                    type='number'
+                    description='Không bắt buộc — để trống là không giới hạn.'
+                  />
+                </>
+              )
+            }
+          </form.Subscribe>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormTextField
@@ -387,10 +402,7 @@ function EditCouponDialog({
     onSubmit: async ({ value }) => {
       const payload: UpdateCouponPayload = {
         code: value.code,
-        discountPercent: value.discountPercent,
-        discountType: value.discountType ?? 'percent',
-        discountAmount: value.discountAmount ?? 0,
-        maxDiscountAmount: value.maxDiscountAmount ?? null,
+        ...discountPayload(value),
         maxUsage: value.maxUsage,
         maxUsagePerUser: value.maxUsagePerUser,
         minOrderAmount: value.minOrderAmount,
@@ -454,39 +466,56 @@ function EditCouponDialog({
             options={DISCOUNT_TYPE_OPTIONS}
           />
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <FormTextField
-              name='discountPercent'
-              label='Giảm giá (%)'
-              required
-              placeholder='10'
-              type='number'
-            />
-            <FormTextField
-              name='minOrderAmount'
-              label='Đơn tối thiểu (VNĐ)'
-              required
-              placeholder='100.000'
-              type='number'
-            />
-          </div>
-
-          {/* One of the two applies, depending on the kind of code (#082):
-              a flat amount, or a ceiling on the percentage above. */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <FormTextField
-              name='discountAmount'
-              label='Số tiền giảm (VNĐ) — dùng khi chọn kiểu Số tiền cụ thể'
-              placeholder='50000'
-              type='number'
-            />
-            <FormTextField
-              name='maxDiscountAmount'
-              label='Giảm tối đa (VNĐ) — để trống là không giới hạn'
-              placeholder='50000'
-              type='number'
-            />
-          </div>
+          {/* Only the fields of the chosen kind of code are shown (#038):
+              a percentage with an optional cap, or a flat amount. */}
+          <form.Subscribe selector={(state) => state.values.discountType ?? 'percent'}>
+            {(discountType) =>
+              discountType === 'fixed' ? (
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <FormTextField
+                    name='discountAmount'
+                    label='Giảm giá số tiền (VNĐ)'
+                    required
+                    placeholder='50000'
+                    type='number'
+                  />
+                  <FormTextField
+                    name='minOrderAmount'
+                    label='Đơn tối thiểu (VNĐ)'
+                    required
+                    placeholder='100000'
+                    type='number'
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <FormTextField
+                      name='discountPercent'
+                      label='Giảm giá theo %'
+                      required
+                      placeholder='10'
+                      type='number'
+                    />
+                    <FormTextField
+                      name='minOrderAmount'
+                      label='Đơn tối thiểu (VNĐ)'
+                      required
+                      placeholder='100000'
+                      type='number'
+                    />
+                  </div>
+                  <FormTextField
+                    name='maxDiscountAmount'
+                    label='Giảm tối đa (VNĐ)'
+                    placeholder='50000'
+                    type='number'
+                    description='Không bắt buộc — để trống là không giới hạn.'
+                  />
+                </>
+              )
+            }
+          </form.Subscribe>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormTextField
