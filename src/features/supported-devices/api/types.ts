@@ -29,6 +29,27 @@ export interface UpdateSupportedDevicePayload {
   sortOrder?: number;
 }
 
+/** One model on the ordering screen (#047). */
+export interface SupportedDeviceOrderingDevice {
+  id: string;
+  device: string;
+  type: SupportedDevice['type'];
+  sortOrder: number;
+}
+
+/** One brand on the ordering screen, with its models in display order (#047). */
+export interface SupportedDeviceBrandOrdering {
+  manufacturer: string;
+  manufacturerOrder: number;
+  devices: SupportedDeviceOrderingDevice[];
+}
+
+/** Only the positions that changed; 0 = not numbered. */
+export interface SaveSupportedDeviceOrderingPayload {
+  manufacturers?: { manufacturer: string; manufacturerOrder: number }[];
+  devices?: { id: string; sortOrder: number }[];
+}
+
 export interface SupportedDeviceFilters {
   search?: string;
   type?: string;

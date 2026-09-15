@@ -3,19 +3,34 @@ import {
   getSupportedDevices,
   createSupportedDevice,
   updateSupportedDevice,
-  deleteSupportedDevice
+  deleteSupportedDevice,
+  getSupportedDeviceOrdering,
+  saveSupportedDeviceOrdering
 } from './service';
 import type {
   SupportedDevice,
   CreateSupportedDevicePayload,
   UpdateSupportedDevicePayload,
-  SupportedDeviceFilters
+  SupportedDeviceFilters,
+  SaveSupportedDeviceOrderingPayload
 } from './types';
 
 export const supportedDeviceKeys = {
   all: ['supported-devices'] as const,
   list: (filters: SupportedDeviceFilters) => [...supportedDeviceKeys.all, 'list', filters] as const,
-  detail: (id: number) => [...supportedDeviceKeys.all, 'detail', id] as const
+  detail: (id: number) => [...supportedDeviceKeys.all, 'detail', id] as const,
+  ordering: () => [...supportedDeviceKeys.all, 'ordering'] as const
+};
+
+export function supportedDeviceOrderingQueryOptions() {
+  return {
+    queryKey: supportedDeviceKeys.ordering(),
+    queryFn: () => getSupportedDeviceOrdering()
+  };
+}
+
+export const saveSupportedDeviceOrderingMutation = {
+  mutationFn: (payload: SaveSupportedDeviceOrderingPayload) => saveSupportedDeviceOrdering(payload)
 };
 
 export function supportedDevicesQueryOptions(filters: SupportedDeviceFilters = {}) {

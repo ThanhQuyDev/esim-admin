@@ -4,8 +4,28 @@ import type {
   SupportedDevicesResponse,
   CreateSupportedDevicePayload,
   UpdateSupportedDevicePayload,
-  SupportedDeviceFilters
+  SupportedDeviceFilters,
+  SupportedDeviceBrandOrdering,
+  SaveSupportedDeviceOrderingPayload
 } from './types';
+
+/** Brands with their models, for the ordering screen (#047). */
+export async function getSupportedDeviceOrdering(): Promise<SupportedDeviceBrandOrdering[]> {
+  const response = await apiClient<{ data: SupportedDeviceBrandOrdering[] }>(
+    '/supported-devices/ordering'
+  );
+  return response?.data ?? [];
+}
+
+export async function saveSupportedDeviceOrdering(
+  payload: SaveSupportedDeviceOrderingPayload
+): Promise<SupportedDeviceBrandOrdering[]> {
+  const response = await apiClient<{ data: SupportedDeviceBrandOrdering[] }>(
+    '/supported-devices/ordering',
+    { method: 'PATCH', body: JSON.stringify(payload) }
+  );
+  return response?.data ?? [];
+}
 
 export async function getSupportedDevices(
   filters?: SupportedDeviceFilters

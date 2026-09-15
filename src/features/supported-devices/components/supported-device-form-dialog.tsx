@@ -20,6 +20,7 @@ import * as z from 'zod';
 import {
   createSupportedDeviceSchema,
   updateSupportedDeviceSchema,
+  toPosition,
   type CreateSupportedDeviceFormValues,
   type UpdateSupportedDeviceFormValues
 } from '../schemas/supported-device';
@@ -209,8 +210,8 @@ function CreateDialog({
       device: '',
       manufacturer: '',
       type: '',
-      manufacturerOrder: '0',
-      sortOrder: '0'
+      manufacturerOrder: '',
+      sortOrder: ''
     } as CreateSupportedDeviceFormValues,
     validators: {
       onSubmit: createSupportedDeviceSchema
@@ -220,8 +221,9 @@ function CreateDialog({
         device: value.device,
         manufacturer: value.manufacturer,
         type: value.type as 'Smart Phones' | 'Smart Watches' | 'Tablets' | 'Laptops',
-        manufacturerOrder: Number(value.manufacturerOrder) || 0,
-        sortOrder: Number(value.sortOrder) || 0
+        // Blank brand position = keep the brand's existing one (#047).
+        manufacturerOrder: toPosition(value.manufacturerOrder),
+        sortOrder: toPosition(value.sortOrder) ?? 0
       };
       await createMut.mutateAsync(payload);
     }
@@ -292,21 +294,25 @@ function CreateDialog({
             placeholder='Chọn loại thiết bị'
           />
 
-          {/* Display order (#090). 0 anywhere means "leave it alphabetical". */}
+          {/* Display order (#090, #047). Blank brand = keep the brand's place. */}
           <div className='grid grid-cols-2 gap-4'>
             <FormTextField
               name='manufacturerOrder'
               label='Thứ tự hãng'
               type='number'
-              placeholder='0'
-              description='Áp dụng cho toàn bộ thiết bị của hãng này. 0 = xếp theo A–Z.'
+              min={0}
+              step={1}
+              placeholder='Giữ thứ tự hiện có'
+              description='Bỏ trống = dùng thứ tự sẵn có của hãng. Nhập số sẽ áp dụng cho cả hãng.'
             />
             <FormTextField
               name='sortOrder'
               label='Thứ tự thiết bị'
               type='number'
+              min={0}
+              step={1}
               placeholder='0'
-              description='Vị trí của model trong hãng. 0 = xếp theo A–Z.'
+              description='Vị trí của model trong hãng. Bỏ trống/0 = xếp sau các model đã đánh số.'
             />
           </div>
         </form.Form>
@@ -341,8 +347,8 @@ function EditDialog({
       device: device.device,
       manufacturer: device.manufacturer,
       type: device.type,
-      manufacturerOrder: String(device.manufacturerOrder ?? 0),
-      sortOrder: String(device.sortOrder ?? 0)
+      manufacturerOrder: device.manufacturerOrder ?? 0,
+      sortOrder: device.sortOrder ?? 0
     } as UpdateSupportedDeviceFormValues,
     validators: {
       onSubmit: updateSupportedDeviceSchema
@@ -352,8 +358,9 @@ function EditDialog({
         device: value.device,
         manufacturer: value.manufacturer,
         type: value.type as 'Smart Phones' | 'Smart Watches' | 'Tablets' | 'Laptops',
-        manufacturerOrder: Number(value.manufacturerOrder) || 0,
-        sortOrder: Number(value.sortOrder) || 0
+        // Blank brand position = leave the brand where it is (#047).
+        manufacturerOrder: toPosition(value.manufacturerOrder),
+        sortOrder: toPosition(value.sortOrder) ?? 0
       };
       await updateMut.mutateAsync({ id: device.id, values: payload });
     }
@@ -398,21 +405,25 @@ function EditDialog({
             placeholder='Chọn loại thiết bị'
           />
 
-          {/* Display order (#090). 0 anywhere means "leave it alphabetical". */}
+          {/* Display order (#090, #047). */}
           <div className='grid grid-cols-2 gap-4'>
             <FormTextField
               name='manufacturerOrder'
               label='Thứ tự hãng'
               type='number'
+              min={0}
+              step={1}
               placeholder='0'
-              description='Áp dụng cho toàn bộ thiết bị của hãng này. 0 = xếp theo A–Z.'
+              description='Áp dụng cho toàn bộ thiết bị của hãng này. 0 = xếp sau các hãng đã đánh số.'
             />
             <FormTextField
               name='sortOrder'
               label='Thứ tự thiết bị'
               type='number'
+              min={0}
+              step={1}
               placeholder='0'
-              description='Vị trí của model trong hãng. 0 = xếp theo A–Z.'
+              description='Vị trí của model trong hãng. 0 = xếp sau các model đã đánh số.'
             />
           </div>
         </form.Form>
