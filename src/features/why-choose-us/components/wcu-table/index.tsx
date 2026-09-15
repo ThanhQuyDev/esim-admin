@@ -23,9 +23,8 @@ export function WcuTable() {
     page: params.page,
     limit: params.perPage,
     ...(params.name && { search: params.name }),
-    // The API matches a single type per request, so only the first selection
-    // is sent even though the filter param is array-shaped.
-    ...(params.type?.[0] && { type: params.type[0] }),
+    // Every selected page type; the API returns rows of any of them.
+    ...(params.type?.length && { type: params.type.join(',') }),
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
   const { data } = useSuspenseQuery(wcuQueryOptions(filters));

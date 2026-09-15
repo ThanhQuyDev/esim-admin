@@ -21,7 +21,7 @@ export const columns: ColumnDef<SeoConfig>[] = [
     cell: ({ row }) => <span className='font-mono text-xs'>{row.original.url}</span>,
     meta: {
       label: 'URL',
-      placeholder: 'Tìm theo trang (vd: /home)...',
+      placeholder: 'Tìm theo URL trang (vd: /home)...',
       variant: 'text' as const,
       icon: Icons.search
     },

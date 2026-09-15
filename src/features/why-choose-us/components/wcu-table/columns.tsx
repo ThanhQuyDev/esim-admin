@@ -42,7 +42,7 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
     ),
     meta: {
       label: 'Tiêu đề',
-      placeholder: 'Tìm kiếm...',
+      placeholder: 'Tìm tiêu đề, nội dung hoặc trang...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -91,8 +91,8 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
     },
     meta: {
       label: 'Trang',
-      // Single-select: the API matches one type per request.
-      variant: 'select' as const,
+      // Several pages at once: the API returns rows of any selected type.
+      variant: 'multiSelect' as const,
       options: WCU_TYPE_OPTIONS.map((o) => ({ label: o.label, value: o.value }))
     },
     enableColumnFilter: true,

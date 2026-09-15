@@ -14,7 +14,7 @@ export default function WcuListingPage() {
     page,
     limit: pageLimit,
     ...(search && { search }),
-    ...(type?.[0] && { type: type[0] }),
+    ...(type?.length && { type: type.join(',') }),
     ...(sort && { sort })
   };
   const queryClient = getQueryClient();
