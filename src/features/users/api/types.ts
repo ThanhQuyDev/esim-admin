@@ -82,8 +82,8 @@ export type CreateUserPayload = {
 export type UpdateUserPayload = {
   email?: string;
   password?: string;
-  firstName?: string;
-  lastName?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   phoneNumber?: string | null;
   tierOverride?: MembershipTier | null;
   tierOverrideReason?: string | null;

@@ -16,11 +16,13 @@ import {
   describeUserSaveError
 } from './author-profile-fields';
 import { formatVnd } from '@/lib/format';
+import { updateReferralCode } from '@/features/wallets/api/service';
 import * as z from 'zod';
 import {
   createUserSchema,
   updateUserSchema,
   phoneNumberSchema,
+  adminReferralCodeSchema,
   type CreateUserFormValues,
   type UpdateUserFormValues,
   AUTHOR_ROLE_ID
@@ -308,10 +310,11 @@ function EditUserDialog({
 
   const form = useAppForm({
     defaultValues: {
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? '',
       email: user.email,
       phoneNumber: user.phoneNumber ?? '',
+      referralCode: user.referralCode ?? '',
       roleId: String(user.role?.id ?? ''),
       statusId: String(user.status?.id ?? ''),
       tierOverride: user.tierOverride ?? 'auto',
@@ -327,10 +330,22 @@ function EditUserDialog({
       onSubmit: updateUserSchema
     },
     onSubmit: async ({ value }) => {
+      // The referral code lives on the wallet side; save it first so a taken
+      // code stops the save instead of half-applying the form (#026).
+      const referralCode = value.referralCode.trim().toUpperCase();
+      if (referralCode && referralCode !== (user.referralCode ?? '').toUpperCase()) {
+        try {
+          await updateReferralCode(user.id, referralCode);
+        } catch (error) {
+          toast.error(describeUserSaveError(error as Error, 'Cập nhật mã giới thiệu thất bại'));
+          return;
+        }
+      }
+
       const payload: UpdateUserPayload = {
         email: value.email,
-        firstName: value.firstName,
-        lastName: value.lastName,
+        firstName: value.firstName.trim() || null,
+        lastName: value.lastName.trim() || null,
         phoneNumber: value.phoneNumber.trim() || null,
         tierOverride: value.tierOverride === 'auto' ? null : value.tierOverride,
         tierOverrideReason: value.tierOverride === 'auto' ? null : value.tierOverrideReason.trim(),
@@ -364,25 +379,17 @@ function EditUserDialog({
       <form.AppForm>
         <form.Form id='user-form-dialog' className='space-y-6'>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <FormTextField
-              name='firstName'
-              label='Họ'
-              required
-              placeholder='Nguyễn'
-              validators={{
-                onBlur: z.string().min(2, 'Họ phải có ít nhất 2 ký tự')
-              }}
-            />
-            <FormTextField
-              name='lastName'
-              label='Tên'
-              required
-              placeholder='Văn A'
-              validators={{
-                onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
-              }}
-            />
+            <FormTextField name='firstName' label='Họ' placeholder='Nguyễn' />
+            <FormTextField name='lastName' label='Tên' placeholder='Văn A' />
           </div>
+
+          <FormTextField
+            name='referralCode'
+            label='Mã giới thiệu'
+            placeholder='VD: VIP2026'
+            validators={{ onBlur: adminReferralCodeSchema }}
+            description='Admin được đặt mã 3–50 ký tự chữ hoặc số (khách tự đổi phải đủ 10 ký tự). Mã được lưu chữ in hoa.'
+          />
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <FormTextField

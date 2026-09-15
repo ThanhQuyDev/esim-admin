@@ -67,10 +67,20 @@ export const createUserSchema = z
 
 export type CreateUserFormValues = z.infer<typeof createUserSchema>;
 
+/** Admins may give a customer a 3-50 character code; customers need exactly 10 (#026). */
+export const adminReferralCodeSchema = z
+  .string()
+  .trim()
+  .refine((v) => v === '' || /^[A-Za-z0-9]{3,50}$/.test(v), {
+    message: 'Mã giới thiệu gồm 3–50 ký tự chữ hoặc số'
+  });
+
 export const updateUserSchema = z
   .object({
-    firstName: z.string().min(2, 'First name must be at least 2 characters'),
-    lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+    // Optional on edit: customers who sign in with an email code have no name (#026).
+    firstName: z.string().trim(),
+    lastName: z.string().trim(),
+    referralCode: adminReferralCodeSchema,
     email: z.string().email('Please enter a valid email'),
     phoneNumber: phoneNumberSchema,
     roleId: z.string().min(1, 'Please select a role'),

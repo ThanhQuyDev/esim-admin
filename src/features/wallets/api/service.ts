@@ -55,6 +55,17 @@ export async function updateWalletStatus(
   });
 }
 
+/** Set a customer's referral code; admins may use 3-50 letters/digits (#026). */
+export async function updateReferralCode(
+  userId: number,
+  code: string
+): Promise<{ userId: number; code: string; isActive: boolean }> {
+  return apiClient(`/wallets/admin/${userId}/referral`, {
+    method: 'PATCH',
+    body: JSON.stringify({ code })
+  });
+}
+
 export async function getWalletTransactions(
   userId: number,
   limit = 100
