@@ -90,7 +90,7 @@ export function OverviewDashboard() {
     {
       label: 'Tổng doanh thu',
       value: formatVnd(summary?.totalRevenue),
-      footer: 'Doanh thu từ đơn hàng paid/completed',
+      footer: 'Đơn đã thanh toán, không tính sản phẩm đã hoàn tiền',
       icon: Icons.trendingUp
     },
     {

@@ -20,7 +20,7 @@ import type { FinancialComparisonSeriesResponse } from '../api/types';
 
 const financialComparisonConfig = {
   costPrice: {
-    label: 'Cost price',
+    label: 'Giá vốn',
     color: 'var(--chart-1)'
   },
   totalRevenue: {
@@ -29,7 +29,9 @@ const financialComparisonConfig = {
   },
   profit: {
     label: 'Lợi nhuận',
-    color: 'var(--chart-3)'
+    // A fixed green, not a theme slot: --chart-3 is grey in most themes, and
+    // profit has to read as "good money" at a glance (#009).
+    color: 'oklch(0.627 0.194 149.214)'
   }
 } satisfies ChartConfig;
 
@@ -62,7 +64,7 @@ export function AreaGraph({ filters }: AreaGraphProps) {
 
   const totals = isFinancialSeries(data)
     ? data.totals
-    : { costPrice: 0, totalRevenue: 0, profit: 0, profitMarginPercent: 0 };
+    : { costPrice: 0, totalRevenue: 0, profit: 0, profitMarginPercent: 0, plansSold: 0 };
 
   if (error) {
     return (
@@ -81,11 +83,11 @@ export function AreaGraph({ filters }: AreaGraphProps) {
     <Card>
       <CardHeader>
         <CardTitle className='flex flex-wrap items-center gap-2'>
-          Cost price / Doanh thu / Lợi nhuận
+          Giá vốn / Doanh thu / Lợi nhuận
           <Badge variant='outline'>Lợi nhuận {formatVnd(totals.profit)}</Badge>
         </CardTitle>
         <CardDescription>
-          Tổng doanh thu {formatVnd(totals.totalRevenue)} · Cost price {formatVnd(totals.costPrice)}
+          Tổng doanh thu {formatVnd(totals.totalRevenue)} · Giá vốn {formatVnd(totals.costPrice)}
         </CardDescription>
       </CardHeader>
       <CardContent>

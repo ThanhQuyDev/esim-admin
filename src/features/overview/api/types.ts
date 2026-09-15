@@ -82,6 +82,8 @@ export interface FinancialTotals {
   totalRevenue: number;
   profit: number;
   profitMarginPercent: number;
+  /** Plans delivered behind these figures; refunded products excluded. */
+  plansSold: number;
 }
 
 export interface FinancialComparisonSeriesResponse {
@@ -90,6 +92,7 @@ export interface FinancialComparisonSeriesResponse {
     costPrice: number;
     totalRevenue: number;
     profit: number;
+    plansSold: number;
   }>;
   totals: FinancialTotals;
 }
@@ -101,6 +104,7 @@ export interface FinancialComparisonGroupedResponse {
     totalRevenue: number;
     profit: number;
     profitMarginPercent: number;
+    plansSold: number;
   }>;
   totals: FinancialTotals;
 }
