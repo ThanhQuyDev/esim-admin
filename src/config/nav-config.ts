@@ -169,6 +169,14 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        // Tax / fee added before prices are compared (#049).
+        title: 'Thuế phí nhà cung cấp',
+        url: '/dashboard/provider-surcharges',
+        icon: 'trendingUp',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Ký quỹ nhà cung cấp',
         url: '/dashboard/provider-deposits',
         icon: 'wallet',
