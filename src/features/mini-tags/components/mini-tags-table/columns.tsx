@@ -31,8 +31,14 @@ export const columns: ColumnDef<MiniTag>[] = [
     header: ({ column }: { column: Column<MiniTag, unknown> }) => (
       <DataTableColumnHeader column={column} title='Tiêu đề' />
     ),
+    // Vietnamese on top, English below — shows which tags still lack English (#059).
     cell: ({ row }) => (
-      <span className='max-w-[200px] truncate font-medium'>{row.original.title}</span>
+      <div className='flex max-w-[240px] flex-col'>
+        <span className='truncate font-medium'>{row.original.title}</span>
+        <span className='text-muted-foreground truncate text-xs'>
+          {row.original.titleEn || 'Chưa có tiếng Anh'}
+        </span>
+      </div>
     ),
     meta: {
       label: 'Tiêu đề',

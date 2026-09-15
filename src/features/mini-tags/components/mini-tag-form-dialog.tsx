@@ -22,6 +22,75 @@ interface MiniTagFormDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+type MiniTagFormValues = {
+  title: string;
+  description: string;
+  contentButton: string;
+  linkUrl: string;
+  titleEn: string;
+  descriptionEn: string;
+  contentButtonEn: string;
+  linkUrlEn: string;
+};
+
+/**
+ * The text fields, Vietnamese and English side by side (#059). The English
+ * column is optional: an English post uses the Vietnamese text for anything
+ * left empty.
+ */
+const TEXT_FIELDS: {
+  vi: keyof MiniTagFormValues;
+  en: keyof MiniTagFormValues;
+  label: string;
+  placeholderVi: string;
+  placeholderEn: string;
+}[] = [
+  {
+    vi: 'title',
+    en: 'titleEn',
+    label: 'Tiêu đề',
+    placeholderVi: 'Nhập tiêu đề',
+    placeholderEn: 'Title in English'
+  },
+  {
+    vi: 'description',
+    en: 'descriptionEn',
+    label: 'Mô tả',
+    placeholderVi: 'Nhập mô tả',
+    placeholderEn: 'Description in English'
+  },
+  {
+    vi: 'contentButton',
+    en: 'contentButtonEn',
+    label: 'Nội dung nút',
+    placeholderVi: 'Nhập nội dung nút bấm',
+    placeholderEn: 'Button text in English'
+  },
+  {
+    vi: 'linkUrl',
+    en: 'linkUrlEn',
+    label: 'Link URL',
+    placeholderVi: 'https://esim.vn/...',
+    placeholderEn: 'https://esim.vn/en/...'
+  }
+];
+
+/** An empty English field is stored as null, so the post falls back to Vietnamese. */
+const english = (text: string) => text.trim() || null;
+
+function toPayload(value: MiniTagFormValues) {
+  return {
+    title: value.title,
+    description: value.description,
+    contentButton: value.contentButton,
+    linkUrl: value.linkUrl,
+    titleEn: english(value.titleEn),
+    descriptionEn: english(value.descriptionEn),
+    contentButtonEn: english(value.contentButtonEn),
+    linkUrlEn: english(value.linkUrlEn)
+  };
+}
+
 export function MiniTagFormDialog({ miniTag, open, onOpenChange }: MiniTagFormDialogProps) {
   const isEdit = !!miniTag;
   return isEdit ? (
@@ -77,6 +146,45 @@ function ImageUploadField({
   );
 }
 
+function BilingualFields({
+  form
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  form: any;
+}) {
+  return (
+    <div className='space-y-4'>
+      <div className='text-muted-foreground hidden grid-cols-2 gap-4 text-xs font-medium md:grid'>
+        <span>Tiếng Việt</span>
+        <span>English (bỏ trống = dùng tiếng Việt)</span>
+      </div>
+      {TEXT_FIELDS.map((field) => (
+        <div key={field.vi} className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          {(
+            [
+              [field.vi, `${field.label}`, field.placeholderVi],
+              [field.en, `${field.label} (English)`, field.placeholderEn]
+            ] as const
+          ).map(([name, label, placeholder]) => (
+            <form.AppField key={name} name={name}>
+              {(input: { state: { value: string }; handleChange: (value: string) => void }) => (
+                <div className='space-y-2'>
+                  <Label>{label}</Label>
+                  <Input
+                    value={input.state.value}
+                    onChange={(e) => input.handleChange(e.target.value)}
+                    placeholder={placeholder}
+                  />
+                </div>
+              )}
+            </form.AppField>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function CreateMiniTagDialog({
   open,
   onOpenChange
@@ -100,20 +208,18 @@ function CreateMiniTagDialog({
       title: '',
       description: '',
       contentButton: '',
-      linkUrl: ''
-    },
+      linkUrl: '',
+      titleEn: '',
+      descriptionEn: '',
+      contentButtonEn: '',
+      linkUrlEn: ''
+    } as MiniTagFormValues,
     onSubmit: async ({ value }) => {
       let imageUrl = '';
       if (imageFile) {
         imageUrl = await uploadToCloudinary(imageFile);
       }
-      mutation.mutate({
-        image: imageUrl,
-        title: value.title,
-        description: value.description,
-        contentButton: value.contentButton,
-        linkUrl: value.linkUrl
-      });
+      mutation.mutate({ image: imageUrl, ...toPayload(value) });
     }
   });
 
@@ -130,54 +236,7 @@ function CreateMiniTagDialog({
       <form.AppForm>
         <form.Form id={FORM_ID} className='space-y-4'>
           <ImageUploadField label='Ảnh' onFileSelect={setImageFile} file={imageFile} />
-          <form.AppField name='title'>
-            {(field) => (
-              <div className='space-y-2'>
-                <Label>Tiêu đề</Label>
-                <Input
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder='Nhập tiêu đề'
-                />
-              </div>
-            )}
-          </form.AppField>
-          <form.AppField name='description'>
-            {(field) => (
-              <div className='space-y-2'>
-                <Label>Mô tả</Label>
-                <Input
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder='Nhập mô tả'
-                />
-              </div>
-            )}
-          </form.AppField>
-          <form.AppField name='contentButton'>
-            {(field) => (
-              <div className='space-y-2'>
-                <Label>Nội dung nút</Label>
-                <Input
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder='Nhập nội dung nút bấm'
-                />
-              </div>
-            )}
-          </form.AppField>
-          <form.AppField name='linkUrl'>
-            {(field) => (
-              <div className='space-y-2'>
-                <Label>Link URL</Label>
-                <Input
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder='https://...'
-                />
-              </div>
-            )}
-          </form.AppField>
+          <BilingualFields form={form} />
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -209,8 +268,12 @@ function EditMiniTagDialog({
       title: miniTag.title ?? '',
       description: miniTag.description ?? '',
       contentButton: miniTag.contentButton ?? '',
-      linkUrl: miniTag.linkUrl ?? ''
-    },
+      linkUrl: miniTag.linkUrl ?? '',
+      titleEn: miniTag.titleEn ?? '',
+      descriptionEn: miniTag.descriptionEn ?? '',
+      contentButtonEn: miniTag.contentButtonEn ?? '',
+      linkUrlEn: miniTag.linkUrlEn ?? ''
+    } as MiniTagFormValues,
     onSubmit: async ({ value }) => {
       let imageUrl = miniTag.image;
       if (imageFile) {
@@ -218,13 +281,7 @@ function EditMiniTagDialog({
       }
       mutation.mutate({
         id: miniTag.id,
-        values: {
-          image: imageUrl,
-          title: value.title,
-          description: value.description,
-          contentButton: value.contentButton,
-          linkUrl: value.linkUrl
-        }
+        values: { image: imageUrl, ...toPayload(value) }
       });
     }
   });
@@ -247,54 +304,7 @@ function EditMiniTagDialog({
             onFileSelect={setImageFile}
             file={imageFile}
           />
-          <form.AppField name='title'>
-            {(field) => (
-              <div className='space-y-2'>
-                <Label>Tiêu đề</Label>
-                <Input
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder='Nhập tiêu đề'
-                />
-              </div>
-            )}
-          </form.AppField>
-          <form.AppField name='description'>
-            {(field) => (
-              <div className='space-y-2'>
-                <Label>Mô tả</Label>
-                <Input
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder='Nhập mô tả'
-                />
-              </div>
-            )}
-          </form.AppField>
-          <form.AppField name='contentButton'>
-            {(field) => (
-              <div className='space-y-2'>
-                <Label>Nội dung nút</Label>
-                <Input
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder='Nhập nội dung nút bấm'
-                />
-              </div>
-            )}
-          </form.AppField>
-          <form.AppField name='linkUrl'>
-            {(field) => (
-              <div className='space-y-2'>
-                <Label>Link URL</Label>
-                <Input
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder='https://...'
-                />
-              </div>
-            )}
-          </form.AppField>
+          <BilingualFields form={form} />
         </form.Form>
       </form.AppForm>
     </FormDialog>
