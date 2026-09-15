@@ -64,6 +64,33 @@ export const columns: ColumnDef<Blog>[] = [
     enableSorting: false
   },
   {
+    // Category and sub-category of each article (#054).
+    id: 'category',
+    accessorKey: 'category',
+    header: ({ column }: { column: Column<Blog, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Danh mục' />
+    ),
+    cell: ({ row }) =>
+      row.original.category ? (
+        <span className='text-sm'>{row.original.category}</span>
+      ) : (
+        <span className='text-muted-foreground text-sm'>—</span>
+      )
+  },
+  {
+    id: 'parent',
+    accessorKey: 'parent',
+    header: ({ column }: { column: Column<Blog, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Danh mục con' />
+    ),
+    cell: ({ row }) =>
+      row.original.parent ? (
+        <Badge variant='secondary'>{row.original.parent}</Badge>
+      ) : (
+        <span className='text-muted-foreground text-sm'>—</span>
+      )
+  },
+  {
     id: 'isPublished',
     accessorKey: 'isPublished',
     header: 'Xuất bản',

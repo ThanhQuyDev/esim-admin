@@ -14,6 +14,8 @@ export const searchParams = {
   provider: parseAsArrayOf(parseAsString, ','),
   gender: parseAsString,
   category: parseAsString,
+  // blogs: sub-category filter (#054)
+  parent: parseAsString,
   role: parseAsString,
   isCheapest: parseAsArrayOf(parseAsString, ','),
   isActive: parseAsArrayOf(parseAsString, ','),

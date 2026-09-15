@@ -18,6 +18,26 @@ export async function getBlogs(filters: BlogFilters): Promise<BlogsResponse> {
   return apiClient<BlogsResponse>(`/blogs${query ? `?${query}` : ''}`);
 }
 
+/**
+ * Sub-categories grouped by category, every language (#054).
+ *
+ * `/blogs/parents` only lists categories that have a sub-category, so the plain
+ * category list is merged in: a category with no sub-category still filters.
+ */
+export async function getBlogCategoryTree(): Promise<Record<string, string[]>> {
+  const [categories, parents] = await Promise.all([
+    apiClient<string[]>('/blogs/categories').catch(() => [] as string[]),
+    apiClient<Record<string, string[]>>('/blogs/parents').catch(
+      () => ({}) as Record<string, string[]>
+    )
+  ]);
+  const tree: Record<string, string[]> = { ...parents };
+  for (const category of categories ?? []) {
+    if (category && !tree[category]) tree[category] = [];
+  }
+  return tree;
+}
+
 export async function getBlog(id: string): Promise<Blog> {
   return apiClient<Blog>(`/blogs/${id}`);
 }
