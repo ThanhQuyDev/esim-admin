@@ -42,26 +42,57 @@ function isEmptyParagraph(block: string): boolean {
   return EMPTY_PARAGRAPH.test(block.trim());
 }
 
+/**
+ * The editor's image block as it writes it: a `<div class="image">` wrapped in a
+ * paragraph (#031). Only a div with no nested div is matched, so columns and
+ * other structures are left alone.
+ */
+const IMAGE_IN_PARAGRAPH =
+  /<p(?:\s[^>]*)?>\s*(<div\b[^>]*\bclass="[^"]*\bimage\b[^"]*"[^>]*>(?:(?!<\/?div\b)[\s\S])*<\/div>)\s*<\/p>/gi;
+
+const IMAGE_BLOCK = /^<div\b[^>]*\bclass="[^"]*\bimage\b[^"]*"/i;
+
+/**
+ * Take the image block out of its paragraph (#031).
+ *
+ * `<p><div class="image">…</div></p>` is invalid HTML: a browser parsing it
+ * closes the paragraph before the div and turns the stray `</p>` into a second,
+ * empty paragraph. So every time an article was opened for editing, each image
+ * came back with a blank line above and below it — and those were saved. The
+ * image itself still loads: the editor matches the `<img>` and puts it back in a
+ * paragraph of its own.
+ */
+export function unwrapImageParagraphs(html: string): string {
+  return html.replace(IMAGE_IN_PARAGRAPH, '$1');
+}
+
 export function normalizeEditorHtml(html: string): string {
   if (!html) return html;
   // Nothing but blank paragraphs means an empty document, whatever it looks like.
-  const blocks = splitBlocks(html);
+  const blocks = splitBlocks(unwrapImageParagraphs(html));
   if (blocks.every((block) => isEmptyParagraph(block))) return '';
 
   const kept: string[] = [];
   let pendingEmpty = false;
+  let lastKeptIsImage = false;
 
   for (const block of blocks) {
-    if (isEmptyParagraph(block)) {
-      // Drop leading empties outright; otherwise remember at most one.
-      if (kept.length > 0) pendingEmpty = true;
+    if (!block.trim()) {
+      kept.push(block);
       continue;
     }
-    if (pendingEmpty) {
-      kept.push('<p></p>');
-      pendingEmpty = false;
+    if (isEmptyParagraph(block)) {
+      // Drop leading empties outright; otherwise remember at most one. An empty
+      // paragraph right after an image is the parser's split, never typed.
+      if (kept.length > 0 && !lastKeptIsImage) pendingEmpty = true;
+      continue;
     }
+    const isImage = IMAGE_BLOCK.test(block.trim());
+    // …and so is one right before an image.
+    if (pendingEmpty && !isImage) kept.push('<p></p>');
+    pendingEmpty = false;
     kept.push(block);
+    lastKeptIsImage = isImage;
   }
 
   // A trailing empty (the editor's own parking paragraph) is never kept.

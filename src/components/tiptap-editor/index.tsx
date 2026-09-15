@@ -204,8 +204,15 @@ export function TiptapEditor({ content, onChange, placeholder, onImageUpload }: 
   const editor = useEditor({
     immediatelyRender: false,
     shouldRerenderOnTransaction: false,
-    content,
+    // Clean what was saved before it is parsed, so opening an article does not
+    // split its images into blank lines (#031).
+    content: normalizeEditorHtml(content),
     extensions,
+    onCreate: ({ editor }) => {
+      // Hand the cleaned document back straight away: an article that is only
+      // opened and saved, without typing, loses its stray blank lines too.
+      onChangeRef.current(normalizeEditorHtml(editor.getHTML()));
+    },
     onUpdate: ({ editor }) => {
       clearTimeout(debounceTimer.current);
       debounceTimer.current = setTimeout(() => {
