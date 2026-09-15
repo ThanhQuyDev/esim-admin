@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
+import { ApiError } from '@/lib/api-client';
 import {
   adminManualTopupMutation,
   topupPackagesQueryOptions,
@@ -92,6 +93,12 @@ export function AdminTopupDialog({ iccid, open, onOpenChange }: AdminTopupDialog
 
         {isLoading ? (
           <p className='text-muted-foreground py-6 text-center text-sm'>Đang tải gói nạp…</p>
+        ) : error instanceof ApiError && error.status === 400 ? (
+          // The backend refuses suppliers with no recharge at all (Viettel /
+          // local inventory) with an English 400 — say it in the admin's words.
+          <p className='text-muted-foreground py-6 text-center text-sm'>
+            Nhà cung cấp của eSIM này không hỗ trợ nạp thêm.
+          </p>
         ) : error ? (
           <p className='text-destructive py-6 text-center text-sm'>
             Không tải được danh sách gói: {error.message}
