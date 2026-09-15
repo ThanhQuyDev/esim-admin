@@ -61,6 +61,18 @@ export function ChatComposer({
     return () => URL.revokeObjectURL(url);
   }, [pendingFile]);
 
+  // Touch keyboards have no Shift+Enter, so there Enter must stay a line break
+  // and the send button sends (#007). Read after mount: the server render has
+  // no pointer to ask about.
+  const [enterSends, setEnterSends] = useState(true);
+  useEffect(() => {
+    const coarse = window.matchMedia('(pointer: coarse)');
+    const update = () => setEnterSends(!coarse.matches);
+    update();
+    coarse.addEventListener('change', update);
+    return () => coarse.removeEventListener('change', update);
+  }, []);
+
   // Picking a message to reply to should put the cursor where the answer goes,
   // and Esc backs out of the quote — the usual messenger keyboard flow (#073).
   useEffect(() => {
@@ -218,6 +230,10 @@ export function ChatComposer({
 
       <div className='border-border/40 bg-background/80 flex items-end gap-2 rounded-2xl border p-3 backdrop-blur sm:gap-3 sm:rounded-3xl sm:p-4'>
         <div className='min-w-0 flex-1'>
+          {/* 16px text on phones: iOS zooms the page into any field smaller than
+              that and leaves it zoomed, which made the chat "swell" (#007). The
+              height is capped so a long message scrolls inside the box instead
+              of pushing the conversation off screen. */}
           <Textarea
             id='messenger-editor'
             ref={textareaRef}
@@ -229,7 +245,9 @@ export function ChatComposer({
                 onCancelReply();
                 return;
               }
-              if (e.key === 'Enter' && !e.shiftKey) {
+              // Never send mid-composition: Vietnamese IMEs (Telex/VNI) use
+              // Enter to commit the word being typed.
+              if (e.key === 'Enter' && !e.shiftKey && enterSends && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 if (canSubmit) {
                   const form = e.currentTarget.closest('form');
@@ -237,9 +255,14 @@ export function ChatComposer({
                 }
               }
             }}
-            placeholder='Nhập tin nhắn... (Enter để gửi, Shift+Enter để xuống dòng)'
+            placeholder={
+              enterSends
+                ? 'Nhập tin nhắn... (Enter để gửi, Shift+Enter để xuống dòng)'
+                : 'Nhập tin nhắn...'
+            }
             rows={2}
-            className='text-foreground placeholder:text-muted-foreground/70 min-h-[3rem] w-full resize-none border-none bg-transparent text-xs focus-visible:ring-0 focus-visible:outline-none sm:min-h-[4rem] sm:text-sm'
+            enterKeyHint={enterSends ? 'send' : 'enter'}
+            className='text-foreground placeholder:text-muted-foreground/70 max-h-40 min-h-[3rem] w-full resize-none overflow-y-auto border-none bg-transparent text-base focus-visible:ring-0 focus-visible:outline-none sm:min-h-[4rem] sm:text-sm'
             aria-label='Ô nhập tin nhắn'
           />
         </div>

@@ -112,7 +112,8 @@ export function ChatRoomList() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder='Tìm kiếm cuộc trò chuyện'
-          className='border-border/40 bg-background/60 text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-primary/40 w-full rounded-2xl pl-10 text-sm focus-visible:ring-2'
+          // 16px on phones, or iOS zooms the page in on focus (#007).
+          className='border-border/40 bg-background/60 text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-primary/40 w-full rounded-2xl pl-10 text-base focus-visible:ring-2 sm:text-sm'
         />
       </div>
 
