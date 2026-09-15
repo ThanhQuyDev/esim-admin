@@ -22,6 +22,11 @@ const VARS: { name: string; description: string; example: string }[] = [
     example: '120.000đ'
   },
   {
+    name: '${fromPriceK}',
+    description: 'Giá rẻ nhất rút gọn theo K (bản tiếng Anh hiện USD, vd $2.07)',
+    example: '58K'
+  },
+  {
     name: '${fromPriceNumber}',
     description: 'Giá rẻ nhất dạng số thuần — dùng cho schema "price"',
     example: '120000'

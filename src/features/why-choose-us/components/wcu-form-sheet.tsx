@@ -200,7 +200,7 @@ function CreateSheet({
                 label='Tiêu đề'
                 required
                 placeholder='Tiêu đề'
-                description='Dùng được biến: ${name} (tên quốc gia/khu vực/nhà mạng của trang), ${fromPrice}, ${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}.'
+                description='Dùng được biến: ${name} (tên quốc gia/khu vực/nhà mạng của trang), ${fromPrice}, ${fromPriceK}, ${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}.'
                 validators={{ onBlur: z.string().min(2) }}
               />
               <div className='space-y-2'>
@@ -209,9 +209,9 @@ function CreateSheet({
                 </label>
                 {/* Same variables the SEO records use (#087). */}
                 <p className='text-muted-foreground text-xs'>
-                  Dùng được biến: ${'{'}name{'}'}, ${'{'}fromPrice{'}'}, ${'{'}fromPriceVnd{'}'}, $
-                  {'{'}planCount{'}'}, ${'{'}dataRange{'}'}, ${'{'}dayRange{'}'} — trang tự điền
-                  theo quốc gia/khu vực đang xem.
+                  Dùng được biến: ${'{'}name{'}'}, ${'{'}fromPrice{'}'}, ${'{'}fromPriceK{'}'}, $
+                  {'{'}fromPriceVnd{'}'}, ${'{'}planCount{'}'}, ${'{'}dataRange{'}'}, ${'{'}dayRange
+                  {'}'} — trang tự điền theo quốc gia/khu vực đang xem.
                 </p>
                 <MinimalTiptapEditor
                   content={descriptionRef.current}
@@ -338,7 +338,7 @@ function EditSheet({
                 label='Tiêu đề'
                 required
                 placeholder='Tiêu đề'
-                description='Dùng được biến: ${name} (tên quốc gia/khu vực/nhà mạng của trang), ${fromPrice}, ${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}.'
+                description='Dùng được biến: ${name} (tên quốc gia/khu vực/nhà mạng của trang), ${fromPrice}, ${fromPriceK}, ${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}.'
                 validators={{ onBlur: z.string().min(2) }}
               />
               <div className='space-y-2'>
@@ -347,9 +347,9 @@ function EditSheet({
                 </label>
                 {/* Same variables the SEO records use (#087). */}
                 <p className='text-muted-foreground text-xs'>
-                  Dùng được biến: ${'{'}name{'}'}, ${'{'}fromPrice{'}'}, ${'{'}fromPriceVnd{'}'}, $
-                  {'{'}planCount{'}'}, ${'{'}dataRange{'}'}, ${'{'}dayRange{'}'} — trang tự điền
-                  theo quốc gia/khu vực đang xem.
+                  Dùng được biến: ${'{'}name{'}'}, ${'{'}fromPrice{'}'}, ${'{'}fromPriceK{'}'}, $
+                  {'{'}fromPriceVnd{'}'}, ${'{'}planCount{'}'}, ${'{'}dataRange{'}'}, ${'{'}dayRange
+                  {'}'} — trang tự điền theo quốc gia/khu vực đang xem.
                 </p>
                 <MinimalTiptapEditor
                   content={descriptionRef.current}
