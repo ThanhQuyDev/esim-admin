@@ -10,7 +10,7 @@ import { ChatOrderWidget } from './chat-order-widget';
 
 export default function ChatViewPage() {
   const connect = useChatStore((s) => s.connect);
-  const disconnect = useChatStore((s) => s.disconnect);
+  const clearSelection = useChatStore((s) => s.clearSelection);
   const fetchRooms = useChatStore((s) => s.fetchRooms);
   const connectionStatus = useChatStore((s) => s.connectionStatus);
   const selectedRoomId = useChatStore((s) => s.selectedRoomId);
@@ -39,7 +39,10 @@ export default function ChatViewPage() {
       });
 
     return () => {
-      disconnect();
+      // Leave the socket running: it is shared app-wide by
+      // ChatNotificationListener. Disconnecting here killed the sidebar badge
+      // and the desktop notifications the moment an admin left this page (#032).
+      clearSelection();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

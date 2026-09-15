@@ -157,6 +157,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     const existing = getCurrentChatSocket();
     if (existing?.connected) {
       set({ connectionStatus: 'connected', _socket: existing, myUserId });
+      existing.emit('getRooms');
       return;
     }
 
@@ -169,6 +170,9 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       set({ connectionStatus: 'connected', _socket: socket });
       // Subscribe to all rooms for global notifications
       socket.emit('subscribeAllRooms');
+      // …and load them: the sidebar badge counts waiting rooms, and outside
+      // the chat page nothing else ever fetched the list, so it read 0 (#032).
+      socket.emit('getRooms');
     });
 
     socket.on('disconnect', () => {
@@ -245,7 +249,15 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         get().fetchUserInfo(msg.senderId);
       }
 
-      const fromCustomer = msg.senderId !== state.myUserId;
+      // A customer is the room's owner. Bot messages (no sender) and other
+      // admins' replies are not someone waiting for an answer (#032).
+      const room = state.rooms.find((r) => r.id === msg.chatRoomId);
+      const fromCustomer = room
+        ? msg.senderId === room.userId
+        : msg.senderId !== null && msg.senderId !== state.myUserId;
+
+      // A conversation we have not loaded yet: fetch the list so it shows.
+      if (!room) socket.emit('getRooms');
 
       // Play notification sound if enabled and message is from customer
       if (state.soundEnabled && fromCustomer) {
@@ -290,11 +302,13 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       set((s) => ({
         rooms: s.rooms.map((room) => {
           if (room.id !== msg.chatRoomId) return room;
-          return {
-            ...room,
-            lastMessage: msg,
-            unreadCount: msg.chatRoomId === s.selectedRoomId ? 0 : room.unreadCount + 1
-          };
+          const unreadCount =
+            msg.chatRoomId === s.selectedRoomId
+              ? 0
+              : msg.senderId === room.userId
+                ? room.unreadCount + 1
+                : room.unreadCount;
+          return { ...room, lastMessage: msg, unreadCount };
         })
       }));
     });
@@ -306,6 +320,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
           msg.chatRoomId === chatRoomId ? { ...msg, isRead: true } : msg
         )
       }));
+    });
+
+    socket.on('roomsChanged', () => {
+      socket.emit('getRooms');
     });
 
     socket.on('rooms', (rooms) => {

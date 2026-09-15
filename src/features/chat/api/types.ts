@@ -69,6 +69,8 @@ export interface ServerToClientEvents {
   messages: (data: { chatRoomId: number; messages: ChatMessage[] }) => void;
   markedAsRead: (data: { chatRoomId: number }) => void;
   rooms: (data: ChatRoomWithMeta[]) => void;
+  /** A customer opened a conversation — refetch the list (#032). */
+  roomsChanged: () => void;
   error: (data: { message: string }) => void;
 }
 
