@@ -70,6 +70,13 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Hạng khách hàng',
+        url: '/dashboard/membership-tiers',
+        icon: 'award',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Blog',
         url: '/dashboard/blogs',
         icon: 'blog',
