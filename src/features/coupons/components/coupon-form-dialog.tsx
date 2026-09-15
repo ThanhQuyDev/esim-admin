@@ -20,6 +20,7 @@ import {
 import { partnersQueryOptions } from '@/features/partners/api/queries';
 import { Badge } from '@/components/ui/badge';
 import { couponUsage } from '../utils/usage';
+import { HOURS, MINUTES, joinDateTime, splitDateTime } from '../utils/datetime';
 
 /** Radix Select has no empty-string value, so "no owner" needs a sentinel. */
 const NO_PARTNER = 'none';
@@ -97,20 +98,56 @@ function DateTimeField({
   onChange: (val: string) => void;
   required?: boolean;
 }) {
+  // A date plus 24-hour hour/minute pickers instead of `datetime-local`, whose
+  // time follows the browser locale and showed "SA/CH" to admins (#039).
+  const parts = splitDateTime(value);
+  const update = (patch: Partial<typeof parts>) => onChange(joinDateTime({ ...parts, ...patch }));
+
   return (
     <div className='space-y-2'>
-      <label className='text-sm font-medium'>
+      <label htmlFor='coupon-expiry-date' className='text-sm font-medium'>
         {label}
         {required && <span className='text-destructive'> *</span>}
       </label>
-      <Input
-        type='datetime-local'
-        value={value || ''}
-        onChange={(e) => {
-          const newValue = e.target.value;
-          onChange(newValue);
-        }}
-      />
+      <div className='flex flex-wrap items-center gap-2'>
+        <Input
+          id='coupon-expiry-date'
+          type='date'
+          className='w-auto min-w-[160px] flex-1'
+          value={parts.date}
+          onChange={(e) => update({ date: e.target.value })}
+        />
+        <Select value={parts.hour} onValueChange={(hour) => update({ hour })}>
+          <SelectTrigger
+            className='w-[76px]'
+            aria-label='Giờ (24h)'
+            data-testid='coupon-expiry-hour'
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className='max-h-64'>
+            {HOURS.map((h) => (
+              <SelectItem key={h} value={h}>
+                {h}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className='text-muted-foreground'>:</span>
+        <Select value={parts.minute} onValueChange={(minute) => update({ minute })}>
+          <SelectTrigger className='w-[76px]' aria-label='Phút' data-testid='coupon-expiry-minute'>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className='max-h-64'>
+            {MINUTES.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <p className='text-muted-foreground text-xs'>Giờ theo định dạng 24h (00:00 – 23:59).</p>
     </div>
   );
 }
