@@ -93,6 +93,7 @@ function IconUploadField({
       <div className='flex items-center gap-3'>
         {previewUrl && (
           <div className='relative h-12 w-12 overflow-hidden rounded-lg border-2 border-border/50 shadow-sm'>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={previewUrl} alt={label} className='h-full w-full object-cover' />
           </div>
         )}
@@ -145,6 +146,7 @@ function CreateDialog({
       form.reset();
       setFirstIconFile(null);
       setSecondIconFile(null);
+      setImageFile(null);
     },
     onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
@@ -311,6 +313,7 @@ function EditDialog({
       onOpenChange(false);
       setFirstIconFile(null);
       setSecondIconFile(null);
+      setImageFile(null);
     },
     onError: (e) => toast.error(e.message || 'Thao tác thất bại')
   });
