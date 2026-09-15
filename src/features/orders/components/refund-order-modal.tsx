@@ -112,8 +112,11 @@ export function RefundOrderModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:max-w-[500px]'>
-        <DialogHeader>
+      {/* Capped to the viewport with a scrolling body: an order with many
+          products made the popup taller than the screen and pushed the
+          confirm/cancel buttons out of reach (#014). Header and footer stay put. */}
+      <DialogContent className='flex max-h-[90dvh] flex-col sm:max-w-[500px]'>
+        <DialogHeader className='shrink-0'>
           <DialogTitle>Hoàn tiền đơn hàng</DialogTitle>
           <DialogDescription>
             Xử lý hoàn tiền cho đơn hàng{' '}
@@ -121,7 +124,10 @@ export function RefundOrderModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4'>
+        <div
+          className='-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2'
+          data-testid='refund-modal-body'
+        >
           {/* Order Summary */}
           <div className='rounded-lg border p-4 space-y-2'>
             <div className='flex items-center justify-between'>
@@ -270,7 +276,7 @@ export function RefundOrderModal({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className='shrink-0'>
           <Button variant='outline' onClick={() => handleOpenChange(false)}>
             Hủy
           </Button>
