@@ -5,7 +5,6 @@ export const footerSchema = z.object({
   titleVi: z.string().min(1, 'Vietnamese title is required'),
   url: z.string().min(1, 'Vui lòng nhập URL tiếng Việt'),
   urlEn: z.string().optional(),
-  language: z.string().min(1, 'Language is required'),
   sortOrder: z.number().int().min(0, 'Thứ tự phải từ 0 trở lên'),
   categories: z.string().optional(),
   categoriesVi: z.string().optional(),

@@ -14,11 +14,6 @@ import type { CreateFooterPayload, Footer, UpdateFooterPayload } from '../api/ty
 import { footerSchema, type FooterFormValues } from '../schemas/footer';
 import Image from 'next/image';
 
-const LANG_OPTIONS = [
-  { value: 'vi', label: 'Tiếng Việt' },
-  { value: 'en', label: 'English' }
-];
-
 interface FooterFormDialogProps {
   item?: Footer;
   open: boolean;
@@ -81,6 +76,78 @@ function IconUploadField({
   );
 }
 
+/**
+ * The footer fields in two columns, English on the left and Vietnamese on the
+ * right, row by row: link title, URL, column heading — then order and icon
+ * (#044). Shared by the create and edit dialogs so they cannot drift apart.
+ *
+ * The language select is gone: every row already carries both languages, and
+ * the storefront never read it.
+ */
+function FooterFields({
+  currentIconUrl,
+  iconFile,
+  onIconFileSelect
+}: {
+  currentIconUrl: string | null;
+  iconFile: File | null;
+  onIconFileSelect: (f: File | null) => void;
+}) {
+  const { FormTextField } = useFormFields<FooterFormValues>();
+
+  return (
+    <div className='grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2'>
+      <FormTextField name='title' label='Tiêu đề tiếng Anh' placeholder='VD: About Us' />
+      <FormTextField name='titleVi' label='Tiêu đề tiếng Việt' placeholder='VD: Về chúng tôi' />
+
+      {/* One URL per language: the English site links elsewhere (#043). */}
+      <FormTextField
+        name='urlEn'
+        label='URL tiếng Anh'
+        placeholder='https://esim.vn/en/...'
+        description='Bỏ trống thì bản tiếng Anh dùng URL tiếng Việt.'
+      />
+      <FormTextField name='url' label='URL tiếng Việt' placeholder='https://esim.vn/...' />
+
+      {/* The heading this link sits under. `categories` doubles as the
+          grouping key, so rows that belong together must share it exactly;
+          the Vietnamese heading is display-only (#088). */}
+      <FormTextField
+        name='categories'
+        label='Tiêu đề cột tiếng Anh'
+        placeholder='VD: Support'
+        description='Các link cùng một tiêu đề này sẽ nằm chung một cột.'
+      />
+      <FormTextField
+        name='categoriesVi'
+        label='Tiêu đề cột tiếng Việt'
+        placeholder='VD: Hỗ trợ'
+        description='Bỏ trống thì bản tiếng Việt dùng tiêu đề tiếng Anh.'
+      />
+
+      <FormTextField
+        name='sortOrder'
+        label='Thứ tự hiển thị'
+        type='number'
+        placeholder='0 (số nhỏ hiển thị trước)'
+      />
+      <div className='hidden md:block' aria-hidden='true' />
+
+      <IconUploadField
+        label='Icon'
+        currentUrl={currentIconUrl}
+        onFileSelect={onIconFileSelect}
+        file={iconFile}
+      />
+      <FormTextField
+        name='iconUrl'
+        label='Hoặc nhập Icon URL'
+        placeholder='https://... (bỏ qua nếu đã upload)'
+      />
+    </div>
+  );
+}
+
 function CreateDialog({
   open,
   onOpenChange
@@ -107,7 +174,6 @@ function CreateDialog({
       titleVi: '',
       url: '',
       urlEn: '',
-      language: 'en',
       sortOrder: 0,
       categories: '',
       categoriesVi: '',
@@ -124,7 +190,6 @@ function CreateDialog({
         titleVi: value.titleVi,
         url: value.url,
         urlEn: value.urlEn?.trim() || null,
-        language: value.language,
         sortOrder: value.sortOrder,
         categories: value.categories || null,
         categoriesVi: value.categoriesVi || null,
@@ -133,8 +198,6 @@ function CreateDialog({
       await mutation.mutateAsync(payload);
     }
   });
-
-  const { FormTextField, FormSelectField } = useFormFields<FooterFormValues>();
 
   return (
     <FormDialog
@@ -153,59 +216,8 @@ function CreateDialog({
       }
     >
       <form.AppForm>
-        <form.Form id='footer-form-dialog' className='space-y-6'>
-          <FormTextField name='title' label='Title' placeholder='Enter default title' />
-          <FormTextField
-            name='titleVi'
-            label='Tiêu đề tiếng Việt'
-            placeholder='Nhập tiêu đề tiếng Việt'
-          />
-          {/* One URL per language: the English site links elsewhere (#043). */}
-          <FormTextField name='url' label='URL tiếng Việt' placeholder='https://esim.vn/...' />
-          <FormTextField
-            name='urlEn'
-            label='URL tiếng Anh'
-            placeholder='https://esim.vn/en/...'
-            description='Bỏ trống thì bản tiếng Anh dùng URL tiếng Việt.'
-          />
-          <FormSelectField
-            name='language'
-            label='Ngôn ngữ'
-            placeholder='Chọn ngôn ngữ'
-            options={LANG_OPTIONS}
-          />
-          <FormTextField
-            name='sortOrder'
-            label='Thứ tự hiển thị'
-            type='number'
-            placeholder='0 (số nhỏ hiển thị trước)'
-          />
-          {/* The heading this link sits under. `categories` doubles as the
-              grouping key, so rows that belong together must share it
-              exactly; the Vietnamese heading is display-only (#088). */}
-          <FormTextField
-            name='categories'
-            label='Tiêu đề cột (mặc định / tiếng Anh)'
-            placeholder='VD: Support'
-            description='Các link cùng một tiêu đề này sẽ nằm chung một cột.'
-          />
-          <FormTextField
-            name='categoriesVi'
-            label='Tiêu đề cột (tiếng Việt)'
-            placeholder='VD: Hỗ trợ'
-            description='Bỏ trống thì bản tiếng Việt dùng tiêu đề mặc định.'
-          />
-          <IconUploadField
-            label='Icon'
-            currentUrl={null}
-            onFileSelect={setIconFile}
-            file={iconFile}
-          />
-          <FormTextField
-            name='iconUrl'
-            label='Hoặc nhập Icon URL'
-            placeholder='https://... (bỏ qua nếu đã upload)'
-          />
+        <form.Form id='footer-form-dialog'>
+          <FooterFields currentIconUrl={null} iconFile={iconFile} onIconFileSelect={setIconFile} />
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -238,7 +250,6 @@ function EditDialog({
       titleVi: item.titleVi,
       url: item.url,
       urlEn: item.urlEn || '',
-      language: item.language || 'en',
       sortOrder: item.sortOrder ?? 0,
       categories: item.categories || '',
       categoriesVi: item.categoriesVi || '',
@@ -255,7 +266,6 @@ function EditDialog({
         titleVi: value.titleVi,
         url: value.url,
         urlEn: value.urlEn?.trim() || null,
-        language: value.language,
         sortOrder: value.sortOrder,
         categories: value.categories || null,
         categoriesVi: value.categoriesVi || null,
@@ -264,8 +274,6 @@ function EditDialog({
       await mutation.mutateAsync({ id: item.id, values: payload });
     }
   });
-
-  const { FormTextField, FormSelectField } = useFormFields<FooterFormValues>();
 
   return (
     <FormDialog
@@ -278,58 +286,11 @@ function EditDialog({
       submitLabel='Cập nhật'
     >
       <form.AppForm>
-        <form.Form id='footer-form-dialog' className='space-y-6'>
-          <FormTextField name='title' label='Title' placeholder='Enter default title' />
-          <FormTextField
-            name='titleVi'
-            label='Tiêu đề tiếng Việt'
-            placeholder='Nhập tiêu đề tiếng Việt'
-          />
-          {/* One URL per language: the English site links elsewhere (#043). */}
-          <FormTextField name='url' label='URL tiếng Việt' placeholder='https://esim.vn/...' />
-          <FormTextField
-            name='urlEn'
-            label='URL tiếng Anh'
-            placeholder='https://esim.vn/en/...'
-            description='Bỏ trống thì bản tiếng Anh dùng URL tiếng Việt.'
-          />
-          <FormSelectField
-            name='language'
-            label='Ngôn ngữ'
-            placeholder='Chọn ngôn ngữ'
-            options={LANG_OPTIONS}
-          />
-          <FormTextField
-            name='sortOrder'
-            label='Thứ tự hiển thị'
-            type='number'
-            placeholder='0 (số nhỏ hiển thị trước)'
-          />
-          {/* The heading this link sits under. `categories` doubles as the
-              grouping key, so rows that belong together must share it
-              exactly; the Vietnamese heading is display-only (#088). */}
-          <FormTextField
-            name='categories'
-            label='Tiêu đề cột (mặc định / tiếng Anh)'
-            placeholder='VD: Support'
-            description='Các link cùng một tiêu đề này sẽ nằm chung một cột.'
-          />
-          <FormTextField
-            name='categoriesVi'
-            label='Tiêu đề cột (tiếng Việt)'
-            placeholder='VD: Hỗ trợ'
-            description='Bỏ trống thì bản tiếng Việt dùng tiêu đề mặc định.'
-          />
-          <IconUploadField
-            label='Icon'
-            currentUrl={item.iconUrl}
-            onFileSelect={setIconFile}
-            file={iconFile}
-          />
-          <FormTextField
-            name='iconUrl'
-            label='Hoặc nhập Icon URL'
-            placeholder='https://... (bỏ qua nếu đã upload)'
+        <form.Form id='footer-form-dialog'>
+          <FooterFields
+            currentIconUrl={item.iconUrl ?? null}
+            iconFile={iconFile}
+            onIconFileSelect={setIconFile}
           />
         </form.Form>
       </form.AppForm>

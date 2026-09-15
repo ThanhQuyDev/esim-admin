@@ -31,7 +31,8 @@ export type CreateFooterPayload = {
   titleVi: string;
   url: string;
   urlEn?: string | null;
-  language: string;
+  /** No longer sent: the form's language select was removed (#044). */
+  language?: string;
   sortOrder?: number;
   /** Column heading, default/English — also the grouping key (#088). */
   categories?: string | null;
