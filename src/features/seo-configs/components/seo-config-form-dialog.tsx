@@ -49,7 +49,47 @@ export function SeoConfigFormDialog({ seoConfig, open, onOpenChange }: SeoConfig
 
 const FORM_ID = 'seo-config-form-dialog';
 
-function SearchableSelect<T extends { id: number; name: string; slug: string }>({
+/**
+ * Every page of a paginated list. One page of 200 silently dropped the rest:
+ * there are already 218 countries, so some could never be picked (#015).
+ */
+async function fetchAllPages<T>(
+  fetchPage: (page: number) => Promise<{ data: T[]; hasNextPage: boolean }>
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let page = 1; page <= 50; page++) {
+    const res = await fetchPage(page);
+    all.push(...res.data);
+    if (!res.hasNextPage) break;
+  }
+  return all;
+}
+
+type SeoPageEntity = {
+  id: number;
+  name: string;
+  slug: string;
+  slugVi?: string | null;
+  title?: string | null;
+  titleVi?: string | null;
+};
+
+/**
+ * The storefront URL of a country/region page, as the SEO lookup asks for it:
+ * `/{slugVi || slug}` (Vietnamese pages carry no locale prefix). The form used
+ * to store `/destinations/…` / `/regions/…`, which no page ever requests, so a
+ * config created this way never applied (#015).
+ */
+function seoPagePath(entity: Pick<SeoPageEntity, 'slug' | 'slugVi'>): string {
+  return `/${entity.slugVi || entity.slug}`;
+}
+
+/** What an admin recognises: the Vietnamese title, not the supplier's raw name. */
+function seoEntityLabel(entity: SeoPageEntity): string {
+  return entity.titleVi || entity.title || entity.name;
+}
+
+function SearchableSelect<T extends SeoPageEntity>({
   label,
   items,
   value,
@@ -76,7 +116,9 @@ function SearchableSelect<T extends { id: number; name: string; slug: string }>(
             aria-expanded={open}
             className='w-full justify-between'
           >
-            {selected ? `${selected.name} (${selected.slug})` : placeholder}
+            <span className='truncate'>
+              {selected ? `${seoEntityLabel(selected)} (${seoPagePath(selected)})` : placeholder}
+            </span>
             <Icons.chevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
           </Button>
         </PopoverTrigger>
@@ -86,23 +128,42 @@ function SearchableSelect<T extends { id: number; name: string; slug: string }>(
             <CommandList>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               <CommandGroup>
-                {items.map((item) => (
-                  <CommandItem
-                    key={item.id}
-                    onSelect={() => {
-                      onSelect(String(item.id));
-                      setOpen(false);
-                    }}
-                  >
-                    <Icons.check
-                      className={cn(
-                        'mr-2 h-4 w-4',
-                        value === item.id ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                    {item.name} ({item.slug})
-                  </CommandItem>
-                ))}
+                {items.map((item) => {
+                  const itemLabel = seoEntityLabel(item);
+                  return (
+                    <CommandItem
+                      key={item.id}
+                      // The id keeps same-named regions ("South", "Asia") apart;
+                      // the keywords let a Vietnamese title or a slug find it.
+                      value={String(item.id)}
+                      keywords={[
+                        item.name,
+                        item.title,
+                        item.titleVi,
+                        item.slug,
+                        item.slugVi
+                      ].filter((k): k is string => !!k)}
+                      onSelect={() => {
+                        onSelect(String(item.id));
+                        setOpen(false);
+                      }}
+                    >
+                      <Icons.check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          value === item.id ? 'opacity-100' : 'opacity-0'
+                        )}
+                      />
+                      <span className='flex min-w-0 flex-col'>
+                        <span className='truncate'>{itemLabel}</span>
+                        <span className='text-muted-foreground truncate text-xs'>
+                          {seoPagePath(item)}
+                          {itemLabel !== item.name ? ` · ${item.name}` : ''}
+                        </span>
+                      </span>
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </Command>
@@ -122,19 +183,19 @@ function CreateSeoConfigDialog({
   const [urlSource, setUrlSource] = useState<'manual' | 'destination' | 'region'>('manual');
 
   const { data: destinationsData } = useQuery({
-    queryKey: ['destinations', 'all-for-seo'],
-    queryFn: () => getDestinations({ limit: 200 }),
+    queryKey: ['destinations', 'all-pages-for-seo'],
+    queryFn: () => fetchAllPages((page) => getDestinations({ page, limit: 200 })),
     enabled: open
   });
 
   const { data: regionsData } = useQuery({
-    queryKey: ['regions', 'all-for-seo'],
-    queryFn: () => getRegions({ limit: 200 }),
+    queryKey: ['regions', 'all-pages-for-seo'],
+    queryFn: () => fetchAllPages((page) => getRegions({ page, limit: 200 })),
     enabled: open
   });
 
-  const destinations = destinationsData?.data ?? [];
-  const regions = regionsData?.data ?? [];
+  const destinations = destinationsData ?? [];
+  const regions = regionsData ?? [];
 
   const mutation = useMutation({
     ...createSeoConfigMutation,
@@ -187,7 +248,7 @@ function CreateSeoConfigDialog({
     if (dest) {
       form.setFieldValue('destinationId', id);
       form.setFieldValue('regionId', null);
-      form.setFieldValue('url', `/destinations/${dest.slug}`);
+      form.setFieldValue('url', seoPagePath(dest));
     }
   };
 
@@ -197,7 +258,7 @@ function CreateSeoConfigDialog({
     if (region) {
       form.setFieldValue('regionId', id);
       form.setFieldValue('destinationId', null);
-      form.setFieldValue('url', `/regions/${region.slug}`);
+      form.setFieldValue('url', seoPagePath(region));
     }
   };
 
@@ -386,19 +447,19 @@ function EditSeoConfigDialog({
   const [urlSource, setUrlSource] = useState<'manual' | 'destination' | 'region'>('manual');
 
   const { data: destinationsData } = useQuery({
-    queryKey: ['destinations', 'all-for-seo'],
-    queryFn: () => getDestinations({ limit: 200 }),
+    queryKey: ['destinations', 'all-pages-for-seo'],
+    queryFn: () => fetchAllPages((page) => getDestinations({ page, limit: 200 })),
     enabled: open
   });
 
   const { data: regionsData } = useQuery({
-    queryKey: ['regions', 'all-for-seo'],
-    queryFn: () => getRegions({ limit: 200 }),
+    queryKey: ['regions', 'all-pages-for-seo'],
+    queryFn: () => fetchAllPages((page) => getRegions({ page, limit: 200 })),
     enabled: open
   });
 
-  const destinations = destinationsData?.data ?? [];
-  const regions = regionsData?.data ?? [];
+  const destinations = destinationsData ?? [];
+  const regions = regionsData ?? [];
 
   const mutation = useMutation({
     ...updateSeoConfigMutation,
@@ -451,7 +512,7 @@ function EditSeoConfigDialog({
     if (dest) {
       form.setFieldValue('destinationId', id);
       form.setFieldValue('regionId', null);
-      form.setFieldValue('url', `/destinations/${dest.slug}`);
+      form.setFieldValue('url', seoPagePath(dest));
     }
   };
 
@@ -461,7 +522,7 @@ function EditSeoConfigDialog({
     if (region) {
       form.setFieldValue('regionId', id);
       form.setFieldValue('destinationId', null);
-      form.setFieldValue('url', `/regions/${region.slug}`);
+      form.setFieldValue('url', seoPagePath(region));
     }
   };
 
