@@ -96,10 +96,6 @@ export type ImportGadgetKoreaExcelPayload = {
   file: File;
 };
 
-export type ImportJapanTravelSimExcelPayload = {
-  file: File;
-};
-
 export type ImportPlansExcelResponse = {
   message: string;
   imported: number;
@@ -113,15 +109,6 @@ export type ImportGadgetKoreaResponse = {
   skipped: number;
   errors: string[];
   destinationNotFound: string[];
-};
-
-export type ImportJapanTravelSimResponse = {
-  total: number;
-  created: number;
-  updated: number;
-  skipped: number;
-  errors?: string[];
-  destinationNotFound?: string[];
 };
 
 export type BatchDiscountPayload = {

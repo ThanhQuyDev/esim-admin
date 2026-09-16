@@ -4,7 +4,6 @@ import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 import { PlanFormDialogTrigger } from '@/features/plans/components/plan-form-dialog';
 import { ImportGadgetKoreaExcelDialog } from '@/features/plans/components/import-gadget-korea-excel-dialog';
-import { ImportJapanTravelSimExcelDialog } from '@/features/plans/components/import-japan-travel-sim-excel-dialog';
 
 export const metadata = {
   title: 'Dashboard: Gói eSIM'
@@ -26,7 +25,6 @@ export default async function EsimPlanPage(props: PageProps) {
       pageHeaderAction={
         <div className='flex items-center gap-2'>
           <ImportGadgetKoreaExcelDialog />
-          <ImportJapanTravelSimExcelDialog />
           <PlanFormDialogTrigger />
         </div>
       }

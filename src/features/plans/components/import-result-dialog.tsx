@@ -12,12 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Icons } from '@/components/icons';
-import type { ImportGadgetKoreaResponse, ImportJapanTravelSimResponse } from '../api/types';
+import type { ImportGadgetKoreaResponse } from '../api/types';
 
 interface ImportResultDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  result: ImportGadgetKoreaResponse | ImportJapanTravelSimResponse | null;
+  result: ImportGadgetKoreaResponse | null;
 }
 
 export function ImportResultDialog({ open, onOpenChange, result }: ImportResultDialogProps) {

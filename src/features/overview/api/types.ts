@@ -2,7 +2,6 @@ export type OverviewProvider =
   | 'airalo'
   | 'esimaccess'
   | 'gadgetkorea'
-  | 'japantravelsim'
   | 'microesim'
   | 'billion'
   | 'viettel';

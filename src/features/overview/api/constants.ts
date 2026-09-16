@@ -9,7 +9,6 @@ export const OVERVIEW_PROVIDERS = [
   'airalo',
   'esimaccess',
   'gadgetkorea',
-  'japantravelsim',
   'microesim',
   'billion',
   'viettel'
@@ -24,7 +23,6 @@ export const PROVIDER_LABELS: Record<string, string> = {
   airalo: 'Airalo',
   esimaccess: 'eSIM Access',
   gadgetkorea: 'Gadget Korea',
-  japantravelsim: 'Japan',
   microesim: 'MicroEsim',
   billion: 'Billion Connect',
   viettel: 'Viettel'
@@ -36,19 +34,16 @@ export const PROVIDER_LABELS: Record<string, string> = {
  * wholesalers esim.vn buys from.
  *
  * Short abbreviations rather than numbered codes: "NCC-01…NCC-07" could not be
- * told apart at a glance (#008). BC and ME are the codes the business already
- * uses for Billion Connect and MicroEsim; the others follow the same
- * two-letter convention and are pending confirmation against the list at the
- * end of Thọ's spreadsheet. Change only the values — the keys (provider slugs)
- * are what the API sends and expects back.
+ * told apart at a glance. The codes are the ones the business confirmed (#008).
+ * Change only the values — the keys (provider slugs) are what the API sends and
+ * expects back.
  */
 export const PROVIDER_CODE_LABELS: Record<string, string> = {
-  airalo: 'AL',
+  airalo: 'AI',
   esimaccess: 'EA',
   gadgetkorea: 'GK',
-  japantravelsim: 'JT',
-  microesim: 'ME',
-  billion: 'BC',
+  microesim: 'MI',
+  billion: 'BL',
   viettel: 'VT'
 };
 
