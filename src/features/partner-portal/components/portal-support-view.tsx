@@ -1,170 +1,319 @@
 'use client';
 
-import { formatDateVn } from '@/lib/format';
-import { useState } from 'react';
+/**
+ * Support — `#view-support` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
+ *
+ * Two tabs: raise a request, and track the partner's own tickets. The topic
+ * picker swaps the hint card the way the mockup's `updateSupportHint` does.
+ */
+
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
-import { Icons } from '@/components/icons';
-
-import { myProfileQueryOptions, myTicketsQueryOptions } from '../api/queries';
 import { createTicketMutation } from '../api/mutations';
+import { myProfileQueryOptions, myTicketsQueryOptions } from '../api/queries';
+import { formatDateTimeVn } from '@/lib/format';
+import { PortalIcon, type PortalIconId } from './portal-icon-sprite';
+import { usePortalToast } from './portal-toast';
 
-const STATUS_LABEL: Record<string, string> = {
-  open: 'Đang mở',
-  pending: 'Chờ xử lý',
-  in_progress: 'Đang xử lý',
-  resolved: 'Đã xử lý',
-  closed: 'Đã đóng'
-};
+/** Topic → what to include, copied from the mockup's `supportHints`. */
+const TOPICS: {
+  value: string;
+  label: string;
+  text: string;
+  icon: PortalIconId;
+}[] = [
+  {
+    value: 'missing',
+    label: 'Đơn hàng chưa được ghi nhận',
+    text: 'Gửi mã đơn, thời điểm mua và link hoặc mã đã sử dụng.',
+    icon: 'i-cart'
+  },
+  {
+    value: 'commission',
+    label: 'Hoa hồng',
+    text: 'Gửi mã đơn và mức hoa hồng cần kiểm tra.',
+    icon: 'i-chart'
+  },
+  {
+    value: 'payout',
+    label: 'Rút tiền',
+    text: 'Gửi mã yêu cầu rút tiền, số tiền và ngày tạo yêu cầu.',
+    icon: 'i-wallet'
+  },
+  {
+    value: 'link',
+    label: 'Link hoặc mã giảm giá',
+    text: 'Gửi link hoặc mã gặp lỗi cùng thiết bị đã thử.',
+    icon: 'i-link'
+  },
+  {
+    value: 'sample',
+    label: 'eSIM trải nghiệm',
+    text: 'Ghi rõ điểm đến, mục đích và thời gian cần eSIM trải nghiệm.',
+    icon: 'i-gift'
+  },
+  {
+    value: 'account',
+    label: 'Tài khoản',
+    text: 'Mô tả vấn đề đăng nhập hoặc thông tin hồ sơ cần thay đổi.',
+    icon: 'i-user'
+  }
+];
 
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'outline'> = {
-  open: 'secondary',
-  pending: 'secondary',
-  in_progress: 'secondary',
-  resolved: 'default',
-  closed: 'outline'
+const TICKET_STATUS: Record<string, { cls: string; label: string }> = {
+  open: { cls: 'b-warning', label: 'Chờ xử lý' },
+  pending: { cls: 'b-warning', label: 'Chờ đối tác phản hồi' },
+  processing: { cls: 'b-info', label: 'Đang xử lý' },
+  resolved: { cls: 'b-success', label: 'Đã xử lý' },
+  closed: { cls: 'b-gray', label: 'Đã đóng' }
 };
 
 export function PortalSupportView() {
-  const { data: partner } = useQuery(myProfileQueryOptions());
-  const { data: tickets, isLoading } = useQuery(myTicketsQueryOptions());
-  const create = useMutation(createTicketMutation);
+  const toast = usePortalToast();
+  const { data: me } = useQuery(myProfileQueryOptions());
+  const { data: tickets } = useQuery(myTicketsQueryOptions());
 
-  const [open, setOpen] = useState(false);
-  const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
-  const [orderId, setOrderId] = useState('');
+  const [tab, setTab] = useState<'support-create' | 'support-list'>('support-create');
+  const [topic, setTopic] = useState(TOPICS[0]!.value);
+  const [reference, setReference] = useState('');
+  const [message, setMessage] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const hint = TOPICS.find((t) => t.value === topic) ?? TOPICS[0]!;
+
+  const waiting = useMemo(
+    () => (tickets ?? []).filter((t) => t.status !== 'closed' && t.status !== 'resolved').length,
+    [tickets]
+  );
+
+  const rows = useMemo(
+    () => (tickets ?? []).filter((t) => statusFilter === 'all' || t.status === statusFilter),
+    [tickets, statusFilter]
+  );
+
+  const createTicket = useMutation({
+    ...createTicketMutation,
+    onSuccess: () => {
+      setMessage('');
+      setReference('');
+      setTab('support-list');
+      toast('Đã gửi yêu cầu hỗ trợ');
+    },
+    onError: () => toast('Không gửi được yêu cầu, vui lòng thử lại')
+  });
 
   const submit = () => {
-    if (!partner?.contactEmail) {
-      toast.error('Không xác định được email liên hệ của bạn.');
+    if (!message.trim()) {
+      toast('Nhập nội dung cần hỗ trợ');
       return;
     }
-    if (!subject.trim() || !description.trim()) {
-      toast.error('Vui lòng nhập chủ đề và nội dung.');
-      return;
-    }
-    create.mutate(
-      {
-        customerEmail: partner.contactEmail,
-        subject: subject.trim(),
-        description: description.trim(),
-        ...(orderId.trim() ? { orderId: orderId.trim() } : {})
-      },
-      {
-        onSuccess: () => {
-          toast.success('Đã gửi yêu cầu hỗ trợ.');
-          setOpen(false);
-          setSubject('');
-          setDescription('');
-          setOrderId('');
-        },
-        onError: (e: Error) => toast.error(e.message || 'Gửi yêu cầu thất bại')
-      }
-    );
+    createTicket.mutate({
+      customerEmail: me?.contactEmail ?? '',
+      subject: hint.label,
+      description: message.trim(),
+      ...(reference.trim() ? { orderId: reference.trim() } : {})
+    });
   };
 
   return (
-    <div className='space-y-4'>
-      <div className='flex justify-end'>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Icons.add className='mr-2 h-4 w-4' />
-              Gửi yêu cầu hỗ trợ
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Gửi yêu cầu hỗ trợ</DialogTitle>
-            </DialogHeader>
-            <div className='space-y-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='ticket-subject'>Chủ đề *</Label>
-                <Input
-                  id='ticket-subject'
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder='VD: Hoa hồng đơn hàng chưa được cộng'
-                />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='ticket-order'>Mã đơn liên quan</Label>
-                <Input
-                  id='ticket-order'
-                  value={orderId}
-                  onChange={(e) => setOrderId(e.target.value)}
-                  placeholder='Không bắt buộc'
-                />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='ticket-description'>Nội dung *</Label>
-                <Textarea
-                  id='ticket-description'
-                  rows={5}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder='Mô tả chi tiết vấn đề bạn gặp phải.'
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant='outline' onClick={() => setOpen(false)}>
-                Hủy
-              </Button>
-              <Button onClick={submit} disabled={create.isPending}>
-                {create.isPending ? 'Đang gửi…' : 'Gửi yêu cầu'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+    <section className='view active'>
+      <div className='support-tabs'>
+        <button
+          className={`support-tab${tab === 'support-create' ? ' active' : ''}`}
+          type='button'
+          onClick={() => setTab('support-create')}
+        >
+          Tạo yêu cầu
+        </button>
+        <button
+          className={`support-tab${tab === 'support-list' ? ' active' : ''}`}
+          type='button'
+          onClick={() => setTab('support-list')}
+        >
+          Yêu cầu của tôi
+          {waiting > 0 && (
+            <span className='badge b-warning' style={{ marginLeft: '.375rem' }}>
+              {waiting} đang chờ
+            </span>
+          )}
+        </button>
       </div>
 
-      {isLoading ? (
-        <div className='flex justify-center py-12'>
-          <Icons.spinner className='h-6 w-6 animate-spin' />
-        </div>
-      ) : (tickets ?? []).length === 0 ? (
-        <p className='text-muted-foreground py-12 text-center text-sm'>
-          Bạn chưa gửi yêu cầu hỗ trợ nào.
-        </p>
-      ) : (
-        <div className='space-y-2'>
-          {(tickets ?? []).map((t) => (
-            <div key={t.id} className='rounded-lg border p-3'>
-              <div className='flex flex-wrap items-start justify-between gap-2'>
-                <div className='min-w-0'>
-                  <p className='text-sm font-medium'>{t.subject}</p>
-                  <p className='text-muted-foreground mt-1 text-xs'>
-                    #{t.id} · {formatDateVn(t.createdAt)}
-                    {t.orderId ? ` · đơn ${t.orderId}` : ''}
-                  </p>
+      <div className={`support-panel${tab === 'support-create' ? ' active' : ''}`}>
+        <div className='support-layout'>
+          <article className='card'>
+            <h2 className='card-title'>Tạo yêu cầu hỗ trợ</h2>
+            <p className='card-sub'>
+              Chọn đúng chủ đề để đội phụ trách tiếp nhận và phản hồi nhanh hơn.
+            </p>
+            <div className='field' style={{ marginTop: '1rem' }}>
+              <label htmlFor='supportTopic'>Chủ đề</label>
+              <select id='supportTopic' value={topic} onChange={(e) => setTopic(e.target.value)}>
+                {TOPICS.map((t) => (
+                  <option value={t.value} key={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <div className='topic-help'>
+                <div className='support-hint-row'>
+                  <div className='support-hint-icon'>
+                    <PortalIcon id={hint.icon} />
+                  </div>
+                  <div className='support-hint-copy'>
+                    <strong>Thông tin nên cung cấp</strong>
+                    <div style={{ marginTop: '.1875rem' }}>{hint.text}</div>
+                  </div>
                 </div>
-                <Badge variant={STATUS_VARIANT[t.status] ?? 'outline'}>
-                  {STATUS_LABEL[t.status] ?? t.status}
-                </Badge>
               </div>
-              <p className='text-muted-foreground mt-2 line-clamp-3 text-xs whitespace-pre-wrap'>
-                {t.description}
-              </p>
             </div>
-          ))}
+            <div className='field' style={{ marginTop: '.875rem' }}>
+              <label htmlFor='supportReference'>Mã đơn hoặc mã yêu cầu</label>
+              <input
+                id='supportReference'
+                placeholder='Không bắt buộc'
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+              />
+            </div>
+            <div className='field' style={{ marginTop: '.875rem' }}>
+              <label htmlFor='supportMessage'>Nội dung</label>
+              <textarea
+                id='supportMessage'
+                placeholder='Mô tả chi tiết vấn đề cần hỗ trợ'
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              <span className='field-hint'>
+                Có thể ghi rõ thời điểm phát sinh, bước đã thực hiện và ảnh chụp lỗi nếu có.
+              </span>
+            </div>
+            <div className='form-actions'>
+              <button
+                className='btn btn-primary'
+                type='button'
+                onClick={submit}
+                disabled={createTicket.isPending}
+              >
+                {createTicket.isPending ? 'Đang gửi…' : 'Gửi yêu cầu'}
+              </button>
+            </div>
+          </article>
+
+          <aside>
+            <article className='card'>
+              <div className='support-highlight'>
+                <h3>Kênh hỗ trợ đối tác</h3>
+                <p>Mỗi yêu cầu được cấp mã riêng để theo dõi, xem phản hồi và tiếp tục trao đổi.</p>
+              </div>
+              <div className='support-info-list'>
+                <div>
+                  <span>Email</span>
+                  <strong>partner@esim.vn</strong>
+                </div>
+                <div>
+                  <span>Thời gian phản hồi</span>
+                  <strong>Trong 8 giờ làm việc</strong>
+                </div>
+                <div>
+                  <span>Giờ hỗ trợ</span>
+                  <strong>08:00–18:00, thứ Hai đến thứ Bảy</strong>
+                </div>
+              </div>
+              <div className='support-cards'>
+                <div className='support-mini'>
+                  <div className='support-mini-icon'>
+                    <PortalIcon id='i-cart' />
+                  </div>
+                  <div>
+                    <strong>Đơn hàng bị thiếu</strong>
+                    <p>Chuẩn bị mã đơn, thời gian mua và nguồn giới thiệu.</p>
+                  </div>
+                </div>
+                <div className='support-mini'>
+                  <div className='support-mini-icon'>
+                    <PortalIcon id='i-wallet' />
+                  </div>
+                  <div>
+                    <strong>Rút tiền</strong>
+                    <p>Chuẩn bị mã yêu cầu, số tiền và tài khoản nhận.</p>
+                  </div>
+                </div>
+                <div className='support-mini'>
+                  <div className='support-mini-icon'>
+                    <PortalIcon id='i-user' />
+                  </div>
+                  <div>
+                    <strong>Vấn đề tài khoản</strong>
+                    <p>Mô tả lỗi đăng nhập hoặc thông tin cần cập nhật.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </aside>
         </div>
-      )}
-    </div>
+      </div>
+
+      <div className={`support-panel${tab === 'support-list' ? ' active' : ''}`}>
+        <div className='toolbar'>
+          <div>
+            <h2 className='card-title'>Yêu cầu hỗ trợ của tôi</h2>
+            <p className='card-sub'>Theo dõi trạng thái, xem hội thoại và gửi phản hồi bổ sung.</p>
+          </div>
+          <div className='support-filter-row'>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value='all'>Tất cả trạng thái</option>
+              <option value='open'>Chờ xử lý</option>
+              <option value='processing'>Đang xử lý</option>
+              <option value='resolved'>Đã xử lý</option>
+              <option value='closed'>Đã đóng</option>
+            </select>
+          </div>
+        </div>
+        <div className='table-wrap'>
+          <table className='table'>
+            <thead>
+              <tr>
+                <th>Mã yêu cầu</th>
+                <th>Chủ đề</th>
+                <th>Tham chiếu</th>
+                <th>Trạng thái</th>
+                <th>Cập nhật gần nhất</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={5}>
+                    <div className='empty'>Chưa có yêu cầu hỗ trợ nào.</div>
+                  </td>
+                </tr>
+              )}
+              {rows.map((t) => {
+                const badge = TICKET_STATUS[t.status] ?? {
+                  cls: 'b-gray',
+                  label: t.status
+                };
+                return (
+                  <tr key={t.id}>
+                    <td className='mono'>#{t.id}</td>
+                    <td>
+                      <strong>{t.subject}</strong>
+                      <div className='card-sub'>{t.description}</div>
+                    </td>
+                    <td className='mono'>{t.orderId ?? '—'}</td>
+                    <td>
+                      <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                    </td>
+                    <td>{formatDateTimeVn(t.updatedAt)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   );
 }

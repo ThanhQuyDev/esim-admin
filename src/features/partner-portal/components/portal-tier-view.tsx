@@ -1,206 +1,314 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+/**
+ * Partner tier — `#view-tier` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
+ *
+ * Hero + progress card, the clickable tier selector, the benefit comparison
+ * table and the evaluation history. The mockup hard-codes four tiers; here the
+ * tiers come from the API and the design's colour and icon per tier code are
+ * kept in `TIER_STYLE`.
+ */
 
-import { Badge } from '@/components/ui/badge';
-import { Icons } from '@/components/icons';
-import { formatDateVn, formatVnd } from '@/lib/format';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 
 import {
   myTierEvaluationsQueryOptions,
-  mySummaryQueryOptions,
-  myTiersQueryOptions
+  myTiersQueryOptions,
+  mySummaryQueryOptions
 } from '../api/queries';
+import { formatDateVn } from '@/lib/format';
+import { formatCount, formatDong, formatPercentVn } from '../lib/portal-format';
+import { VIEW_ROUTES } from '../lib/portal-nav';
 import type { PartnerTier } from '../api/types';
 
-const num = (v: string | number) => Number(v ?? 0);
+/** The v29 tier colours and flat icons, keyed by tier code. */
+const TIER_STYLE: Record<string, { color: string; icon: React.ReactNode }> = {
+  bronze: {
+    color: '#a16207',
+    icon: (
+      <>
+        <path d='M7 4h10v5a5 5 0 01-10 0V4z' />
+        <path d='M9 15h6M10 15v4h4v-4M8 21h8' />
+        <path d='M7 6H4a3 3 0 003 3M17 6h3a3 3 0 01-3 3' />
+      </>
+    )
+  },
+  silver: {
+    color: '#64748b',
+    icon: (
+      <>
+        <path d='M8 4h8l2 5-6 4-6-4 2-5z' />
+        <circle cx='12' cy='16.5' r='3.5' />
+        <path d='M10 13l-1.5 7M14 13l1.5 7' />
+      </>
+    )
+  },
+  gold: {
+    color: '#f59e0b',
+    icon: (
+      <>
+        <path d='M12 3l2.2 4.4 4.8.7-3.5 3.4.8 4.8-4.3-2.3-4.3 2.3.8-4.8L5 8.1l4.8-.7L12 3z' />
+        <path d='M8 20h8' />
+      </>
+    )
+  },
+  platinum: {
+    color: '#4f46e5',
+    icon: (
+      <>
+        <path d='M5 8l3-4h8l3 4-7 12L5 8z' />
+        <path d='M5 8h14M8 4l4 4 4-4M8 8l4 12 4-12' />
+      </>
+    )
+  }
+};
 
-/** Rows of the benefits comparison, derived from what a tier actually configures. */
-function benefitRows(tiers: PartnerTier[], isKol: boolean) {
-  return [
-    {
-      label: 'Doanh số tối thiểu',
-      value: (t: PartnerTier) =>
-        num(t.minVolumeVnd) === 0 ? 'Không yêu cầu' : formatVnd(num(t.minVolumeVnd))
-    },
-    isKol
-      ? {
-          label: 'Hoa hồng trên đơn hàng',
-          value: (t: PartnerTier) => `${num(t.commissionPercent)}%`
-        }
-      : {
-          label: 'Chiết khấu tối đa',
-          value: (t: PartnerTier) => `${num(t.maxDiscountPercent)}%`
-        }
-  ];
+const FALLBACK_STYLE = {
+  color: '#4f46e5',
+  icon: <path d='M12 3l7 4v10l-7 4-7-4V7z' />
+};
+
+function styleFor(tierCode: string) {
+  return TIER_STYLE[tierCode.toLowerCase()] ?? FALLBACK_STYLE;
 }
 
 export function PortalTierView() {
-  const { data: summary, isLoading: loadingSummary } = useQuery(mySummaryQueryOptions());
-  const { data: tiers, isLoading: loadingTiers } = useQuery(myTiersQueryOptions());
+  const { data: summary } = useQuery(mySummaryQueryOptions());
+  const { data: tiers } = useQuery(myTiersQueryOptions());
   const { data: evaluations } = useQuery(myTierEvaluationsQueryOptions());
 
-  if (loadingSummary || loadingTiers || !summary) {
-    return (
-      <div className='flex justify-center py-12'>
-        <Icons.spinner className='h-6 w-6 animate-spin' />
-      </div>
-    );
-  }
+  const sorted = useMemo(
+    () => [...(tiers ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
+    [tiers]
+  );
 
-  const list = tiers ?? [];
-  const current = summary.tier.current;
-  const isKol = list[0]?.partnerType !== 'distribution';
-  const rows = benefitRows(list, isKol);
+  const currentCode = summary?.tier.current?.tierCode ?? null;
+  const [viewing, setViewing] = useState<string | null>(null);
+
+  // Land on the partner's own tier once the summary arrives.
+  useEffect(() => {
+    if (!viewing && currentCode) setViewing(currentCode);
+  }, [currentCode, viewing]);
+
+  const shown: PartnerTier | undefined =
+    sorted.find((t) => t.tierCode === viewing) ?? summary?.tier.current ?? sorted[0];
+
+  const progress = Math.max(0, Math.min(100, Math.round(summary?.tier.progressPercent ?? 0)));
 
   return (
-    <div className='space-y-6'>
-      {/* Current standing */}
-      <div className='rounded-lg border p-4'>
-        <p className='mb-3 text-sm font-medium'>Tiến độ hạng hiện tại</p>
-        <div className='flex flex-wrap items-center justify-between gap-3'>
-          <div>
-            <p className='text-2xl font-semibold'>{current ? current.tierName : 'Chưa gán hạng'}</p>
-            <p className='text-muted-foreground mt-1 text-xs'>
-              Doanh số tích lũy {formatVnd(summary.lifetime.revenueVnd)} · {summary.lifetime.orders}{' '}
-              đơn hợp lệ
-            </p>
+    <section className='view active'>
+      <div className='grid grid-2'>
+        <article className='card hero tier-hero'>
+          <div className='hero-label'>Đang xem quyền lợi hạng</div>
+          <div className='hero-value' style={{ fontSize: '2.375rem' }}>
+            {shown ? `Hạng ${shown.tierName}` : 'Chưa gán hạng'}
           </div>
-          <div className='text-right'>
-            {summary.tier.next ? (
-              <>
-                <p className='text-sm'>
-                  Hạng kế tiếp: <Badge variant='secondary'>{summary.tier.next.tierName}</Badge>
-                </p>
-                <p className='text-muted-foreground mt-1 text-xs'>
-                  Còn {formatVnd(summary.tier.toNextTierVnd)}
-                </p>
-              </>
-            ) : (
-              <p className='text-muted-foreground text-sm'>Bạn đang ở hạng cao nhất.</p>
+          <div className='hero-meta'>
+            <span className='trend'>
+              {shown ? `Từ ${formatDong(Number(shown.minVolumeVnd))} doanh số` : '—'}
+            </span>
+            <span>
+              {shown && shown.tierCode === currentCode
+                ? 'Hạng hiện tại của bạn'
+                : 'Quyền lợi khi đạt hạng này'}
+            </span>
+          </div>
+          <div className='tier-summary-grid'>
+            <div className='tier-summary-item'>
+              <span>Hoa hồng</span>
+              <strong>{shown ? formatPercentVn(Number(shown.commissionPercent)) : '—'}</strong>
+            </div>
+            <div className='tier-summary-item'>
+              <span>Giảm giá tối đa</span>
+              <strong>{shown ? formatPercentVn(Number(shown.maxDiscountPercent)) : '—'}</strong>
+            </div>
+            <div className='tier-summary-item'>
+              <span>Điều kiện doanh số</span>
+              <strong>{shown ? formatDong(Number(shown.minVolumeVnd)) : '—'}</strong>
+            </div>
+            <div className='tier-summary-item'>
+              <span>Trạng thái</span>
+              <strong>{shown?.isActive ? 'Đang áp dụng' : 'Ngừng áp dụng'}</strong>
+            </div>
+          </div>
+          <div className='hero-actions'>
+            <Link className='btn btn-primary' href={VIEW_ROUTES['tier-rules']}>
+              Xem quy định xét hạng
+            </Link>
+            <Link className='btn btn-light-outline' href={VIEW_ROUTES.commissions}>
+              Xem hoa hồng chi tiết
+            </Link>
+          </div>
+        </article>
+
+        <article className='card'>
+          <h2 className='card-title'>Tiến độ hạng hiện tại</h2>
+          <p className='card-sub'>Dữ liệu được tính từ các đơn hợp lệ đã qua thời gian xác minh.</p>
+          <div className='detail-list' style={{ marginTop: '1rem' }}>
+            <div className='detail-item'>
+              <span>Đơn hợp lệ 30 ngày</span>
+              <strong>{formatCount(summary?.performance30d.orders)}</strong>
+            </div>
+            <div className='detail-item'>
+              <span>Doanh số hợp lệ</span>
+              <strong>{formatDong(summary?.lifetime.revenueVnd)}</strong>
+            </div>
+            <div className='detail-item'>
+              <span>Hạng hiện tại</span>
+              <strong>
+                {summary?.tier.current ? `Hạng ${summary.tier.current.tierName}` : 'Chưa gán hạng'}
+              </strong>
+            </div>
+            <div className='detail-item'>
+              <span>Hạng kế tiếp</span>
+              <strong>
+                {summary?.tier.next ? `Hạng ${summary.tier.next.tierName}` : 'Cao nhất'}
+              </strong>
+            </div>
+          </div>
+          <div className='progress' style={{ marginTop: '1rem' }}>
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <p className='card-sub' style={{ marginTop: '0.5rem' }}>
+            {summary?.tier.next
+              ? `Còn ${formatDong(summary.tier.toNextTierVnd)} doanh số để đạt Hạng ${summary.tier.next.tierName}.`
+              : 'Bạn đang ở hạng cao nhất.'}
+          </p>
+        </article>
+      </div>
+
+      <div className='section-head'>
+        <div>
+          <h2>Chọn hạng để xem quyền lợi</h2>
+          <p>Bấm vào từng hạng để xem màu đại diện, điều kiện và quyền lợi tương ứng.</p>
+        </div>
+      </div>
+      <div className='tier-selector-grid'>
+        {sorted.map((t) => {
+          const style = styleFor(t.tierCode);
+          return (
+            <button
+              className={`tier-select-card${viewing === t.tierCode ? ' active' : ''}`}
+              style={{ ['--tier-color' as string]: style.color }}
+              type='button'
+              key={t.id}
+              onClick={() => setViewing(t.tierCode)}
+            >
+              <div className='tier-flat-icon'>
+                <svg className='icon' viewBox='0 0 24 24'>
+                  {style.icon}
+                </svg>
+              </div>
+              <h3>Hạng {t.tierName}</h3>
+              <p>
+                {Number(t.minVolumeVnd) > 0
+                  ? `Từ ${formatDong(Number(t.minVolumeVnd))} doanh số`
+                  : 'Mặc định khi tài khoản được duyệt'}
+              </p>
+              <div className='tier-benefit-lines'>
+                <div className='tier-benefit-line'>
+                  Hoa hồng {formatPercentVn(Number(t.commissionPercent))}
+                </div>
+                <div className='tier-benefit-line'>
+                  Giảm tối đa {formatPercentVn(Number(t.maxDiscountPercent))}
+                </div>
+                <div className='tier-benefit-line'>
+                  {t.isActive ? 'Đang áp dụng' : 'Ngừng áp dụng'}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className='section-head'>
+        <div>
+          <h2>So sánh quyền lợi theo hạng</h2>
+          <p>Quyền lợi được áp dụng từ kỳ tiếp theo sau khi kết quả được khóa.</p>
+        </div>
+      </div>
+      <div className='table-wrap'>
+        <table className='table'>
+          <thead>
+            <tr>
+              <th>Quyền lợi</th>
+              {sorted.map((t) => (
+                <th key={t.id}>{t.tierName}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Hoa hồng</td>
+              {sorted.map((t) => (
+                <td key={t.id}>{formatPercentVn(Number(t.commissionPercent))}</td>
+              ))}
+            </tr>
+            <tr>
+              <td>Giảm giá tối đa</td>
+              {sorted.map((t) => (
+                <td key={t.id}>{formatPercentVn(Number(t.maxDiscountPercent))}</td>
+              ))}
+            </tr>
+            <tr>
+              <td>Điều kiện doanh số</td>
+              {sorted.map((t) => (
+                <td key={t.id}>
+                  {Number(t.minVolumeVnd) > 0 ? formatDong(Number(t.minVolumeVnd)) : 'Mặc định'}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className='section-head'>
+        <div>
+          <h2>Lịch sử đánh giá hạng</h2>
+          <p>Hạng được cập nhật dựa trên dữ liệu đã xác nhận.</p>
+        </div>
+      </div>
+      <div className='table-wrap'>
+        <table className='table'>
+          <thead>
+            <tr>
+              <th>Kỳ đánh giá</th>
+              <th>Hạng trước</th>
+              <th>Hạng sau đánh giá</th>
+              <th>Đơn hợp lệ</th>
+              <th>Doanh số hợp lệ</th>
+              <th>Kết quả</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(evaluations ?? []).length === 0 && (
+              <tr>
+                <td colSpan={6}>
+                  <div className='empty'>Chưa có kỳ đánh giá nào.</div>
+                </td>
+              </tr>
             )}
-          </div>
-        </div>
-        <div className='bg-muted mt-3 h-2 w-full overflow-hidden rounded-full'>
-          <div
-            className='bg-primary h-full rounded-full transition-all'
-            style={{ width: `${summary.tier.progressPercent}%` }}
-          />
-        </div>
+            {(evaluations ?? []).map((e) => (
+              <tr key={e.id}>
+                <td>{formatDateVn(e.evaluatedAt)}</td>
+                <td>{e.tierBefore ? `Hạng ${e.tierBefore}` : '—'}</td>
+                <td>
+                  <strong>{e.tierAfter ? `Hạng ${e.tierAfter}` : '—'}</strong>
+                </td>
+                <td>{formatCount(e.validOrders)} đơn</td>
+                <td>{formatDong(Number(e.revenueVnd))}</td>
+                <td>
+                  <span className={`badge ${e.result === 'promoted' ? 'b-info' : 'b-success'}`}>
+                    {e.result === 'promoted' ? 'Đã nâng hạng' : 'Duy trì hạng'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      {/* Benefits comparison */}
-      <div>
-        <p className='mb-3 text-sm font-medium'>So sánh quyền lợi theo hạng</p>
-        {list.length === 0 ? (
-          <p className='text-muted-foreground rounded-lg border p-6 text-center text-sm'>
-            Chương trình chưa công bố hạng đối tác nào.
-          </p>
-        ) : (
-          <div className='overflow-x-auto rounded-lg border'>
-            <table className='w-full text-sm'>
-              <thead className='bg-muted/50 text-muted-foreground text-xs'>
-                <tr>
-                  <th className='px-3 py-2 text-left font-medium'>Quyền lợi</th>
-                  {list.map((t) => (
-                    <th key={t.id} className='px-3 py-2 text-left font-medium'>
-                      {t.tierName}
-                      {current?.tierCode === t.tierCode && (
-                        <Badge className='ml-2' variant='default'>
-                          Hạng của bạn
-                        </Badge>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.label} className='border-t'>
-                    <td className='text-muted-foreground px-3 py-2'>{row.label}</td>
-                    {list.map((t) => (
-                      <td
-                        key={t.id}
-                        className={
-                          current?.tierCode === t.tierCode ? 'px-3 py-2 font-medium' : 'px-3 py-2'
-                        }
-                      >
-                        {row.value(t)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Weekly review history */}
-      <div>
-        <p className='mb-3 text-sm font-medium'>Lịch sử xét hạng</p>
-        {(evaluations ?? []).length === 0 ? (
-          <p className='text-muted-foreground rounded-lg border p-6 text-center text-sm'>
-            Chưa có kỳ xét hạng nào. Hệ thống rà soát hạng mỗi tuần một lần.
-          </p>
-        ) : (
-          <div className='overflow-x-auto rounded-lg border'>
-            <table className='w-full text-sm'>
-              <thead className='bg-muted/50 text-muted-foreground text-xs'>
-                <tr>
-                  <th className='px-3 py-2 text-left font-medium'>Kỳ đánh giá</th>
-                  <th className='px-3 py-2 text-right font-medium'>Đơn hợp lệ</th>
-                  <th className='px-3 py-2 text-right font-medium'>Doanh số hợp lệ</th>
-                  <th className='px-3 py-2 text-left font-medium'>Hạng trước</th>
-                  <th className='px-3 py-2 text-left font-medium'>Hạng sau</th>
-                  <th className='px-3 py-2 text-left font-medium'>Kết quả</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(evaluations ?? []).map((e) => (
-                  <tr key={e.id} className='border-t'>
-                    <td className='px-3 py-2'>{formatDateVn(e.evaluatedAt)}</td>
-                    <td className='px-3 py-2 text-right'>{e.validOrders}</td>
-                    <td className='px-3 py-2 text-right'>{formatVnd(num(e.revenueVnd))}</td>
-                    <td className='px-3 py-2'>{e.tierBefore ?? '—'}</td>
-                    <td className='px-3 py-2'>{e.tierAfter ?? '—'}</td>
-                    <td className='px-3 py-2'>
-                      <Badge variant={e.result === 'promoted' ? 'default' : 'secondary'}>
-                        {e.result === 'promoted' ? 'Lên hạng' : 'Giữ nguyên'}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Programme rules */}
-      <div className='rounded-lg border p-4'>
-        <p className='mb-2 text-sm font-medium'>Quy định xét hạng</p>
-        <ul className='text-muted-foreground list-disc space-y-1 pl-5 text-xs'>
-          <li>
-            <span className='text-foreground font-medium'>Đơn hợp lệ:</span> đơn đã thanh toán thành
-            công qua link tiếp thị của bạn và không bị hoàn tiền.
-          </li>
-          <li>
-            <span className='text-foreground font-medium'>Doanh số tính hạng:</span> tổng giá trị
-            các đơn hợp lệ, tính lũy kế.
-          </li>
-          <li>
-            <span className='text-foreground font-medium'>Hoa hồng:</span> tính theo % của hạng tại
-            thời điểm phát sinh đơn, và được ghi lại trên từng giao dịch.
-          </li>
-          <li>
-            <span className='text-foreground font-medium'>Kỳ đánh giá:</span> hệ thống rà soát hạng
-            mỗi tuần một lần. Hạng chỉ được nâng tự động — việc hạ hạng do đội ngũ esim.vn quyết
-            định thủ công.
-          </li>
-          <li>Đơn bị hoàn tiền sẽ bị trừ lại hoa hồng tương ứng.</li>
-        </ul>
-      </div>
-    </div>
+    </section>
   );
 }

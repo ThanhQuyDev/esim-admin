@@ -6,6 +6,7 @@ import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { BreadcrumbProvider } from '@/hooks/use-breadcrumb-context';
 import { ChatNotificationListener } from '@/features/chat/components/chat-notification-listener';
+import { PortalShell } from '@/features/partner-portal/components/portal-shell';
 import { IS_PARTNER_PORTAL } from '@/config/app-mode';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
@@ -20,6 +21,18 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // The partner deployment serves only `/dashboard/portal/*` and wears the v29
+  // portal chrome instead of the admin sidebar, so it never builds the admin
+  // shell around a partner screen.
+  if (IS_PARTNER_PORTAL) {
+    return (
+      <>
+        <PortalShell>{children}</PortalShell>
+        <ChatNotificationListener />
+      </>
+    );
+  }
+
   // Persisting the sidebar state in the cookie.
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';

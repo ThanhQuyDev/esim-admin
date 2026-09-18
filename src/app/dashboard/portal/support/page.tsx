@@ -1,18 +1,13 @@
-import PageContainer from '@/components/layout/page-container';
 import { PortalSupportView } from '@/features/partner-portal/components/portal-support-view';
 
 export const metadata = {
   title: 'Cổng đối tác: Hỗ trợ'
 };
 
+/**
+ * The portal shell draws the heading and the `.content` padding the v29 design
+ * specifies, so this page renders its view directly.
+ */
 export default function PortalSupportPage() {
-  return (
-    <PageContainer
-      scrollable
-      pageTitle='Hỗ trợ'
-      pageDescription='Gửi yêu cầu và theo dõi phản hồi từ đội ngũ esim.vn.'
-    >
-      <PortalSupportView />
-    </PageContainer>
-  );
+  return <PortalSupportView />;
 }

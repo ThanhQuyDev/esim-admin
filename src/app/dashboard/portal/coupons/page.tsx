@@ -1,18 +1,13 @@
-import PageContainer from '@/components/layout/page-container';
 import { PortalCouponsView } from '@/features/partner-portal/components/portal-coupons-view';
 
 export const metadata = {
   title: 'Cổng đối tác: Mã giảm giá'
 };
 
+/**
+ * The portal shell draws the heading and the `.content` padding the v29 design
+ * specifies, so this page renders its view directly.
+ */
 export default function PortalCouponsPage() {
-  return (
-    <PageContainer
-      scrollable
-      pageTitle='Mã giảm giá'
-      pageDescription='Mã giảm giá esim.vn cấp cho bạn và hiệu quả sử dụng.'
-    >
-      <PortalCouponsView />
-    </PageContainer>
-  );
+  return <PortalCouponsView />;
 }

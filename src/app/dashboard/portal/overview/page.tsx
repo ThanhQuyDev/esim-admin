@@ -1,18 +1,13 @@
-import PageContainer from '@/components/layout/page-container';
 import { PortalOverviewView } from '@/features/partner-portal/components/portal-overview-view';
 
 export const metadata = {
   title: 'Cổng đối tác: Tổng quan'
 };
 
+/**
+ * The portal shell draws the heading and the `.content` padding the v29 design
+ * specifies, so this page renders its view directly.
+ */
 export default function PortalOverviewPage() {
-  return (
-    <PageContainer
-      scrollable
-      pageTitle='Tổng quan'
-      pageDescription='Hiệu suất tiếp thị, hoa hồng và tiến độ hạng của bạn.'
-    >
-      <PortalOverviewView />
-    </PageContainer>
-  );
+  return <PortalOverviewView />;
 }
