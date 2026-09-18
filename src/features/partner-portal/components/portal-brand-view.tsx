@@ -8,7 +8,7 @@
  * the design's card, field and preview markup.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { updateMyProfileMutation } from '../api/mutations';
@@ -33,8 +33,12 @@ export function PortalBrandView() {
     tagline: ''
   });
 
+  // Seed once: `partner` is refetched on window focus and after each save, and
+  // re-seeding then would discard edits the partner had not saved yet.
+  const seededFor = useRef<number | null>(null);
   useEffect(() => {
-    if (!partner) return;
+    if (!partner || seededFor.current === partner.id) return;
+    seededFor.current = partner.id;
     setForm(readBrand(partner.brandInfo ?? null));
   }, [partner]);
 

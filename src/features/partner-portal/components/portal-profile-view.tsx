@@ -8,7 +8,7 @@
  * the channels they last saved from another tab.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { changePassword } from '@/features/auth/api/service';
@@ -73,9 +73,15 @@ export function PortalProfileView() {
     bankBranch: ''
   });
 
-  // Seed the forms once the partner record arrives.
+  // Seed the forms from the partner record exactly once.
+  //
+  // `me` is refetched on window focus and after every save, and re-seeding on
+  // each of those would overwrite whatever the partner had typed since — the
+  // save would then post the values that were already on the server.
+  const seededFor = useRef<number | null>(null);
   useEffect(() => {
-    if (!me) return;
+    if (!me || seededFor.current === me.id) return;
+    seededFor.current = me.id;
     setBasic({
       contactName: me.contactName ?? '',
       contactPhone: me.contactPhone ?? '',
