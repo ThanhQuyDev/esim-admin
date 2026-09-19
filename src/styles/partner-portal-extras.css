@@ -7,29 +7,30 @@
  * tokens and idiom so it reads as part of the same system.
  */
 
-/* Sign-out, sitting at the right edge of the sidebar account card. The mockup
-   is a static page and simply has no way out of the portal. */
-.pp-app .account {
-  position: relative;
-}
-
+/* Sign-out. The mockup is a static page and simply has no way out of the
+   portal, so this is drawn in its idiom: a full-width row under the account
+   card, matching the sidebar's dark surfaces. It carries a label rather than an
+   icon alone — signing out is not an action to make people hunt for. */
 .pp-app .account-signout {
-  margin-left: auto;
-  width: 2rem;
-  height: 2rem;
-  flex: none;
+  width: 100%;
+  margin-top: 0.5rem;
+  min-height: 2.375rem;
   border: 0.0625rem solid #2d2d2d;
-  border-radius: 0.5rem;
-  background: transparent;
-  color: #8b8b8b;
-  display: grid;
-  place-items: center;
+  border-radius: 0.75rem;
+  background: #202020;
+  color: #c9c9c9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.78125rem;
   transition: 0.15s ease;
 }
 
 .pp-app .account-signout:hover {
   background: #2a2a2a;
-  border-color: #3a3a3a;
+  border-color: #3f3f3f;
   color: #fff;
 }
 

@@ -142,17 +142,16 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
                   <div className='who'>{me?.contactName ?? 'Đối tác'}</div>
                   <div className='role'>{accountRole}</div>
                 </div>
-                <button
-                  className='account-signout'
-                  type='button'
-                  title='Đăng xuất'
-                  aria-label='Đăng xuất'
-                  disabled={signingOut}
-                  onClick={signOut}
-                >
-                  <PortalIcon id='i-lock' />
-                </button>
               </div>
+              <button
+                className='account-signout'
+                type='button'
+                disabled={signingOut}
+                onClick={signOut}
+              >
+                <PortalIcon id='i-lock' />
+                {signingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}
+              </button>
             </div>
           </aside>
 
