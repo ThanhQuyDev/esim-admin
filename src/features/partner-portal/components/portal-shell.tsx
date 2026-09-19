@@ -12,10 +12,13 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { usePathname, useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import '@/styles/partner-portal.css';
+import '@/styles/partner-portal-extras.css';
+
+import { logout } from '@/features/auth/api/service';
 
 import { myProfileQueryOptions } from '../api/queries';
 import {
@@ -43,8 +46,28 @@ function initialsOf(name: string | undefined): string {
 
 export function PortalShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: me } = useQuery(myProfileQueryOptions());
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  /**
+   * Sign out. The cached partner data is cleared as well, so the next account
+   * to sign in on this browser never sees the previous partner's figures while
+   * their own are still loading.
+   */
+  const signOut = async () => {
+    setSigningOut(true);
+    try {
+      await logout();
+      queryClient.clear();
+      router.push('/auth/sign-in');
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   const role = roleFromPartnerType(me?.partnerType);
   const config = ROLE_CONFIGS[role];
@@ -119,6 +142,16 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
                   <div className='who'>{me?.contactName ?? 'Đối tác'}</div>
                   <div className='role'>{accountRole}</div>
                 </div>
+                <button
+                  className='account-signout'
+                  type='button'
+                  title='Đăng xuất'
+                  aria-label='Đăng xuất'
+                  disabled={signingOut}
+                  onClick={signOut}
+                >
+                  <PortalIcon id='i-lock' />
+                </button>
               </div>
             </div>
           </aside>
@@ -181,6 +214,15 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
                   {config.nav[view]}
                 </Link>
               ))}
+              <button
+                className='sheet-link sheet-signout'
+                type='button'
+                disabled={signingOut}
+                onClick={signOut}
+              >
+                <PortalIcon id='i-lock' />
+                Đăng xuất
+              </button>
             </div>
           </div>
         </div>
