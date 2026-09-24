@@ -1,22 +1,48 @@
 'use client';
 
 /**
- * Marketing links — `#view-links` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
- *
- * Three blocks, in the mockup's order and markup: the link builder, the QR card
- * beside it, and the list of existing links. The mockup's QR is a decorative
- * grid of spans; here it is a real QR for the link, drawn into the same shell.
+ * Marketing links: the builder, the QR for the selected link, and the list of
+ * links with their performance.
  */
 
 import { useMemo, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import { Icons } from '@/components/icons';
+import { formatVnd } from '@/lib/format';
 
 import { createLinkMutation, updateLinkMutation } from '../api/mutations';
 import { myLinksQueryOptions, partnerPortalKeys } from '../api/queries';
-import { formatCount, formatDong } from '../lib/portal-format';
-import { PortalIcon } from './portal-icon-sprite';
-import { usePortalToast } from './portal-toast';
 import type { MyLink } from '../api/types';
 
 const CHANNELS = [
@@ -29,21 +55,15 @@ const CHANNELS = [
   { value: 'other', label: 'Kênh khác' }
 ];
 
-const EMPTY_FORM = {
-  landing: '',
-  linkName: '',
-  channel: 'youtube',
-  subid: ''
-};
+const EMPTY_FORM = { landing: '', label: '', channel: 'youtube', subid: '' };
 
-/** Public short link for a code, as the table's "Link rút gọn" column shows it. */
 function shortLinkOf(code: string): string {
   return `esim.vn/r/${code}`;
 }
 
 /**
- * Fold the promotion channel and sub-id into the destination so the click still
- * carries them: the links API stores a label and a target path, nothing else.
+ * Fold the channel and sub-id into the destination: the links API stores a
+ * label and a target path and nothing else, so this is where they survive.
  */
 function buildTargetPath(landing: string, channel: string, subid: string): string | undefined {
   const trimmed = landing.trim();
@@ -58,7 +78,7 @@ function buildTargetPath(landing: string, channel: string, subid: string): strin
   }
 }
 
-/** Read the promotion channel back out of the target path's `utm_source`. */
+/** Read the channel back out of a stored target path. */
 function channelOf(targetPath: string | null): string {
   if (!targetPath) return '—';
   const source = new URLSearchParams(targetPath.split('?')[1] ?? '').get('utm_source');
@@ -66,314 +86,314 @@ function channelOf(targetPath: string | null): string {
 }
 
 export function PortalLinksView() {
-  const toast = usePortalToast();
   const queryClient = useQueryClient();
   const { data: links, isLoading } = useQuery(myLinksQueryOptions());
 
   const [form, setForm] = useState(EMPTY_FORM);
+  const [labelError, setLabelError] = useState<string | null>(null);
   const [qrLink, setQrLink] = useState('');
+
+  const rows = useMemo(() => links ?? [], [links]);
+  const qrValue = qrLink || (rows[0] ? `https://${shortLinkOf(rows[0].code)}` : '');
 
   const createLink = useMutation({
     ...createLinkMutation,
     onSuccess: (created: MyLink) => {
       queryClient.invalidateQueries({ queryKey: partnerPortalKeys.links() });
       setQrLink(`https://${shortLinkOf(created.code)}`);
-      toast('Đã tạo liên kết tiếp thị');
+      setForm(EMPTY_FORM);
+      toast.success('Đã tạo liên kết tiếp thị.');
     },
-    onError: () => toast('Không tạo được liên kết, vui lòng thử lại')
+    onError: (e: Error) => toast.error(e.message || 'Không tạo được liên kết.')
   });
 
-  const deactivateLink = useMutation({
+  const deactivate = useMutation({
     ...updateLinkMutation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: partnerPortalKeys.links() });
-      toast('Đã tắt liên kết');
+      toast.success('Đã tắt liên kết.');
     },
-    onError: () => toast('Không tắt được liên kết')
+    onError: (e: Error) => toast.error(e.message || 'Không tắt được liên kết.')
   });
 
-  const rows = useMemo(() => links ?? [], [links]);
-
-  // The QR card follows the newest link until the partner types another one.
-  const qrValue = qrLink || (rows[0] ? `https://${shortLinkOf(rows[0].code)}` : '');
-
   const submit = () => {
-    if (!form.linkName.trim()) {
-      toast('Nhập tên liên kết trước khi tạo');
+    if (!form.label.trim()) {
+      setLabelError('Nhập tên để nhận ra liên kết này về sau.');
       return;
     }
     createLink.mutate({
-      label: form.linkName.trim(),
+      label: form.label.trim(),
       targetPath: buildTargetPath(form.landing, form.channel, form.subid)
     });
   };
 
-  const copy = (text: string, message: string) => {
-    navigator.clipboard?.writeText(text);
-    toast(message);
+  const copy = async (text: string, message: string) => {
+    await navigator.clipboard?.writeText(text);
+    toast.success(message);
   };
 
-  const exportCsv = () => {
-    const header = ['Tên liên kết', 'Link rút gọn', 'Nhấp', 'Đơn', 'Hoa hồng'];
-    const body = rows.map((r) => [
-      r.label,
-      shortLinkOf(r.code),
-      String(r.clickCount),
-      String(r.conversionCount),
-      String(r.totalCommissionVnd)
-    ]);
-    const csv = [header, ...body].map((line) => line.map((c) => `"${c}"`).join(',')).join('\n');
-    const url = URL.createObjectURL(new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' }));
+  const downloadQr = () => {
+    const canvas = document.querySelector<HTMLCanvasElement>('#portalQrCanvas');
+    if (!canvas) return;
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'partner-links.csv';
+    a.href = canvas.toDataURL('image/png');
+    a.download = 'partner-qr.png';
     a.click();
-    URL.revokeObjectURL(url);
   };
+
+  const totals = rows.reduce(
+    (acc, r) => ({
+      clicks: acc.clicks + r.clickCount,
+      conversions: acc.conversions + r.conversionCount,
+      commission: acc.commission + r.totalCommissionVnd
+    }),
+    { clicks: 0, conversions: 0, commission: 0 }
+  );
 
   return (
-    <section className='view active'>
-      <div className='link-workspace'>
-        <article className='card link-card'>
-          <div className='card-heading'>
-            <div>
-              <h2 className='card-title'>Tạo liên kết tiếp thị</h2>
-              <p className='card-sub'>
-                Dán đường dẫn sản phẩm để tạo liên kết có mã theo dõi cho từng nội dung hoặc kênh
-                quảng bá.
+    <div className='flex flex-1 flex-col space-y-4'>
+      <div className='grid gap-4 lg:grid-cols-3'>
+        <Card className='lg:col-span-2'>
+          <CardHeader>
+            <CardTitle>Tạo liên kết tiếp thị</CardTitle>
+            <CardDescription>
+              Dán đường dẫn sản phẩm trên esim.vn để sinh liên kết có mã theo dõi riêng.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='grid gap-4 md:grid-cols-2'>
+            <div className='space-y-2 md:col-span-2'>
+              <Label htmlFor='landing'>Đường dẫn sản phẩm</Label>
+              <Input
+                id='landing'
+                type='url'
+                placeholder='https://esim.vn/esim/nhat-ban'
+                value={form.landing}
+                onChange={(e) => setForm({ ...form, landing: e.target.value })}
+              />
+              <p className='text-muted-foreground text-xs'>
+                Để trống nếu muốn liên kết trỏ về trang chủ esim.vn.
               </p>
             </div>
-            <div className='card-heading-icon'>
-              <PortalIcon id='i-link' />
-            </div>
-          </div>
-          <div className='link-form'>
-            <div className='link-form-grid'>
-              <div className='field field-full'>
-                <label htmlFor='landing'>Đường dẫn sản phẩm trên esim.vn</label>
-                <input
-                  id='landing'
-                  type='url'
-                  placeholder='https://esim.vn/esim/...'
-                  value={form.landing}
-                  onChange={(e) => setForm({ ...form, landing: e.target.value })}
-                />
-              </div>
-              <div className='field'>
-                <label htmlFor='linkName'>Tên liên kết</label>
-                <input
-                  id='linkName'
-                  placeholder='Ví dụ: Video Nhật Bản tháng 8'
-                  value={form.linkName}
-                  onChange={(e) => setForm({ ...form, linkName: e.target.value })}
-                />
-              </div>
-              <div className='field'>
-                <label htmlFor='channel'>Kênh quảng bá</label>
-                <select
-                  id='channel'
-                  value={form.channel}
-                  onChange={(e) => setForm({ ...form, channel: e.target.value })}
-                >
-                  {CHANNELS.map((c) => (
-                    <option value={c.value} key={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className='field'>
-                <label htmlFor='subid'>Mã phân biệt nguồn — Không bắt buộc</label>
-                <input
-                  id='subid'
-                  maxLength={60}
-                  placeholder='Ví dụ: youtube_nhatban_01'
-                  value={form.subid}
-                  onChange={(e) => setForm({ ...form, subid: e.target.value })}
-                />
-              </div>
-              <div className='field'>
-                <label htmlFor='trackingDuration'>Thời hạn theo dõi</label>
-                <select id='trackingDuration' defaultValue='30'>
-                  <option value='30'>30 ngày</option>
-                </select>
-              </div>
-            </div>
-            <div className='link-form-actions'>
-              <button className='btn' type='button' onClick={() => setForm(EMPTY_FORM)}>
-                Đặt lại
-              </button>
-              <button
-                className='btn btn-primary'
-                type='button'
-                onClick={submit}
-                disabled={createLink.isPending}
-              >
-                <PortalIcon id='i-plus' />
-                {createLink.isPending ? 'Đang tạo…' : 'Tạo liên kết'}
-              </button>
-            </div>
-          </div>
-        </article>
 
-        <article className='card link-card'>
-          <div className='card-heading'>
-            <div>
-              <h2 className='card-title'>Tạo mã QR từ liên kết</h2>
-              <p className='card-sub'>
-                Biến liên kết tiếp thị thành mã QR để dùng trên video, hình ảnh, quầy tư vấn hoặc
-                tài liệu in.
+            <div className='space-y-2'>
+              <Label htmlFor='linkLabel'>
+                Tên liên kết <span className='text-destructive'>*</span>
+              </Label>
+              <Input
+                id='linkLabel'
+                placeholder='Ví dụ: Video Nhật Bản tháng 8'
+                value={form.label}
+                aria-invalid={Boolean(labelError)}
+                aria-describedby='linkLabel-error'
+                onChange={(e) => {
+                  setForm({ ...form, label: e.target.value });
+                  if (labelError) setLabelError(null);
+                }}
+                onBlur={() =>
+                  setLabelError(form.label.trim() ? null : 'Nhập tên để nhận ra liên kết này.')
+                }
+              />
+              {labelError && (
+                <p id='linkLabel-error' className='text-destructive text-xs'>
+                  {labelError}
+                </p>
+              )}
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='channel'>Kênh quảng bá</Label>
+              <Select
+                value={form.channel}
+                onValueChange={(value) => setForm({ ...form, channel: value })}
+              >
+                <SelectTrigger id='channel' className='w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHANNELS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='space-y-2 md:col-span-2'>
+              <Label htmlFor='subid'>Mã phân biệt nguồn</Label>
+              <Input
+                id='subid'
+                maxLength={60}
+                placeholder='Ví dụ: youtube_nhatban_01'
+                value={form.subid}
+                onChange={(e) => setForm({ ...form, subid: e.target.value })}
+              />
+              <p className='text-muted-foreground text-xs'>
+                Không bắt buộc. Dùng khi bạn muốn tách hiệu suất của nhiều nội dung trên cùng một
+                kênh.
               </p>
             </div>
-            <div className='card-heading-icon'>
-              <PortalIcon id='i-qr' />
-            </div>
-          </div>
-          <div className='qr-card-layout'>
-            <div>
-              <div className='field'>
-                <label htmlFor='qrLink'>Liên kết cần tạo mã QR</label>
-                <input
-                  id='qrLink'
-                  value={qrValue}
-                  onChange={(e) => setQrLink(e.target.value)}
-                  placeholder='https://esim.vn/r/...'
-                />
-                <span className='field-help'>
-                  Dán hoặc chọn một link tiếp thị đã tạo để chuyển thành mã QR.
-                </span>
-              </div>
-              <div className='qr-note'>
-                <strong>Ghi nhận giống liên kết gốc</strong>
-                <p>
-                  Mọi đơn hàng phát sinh sau khi khách quét QR vẫn được ghi nhận có cùng tài khoản
-                  và mã phân biệt nguồn của liên kết.
-                </p>
-              </div>
-              <div className='qr-actions'>
-                <button
-                  className='btn btn-sm'
-                  type='button'
-                  onClick={() => copy(qrValue, 'Đã sao chép liên kết')}
-                >
-                  <PortalIcon id='i-copy' />
-                  Sao chép liên kết
-                </button>
-                <button
-                  className='btn btn-primary btn-sm'
-                  type='button'
-                  onClick={() => {
-                    const canvas = document.querySelector<HTMLCanvasElement>('#portalQrCanvas');
-                    if (!canvas) return;
-                    const a = document.createElement('a');
-                    a.href = canvas.toDataURL('image/png');
-                    a.download = 'partner-qr.png';
-                    a.click();
-                    toast('Đã chuẩn bị tệp QR PNG');
-                  }}
-                >
-                  <PortalIcon id='i-download' />
-                  Tải mã QR
-                </button>
-              </div>
-            </div>
-            <div className='qr-preview-shell'>
+          </CardContent>
+          <CardFooter className='gap-2'>
+            <Button onClick={submit} isLoading={createLink.isPending}>
+              <Icons.add />
+              Tạo liên kết
+            </Button>
+            <Button variant='outline' onClick={() => setForm(EMPTY_FORM)}>
+              Đặt lại
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <Icons.qrCode className='size-4' />
+              Mã QR
+            </CardTitle>
+            <CardDescription>
+              Đơn phát sinh sau khi khách quét QR vẫn ghi nhận đúng liên kết gốc.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            <div className='bg-muted/40 flex items-center justify-center rounded-lg border p-6'>
               {qrValue ? (
-                <QRCodeCanvas id='portalQrCanvas' value={qrValue} size={168} level='M' />
+                <QRCodeCanvas id='portalQrCanvas' value={qrValue} size={160} level='M' />
               ) : (
-                <div className='qr-preview-grid' />
+                <p className='text-muted-foreground py-8 text-center text-xs'>
+                  Tạo một liên kết để sinh mã QR.
+                </p>
               )}
-              <span className='badge b-info qr-badge'>QR theo dõi tiếp thị</span>
-              <p className='qr-caption'>Quét thử bằng camera điện thoại trước khi đăng hoặc in.</p>
             </div>
-          </div>
-        </article>
+            <div className='space-y-2'>
+              <Label htmlFor='qrLink'>Liên kết trong mã</Label>
+              <Input
+                id='qrLink'
+                value={qrValue}
+                placeholder='https://esim.vn/r/...'
+                onChange={(e) => setQrLink(e.target.value)}
+              />
+            </div>
+          </CardContent>
+          <CardFooter className='gap-2'>
+            <Button
+              size='sm'
+              variant='outline'
+              disabled={!qrValue}
+              onClick={() => copy(qrValue, 'Đã sao chép liên kết.')}
+            >
+              <Icons.copy />
+              Sao chép
+            </Button>
+            <Button size='sm' disabled={!qrValue} onClick={downloadQr}>
+              <Icons.download />
+              Tải PNG
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
 
-      <div className='link-list-section'>
-        <div className='link-list-title'>
-          <div>
-            <h2>Danh sách link</h2>
-            <p>Hiệu suất theo từng link và kênh quảng bá.</p>
-          </div>
-          <button className='btn btn-sm' type='button' onClick={exportCsv}>
-            <PortalIcon id='i-download' />
-            Xuất CSV
-          </button>
-        </div>
-        <div className='table-wrap'>
-          <table className='table link-list-table'>
-            <thead>
-              <tr>
-                <th>Tên liên kết</th>
-                <th>Link rút gọn</th>
-                <th>Kênh</th>
-                <th>Nhấp</th>
-                <th>Đơn</th>
-                <th>Hoa hồng</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={7}>
-                    <div className='empty'>Đang tải liên kết…</div>
-                  </td>
-                </tr>
-              )}
-              {!isLoading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={7}>
-                    <div className='empty'>Chưa có liên kết tiếp thị nào.</div>
-                  </td>
-                </tr>
-              )}
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <strong>{r.label}</strong>
-                  </td>
-                  <td>
-                    <span className='link-short'>{shortLinkOf(r.code)}</span>
-                  </td>
-                  <td>{channelOf(r.targetPath)}</td>
-                  <td>{formatCount(r.clickCount)}</td>
-                  <td>{formatCount(r.conversionCount)}</td>
-                  <td>{formatDong(r.totalCommissionVnd)}</td>
-                  <td>
-                    <div className='actions'>
-                      <button
-                        className='btn btn-sm'
-                        type='button'
-                        onClick={() => copy(`https://${shortLinkOf(r.code)}`, 'Đã sao chép link')}
-                      >
-                        <PortalIcon id='i-copy' />
-                        Sao chép
-                      </button>
-                      {r.status === 'active' && (
-                        <button
-                          className='btn btn-sm btn-danger'
-                          type='button'
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex flex-wrap items-center gap-2'>
+            Danh sách liên kết
+            <Badge variant='outline'>{rows.length} liên kết</Badge>
+          </CardTitle>
+          <CardDescription>
+            {totals.clicks.toLocaleString('vi-VN')} lượt nhấp ·{' '}
+            {totals.conversions.toLocaleString('vi-VN')} đơn · {formatVnd(totals.commission)} hoa
+            hồng
+          </CardDescription>
+          <CardAction>
+            <Badge variant='secondary'>
+              {rows.filter((r) => r.status === 'active').length} đang chạy
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <div className='rounded-lg border'>
+            <Table>
+              <TableHeader className='bg-muted'>
+                <TableRow>
+                  <TableHead>Tên liên kết</TableHead>
+                  <TableHead>Link rút gọn</TableHead>
+                  <TableHead>Kênh</TableHead>
+                  <TableHead className='text-right'>Nhấp</TableHead>
+                  <TableHead className='text-right'>Đơn</TableHead>
+                  <TableHead className='text-right'>Hoa hồng</TableHead>
+                  <TableHead className='text-right'>Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={7} className='text-muted-foreground h-24 text-center'>
+                      Đang tải liên kết…
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoading && rows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className='h-24 text-center'>
+                      <p className='text-muted-foreground text-sm'>Chưa có liên kết nào.</p>
+                      <p className='text-muted-foreground mt-1 text-xs'>
+                        Tạo liên kết đầu tiên ở khung phía trên để bắt đầu theo dõi hiệu suất.
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                )}
+                {rows.map((r) => (
+                  <TableRow key={r.id} className={r.status === 'active' ? undefined : 'opacity-60'}>
+                    <TableCell>
+                      <div className='flex items-center gap-2'>
+                        <span className='font-medium'>{r.label}</span>
+                        {r.status !== 'active' && <Badge variant='secondary'>Đã tắt</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className='font-mono text-xs'>{shortLinkOf(r.code)}</TableCell>
+                    <TableCell>{channelOf(r.targetPath)}</TableCell>
+                    <TableCell className='text-right tabular-nums'>
+                      {r.clickCount.toLocaleString('vi-VN')}
+                    </TableCell>
+                    <TableCell className='text-right tabular-nums'>
+                      {r.conversionCount.toLocaleString('vi-VN')}
+                    </TableCell>
+                    <TableCell className='text-right font-medium tabular-nums'>
+                      {formatVnd(r.totalCommissionVnd)}
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex justify-end gap-1'>
+                        <Button
+                          size='sm'
+                          variant='ghost'
                           onClick={() =>
-                            deactivateLink.mutate({
-                              id: r.id,
-                              data: { isActive: false }
-                            })
+                            copy(`https://${shortLinkOf(r.code)}`, 'Đã sao chép liên kết.')
                           }
                         >
-                          <PortalIcon id='i-x' />
-                          Tắt
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+                          <Icons.copy />
+                          Sao chép
+                        </Button>
+                        {r.status === 'active' && (
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            className='text-destructive hover:text-destructive'
+                            onClick={() =>
+                              deactivate.mutate({ id: r.id, data: { isActive: false } })
+                            }
+                          >
+                            Tắt
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

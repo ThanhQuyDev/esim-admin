@@ -1,95 +1,125 @@
 'use client';
 
 /**
- * Support — `#view-support` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
+ * Support: raise a request, and track the partner's own tickets.
  *
- * Two tabs: raise a request, and track the partner's own tickets. The topic
- * picker swaps the hint card the way the mockup's `updateSupportHint` does.
+ * Picking a topic swaps the hint under it — the guidance arrives before the
+ * partner writes, not after they submit something unusable.
  */
 
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Icons } from '@/components/icons';
+import { formatDateTimeVn } from '@/lib/format';
 
 import { createTicketMutation } from '../api/mutations';
 import { myProfileQueryOptions, myTicketsQueryOptions } from '../api/queries';
-import { formatDateTimeVn } from '@/lib/format';
-import { PortalIcon, type PortalIconId } from './portal-icon-sprite';
-import { usePortalToast } from './portal-toast';
 
-/** Topic → what to include, copied from the mockup's `supportHints`. */
-const TOPICS: {
-  value: string;
-  label: string;
-  text: string;
-  icon: PortalIconId;
-}[] = [
+const TAB_VALUES = ['create', 'mine'] as const;
+
+/** Topic → what to include. Steers the request toward something answerable. */
+const TOPICS = [
   {
     value: 'missing',
     label: 'Đơn hàng chưa được ghi nhận',
-    text: 'Gửi mã đơn, thời điểm mua và link hoặc mã đã sử dụng.',
-    icon: 'i-cart'
+    hint: 'Gửi mã đơn, thời điểm mua và link hoặc mã khách đã dùng.'
   },
   {
     value: 'commission',
     label: 'Hoa hồng',
-    text: 'Gửi mã đơn và mức hoa hồng cần kiểm tra.',
-    icon: 'i-chart'
+    hint: 'Gửi mã đơn và mức hoa hồng bạn cho là chưa đúng.'
   },
   {
     value: 'payout',
     label: 'Rút tiền',
-    text: 'Gửi mã yêu cầu rút tiền, số tiền và ngày tạo yêu cầu.',
-    icon: 'i-wallet'
+    hint: 'Gửi mã yêu cầu rút, số tiền và ngày tạo yêu cầu.'
   },
   {
     value: 'link',
     label: 'Link hoặc mã giảm giá',
-    text: 'Gửi link hoặc mã gặp lỗi cùng thiết bị đã thử.',
-    icon: 'i-link'
-  },
-  {
-    value: 'sample',
-    label: 'eSIM trải nghiệm',
-    text: 'Ghi rõ điểm đến, mục đích và thời gian cần eSIM trải nghiệm.',
-    icon: 'i-gift'
+    hint: 'Gửi link hoặc mã gặp lỗi, kèm thiết bị và trình duyệt đã thử.'
   },
   {
     value: 'account',
     label: 'Tài khoản',
-    text: 'Mô tả vấn đề đăng nhập hoặc thông tin hồ sơ cần thay đổi.',
-    icon: 'i-user'
+    hint: 'Mô tả lỗi đăng nhập hoặc thông tin hồ sơ cần thay đổi.'
   }
 ];
 
-const TICKET_STATUS: Record<string, { cls: string; label: string }> = {
-  open: { cls: 'b-warning', label: 'Chờ xử lý' },
-  pending: { cls: 'b-warning', label: 'Chờ đối tác phản hồi' },
-  processing: { cls: 'b-info', label: 'Đang xử lý' },
-  resolved: { cls: 'b-success', label: 'Đã xử lý' },
-  closed: { cls: 'b-gray', label: 'Đã đóng' }
+const TICKET_STATUS: Record<string, { label: string; className: string }> = {
+  open: {
+    label: 'Chờ xử lý',
+    className:
+      'border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300'
+  },
+  in_progress: {
+    label: 'Đang xử lý',
+    className:
+      'border-orange-200 bg-orange-100 text-orange-800 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-300'
+  },
+  resolved: {
+    label: 'Đã xử lý',
+    className:
+      'border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+  },
+  closed: {
+    label: 'Đã đóng',
+    className:
+      'border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300'
+  }
 };
 
 export function PortalSupportView() {
-  const toast = usePortalToast();
   const { data: me } = useQuery(myProfileQueryOptions());
   const { data: tickets } = useQuery(myTicketsQueryOptions());
 
-  const [tab, setTab] = useState<'support-create' | 'support-list'>('support-create');
+  const [tab, setTab] = useQueryState(
+    'tab',
+    parseAsStringLiteral(TAB_VALUES).withDefault('create').withOptions({ shallow: true })
+  );
+
   const [topic, setTopic] = useState(TOPICS[0]!.value);
   const [reference, setReference] = useState('');
   const [message, setMessage] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [error, setError] = useState<string | null>(null);
 
   const hint = TOPICS.find((t) => t.value === topic) ?? TOPICS[0]!;
 
-  const waiting = useMemo(
+  const open = useMemo(
     () => (tickets ?? []).filter((t) => t.status !== 'closed' && t.status !== 'resolved').length,
     [tickets]
-  );
-
-  const rows = useMemo(
-    () => (tickets ?? []).filter((t) => statusFilter === 'all' || t.status === statusFilter),
-    [tickets, statusFilter]
   );
 
   const createTicket = useMutation({
@@ -97,17 +127,18 @@ export function PortalSupportView() {
     onSuccess: () => {
       setMessage('');
       setReference('');
-      setTab('support-list');
-      toast('Đã gửi yêu cầu hỗ trợ');
+      setTab('mine');
+      toast.success('Đã gửi yêu cầu hỗ trợ.');
     },
-    onError: () => toast('Không gửi được yêu cầu, vui lòng thử lại')
+    onError: (e: Error) => toast.error(e.message || 'Không gửi được yêu cầu.')
   });
 
   const submit = () => {
     if (!message.trim()) {
-      toast('Nhập nội dung cần hỗ trợ');
+      setError('Mô tả vấn đề bạn đang gặp.');
       return;
     }
+    setError(null);
     createTicket.mutate({
       customerEmail: me?.contactEmail ?? '',
       subject: hint.label,
@@ -117,203 +148,190 @@ export function PortalSupportView() {
   };
 
   return (
-    <section className='view active'>
-      <div className='support-tabs'>
-        <button
-          className={`support-tab${tab === 'support-create' ? ' active' : ''}`}
-          type='button'
-          onClick={() => setTab('support-create')}
-        >
-          Tạo yêu cầu
-        </button>
-        <button
-          className={`support-tab${tab === 'support-list' ? ' active' : ''}`}
-          type='button'
-          onClick={() => setTab('support-list')}
-        >
+    <Tabs value={tab} onValueChange={(v) => setTab(v as (typeof TAB_VALUES)[number])}>
+      <TabsList>
+        <TabsTrigger value='create'>Tạo yêu cầu</TabsTrigger>
+        <TabsTrigger value='mine'>
           Yêu cầu của tôi
-          {waiting > 0 && (
-            <span className='badge b-warning' style={{ marginLeft: '.375rem' }}>
-              {waiting} đang chờ
-            </span>
+          {open > 0 && (
+            <Badge variant='secondary' className='ml-2'>
+              {open}
+            </Badge>
           )}
-        </button>
-      </div>
+        </TabsTrigger>
+      </TabsList>
 
-      <div className={`support-panel${tab === 'support-create' ? ' active' : ''}`}>
-        <div className='support-layout'>
-          <article className='card'>
-            <h2 className='card-title'>Tạo yêu cầu hỗ trợ</h2>
-            <p className='card-sub'>
-              Chọn đúng chủ đề để đội phụ trách tiếp nhận và phản hồi nhanh hơn.
-            </p>
-            <div className='field' style={{ marginTop: '1rem' }}>
-              <label htmlFor='supportTopic'>Chủ đề</label>
-              <select id='supportTopic' value={topic} onChange={(e) => setTopic(e.target.value)}>
-                {TOPICS.map((t) => (
-                  <option value={t.value} key={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-              <div className='topic-help'>
-                <div className='support-hint-row'>
-                  <div className='support-hint-icon'>
-                    <PortalIcon id={hint.icon} />
-                  </div>
-                  <div className='support-hint-copy'>
-                    <strong>Thông tin nên cung cấp</strong>
-                    <div style={{ marginTop: '.1875rem' }}>{hint.text}</div>
+      <TabsContent value='create' className='mt-4'>
+        <div className='grid gap-4 lg:grid-cols-3'>
+          <Card className='lg:col-span-2'>
+            <CardHeader>
+              <CardTitle>Tạo yêu cầu hỗ trợ</CardTitle>
+              <CardDescription>
+                Chọn đúng chủ đề để đội phụ trách tiếp nhận và phản hồi nhanh hơn.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='space-y-2'>
+                <Label htmlFor='supportTopic'>Chủ đề</Label>
+                <Select value={topic} onValueChange={setTopic}>
+                  <SelectTrigger id='supportTopic' className='w-full'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TOPICS.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className='bg-muted/40 flex gap-3 rounded-lg border p-3'>
+                  <Icons.info className='text-muted-foreground mt-0.5 size-4 shrink-0' />
+                  <div>
+                    <p className='text-xs font-medium'>Thông tin nên cung cấp</p>
+                    <p className='text-muted-foreground mt-0.5 text-xs'>{hint.hint}</p>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className='field' style={{ marginTop: '.875rem' }}>
-              <label htmlFor='supportReference'>Mã đơn hoặc mã yêu cầu</label>
-              <input
-                id='supportReference'
-                placeholder='Không bắt buộc'
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-              />
-            </div>
-            <div className='field' style={{ marginTop: '.875rem' }}>
-              <label htmlFor='supportMessage'>Nội dung</label>
-              <textarea
-                id='supportMessage'
-                placeholder='Mô tả chi tiết vấn đề cần hỗ trợ'
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-              <span className='field-hint'>
-                Có thể ghi rõ thời điểm phát sinh, bước đã thực hiện và ảnh chụp lỗi nếu có.
-              </span>
-            </div>
-            <div className='form-actions'>
-              <button
-                className='btn btn-primary'
-                type='button'
-                onClick={submit}
-                disabled={createTicket.isPending}
-              >
-                {createTicket.isPending ? 'Đang gửi…' : 'Gửi yêu cầu'}
-              </button>
-            </div>
-          </article>
 
-          <aside>
-            <article className='card'>
-              <div className='support-highlight'>
-                <h3>Kênh hỗ trợ đối tác</h3>
-                <p>Mỗi yêu cầu được cấp mã riêng để theo dõi, xem phản hồi và tiếp tục trao đổi.</p>
+              <div className='space-y-2'>
+                <Label htmlFor='supportReference'>Mã đơn hoặc mã yêu cầu</Label>
+                <Input
+                  id='supportReference'
+                  placeholder='Không bắt buộc'
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                />
               </div>
-              <div className='support-info-list'>
-                <div>
-                  <span>Email</span>
-                  <strong>partner@esim.vn</strong>
-                </div>
-                <div>
-                  <span>Thời gian phản hồi</span>
-                  <strong>Trong 8 giờ làm việc</strong>
-                </div>
-                <div>
-                  <span>Giờ hỗ trợ</span>
-                  <strong>08:00–18:00, thứ Hai đến thứ Bảy</strong>
-                </div>
-              </div>
-              <div className='support-cards'>
-                <div className='support-mini'>
-                  <div className='support-mini-icon'>
-                    <PortalIcon id='i-cart' />
-                  </div>
-                  <div>
-                    <strong>Đơn hàng bị thiếu</strong>
-                    <p>Chuẩn bị mã đơn, thời gian mua và nguồn giới thiệu.</p>
-                  </div>
-                </div>
-                <div className='support-mini'>
-                  <div className='support-mini-icon'>
-                    <PortalIcon id='i-wallet' />
-                  </div>
-                  <div>
-                    <strong>Rút tiền</strong>
-                    <p>Chuẩn bị mã yêu cầu, số tiền và tài khoản nhận.</p>
-                  </div>
-                </div>
-                <div className='support-mini'>
-                  <div className='support-mini-icon'>
-                    <PortalIcon id='i-user' />
-                  </div>
-                  <div>
-                    <strong>Vấn đề tài khoản</strong>
-                    <p>Mô tả lỗi đăng nhập hoặc thông tin cần cập nhật.</p>
-                  </div>
-                </div>
-              </div>
-            </article>
-          </aside>
-        </div>
-      </div>
 
-      <div className={`support-panel${tab === 'support-list' ? ' active' : ''}`}>
-        <div className='toolbar'>
-          <div>
-            <h2 className='card-title'>Yêu cầu hỗ trợ của tôi</h2>
-            <p className='card-sub'>Theo dõi trạng thái, xem hội thoại và gửi phản hồi bổ sung.</p>
-          </div>
-          <div className='support-filter-row'>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value='all'>Tất cả trạng thái</option>
-              <option value='open'>Chờ xử lý</option>
-              <option value='processing'>Đang xử lý</option>
-              <option value='resolved'>Đã xử lý</option>
-              <option value='closed'>Đã đóng</option>
-            </select>
-          </div>
+              <div className='space-y-2'>
+                <Label htmlFor='supportMessage'>
+                  Nội dung <span className='text-destructive'>*</span>
+                </Label>
+                <Textarea
+                  id='supportMessage'
+                  rows={6}
+                  placeholder='Mô tả chi tiết vấn đề cần hỗ trợ.'
+                  value={message}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby='supportMessage-error'
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    if (error) setError(null);
+                  }}
+                  onBlur={() => setError(message.trim() ? null : 'Mô tả vấn đề bạn đang gặp.')}
+                />
+                {error ? (
+                  <p id='supportMessage-error' className='text-destructive text-xs'>
+                    {error}
+                  </p>
+                ) : (
+                  <p className='text-muted-foreground text-xs'>
+                    Ghi rõ thời điểm phát sinh và các bước bạn đã thử.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={submit} isLoading={createTicket.isPending}>
+                Gửi yêu cầu
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className='text-base'>Kênh hỗ trợ đối tác</CardTitle>
+              <CardDescription>
+                Mỗi yêu cầu có mã riêng để theo dõi và trao đổi tiếp.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              {[
+                ['Email', 'partner@esim.vn'],
+                ['Thời gian phản hồi', 'Trong 8 giờ làm việc'],
+                ['Giờ hỗ trợ', '08:00–18:00, thứ Hai đến thứ Bảy']
+              ].map(([label, value]) => (
+                <div key={label} className='space-y-0.5'>
+                  <p className='text-muted-foreground text-xs'>{label}</p>
+                  <p className='text-sm font-medium'>{value}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
-        <div className='table-wrap'>
-          <table className='table'>
-            <thead>
-              <tr>
-                <th>Mã yêu cầu</th>
-                <th>Chủ đề</th>
-                <th>Tham chiếu</th>
-                <th>Trạng thái</th>
-                <th>Cập nhật gần nhất</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={5}>
-                    <div className='empty'>Chưa có yêu cầu hỗ trợ nào.</div>
-                  </td>
-                </tr>
-              )}
-              {rows.map((t) => {
-                const badge = TICKET_STATUS[t.status] ?? {
-                  cls: 'b-gray',
-                  label: t.status
-                };
-                return (
-                  <tr key={t.id}>
-                    <td className='mono'>#{t.id}</td>
-                    <td>
-                      <strong>{t.subject}</strong>
-                      <div className='card-sub'>{t.description}</div>
-                    </td>
-                    <td className='mono'>{t.orderId ?? '—'}</td>
-                    <td>
-                      <span className={`badge ${badge.cls}`}>{badge.label}</span>
-                    </td>
-                    <td>{formatDateTimeVn(t.updatedAt)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+      </TabsContent>
+
+      <TabsContent value='mine' className='mt-4'>
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex flex-wrap items-center gap-2'>
+              Yêu cầu hỗ trợ của tôi
+              <Badge variant='outline'>{(tickets ?? []).length} yêu cầu</Badge>
+            </CardTitle>
+            <CardDescription>Theo dõi trạng thái và phản hồi từ đội vận hành.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className='rounded-lg border'>
+              <Table>
+                <TableHeader className='bg-muted'>
+                  <TableRow>
+                    <TableHead>Mã</TableHead>
+                    <TableHead>Chủ đề</TableHead>
+                    <TableHead>Tham chiếu</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Cập nhật</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(tickets ?? []).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className='h-24 text-center'>
+                        <p className='text-muted-foreground text-sm'>Chưa có yêu cầu nào.</p>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='mt-3'
+                          onClick={() => setTab('create')}
+                        >
+                          Tạo yêu cầu đầu tiên
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {(tickets ?? []).map((t) => {
+                    const status = TICKET_STATUS[t.status];
+                    return (
+                      <TableRow key={t.id}>
+                        <TableCell className='font-mono text-xs'>#{t.id}</TableCell>
+                        <TableCell>
+                          <p className='text-sm font-medium'>{t.subject}</p>
+                          <p className='text-muted-foreground line-clamp-1 text-xs'>
+                            {t.description}
+                          </p>
+                        </TableCell>
+                        <TableCell className='font-mono text-xs'>{t.orderId ?? '—'}</TableCell>
+                        <TableCell>
+                          {status ? (
+                            <Badge variant='outline' className={status.className}>
+                              {status.label}
+                            </Badge>
+                          ) : (
+                            <Badge variant='outline'>{t.status}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className='whitespace-nowrap text-xs'>
+                          {formatDateTimeVn(t.updatedAt)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 }

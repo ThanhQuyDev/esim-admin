@@ -1,33 +1,43 @@
 'use client';
 
 /**
- * Profile — `#view-profile` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
+ * Partner profile.
  *
- * Four tabs beside the completion aside, in the design's layout. Each tab saves
- * only its own fields, so a partner editing their bank details cannot overwrite
- * the channels they last saved from another tab.
+ * Four tabs beside a completion card. The active tab lives in the URL (as in
+ * `features/users/components/users-tabs`) so a partner can link someone
+ * straight to the payment details. Each tab saves only its own fields, so
+ * editing bank details cannot overwrite the channels saved from another tab.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { toast } from 'sonner';
 
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { changePassword } from '@/features/auth/api/service';
 
 import { updateMyProfileMutation } from '../api/mutations';
 import { myProfileQueryOptions, mySummaryQueryOptions } from '../api/queries';
-import { usePortalToast } from './portal-toast';
 import type { UpdateMyProfilePayload } from '../api/types';
 
-const TABS = [
-  { id: 'profile-basic', label: 'Thông tin cơ bản' },
-  { id: 'profile-channels', label: 'Kênh tiếp thị' },
-  { id: 'profile-payment', label: 'Thanh toán' },
-  { id: 'profile-security', label: 'Bảo mật' }
-] as const;
+const TAB_VALUES = ['basic', 'channels', 'payment', 'security'] as const;
+type ProfileTab = (typeof TAB_VALUES)[number];
 
 const MIN_PASSWORD_LENGTH = 8;
-
-type TabId = (typeof TABS)[number]['id'];
 
 /** Channel links live in the free-form `channelInfo` blob on the partner. */
 type Channels = {
@@ -53,11 +63,14 @@ function initialsOf(name: string | undefined): string {
 }
 
 export function PortalProfileView() {
-  const toast = usePortalToast();
   const { data: me } = useQuery(myProfileQueryOptions());
   const { data: summary } = useQuery(mySummaryQueryOptions());
 
-  const [tab, setTab] = useState<TabId>('profile-basic');
+  const [tab, setTab] = useQueryState(
+    'tab',
+    parseAsStringLiteral(TAB_VALUES).withDefault('basic').withOptions({ shallow: true })
+  );
+
   const [basic, setBasic] = useState({
     contactName: '',
     contactPhone: '',
@@ -72,12 +85,12 @@ export function PortalProfileView() {
     bankAccountHolder: '',
     bankBranch: ''
   });
+  const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Seed the forms from the partner record exactly once.
-  //
-  // `me` is refetched on window focus and after every save, and re-seeding on
-  // each of those would overwrite whatever the partner had typed since — the
-  // save would then post the values that were already on the server.
+  // Seed the forms from the partner record exactly once. `me` is refetched on
+  // window focus and after every save, and re-seeding on each of those would
+  // overwrite whatever the partner had typed since.
   const seededFor = useRef<number | null>(null);
   useEffect(() => {
     if (!me || seededFor.current === me.id) return;
@@ -89,8 +102,7 @@ export function PortalProfileView() {
       taxCode: me.taxCode ?? '',
       businessAddress: me.businessAddress ?? ''
     });
-    const info = (me.channelInfo ?? {}) as Partial<Channels>;
-    setChannels({ ...EMPTY_CHANNELS, ...info });
+    setChannels({ ...EMPTY_CHANNELS, ...((me.channelInfo ?? {}) as Partial<Channels>) });
     setBank({
       bankName: me.bankName ?? '',
       bankAccountNumber: me.bankAccountNumber ?? '',
@@ -101,363 +113,328 @@ export function PortalProfileView() {
 
   const save = useMutation({
     ...updateMyProfileMutation,
-    onSuccess: () => toast('Đã lưu thay đổi'),
-    onError: () => toast('Không lưu được, vui lòng thử lại')
-  });
-
-  const [passwords, setPasswords] = useState({
-    current: '',
-    next: '',
-    confirm: ''
+    onSuccess: () => toast.success('Đã lưu thay đổi.'),
+    onError: (e: Error) => toast.error(e.message || 'Không lưu được, vui lòng thử lại.')
   });
 
   const updatePassword = useMutation({
     mutationFn: changePassword,
     onSuccess: () => {
       setPasswords({ current: '', next: '', confirm: '' });
-      toast('Đã cập nhật mật khẩu');
+      toast.success('Đã cập nhật mật khẩu.');
     },
-    onError: () => toast('Không đổi được mật khẩu, kiểm tra lại mật khẩu hiện tại')
+    onError: (e: Error) =>
+      toast.error(e.message || 'Không đổi được mật khẩu, kiểm tra lại mật khẩu hiện tại.')
   });
-
-  const submitPassword = () => {
-    if (passwords.next.length < MIN_PASSWORD_LENGTH) {
-      toast(`Mật khẩu mới cần ít nhất ${MIN_PASSWORD_LENGTH} ký tự`);
-      return;
-    }
-    if (passwords.next !== passwords.confirm) {
-      toast('Xác nhận mật khẩu chưa khớp');
-      return;
-    }
-    updatePassword.mutate({
-      oldPassword: passwords.current,
-      password: passwords.next
-    });
-  };
 
   const submit = (payload: UpdateMyProfilePayload) => save.mutate(payload);
 
+  const submitPassword = () => {
+    if (passwords.next.length < MIN_PASSWORD_LENGTH) {
+      setPasswordError(`Mật khẩu mới cần ít nhất ${MIN_PASSWORD_LENGTH} ký tự.`);
+      return;
+    }
+    if (passwords.next !== passwords.confirm) {
+      setPasswordError('Xác nhận mật khẩu chưa khớp.');
+      return;
+    }
+    setPasswordError(null);
+    updatePassword.mutate({ oldPassword: passwords.current, password: passwords.next });
+  };
+
   const filledChannels = Object.values(channels).filter(Boolean).length;
   const hasBank = Boolean(bank.bankAccountNumber);
-  const completion = Math.round(
-    ((basic.contactName && basic.contactPhone ? 1 : 0) +
-      (filledChannels > 0 ? 1 : 0) +
-      (hasBank ? 1 : 0)) *
-      (100 / 3)
-  );
+  const steps = [
+    { label: 'Thông tin liên hệ', done: Boolean(basic.contactName && basic.contactPhone) },
+    { label: 'Kênh tiếp thị', done: filledChannels > 0 },
+    { label: 'Tài khoản nhận tiền', done: hasBank }
+  ];
+  const completion = Math.round((steps.filter((s) => s.done).length / steps.length) * 100);
 
   return (
-    <section className='view active'>
-      <div className='profile-layout'>
-        <div>
-          <div className='profile-tabs'>
-            {TABS.map((t) => (
-              <button
-                className={`tab${tab === t.id ? ' active' : ''}`}
-                type='button'
-                key={t.id}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+    <div className='grid gap-4 lg:grid-cols-3'>
+      <div className='lg:col-span-2'>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as ProfileTab)}>
+          <TabsList>
+            <TabsTrigger value='basic'>Thông tin cơ bản</TabsTrigger>
+            <TabsTrigger value='channels'>Kênh tiếp thị</TabsTrigger>
+            <TabsTrigger value='payment'>Thanh toán</TabsTrigger>
+            <TabsTrigger value='security'>Bảo mật</TabsTrigger>
+          </TabsList>
 
-          <div className={`subview${tab === 'profile-basic' ? ' active' : ''}`}>
-            <article className='card'>
-              <h2 className='card-title'>Thông tin tài khoản đối tác</h2>
-              <p className='card-sub'>Thông tin dùng để xác minh và liên hệ vận hành.</p>
-              <div className='form-grid-2' style={{ marginTop: '1rem' }}>
-                <div className='field'>
-                  <label htmlFor='contactName'>Họ và tên</label>
-                  <input
+          <TabsContent value='basic' className='mt-4'>
+            <Card>
+              <CardHeader>
+                <CardTitle>Thông tin tài khoản đối tác</CardTitle>
+                <CardDescription>Dùng để xác minh và liên hệ vận hành.</CardDescription>
+              </CardHeader>
+              <CardContent className='grid gap-4 md:grid-cols-2'>
+                <div className='space-y-2'>
+                  <Label htmlFor='contactName'>Họ và tên</Label>
+                  <Input
                     id='contactName'
                     value={basic.contactName}
                     onChange={(e) => setBasic({ ...basic, contactName: e.target.value })}
                   />
                 </div>
-                <div className='field'>
-                  <label htmlFor='contactEmail'>Email</label>
-                  <input id='contactEmail' value={me?.contactEmail ?? ''} disabled />
+                <div className='space-y-2'>
+                  <Label htmlFor='contactEmail'>Email</Label>
+                  <Input id='contactEmail' value={me?.contactEmail ?? ''} disabled />
                 </div>
-                <div className='field'>
-                  <label htmlFor='contactPhone'>Số điện thoại</label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='contactPhone'>Số điện thoại</Label>
+                  <Input
                     id='contactPhone'
                     value={basic.contactPhone}
                     onChange={(e) => setBasic({ ...basic, contactPhone: e.target.value })}
                   />
                 </div>
-                <div className='field'>
-                  <label htmlFor='legalType'>Tư cách pháp nhân</label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='legalType'>Tư cách pháp nhân</Label>
+                  <Input
                     id='legalType'
                     value={me?.legalType === 'company' ? 'Doanh nghiệp' : 'Cá nhân'}
                     disabled
                   />
                 </div>
-                <div className='field'>
-                  <label htmlFor='companyName'>Tên thương hiệu hoặc kênh</label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='companyName'>Tên thương hiệu hoặc kênh</Label>
+                  <Input
                     id='companyName'
                     value={basic.companyName}
                     onChange={(e) => setBasic({ ...basic, companyName: e.target.value })}
                   />
                 </div>
-                <div className='field'>
-                  <label htmlFor='partnerType'>Loại hình hợp tác</label>
-                  <input
-                    id='partnerType'
-                    value={
-                      me?.partnerType === 'distribution' ? 'Đối tác phân phối' : 'Đối tác tiếp thị'
-                    }
-                    disabled
-                  />
-                </div>
-                <div className='field'>
-                  <label htmlFor='taxCode'>Mã số thuế</label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='taxCode'>Mã số thuế</Label>
+                  <Input
                     id='taxCode'
+                    inputMode='numeric'
                     value={basic.taxCode}
                     onChange={(e) => setBasic({ ...basic, taxCode: e.target.value })}
                   />
                 </div>
-                <div className='field'>
-                  <label htmlFor='businessAddress'>Địa chỉ</label>
-                  <input
+                <div className='space-y-2 md:col-span-2'>
+                  <Label htmlFor='businessAddress'>Địa chỉ</Label>
+                  <Input
                     id='businessAddress'
                     value={basic.businessAddress}
                     onChange={(e) => setBasic({ ...basic, businessAddress: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className='form-actions'>
-                <button
-                  className='btn btn-primary'
-                  type='button'
-                  disabled={save.isPending}
-                  onClick={() => submit(basic)}
-                >
+              </CardContent>
+              <CardFooter>
+                <Button isLoading={save.isPending} onClick={() => submit(basic)}>
                   Lưu thay đổi
-                </button>
-              </div>
-            </article>
-          </div>
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
 
-          <div className={`subview${tab === 'profile-channels' ? ' active' : ''}`}>
-            <article className='card'>
-              <h2 className='card-title'>Kênh tiếp thị</h2>
-              <p className='card-sub'>Khai báo các kênh bạn đang sử dụng để quảng bá sản phẩm.</p>
-              <div className='form-grid-2' style={{ marginTop: '1rem' }}>
-                <div className='field'>
-                  <label htmlFor='youtube'>YouTube</label>
-                  <input
-                    id='youtube'
-                    value={channels.youtube}
-                    placeholder='https://youtube.com/@...'
-                    onChange={(e) => setChannels({ ...channels, youtube: e.target.value })}
-                  />
-                </div>
-                <div className='field'>
-                  <label htmlFor='tiktok'>TikTok</label>
-                  <input
-                    id='tiktok'
-                    value={channels.tiktok}
-                    placeholder='https://tiktok.com/@...'
-                    onChange={(e) => setChannels({ ...channels, tiktok: e.target.value })}
-                  />
-                </div>
-                <div className='field'>
-                  <label htmlFor='website'>Trang web</label>
-                  <input
-                    id='website'
-                    value={channels.website}
-                    placeholder='https://...'
-                    onChange={(e) => setChannels({ ...channels, website: e.target.value })}
-                  />
-                </div>
-                <div className='field'>
-                  <label htmlFor='facebook'>Facebook</label>
-                  <input
-                    id='facebook'
-                    value={channels.facebook}
-                    placeholder='Ví dụ: https://facebook.com/minhtrantravel'
-                    onChange={(e) => setChannels({ ...channels, facebook: e.target.value })}
-                  />
-                </div>
-                <div className='field field-full'>
-                  <label htmlFor='otherChannel'>Kênh tiếp thị khác</label>
-                  <input
+          <TabsContent value='channels' className='mt-4'>
+            <Card>
+              <CardHeader>
+                <CardTitle>Kênh tiếp thị</CardTitle>
+                <CardDescription>
+                  Khai báo các kênh bạn dùng để quảng bá. Đội duyệt dựa vào đây để đánh giá hồ sơ.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='grid gap-4 md:grid-cols-2'>
+                {(
+                  [
+                    ['youtube', 'YouTube', 'https://youtube.com/@...'],
+                    ['tiktok', 'TikTok', 'https://tiktok.com/@...'],
+                    ['website', 'Trang web', 'https://...'],
+                    ['facebook', 'Facebook', 'https://facebook.com/...']
+                  ] as const
+                ).map(([key, label, placeholder]) => (
+                  <div className='space-y-2' key={key}>
+                    <Label htmlFor={key}>{label}</Label>
+                    <Input
+                      id={key}
+                      value={channels[key]}
+                      placeholder={placeholder}
+                      onChange={(e) => setChannels({ ...channels, [key]: e.target.value })}
+                    />
+                  </div>
+                ))}
+                <div className='space-y-2 md:col-span-2'>
+                  <Label htmlFor='otherChannel'>Kênh khác</Label>
+                  <Input
                     id='otherChannel'
                     value={channels.other}
-                    placeholder='Ví dụ: Instagram, Threads, Telegram, Zalo OA hoặc podcast'
+                    placeholder='Instagram, Threads, Telegram, Zalo OA, podcast…'
                     onChange={(e) => setChannels({ ...channels, other: e.target.value })}
                   />
-                  <span className='field-hint'>
-                    Có thể nhập thêm loại kênh không có trong danh sách trên.
-                  </span>
                 </div>
-              </div>
-              <div className='form-actions'>
-                <button
-                  className='btn btn-primary'
-                  type='button'
-                  disabled={save.isPending}
+              </CardContent>
+              <CardFooter>
+                <Button
+                  isLoading={save.isPending}
                   onClick={() => submit({ channelInfo: channels })}
                 >
                   Lưu thay đổi
-                </button>
-              </div>
-            </article>
-          </div>
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
 
-          <div className={`subview${tab === 'profile-payment' ? ' active' : ''}`}>
-            <article className='card'>
-              <h2 className='card-title'>Tài khoản nhận tiền</h2>
-              <p className='card-sub'>Thông tin phải trùng với chủ tài khoản đã xác minh.</p>
-              <div className='form-grid-2' style={{ marginTop: '1rem' }}>
-                <div className='field'>
-                  <label htmlFor='bankName'>Ngân hàng</label>
-                  <input
+          <TabsContent value='payment' className='mt-4'>
+            <Card>
+              <CardHeader>
+                <CardTitle>Tài khoản nhận tiền</CardTitle>
+                <CardDescription>
+                  Thông tin phải trùng với chủ tài khoản đã xác minh, nếu không yêu cầu rút sẽ bị từ
+                  chối.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='grid gap-4 md:grid-cols-2'>
+                <div className='space-y-2'>
+                  <Label htmlFor='bankName'>Ngân hàng</Label>
+                  <Input
                     id='bankName'
                     value={bank.bankName}
+                    placeholder='Vietcombank'
                     onChange={(e) => setBank({ ...bank, bankName: e.target.value })}
                   />
                 </div>
-                <div className='field'>
-                  <label htmlFor='bankStatus'>Trạng thái</label>
-                  <input
-                    id='bankStatus'
-                    value={hasBank ? 'Đã cập nhật' : 'Chưa cập nhật'}
-                    disabled
-                  />
-                </div>
-                <div className='field'>
-                  <label htmlFor='bankAccountNumber'>Số tài khoản</label>
-                  <input
-                    id='bankAccountNumber'
-                    value={bank.bankAccountNumber}
-                    onChange={(e) => setBank({ ...bank, bankAccountNumber: e.target.value })}
-                  />
-                </div>
-                <div className='field'>
-                  <label htmlFor='bankBranch'>Chi nhánh</label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='bankBranch'>Chi nhánh</Label>
+                  <Input
                     id='bankBranch'
                     value={bank.bankBranch}
                     onChange={(e) => setBank({ ...bank, bankBranch: e.target.value })}
                   />
                 </div>
-                <div className='field field-full'>
-                  <label htmlFor='bankAccountHolder'>Chủ tài khoản</label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='bankAccountNumber'>Số tài khoản</Label>
+                  <Input
+                    id='bankAccountNumber'
+                    inputMode='numeric'
+                    value={bank.bankAccountNumber}
+                    onChange={(e) => setBank({ ...bank, bankAccountNumber: e.target.value })}
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='bankAccountHolder'>Chủ tài khoản</Label>
+                  <Input
                     id='bankAccountHolder'
                     value={bank.bankAccountHolder}
                     onChange={(e) => setBank({ ...bank, bankAccountHolder: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className='form-actions'>
-                <button
-                  className='btn btn-primary'
-                  type='button'
-                  disabled={save.isPending}
-                  onClick={() => submit(bank)}
-                >
+              </CardContent>
+              <CardFooter>
+                <Button isLoading={save.isPending} onClick={() => submit(bank)}>
                   Lưu thay đổi
-                </button>
-              </div>
-            </article>
-          </div>
-          <div className={`subview${tab === 'profile-security' ? ' active' : ''}`}>
-            <article className='card'>
-              <h2 className='card-title'>Đổi mật khẩu</h2>
-              <p className='card-sub'>Mật khẩu mới cần có ít nhất {MIN_PASSWORD_LENGTH} ký tự.</p>
-              <div className='form-grid-2' style={{ marginTop: '1rem' }}>
-                <div className='field field-full'>
-                  <label htmlFor='currentPassword'>Mật khẩu hiện tại</label>
-                  <input
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value='security' className='mt-4'>
+            <Card>
+              <CardHeader>
+                <CardTitle>Đổi mật khẩu</CardTitle>
+                <CardDescription>
+                  Mật khẩu mới cần ít nhất {MIN_PASSWORD_LENGTH} ký tự.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='grid gap-4 md:grid-cols-2'>
+                <div className='space-y-2 md:col-span-2'>
+                  <Label htmlFor='currentPassword'>Mật khẩu hiện tại</Label>
+                  <Input
                     id='currentPassword'
                     type='password'
+                    autoComplete='current-password'
                     value={passwords.current}
                     onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
                   />
                 </div>
-                <div className='field'>
-                  <label htmlFor='newPassword'>Mật khẩu mới</label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='newPassword'>Mật khẩu mới</Label>
+                  <Input
                     id='newPassword'
                     type='password'
+                    autoComplete='new-password'
                     value={passwords.next}
-                    onChange={(e) => setPasswords({ ...passwords, next: e.target.value })}
+                    aria-invalid={Boolean(passwordError)}
+                    aria-describedby='password-error'
+                    onChange={(e) => {
+                      setPasswords({ ...passwords, next: e.target.value });
+                      if (passwordError) setPasswordError(null);
+                    }}
                   />
                 </div>
-                <div className='field'>
-                  <label htmlFor='confirmPassword'>Xác nhận mật khẩu mới</label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='confirmPassword'>Xác nhận mật khẩu mới</Label>
+                  <Input
                     id='confirmPassword'
                     type='password'
+                    autoComplete='new-password'
                     value={passwords.confirm}
                     onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className='form-actions'>
-                <button
-                  className='btn btn-primary'
-                  type='button'
-                  disabled={updatePassword.isPending}
-                  onClick={submitPassword}
-                >
+                {passwordError && (
+                  <p id='password-error' className='text-destructive text-xs md:col-span-2'>
+                    {passwordError}
+                  </p>
+                )}
+              </CardContent>
+              <CardFooter>
+                <Button isLoading={updatePassword.isPending} onClick={submitPassword}>
                   Cập nhật mật khẩu
-                </button>
-              </div>
-            </article>
-          </div>
-        </div>
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
 
-        <aside className='profile-aside'>
-          <article className='card profile-avatar-card'>
-            <div className='profile-avatar-large'>{initialsOf(me?.contactName)}</div>
-            <h2 className='card-title' style={{ marginTop: '.75rem' }}>
-              {me?.contactName ?? 'Đối tác'}
-            </h2>
-            <p className='card-sub'>
+      <div className='space-y-4'>
+        <Card>
+          <CardHeader className='items-center text-center'>
+            <Avatar className='mx-auto size-16'>
+              <AvatarFallback className='text-lg'>{initialsOf(me?.contactName)}</AvatarFallback>
+            </Avatar>
+            <CardTitle className='mt-3'>{me?.contactName ?? 'Đối tác'}</CardTitle>
+            <CardDescription>
               {me?.partnerType === 'distribution' ? 'Đối tác phân phối' : 'Đối tác tiếp thị'}
               {summary?.tier.current ? ` · Hạng ${summary.tier.current.tierName}` : ''}
-            </p>
-            <span
-              className={`badge ${me?.status === 'active' ? 'b-success' : 'b-warning'}`}
-              style={{ marginTop: '.75rem' }}
+            </CardDescription>
+            <Badge
+              variant={me?.status === 'active' ? 'default' : 'secondary'}
+              className='mx-auto mt-2'
             >
-              {me?.status === 'active' ? 'Tài khoản đã xác minh' : 'Đang chờ duyệt'}
-            </span>
-          </article>
+              {me?.status === 'active' ? 'Đã xác minh' : 'Đang chờ duyệt'}
+            </Badge>
+          </CardHeader>
+        </Card>
 
-          <article className='card'>
-            <h2 className='card-title'>Mức độ hoàn thiện hồ sơ</h2>
-            <div className='progress' style={{ marginTop: '1rem' }}>
-              <span style={{ width: `${completion}%` }} />
+        <Card>
+          <CardHeader>
+            <CardTitle className='text-base'>Mức độ hoàn thiện hồ sơ</CardTitle>
+            <CardDescription>{completion}% hoàn tất</CardDescription>
+          </CardHeader>
+          <CardContent className='space-y-3'>
+            <div className='bg-muted h-2 overflow-hidden rounded-full'>
+              <div
+                className='bg-primary h-full rounded-full transition-[width] duration-500'
+                style={{ width: `${completion}%` }}
+              />
             </div>
-            <div className='profile-status-list'>
-              <div className='profile-status-row'>
-                <span>Thông tin cá nhân</span>
-                <strong>
-                  {basic.contactName && basic.contactPhone ? 'Hoàn tất' : 'Còn thiếu'}
-                </strong>
+            {steps.map((step) => (
+              <div key={step.label} className='flex items-center justify-between text-sm'>
+                <span className='text-muted-foreground'>{step.label}</span>
+                <Badge variant={step.done ? 'default' : 'outline'}>
+                  {step.done ? 'Hoàn tất' : 'Còn thiếu'}
+                </Badge>
               </div>
-              <div className='profile-status-row'>
-                <span>Kênh tiếp thị</span>
-                <strong>{filledChannels > 0 ? 'Hoàn tất' : 'Còn thiếu'}</strong>
-              </div>
-              <div className='profile-status-row'>
-                <span>Thanh toán</span>
-                <strong>{hasBank ? 'Đã cập nhật' : 'Còn thiếu'}</strong>
-              </div>
-            </div>
-          </article>
-        </aside>
+            ))}
+          </CardContent>
+        </Card>
       </div>
-    </section>
+    </div>
   );
 }

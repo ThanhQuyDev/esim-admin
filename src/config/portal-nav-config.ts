@@ -67,6 +67,13 @@ export const portalNavGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Quy định xét hạng',
+        url: '/dashboard/portal/tier-rules',
+        icon: 'info',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Cấu hình thương hiệu',
         url: '/dashboard/portal/brand',
         icon: 'media',

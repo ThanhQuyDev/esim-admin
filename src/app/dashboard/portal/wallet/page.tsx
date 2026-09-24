@@ -1,13 +1,14 @@
+import PageContainer from '@/components/layout/page-container';
 import { PortalWalletView } from '@/features/partner-portal/components/portal-wallet-view';
 
 export const metadata = {
   title: 'Cổng đối tác: Ví ký quỹ'
 };
 
-/**
- * The portal shell draws the heading and the `.content` padding the v29 design
- * specifies, so this page renders its view directly.
- */
 export default function PortalWalletPage() {
-  return <PortalWalletView />;
+  return (
+    <PageContainer pageTitle='Ví ký quỹ' pageDescription='Số dư, yêu cầu nạp và lịch sử giao dịch.'>
+      <PortalWalletView />
+    </PageContainer>
+  );
 }

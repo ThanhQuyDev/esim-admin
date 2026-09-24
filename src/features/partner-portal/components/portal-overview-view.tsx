@@ -1,18 +1,41 @@
 'use client';
 
 /**
- * Partner dashboard — `#view-dashboard` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
+ * Partner dashboard.
  *
- * The markup is the mockup's, class for class. What differs is the source of
- * the numbers: the mockup hard-codes them, this reads the partner's own
- * summary, orders and tickets. Where the API has no equivalent of a mocked
- * figure (period-over-period deltas, "khách mới"), the element keeps its place
- * and carries a real number instead of an invented one.
+ * Built from the admin console's own vocabulary so the portal reads as the same
+ * product: the KPI grid from `features/overview/components/overview-dashboard`,
+ * charts through `ChartContainer` with `--chart-*` tokens, and Card/Badge for
+ * everything else. No colour is written by hand — the theme owns them all, so
+ * the portal follows the active theme and dark mode like every admin screen.
  */
 
-import Link from 'next/link';
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig
+} from '@/components/ui/chart';
+import { Icons } from '@/components/icons';
+import { formatVnd } from '@/lib/format';
 
 import {
   myOrdersQueryOptions,
@@ -20,27 +43,22 @@ import {
   mySummaryQueryOptions,
   myTicketsQueryOptions
 } from '../api/queries';
-import { VIEW_ROUTES } from '../lib/portal-nav';
-import {
-  formatCompactDong,
-  formatCount,
-  formatDong,
-  formatPercentVn,
-  toMillions
-} from '../lib/portal-format';
-import { PortalIcon } from './portal-icon-sprite';
-import { PortalLineChart, type ChartConfig } from './portal-chart';
 import type { MyOrder } from '../api/types';
 
 const DAYS = 30;
 
+const performanceConfig = {
+  revenue: { label: 'Doanh số', color: 'var(--chart-1)' },
+  commission: { label: 'Hoa hồng đã duyệt', color: 'var(--chart-2)' }
+} satisfies ChartConfig;
+
 /**
- * Daily revenue and commission for the last 30 days, in millions.
+ * Daily revenue and credited commission for the last 30 days.
  *
- * The summary endpoint returns only totals, so the series is bucketed from the
+ * The summary endpoint returns totals only, so the series is bucketed from the
  * partner's own orders — the same rows the orders screen lists.
  */
-function buildPerformanceChart(orders: MyOrder[]): ChartConfig {
+function buildSeries(orders: MyOrder[]) {
   const today = new Date();
   const days = Array.from({ length: DAYS }, (_, i) => {
     const d = new Date(today);
@@ -53,46 +71,28 @@ function buildPerformanceChart(orders: MyOrder[]): ChartConfig {
   const commission = new Map<string, number>();
 
   for (const order of orders) {
-    const created = new Date(order.createdAt);
-    const k = key(created);
+    const k = key(new Date(order.createdAt));
     revenue.set(k, (revenue.get(k) ?? 0) + (order.vndPrice ?? 0));
     if (order.commissionStatus === 'credited') {
       commission.set(k, (commission.get(k) ?? 0) + (order.commissionVnd ?? 0));
     }
   }
 
-  return {
-    unit: 'triệu đồng',
-    format: 'moneyM',
-    showLegend: false,
-    labels: days.map(
-      (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
-    ),
-    series: [
-      {
-        name: 'Doanh số',
-        color: '#4f46e5',
-        area: true,
-        data: days.map((d) => toMillions(revenue.get(key(d)) ?? 0))
-      },
-      {
-        name: 'Hoa hồng đã duyệt',
-        color: '#0f9f8f',
-        data: days.map((d) => toMillions(commission.get(key(d)) ?? 0))
-      }
-    ]
-  };
+  return days.map((d) => ({
+    label: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
+    revenue: revenue.get(key(d)) ?? 0,
+    commission: commission.get(key(d)) ?? 0
+  }));
 }
 
-/** Relative time in the wording the mockup's `.notice-time` uses. */
-function noticeAge(iso: string | undefined): string {
+/** Relative age, for the "cần xử lý" list. */
+function age(iso: string | undefined): string {
   if (!iso) return '';
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const hours = Math.floor(diffMs / 3_600_000);
+  const hours = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
   if (hours < 1) return 'Vừa xong';
-  if (hours < 24) return `${hours} giờ`;
+  if (hours < 24) return `${hours} giờ trước`;
   const days = Math.floor(hours / 24);
-  return days === 1 ? 'Hôm qua' : `${days} ngày`;
+  return days === 1 ? 'Hôm qua' : `${days} ngày trước`;
 }
 
 export function PortalOverviewView() {
@@ -101,258 +101,297 @@ export function PortalOverviewView() {
   const { data: me } = useQuery(myProfileQueryOptions());
   const { data: tickets } = useQuery(myTicketsQueryOptions());
 
-  const chart = useMemo(() => buildPerformanceChart(orders ?? []), [orders]);
+  const chartData = useMemo(() => buildSeries(orders ?? []), [orders]);
 
-  if (isLoading || !summary) {
-    return (
-      <section className='view active'>
-        <article className='card'>
-          <div className='empty'>Đang tải dữ liệu…</div>
-        </article>
-      </section>
-    );
-  }
+  const p30 = summary?.performance30d;
+  const conversion = p30 && p30.clicks > 0 ? (p30.orders / p30.clicks) * 100 : 0;
+  const tier = summary?.tier;
+  const progress = Math.max(0, Math.min(100, Math.round(tier?.progressPercent ?? 0)));
 
-  const { performance30d: p30, wallet, tier } = summary;
-  const conversionRate = p30.clicks > 0 ? (p30.orders / p30.clicks) * 100 : 0;
-  const avgOrderVnd = p30.orders > 0 ? Math.round(p30.revenueVnd / p30.orders) : 0;
-  const progress = Math.max(0, Math.min(100, Math.round(tier.progressPercent)));
+  const cards = [
+    {
+      label: 'Khả dụng để thanh toán',
+      value: formatVnd(summary?.wallet.availableBalanceVnd),
+      badge: 'Số dư',
+      icon: Icons.wallet,
+      footerStrong: 'Đã đủ điều kiện rút',
+      footer: `${formatVnd(summary?.commissionPendingVnd)} đang chờ đối soát`
+    },
+    {
+      label: 'Lượt nhấp 30 ngày',
+      value: (p30?.clicks ?? 0).toLocaleString('vi-VN'),
+      badge: '30 ngày',
+      icon: Icons.link,
+      footerStrong: `Tỷ lệ chuyển đổi ${conversion.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`,
+      footer: `${(summary?.lifetime.clicks ?? 0).toLocaleString('vi-VN')} lượt nhấp tích luỹ`
+    },
+    {
+      label: 'Doanh số 30 ngày',
+      value: formatVnd(p30?.revenueVnd),
+      badge: `${(p30?.orders ?? 0).toLocaleString('vi-VN')} đơn`,
+      icon: Icons.order,
+      footerStrong:
+        p30 && p30.orders > 0
+          ? `Trung bình ${formatVnd(Math.round(p30.revenueVnd / p30.orders))}/đơn`
+          : 'Chưa có đơn hợp lệ',
+      footer: `${formatVnd(summary?.lifetime.revenueVnd)} tích luỹ`
+    },
+    {
+      label: 'Hoa hồng 30 ngày',
+      value: formatVnd(p30?.commissionVnd),
+      badge: tier?.current ? `Hạng ${tier.current.tierName}` : 'Chưa gán hạng',
+      icon: Icons.trendingUp,
+      footerStrong: tier?.current
+        ? `Tỷ lệ ${Number(tier.current.commissionPercent)}%`
+        : 'Chưa áp dụng tỷ lệ',
+      footer: `${formatVnd(summary?.lifetime.commissionVnd)} đã ghi nhận`
+    }
+  ];
 
-  // Notices are derived from the partner's real state, in the mockup's order:
-  // something to fix, something that went through, something in progress.
-  const openTicket = (tickets ?? []).find((t) => t.status !== 'closed');
-  const missingBank = !me?.bankAccountNumber;
-  const creditedOrder = (orders ?? []).find((o) => o.commissionStatus === 'credited');
+  // Everything the partner still has to act on, most blocking first.
+  const openTicket = (tickets ?? []).find((t) => t.status !== 'closed' && t.status !== 'resolved');
+  const todo = [
+    !me?.bankAccountNumber && {
+      key: 'bank',
+      title: 'Bổ sung tài khoản ngân hàng',
+      description: 'Yêu cầu rút tiền chỉ được duyệt khi hồ sơ có tài khoản nhận tiền.',
+      href: '/dashboard/portal/profile',
+      tone: 'destructive' as const,
+      meta: 'Cần xử lý'
+    },
+    openTicket && {
+      key: 'ticket',
+      title: `Yêu cầu hỗ trợ #${openTicket.id} đang mở`,
+      description: openTicket.subject,
+      href: '/dashboard/portal/support',
+      tone: 'secondary' as const,
+      meta: age(openTicket.updatedAt)
+    },
+    (summary?.commissionPendingVnd ?? 0) > 0 && {
+      key: 'pending',
+      title: `${formatVnd(summary?.commissionPendingVnd)} hoa hồng chờ đối soát`,
+      description: 'Khoản này chuyển sang số dư khả dụng sau khi đơn qua thời gian kiểm tra.',
+      href: '/dashboard/portal/commissions',
+      tone: 'outline' as const,
+      meta: 'Đang chờ'
+    }
+  ].filter(Boolean) as {
+    key: string;
+    title: string;
+    description: string;
+    href: string;
+    tone: 'destructive' | 'secondary' | 'outline';
+    meta: string;
+  }[];
 
   return (
-    <section className='view active'>
-      <div className='grid grid-2'>
-        <article className='card hero'>
-          <div className='hero-label'>Khả dụng để thanh toán</div>
-          <div className='hero-value'>{formatDong(wallet.availableBalanceVnd)}</div>
-          <div className='hero-meta'>
-            <span className='trend'>{formatDong(summary.commissionPendingVnd)}</span>
-            <span>đang chờ xác minh</span>
-          </div>
-          <div className='hero-actions'>
-            <Link className='btn btn-primary' href={VIEW_ROUTES.payout}>
-              <PortalIcon id='i-wallet' />
-              Yêu cầu thanh toán
-            </Link>
-            <Link className='btn btn-light-outline' href={VIEW_ROUTES.commissions}>
-              Xem hoa hồng
-            </Link>
-          </div>
-        </article>
+    <div className='flex flex-1 flex-col space-y-4'>
+      <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Card key={card.label} className='@container/card'>
+              <CardHeader>
+                <CardDescription>{card.label}</CardDescription>
+                <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
+                  {isLoading ? '…' : card.value}
+                </CardTitle>
+                <CardAction>
+                  <Badge variant='outline'>
+                    <Icon />
+                    {card.badge}
+                  </Badge>
+                </CardAction>
+              </CardHeader>
+              <CardFooter className='flex-col items-start gap-1.5 text-sm'>
+                <div className='line-clamp-1 flex gap-2 font-medium'>{card.footerStrong}</div>
+                <div className='text-muted-foreground'>{card.footer}</div>
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </div>
 
-        <article
-          className='card tier-card'
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-around',
-            gap: '1.125rem'
-          }}
-        >
-          <div
-            className='donut'
-            style={{
-              background: `conic-gradient(var(--accent) 0 ${progress}%,#e7eaf0 ${progress}%)`
-            }}
-          >
-            <strong>{progress}%</strong>
-          </div>
-          <div>
-            <span className='badge b-yellow'>
-              {tier.current ? `Hạng ${tier.current.tierName}` : 'Chưa gán hạng'}
-            </span>
-            <h2 style={{ fontSize: '1.0625rem', marginTop: '0.625rem' }}>
-              {tier.next
-                ? `Còn ${formatDong(tier.toNextTierVnd)} để lên hạng ${tier.next.tierName}`
-                : 'Bạn đang ở hạng cao nhất'}
-            </h2>
-            <p className='card-sub'>
-              {tier.current
-                ? `Hoa hồng cơ bản ${formatPercentVn(Number(tier.current.commissionPercent))} · quyền lợi theo hạng hiện tại`
-                : 'Hạng được xét theo doanh số tích luỹ của bạn'}
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7'>
+        <div className='col-span-4'>
+          <Card>
+            <CardHeader>
+              <CardTitle className='flex flex-wrap items-center gap-2'>
+                Hiệu suất 30 ngày
+                <Badge variant='outline'>Doanh số {formatVnd(p30?.revenueVnd)}</Badge>
+              </CardTitle>
+              <CardDescription>
+                Doanh số và hoa hồng đã duyệt, tổng hợp từ đơn hàng ghi nhận cho bạn.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={performanceConfig} className='h-[280px] w-full'>
+                <AreaChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
+                  <defs>
+                    <linearGradient id='fillRevenue' x1='0' y1='0' x2='0' y2='1'>
+                      <stop offset='5%' stopColor='var(--color-revenue)' stopOpacity={0.8} />
+                      <stop offset='95%' stopColor='var(--color-revenue)' stopOpacity={0.1} />
+                    </linearGradient>
+                    <linearGradient id='fillCommission' x1='0' y1='0' x2='0' y2='1'>
+                      <stop offset='5%' stopColor='var(--color-commission)' stopOpacity={0.8} />
+                      <stop offset='95%' stopColor='var(--color-commission)' stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} strokeDasharray='3 3' />
+                  <XAxis
+                    dataKey='label'
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    interval='preserveStartEnd'
+                    minTickGap={24}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    width={56}
+                    tickFormatter={(value) =>
+                      new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(value)
+                    }
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value, name) => (
+                          <div className='flex min-w-[180px] items-center justify-between gap-3'>
+                            <span className='text-muted-foreground'>
+                              {performanceConfig[name as keyof typeof performanceConfig]?.label ??
+                                name}
+                            </span>
+                            <span className='font-mono font-medium'>
+                              {formatVnd(Number(value))}
+                            </span>
+                          </div>
+                        )}
+                      />
+                    }
+                  />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <Area
+                    dataKey='revenue'
+                    type='monotone'
+                    fill='url(#fillRevenue)'
+                    stroke='var(--color-revenue)'
+                    strokeWidth={2}
+                  />
+                  <Area
+                    dataKey='commission'
+                    type='monotone'
+                    fill='url(#fillCommission)'
+                    stroke='var(--color-commission)'
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className='col-span-4 md:col-span-3'>
+          <Card className='h-full'>
+            <CardHeader>
+              <CardTitle className='flex flex-wrap items-center gap-2'>
+                Hạng đối tác
+                <Badge variant='outline'>
+                  {tier?.current ? tier.current.tierName : 'Chưa gán hạng'}
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                {tier?.next
+                  ? `Còn ${formatVnd(tier.toNextTierVnd)} doanh số để đạt hạng ${tier.next.tierName}.`
+                  : 'Bạn đang ở hạng cao nhất hiện có.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='space-y-2'>
+                <div className='flex items-center justify-between text-sm'>
+                  <span className='text-muted-foreground'>Tiến độ lên hạng</span>
+                  <span className='font-medium tabular-nums'>{progress}%</span>
+                </div>
+                <div className='bg-muted h-2 overflow-hidden rounded-full'>
+                  <div
+                    className='bg-primary h-full rounded-full transition-[width] duration-500'
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className='grid grid-cols-3 gap-2 border-t pt-4 text-xs'>
+                <div>
+                  <p className='text-muted-foreground'>Hoa hồng</p>
+                  <p className='text-foreground font-medium tabular-nums'>
+                    {tier?.current ? `${Number(tier.current.commissionPercent)}%` : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className='text-muted-foreground'>Giảm tối đa</p>
+                  <p className='text-foreground font-medium tabular-nums'>
+                    {tier?.current ? `${Number(tier.current.maxDiscountPercent)}%` : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className='text-muted-foreground'>Đơn 30 ngày</p>
+                  <p className='text-foreground font-medium tabular-nums'>
+                    {(p30?.orders ?? 0).toLocaleString('vi-VN')}
+                  </p>
+                </div>
+              </div>
+
+              <div className='flex flex-wrap gap-2'>
+                <Button asChild size='sm'>
+                  <Link href='/dashboard/portal/payouts'>Yêu cầu rút tiền</Link>
+                </Button>
+                <Button asChild size='sm' variant='outline'>
+                  <Link href='/dashboard/portal/tier'>Xem quyền lợi hạng</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex flex-wrap items-center gap-2'>
+            Cần bạn xử lý
+            {todo.length > 0 ? (
+              <Badge variant='secondary'>{todo.length}</Badge>
+            ) : (
+              <Badge variant='outline'>Không có việc tồn</Badge>
+            )}
+          </CardTitle>
+          <CardDescription>Những việc đang chặn dòng tiền hoặc cần bạn phản hồi.</CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-2'>
+          {todo.length === 0 && (
+            <p className='text-muted-foreground py-6 text-center text-sm'>
+              Không có việc nào đang chờ bạn.
             </p>
-            <div className='progress' style={{ marginTop: '1rem' }}>
-              <span style={{ width: `${progress}%` }} />
-            </div>
-            <Link className='btn btn-sm' href={VIEW_ROUTES.tier} style={{ marginTop: '0.75rem' }}>
-              Xem hạng đối tác
+          )}
+          {todo.map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              className='hover:bg-accent flex items-start justify-between gap-4 rounded-lg border p-3 transition-colors'
+            >
+              <div className='min-w-0'>
+                <p className='text-sm font-medium'>{item.title}</p>
+                <p className='text-muted-foreground mt-0.5 text-xs'>{item.description}</p>
+              </div>
+              <Badge variant={item.tone} className='shrink-0'>
+                {item.meta}
+              </Badge>
             </Link>
-          </div>
-        </article>
-      </div>
-
-      <div className='grid dashboard-kpis' style={{ marginTop: '0.875rem' }}>
-        <article className='card stat'>
-          <div className='stat-top'>
-            <div className='stat-icon'>
-              <PortalIcon id='i-eye' />
-            </div>
-            <span className='badge b-gray'>30 ngày</span>
-          </div>
-          <div className='stat-label'>Lượt nhấp</div>
-          <div className='stat-value'>{formatCount(p30.clicks)}</div>
-          <div className='stat-note'>{formatCount(summary.lifetime.clicks)} lượt nhấp tích luỹ</div>
-        </article>
-
-        <article className='card stat'>
-          <div className='stat-top'>
-            <div className='stat-icon'>
-              <PortalIcon id='i-cart' />
-            </div>
-            <span className='badge b-info'>{formatPercentVn(conversionRate)}</span>
-          </div>
-          <div className='stat-label'>Đơn hợp lệ</div>
-          <div className='stat-value'>{formatCount(p30.orders)}</div>
-          <div className='stat-note'>Tỷ lệ chuyển đổi {formatPercentVn(conversionRate)}</div>
-        </article>
-
-        <article className='card stat'>
-          <div className='stat-top'>
-            <div className='stat-icon'>
-              <PortalIcon id='i-wallet' />
-            </div>
-            <span className='badge b-gray'>30 ngày</span>
-          </div>
-          <div className='stat-label'>Doanh số</div>
-          <div className='stat-value'>{formatCompactDong(p30.revenueVnd)}</div>
-          <div className='stat-note'>Giá trị trung bình mỗi đơn {formatDong(avgOrderVnd)}</div>
-        </article>
-
-        <article className='card stat'>
-          <div className='stat-top'>
-            <div className='stat-icon'>
-              <PortalIcon id='i-chart' />
-            </div>
-            <span className='badge b-success'>Đã duyệt</span>
-          </div>
-          <div className='stat-label'>Hoa hồng</div>
-          <div className='stat-value'>{formatCompactDong(p30.commissionVnd)}</div>
-          <div className='stat-note'>
-            {formatDong(summary.commissionPendingVnd)} đang chờ xác minh
-          </div>
-        </article>
-      </div>
-
-      <div className='grid grid-2' style={{ marginTop: '0.875rem' }}>
-        <article className='card'>
-          <div className='toolbar'>
-            <div>
-              <h2 className='card-title'>Hiệu suất 30 ngày</h2>
-              <p className='card-sub'>Doanh số và hoa hồng đã duyệt</p>
-            </div>
-            <div className='actions'>
-              <span className='badge b-gray'>Doanh số</span>
-              <span className='badge b-yellow'>Hoa hồng</span>
-            </div>
-          </div>
-          <PortalLineChart cfg={chart} ariaLabel='Hiệu suất 30 ngày' />
-        </article>
-
-        <article className='card'>
-          <h2 className='card-title'>Thông báo quan trọng</h2>
-          <p className='card-sub'>
-            Các cập nhật mới liên quan đến tài khoản, đơn hàng và hoa hồng.
-          </p>
-          <div className='notice-list'>
-            {missingBank && (
-              <Link className='notice-item' href={VIEW_ROUTES.profile}>
-                <span className='notice-icon warning'>
-                  <PortalIcon id='i-user' />
-                </span>
-                <span className='notice-copy'>
-                  <strong>Bổ sung tài khoản ngân hàng để nhận thanh toán</strong>
-                  <p>Yêu cầu rút tiền chỉ được duyệt khi hồ sơ có tài khoản nhận tiền.</p>
-                </span>
-                <span className='notice-time'>Cần xử lý</span>
-              </Link>
-            )}
-
-            {creditedOrder && (
-              <Link className='notice-item' href={VIEW_ROUTES.commissions}>
-                <span className='notice-icon success'>
-                  <PortalIcon id='i-check' />
-                </span>
-                <span className='notice-copy'>
-                  <strong>Đơn #{creditedOrder.orderNumber} đã được duyệt</strong>
-                  <p>Hoa hồng {formatDong(creditedOrder.commissionVnd)} đã được ghi nhận.</p>
-                </span>
-                <span className='notice-time'>{noticeAge(creditedOrder.createdAt)}</span>
-              </Link>
-            )}
-
-            {openTicket && (
-              <Link className='notice-item' href={VIEW_ROUTES.support}>
-                <span className='notice-icon info'>
-                  <PortalIcon id='i-help' />
-                </span>
-                <span className='notice-copy'>
-                  <strong>Yêu cầu hỗ trợ #{openTicket.id} đang được xử lý</strong>
-                  <p>{openTicket.subject}</p>
-                </span>
-                <span className='notice-time'>{noticeAge(openTicket.updatedAt)}</span>
-              </Link>
-            )}
-
-            {!missingBank && !creditedOrder && !openTicket && (
-              <div className='empty'>Chưa có thông báo mới.</div>
-            )}
-          </div>
-        </article>
-      </div>
-
-      <div className='section-head'>
-        <h2>Thao tác thường dùng</h2>
-      </div>
-      <div className='quick-actions quick-actions-3'>
-        <article className='quick-action-card'>
-          <div className='quick-head'>
-            <div className='quick-icon'>
-              <PortalIcon id='i-link' />
-            </div>
-            <span className='badge b-gray'>Liên kết</span>
-          </div>
-          <h3>Tạo liên kết giới thiệu</h3>
-          <p>Dán đường dẫn sản phẩm để tạo liên kết có mã theo dõi.</p>
-          <Link className='btn btn-primary btn-sm' href={VIEW_ROUTES.links}>
-            Tạo liên kết
-          </Link>
-        </article>
-
-        <article className='quick-action-card'>
-          <div className='quick-head'>
-            <div className='quick-icon'>
-              <PortalIcon id='i-chart' />
-            </div>
-            <span className='badge b-gray'>Thu nhập</span>
-          </div>
-          <h3>Xem hoa hồng</h3>
-          <p>Kiểm tra khoản chờ duyệt và khoản đã được ghi nhận.</p>
-          <Link className='btn btn-sm' href={VIEW_ROUTES.commissions}>
-            Xem chi tiết
-          </Link>
-        </article>
-
-        <article className='quick-action-card'>
-          <div className='quick-head'>
-            <div className='quick-icon'>
-              <PortalIcon id='i-wallet' />
-            </div>
-            <span className={`badge ${missingBank ? 'b-warning' : 'b-success'}`}>
-              {missingBank ? 'Chưa xác minh' : 'Đã xác minh'}
-            </span>
-          </div>
-          <h3>Yêu cầu rút tiền</h3>
-          <p>Gửi yêu cầu về tài khoản ngân hàng đã xác minh.</p>
-          <Link className='btn btn-sm' href={VIEW_ROUTES.payout}>
-            Rút tiền
-          </Link>
-        </article>
-      </div>
-    </section>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

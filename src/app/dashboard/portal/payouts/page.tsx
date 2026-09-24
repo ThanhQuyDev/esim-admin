@@ -1,13 +1,17 @@
+import PageContainer from '@/components/layout/page-container';
 import { PortalPayoutsView } from '@/features/partner-portal/components/portal-payouts-view';
 
 export const metadata = {
-  title: 'Cổng đối tác: Yêu cầu rút tiền'
+  title: 'Cổng đối tác: Rút tiền'
 };
 
-/**
- * The portal shell draws the heading and the `.content` padding the v29 design
- * specifies, so this page renders its view directly.
- */
 export default function PortalPayoutsPage() {
-  return <PortalPayoutsView />;
+  return (
+    <PageContainer
+      pageTitle='Rút tiền'
+      pageDescription='Tạo yêu cầu và theo dõi lịch sử rút hoa hồng.'
+    >
+      <PortalPayoutsView />
+    </PageContainer>
+  );
 }

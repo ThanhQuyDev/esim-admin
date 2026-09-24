@@ -1,173 +1,258 @@
 'use client';
 
 /**
- * Discount codes — `#view-coupons` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
+ * Discount codes issued to this partner.
  *
- * The explainer aside, then the grid of active codes. "Đề nghị mã mới" opens the
- * mockup's request modal, which here files a support ticket — the portal has no
- * self-serve coupon creation, an admin issues the code.
+ * The portal has no self-serve coupon creation — an admin issues the code — so
+ * "Đề nghị mã mới" files a support ticket rather than pretending to create one.
  */
 
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Icons } from '@/components/icons';
+import { formatDateVn, formatVnd } from '@/lib/format';
 
 import { createTicketMutation } from '../api/mutations';
 import { myCouponsQueryOptions, myProfileQueryOptions } from '../api/queries';
-import { formatDateVn } from '@/lib/format';
-import { formatCount } from '../lib/portal-format';
-import { PortalIcon } from './portal-icon-sprite';
-import { usePortalToast } from './portal-toast';
+import type { MyCoupon } from '../api/types';
 
-/** Codes inside this window get the mockup's "Sắp hết hạn" badge. */
+/** Codes inside this window get a "sắp hết hạn" warning. */
 const EXPIRING_SOON_DAYS = 30;
 
-function expiryState(expiresAt: string | null, isActive: boolean) {
-  if (!isActive) return { cls: 'b-gray', label: 'Ngừng hoạt động' };
-  if (!expiresAt) return { cls: 'b-success', label: 'Hoạt động' };
-  const days = (new Date(expiresAt).getTime() - Date.now()) / 86_400_000;
-  if (days < 0) return { cls: 'b-danger', label: 'Đã hết hạn' };
-  if (days <= EXPIRING_SOON_DAYS) return { cls: 'b-warning', label: 'Sắp hết hạn' };
-  return { cls: 'b-success', label: 'Hoạt động' };
+function couponState(coupon: MyCoupon): {
+  label: string;
+  variant: 'default' | 'secondary' | 'destructive' | 'outline';
+} {
+  if (!coupon.isActive) return { label: 'Ngừng hoạt động', variant: 'secondary' };
+  if (coupon.maxUsage != null && coupon.usageCount >= coupon.maxUsage) {
+    return { label: 'Hết lượt', variant: 'destructive' };
+  }
+  if (coupon.expiresAt) {
+    const days = (new Date(coupon.expiresAt).getTime() - Date.now()) / 86_400_000;
+    if (days < 0) return { label: 'Đã hết hạn', variant: 'destructive' };
+    if (days <= EXPIRING_SOON_DAYS) return { label: 'Sắp hết hạn', variant: 'outline' };
+  }
+  return { label: 'Đang hoạt động', variant: 'default' };
 }
 
 export function PortalCouponsView() {
-  const toast = usePortalToast();
   const { data: coupons, isLoading } = useQuery(myCouponsQueryOptions());
   const { data: me } = useQuery(myProfileQueryOptions());
 
-  const [requesting, setRequesting] = useState(false);
+  const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const requestCoupon = useMutation({
     ...createTicketMutation,
     onSuccess: () => {
-      setRequesting(false);
+      setOpen(false);
       setNote('');
-      toast('Đã gửi đề nghị mã giảm giá');
+      toast.success('Đã gửi đề nghị cấp mã giảm giá.');
     },
-    onError: () => toast('Không gửi được đề nghị, vui lòng thử lại')
+    onError: (e: Error) => toast.error(e.message || 'Không gửi được đề nghị.')
   });
 
-  const copy = (code: string) => {
-    navigator.clipboard?.writeText(code);
-    toast('Đã sao chép mã');
+  const copy = async (code: string) => {
+    await navigator.clipboard?.writeText(code);
+    toast.success(`Đã sao chép mã ${code}.`);
   };
 
+  const list = coupons ?? [];
+
   return (
-    <section className='view active'>
-      <aside className='coupon-note' aria-label='Thông tin về mã giảm giá'>
-        <div className='coupon-note-icon'>
-          <PortalIcon id='i-help' />
-        </div>
-        <div>
-          <h3>Lưu ý về mã giảm giá</h3>
-          <div className='coupon-note-list'>
-            <p className='coupon-note-item'>
-              Mã giúp ghi nhận đơn hàng khi khách không bấm liên kết tiếp thị hoặc mua trên thiết bị
-              khác.
-            </p>
-            <p className='coupon-note-item'>
-              Hoa hồng được tính trên doanh thu sau giảm giá. Mức giảm phải nằm trong quyền hạn mà
-              quản trị viên cấp.
-            </p>
-          </div>
-        </div>
-      </aside>
+    <div className='flex flex-1 flex-col space-y-4'>
+      <Alert>
+        <Icons.info />
+        <AlertTitle>Mã giảm giá hoạt động thế nào</AlertTitle>
+        <AlertDescription>
+          <ul className='list-disc space-y-1 pl-4'>
+            <li>
+              Mã giúp ghi nhận đơn hàng cho bạn khi khách không bấm link tiếp thị hoặc mua trên
+              thiết bị khác.
+            </li>
+            <li>
+              Hoa hồng tính trên doanh thu sau giảm giá. Mức giảm nằm trong quyền hạn quản trị viên
+              cấp cho hạng của bạn.
+            </li>
+          </ul>
+        </AlertDescription>
+      </Alert>
 
-      <div className='coupon-section-head'>
-        <div>
-          <h2>Mã đang hoạt động</h2>
-          <p>Theo dõi lượt sử dụng và doanh số từ từng mã.</p>
-        </div>
-        <button className='btn' type='button' onClick={() => setRequesting(true)}>
-          <PortalIcon id='i-plus' />
-          Đề nghị mã mới
-        </button>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex flex-wrap items-center gap-2'>
+            Mã được cấp
+            <Badge variant='outline'>{list.length} mã</Badge>
+          </CardTitle>
+          <CardDescription>Theo dõi lượt sử dụng và doanh số từ từng mã.</CardDescription>
+          <CardAction>
+            <Button size='sm' variant='outline' onClick={() => setOpen(true)}>
+              <Icons.add />
+              Đề nghị mã mới
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          {isLoading && <p className='text-muted-foreground py-8 text-center text-sm'>Đang tải…</p>}
 
-      <div className='coupon-grid'>
-        {isLoading && <div className='empty'>Đang tải mã giảm giá…</div>}
-        {!isLoading && (coupons ?? []).length === 0 && (
-          <div className='empty'>Chưa có mã giảm giá nào được cấp.</div>
-        )}
-        {(coupons ?? []).map((c) => {
-          const state = expiryState(c.expiresAt, c.isActive);
-          return (
-            <article className='coupon-card' key={c.id}>
-              <div className='coupon-card-top'>
-                <span className='coupon-code'>{c.code}</span>
-                <span className={`badge ${state.cls}`}>{state.label}</span>
-              </div>
-              <div className='coupon-value'>{c.discountPercent}%</div>
-              <div className='coupon-meta'>
-                {formatCount(c.usageCount)} lượt dùng
-                {c.expiresAt ? ` · hết hạn ${formatDateVn(c.expiresAt)}` : ' · không giới hạn'}
-              </div>
-              <button className='btn btn-sm' type='button' onClick={() => copy(c.code)}>
-                <PortalIcon id='i-copy' />
-                Sao chép mã
-              </button>
-            </article>
-          );
-        })}
-      </div>
-
-      <div
-        aria-labelledby='couponRequestTitle'
-        aria-modal='true'
-        className={`modal-backdrop${requesting ? ' open' : ''}`}
-        role='dialog'
-        onClick={(e) => {
-          if (e.target === e.currentTarget) setRequesting(false);
-        }}
-      >
-        <div className='modal'>
-          <div className='modal-head'>
-            <div>
-              <h2 id='couponRequestTitle' style={{ fontSize: '1.0625rem' }}>
-                Đề nghị mã giảm giá
-              </h2>
-              <p className='card-sub'>Mã sẽ được quản trị viên cấp sau khi duyệt.</p>
+          {!isLoading && list.length === 0 && (
+            <div className='rounded-lg border border-dashed py-12 text-center'>
+              <p className='text-sm font-medium'>Chưa có mã giảm giá nào</p>
+              <p className='text-muted-foreground mx-auto mt-1 max-w-md text-xs'>
+                Mã giảm giá do quản trị viên cấp. Gửi đề nghị kèm mức giảm, thời hạn và kênh bạn
+                định dùng để được xét.
+              </p>
+              <Button size='sm' className='mt-4' onClick={() => setOpen(true)}>
+                <Icons.add />
+                Đề nghị mã mới
+              </Button>
             </div>
-            <button className='btn btn-icon' type='button' onClick={() => setRequesting(false)}>
-              <PortalIcon id='i-x' />
-            </button>
+          )}
+
+          <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {list.map((coupon) => {
+              const state = couponState(coupon);
+              return (
+                <Card key={coupon.id} className='@container/card'>
+                  <CardHeader>
+                    <CardDescription className='font-mono text-xs tracking-wider'>
+                      {coupon.code}
+                    </CardDescription>
+                    <CardTitle className='text-2xl font-semibold tabular-nums'>
+                      {coupon.discountPercent}%
+                    </CardTitle>
+                    <CardAction>
+                      <Badge variant={state.variant}>{state.label}</Badge>
+                    </CardAction>
+                  </CardHeader>
+                  <CardContent className='space-y-2 text-xs'>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-muted-foreground'>Lượt dùng</span>
+                      <span className='font-medium tabular-nums'>
+                        {coupon.usageCount.toLocaleString('vi-VN')}
+                        {coupon.maxUsage != null && ` / ${coupon.maxUsage.toLocaleString('vi-VN')}`}
+                      </span>
+                    </div>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-muted-foreground'>Đơn của bạn</span>
+                      <span className='font-medium tabular-nums'>
+                        {coupon.myOrders.toLocaleString('vi-VN')}
+                      </span>
+                    </div>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-muted-foreground'>Đã giảm cho khách</span>
+                      <span className='font-medium tabular-nums'>
+                        {formatVnd(coupon.discountGivenVnd)}
+                      </span>
+                    </div>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-muted-foreground'>Hết hạn</span>
+                      <span className='font-medium'>
+                        {coupon.expiresAt ? formatDateVn(coupon.expiresAt) : 'Không giới hạn'}
+                      </span>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='w-full'
+                      onClick={() => copy(coupon.code)}
+                    >
+                      <Icons.copy />
+                      Sao chép mã
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
-          <div className='modal-body'>
-            <div className='field'>
-              <label htmlFor='couponNote'>Nội dung đề nghị</label>
-              <textarea
-                id='couponNote'
-                placeholder='Ví dụ: mã giảm 10% cho chiến dịch Nhật Bản tháng 8, dự kiến 200 lượt dùng.'
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <span className='field-hint'>
-                Nêu rõ mức giảm mong muốn, thời hạn và kênh sẽ sử dụng mã.
-              </span>
-            </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đề nghị cấp mã giảm giá</DialogTitle>
+            <DialogDescription>
+              Đề nghị được gửi tới đội vận hành dưới dạng một yêu cầu hỗ trợ.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='space-y-2'>
+            <Label htmlFor='couponNote'>
+              Nội dung đề nghị <span className='text-destructive'>*</span>
+            </Label>
+            <Textarea
+              id='couponNote'
+              rows={5}
+              value={note}
+              placeholder='Ví dụ: mã giảm 10% cho chiến dịch Nhật Bản tháng 8, dự kiến 200 lượt dùng, chạy tới 30/09.'
+              aria-invalid={Boolean(error)}
+              aria-describedby='couponNote-error'
+              onChange={(e) => {
+                setNote(e.target.value);
+                if (error) setError(null);
+              }}
+              onBlur={() => setError(note.trim() ? null : 'Mô tả đề nghị của bạn.')}
+            />
+            {error ? (
+              <p id='couponNote-error' className='text-destructive text-xs'>
+                {error}
+              </p>
+            ) : (
+              <p className='text-muted-foreground text-xs'>
+                Nêu rõ mức giảm mong muốn, thời hạn và kênh sẽ dùng mã.
+              </p>
+            )}
           </div>
-          <div className='modal-foot'>
-            <button className='btn' type='button' onClick={() => setRequesting(false)}>
-              Hủy
-            </button>
-            <button
-              className='btn btn-primary'
-              type='button'
-              disabled={requestCoupon.isPending || !note.trim()}
-              onClick={() =>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setOpen(false)}>
+              Huỷ
+            </Button>
+            <Button
+              isLoading={requestCoupon.isPending}
+              onClick={() => {
+                if (!note.trim()) {
+                  setError('Mô tả đề nghị của bạn.');
+                  return;
+                }
                 requestCoupon.mutate({
                   customerEmail: me?.contactEmail ?? '',
                   subject: 'Đề nghị cấp mã giảm giá',
                   description: note.trim()
-                })
-              }
+                });
+              }}
             >
-              {requestCoupon.isPending ? 'Đang gửi…' : 'Gửi đề nghị'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
+              Gửi đề nghị
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

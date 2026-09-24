@@ -1,21 +1,66 @@
 'use client';
 
 /**
- * Tier rules — `#view-tier-rules` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
+ * Tier rules: what counts, when it is locked, and how a tier changes.
  *
- * The screen the previous portal never had. Explanatory copy is the design's,
- * verbatim; the threshold table is filled from the live tier list so the rules
- * page and the tier page can never disagree.
+ * The threshold table is filled from the live tier list, so this page and the
+ * tier page can never disagree.
  */
 
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import { Icons } from '@/components/icons';
+import { formatVnd } from '@/lib/format';
+
 import { myTiersQueryOptions } from '../api/queries';
-import { formatDong, formatPercentVn } from '../lib/portal-format';
-import { VIEW_ROUTES } from '../lib/portal-nav';
-import { PortalIcon } from './portal-icon-sprite';
+
+const PRINCIPLES = [
+  {
+    icon: Icons.order,
+    title: 'Đơn hợp lệ',
+    description:
+      'Chỉ tính đơn đã thanh toán, ghi nhận đúng nguồn đối tác và hoàn tất thời gian xác minh.'
+  },
+  {
+    icon: Icons.clock,
+    title: 'Kỳ đánh giá',
+    description:
+      'Dữ liệu khoá vào cuối tháng. Quyền lợi mới áp dụng từ kỳ kế tiếp sau khi kết quả được xác nhận.'
+  },
+  {
+    icon: Icons.badgeCheck,
+    title: 'Chất lượng hoạt động',
+    description:
+      'Đơn gian lận, đơn hoàn tiền và nguồn quảng bá vi phạm quy định không được tính vào kết quả.'
+  }
+];
+
+const STEPS = [
+  { step: 1, title: 'Khoá dữ liệu', description: 'Tổng hợp đơn đã xác nhận trong kỳ.' },
+  { step: 2, title: 'Loại trừ rủi ro', description: 'Bỏ đơn hoàn tiền, gian lận hoặc sai nguồn.' },
+  { step: 3, title: 'Xác định hạng', description: 'Đối chiếu ngưỡng và quyền lợi tương ứng.' },
+  { step: 4, title: 'Áp dụng kỳ mới', description: 'Cập nhật hạng và thông báo cho đối tác.' }
+];
 
 export function PortalTierRulesView() {
   const { data: tiers } = useQuery(myTiersQueryOptions());
@@ -25,140 +70,107 @@ export function PortalTierRulesView() {
   );
 
   return (
-    <section className='view active'>
-      <div className='toolbar'>
-        <div>
-          <h2 className='card-title'>Quy định xét hạng đối tác tiếp thị</h2>
-          <p className='card-sub'>
-            Giải thích dữ liệu được tính, thời điểm khóa kỳ và nguyên tắc nâng hoặc hạ hạng.
-          </p>
-        </div>
-        <Link className='btn' href={VIEW_ROUTES.tier}>
-          <PortalIcon id='i-x' />
-          Quay lại Hạng đối tác
-        </Link>
+    <div className='flex flex-1 flex-col space-y-4'>
+      <div className='grid gap-4 md:grid-cols-3'>
+        {PRINCIPLES.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Card key={item.title}>
+              <CardHeader>
+                <div className='bg-muted text-foreground flex size-9 items-center justify-center rounded-lg'>
+                  <Icon className='size-4' />
+                </div>
+                <CardTitle className='mt-3 text-base'>{item.title}</CardTitle>
+                <CardDescription>{item.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          );
+        })}
       </div>
 
-      <div className='grid grid-3 tier-rule-grid'>
-        <article className='card'>
-          <div className='stat-icon'>
-            <PortalIcon id='i-cart' />
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex flex-wrap items-center gap-2'>
+            Điều kiện theo từng hạng
+            <Badge variant='outline'>{sorted.length} hạng</Badge>
+          </CardTitle>
+          <CardDescription>
+            Các ngưỡng dưới đây áp dụng trên dữ liệu đã xác nhận trong kỳ đánh giá.
+          </CardDescription>
+          <CardAction>
+            <Button asChild size='sm' variant='outline'>
+              <Link href='/dashboard/portal/tier'>Xem hạng của tôi</Link>
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <div className='rounded-lg border'>
+            <Table>
+              <TableHeader className='bg-muted'>
+                <TableRow>
+                  <TableHead>Hạng</TableHead>
+                  <TableHead>Điều kiện doanh số</TableHead>
+                  <TableHead className='text-right'>Hoa hồng</TableHead>
+                  <TableHead className='text-right'>Giảm giá tối đa</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sorted.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className='text-muted-foreground h-24 text-center'>
+                      Chưa có cấu hình hạng nào.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {sorted.map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell className='font-medium'>{t.tierName}</TableCell>
+                    <TableCell>
+                      {Number(t.minVolumeVnd) > 0
+                        ? `Từ ${formatVnd(Number(t.minVolumeVnd))}`
+                        : 'Mặc định khi được duyệt'}
+                    </TableCell>
+                    <TableCell className='text-right tabular-nums'>
+                      {Number(t.commissionPercent)}%
+                    </TableCell>
+                    <TableCell className='text-right tabular-nums'>
+                      {Number(t.maxDiscountPercent)}%
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={t.isActive ? 'default' : 'secondary'}>
+                        {t.isActive ? 'Đang áp dụng' : 'Ngừng áp dụng'}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-          <h3 className='card-title' style={{ marginTop: '.75rem' }}>
-            Đơn hợp lệ
-          </h3>
-          <p className='card-sub'>
-            Chỉ tính đơn đã thanh toán, ghi nhận đúng nguồn đối tác và hoàn tất thời gian xác minh.
-          </p>
-        </article>
-        <article className='card'>
-          <div className='stat-icon'>
-            <PortalIcon id='i-chart' />
-          </div>
-          <h3 className='card-title' style={{ marginTop: '.75rem' }}>
-            Kỳ đánh giá
-          </h3>
-          <p className='card-sub'>
-            Dữ liệu được khóa vào cuối tháng. Quyền lợi mới áp dụng từ kỳ kế tiếp sau khi kết quả
-            được xác nhận.
-          </p>
-        </article>
-        <article className='card'>
-          <div className='stat-icon'>
-            <PortalIcon id='i-shield' />
-          </div>
-          <h3 className='card-title' style={{ marginTop: '.75rem' }}>
-            Chất lượng hoạt động
-          </h3>
-          <p className='card-sub'>
-            Đơn gian lận, đơn hoàn tiền và nguồn quảng bá vi phạm quy định không được tính vào kết
-            quả.
-          </p>
-        </article>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className='section-head'>
-        <div>
-          <h2>Điều kiện theo từng hạng</h2>
-          <p>Các ngưỡng dưới đây được áp dụng trên dữ liệu đã xác nhận trong kỳ đánh giá.</p>
-        </div>
-      </div>
-      <div className='table-wrap'>
-        <table className='table'>
-          <thead>
-            <tr>
-              <th>Hạng</th>
-              <th>Điều kiện doanh số</th>
-              <th>Hoa hồng</th>
-              <th>Giảm giá tối đa</th>
-              <th>Trạng thái</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.length === 0 && (
-              <tr>
-                <td colSpan={5}>
-                  <div className='empty'>Chưa có cấu hình hạng nào.</div>
-                </td>
-              </tr>
-            )}
-            {sorted.map((t) => (
-              <tr key={t.id}>
-                <td>{t.tierName}</td>
-                <td>
-                  {Number(t.minVolumeVnd) > 0
-                    ? `Từ ${formatDong(Number(t.minVolumeVnd))}`
-                    : 'Mặc định khi được duyệt'}
-                </td>
-                <td>{formatPercentVn(Number(t.commissionPercent))}</td>
-                <td>{formatPercentVn(Number(t.maxDiscountPercent))}</td>
-                <td>
-                  <span className={`badge ${t.isActive ? 'b-success' : 'b-gray'}`}>
-                    {t.isActive ? 'Đang áp dụng' : 'Ngừng áp dụng'}
-                  </span>
-                </td>
-              </tr>
+      <Card>
+        <CardHeader>
+          <CardTitle>Quy trình cập nhật hạng</CardTitle>
+          <CardDescription>
+            Hệ thống chạy tự động, sau đó đội vận hành kiểm tra các trường hợp bất thường.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+            {STEPS.map((item) => (
+              <div key={item.step} className='rounded-lg border p-4'>
+                <div className='bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-full text-xs font-semibold tabular-nums'>
+                  {item.step}
+                </div>
+                <p className='mt-3 text-sm font-medium'>{item.title}</p>
+                <p className='text-muted-foreground mt-1 text-xs'>{item.description}</p>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className='section-head'>
-        <div>
-          <h2>Quy trình cập nhật hạng</h2>
-          <p>Hệ thống thực hiện tự động, sau đó đội vận hành kiểm tra các trường hợp bất thường.</p>
-        </div>
-      </div>
-      <div className='grid grid-4'>
-        <article className='card compact'>
-          <span className='badge b-gray'>Bước 1</span>
-          <h3 className='card-title' style={{ marginTop: '.625rem' }}>
-            Khóa dữ liệu
-          </h3>
-          <p className='card-sub'>Tổng hợp đơn đã xác nhận trong kỳ.</p>
-        </article>
-        <article className='card compact'>
-          <span className='badge b-gray'>Bước 2</span>
-          <h3 className='card-title' style={{ marginTop: '.625rem' }}>
-            Loại trừ rủi ro
-          </h3>
-          <p className='card-sub'>Bỏ đơn hoàn tiền, gian lận hoặc sai nguồn.</p>
-        </article>
-        <article className='card compact'>
-          <span className='badge b-gray'>Bước 3</span>
-          <h3 className='card-title' style={{ marginTop: '.625rem' }}>
-            Xác định hạng
-          </h3>
-          <p className='card-sub'>Đối chiếu ngưỡng và quyền lợi tương ứng.</p>
-        </article>
-        <article className='card compact'>
-          <span className='badge b-success'>Bước 4</span>
-          <h3 className='card-title' style={{ marginTop: '.625rem' }}>
-            Áp dụng kỳ mới
-          </h3>
-          <p className='card-sub'>Cập nhật hạng và thông báo cho đối tác.</p>
-        </article>
-      </div>
-    </section>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

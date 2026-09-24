@@ -1,19 +1,30 @@
 'use client';
 
 /**
- * Brand settings — `#view-brand` in cong-doi-tac-phan-phoi-hoan-chinh-v29.html.
- *
- * The mockup leaves this screen empty for the affiliate role and fills it only
- * for distribution partners, so the nav hides it for affiliates. The form keeps
- * the design's card, field and preview markup.
+ * Brand settings: the name, logo and tagline a partner shows to their own
+ * customers, with a live preview of the result.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import { updateMyProfileMutation } from '../api/mutations';
 import { myProfileQueryOptions } from '../api/queries';
-import { usePortalToast } from './portal-toast';
 import type { PartnerBrandInfo } from '../api/types';
 
 function readBrand(info: Record<string, unknown> | null): PartnerBrandInfo {
@@ -25,7 +36,6 @@ function readBrand(info: Record<string, unknown> | null): PartnerBrandInfo {
 }
 
 export function PortalBrandView() {
-  const toast = usePortalToast();
   const { data: partner, isLoading } = useQuery(myProfileQueryOptions());
   const [form, setForm] = useState<PartnerBrandInfo>({
     displayName: '',
@@ -44,124 +54,111 @@ export function PortalBrandView() {
 
   const update = useMutation({
     ...updateMyProfileMutation,
-    onSuccess: () => toast('Đã lưu cấu hình thương hiệu'),
-    onError: () => toast('Lưu thất bại, vui lòng thử lại')
+    onSuccess: () => toast.success('Đã lưu cấu hình thương hiệu.'),
+    onError: (e: Error) => toast.error(e.message || 'Lưu thất bại.')
   });
 
   if (isLoading || !partner) {
     return (
-      <section className='view active'>
-        <article className='card'>
-          <div className='empty'>Đang tải dữ liệu…</div>
-        </article>
-      </section>
+      <div className='grid gap-4 lg:grid-cols-3'>
+        <Skeleton className='h-80 lg:col-span-2' />
+        <Skeleton className='h-80' />
+      </div>
     );
   }
 
-  // Falls back to the contact name so the preview always shows something real.
   const previewName = form.displayName?.trim() || partner.contactName;
 
   return (
-    <section className='view active'>
-      <div className='grid grid-2'>
-        <article className='card'>
-          <div className='card-heading'>
-            <div>
-              <h2 className='card-title'>Nhận diện thương hiệu</h2>
-              <p className='card-sub'>
-                Tùy chỉnh tên, logo và câu giới thiệu hiển thị với khách hàng của bạn.
+    <div className='grid gap-4 lg:grid-cols-3'>
+      <Card className='lg:col-span-2'>
+        <CardHeader>
+          <CardTitle>Nhận diện thương hiệu</CardTitle>
+          <CardDescription>
+            Tên, logo và câu giới thiệu hiển thị với khách hàng của bạn.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div className='space-y-2'>
+            <Label htmlFor='displayName'>Tên hiển thị</Label>
+            <Input
+              id='displayName'
+              value={form.displayName}
+              placeholder={partner.contactName}
+              aria-describedby='displayName-help'
+              onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
+            />
+            <p id='displayName-help' className='text-muted-foreground text-xs'>
+              Tên khách nhìn thấy, thay cho tên trên hồ sơ pháp lý.
+            </p>
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='logoUrl'>Đường dẫn logo</Label>
+            <Input
+              id='logoUrl'
+              type='url'
+              value={form.logoUrl}
+              placeholder='https://…/logo.png'
+              onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
+            />
+            <p className='text-muted-foreground text-xs'>
+              Ảnh vuông, tối thiểu 256×256 để hiển thị sắc nét.
+            </p>
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='tagline'>Câu giới thiệu ngắn</Label>
+            <Input
+              id='tagline'
+              value={form.tagline}
+              placeholder='Ví dụ: eSIM du lịch giá tốt cùng Minh Trần'
+              onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))}
+            />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button
+            isLoading={update.isPending}
+            onClick={() =>
+              update.mutate({
+                brandInfo: {
+                  displayName: form.displayName?.trim() || undefined,
+                  logoUrl: form.logoUrl?.trim() || undefined,
+                  tagline: form.tagline?.trim() || undefined
+                }
+              })
+            }
+          >
+            Lưu thay đổi
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Xem trước</CardTitle>
+          <CardDescription>Cách khách hàng nhìn thấy thương hiệu của bạn.</CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div className='flex items-center gap-3 rounded-lg border p-4'>
+            <Avatar className='size-12'>
+              <AvatarImage src={form.logoUrl || undefined} alt='' />
+              <AvatarFallback>{previewName.trim().charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className='min-w-0'>
+              <p className='truncate font-medium'>{previewName}</p>
+              <p className='text-muted-foreground truncate text-xs'>
+                {form.tagline || 'Đối tác của esim.vn'}
               </p>
             </div>
           </div>
-          <div className='form-grid-2' style={{ marginTop: '1rem' }}>
-            <div className='field field-full'>
-              <label htmlFor='displayName'>Tên hiển thị</label>
-              <input
-                id='displayName'
-                value={form.displayName}
-                placeholder={partner.contactName}
-                onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
-              />
-              <span className='field-hint'>
-                Tên khách nhìn thấy thay cho tên trên hồ sơ pháp lý.
-              </span>
-            </div>
-            <div className='field field-full'>
-              <label htmlFor='logoUrl'>Đường dẫn logo</label>
-              <input
-                id='logoUrl'
-                value={form.logoUrl}
-                placeholder='https://…/logo.png'
-                onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
-              />
-            </div>
-            <div className='field field-full'>
-              <label htmlFor='tagline'>Câu giới thiệu ngắn</label>
-              <input
-                id='tagline'
-                value={form.tagline}
-                placeholder='Ví dụ: eSIM du lịch giá tốt cùng Minh Trần'
-                onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))}
-              />
-            </div>
-          </div>
-          <div className='form-actions'>
-            <button
-              className='btn btn-primary'
-              type='button'
-              disabled={update.isPending}
-              onClick={() =>
-                update.mutate({
-                  brandInfo: {
-                    displayName: form.displayName?.trim() || undefined,
-                    logoUrl: form.logoUrl?.trim() || undefined,
-                    tagline: form.tagline?.trim() || undefined
-                  }
-                })
-              }
-            >
-              Lưu thay đổi
-            </button>
-          </div>
-        </article>
-
-        <article className='card'>
-          <h2 className='card-title'>Xem trước</h2>
-          <p className='card-sub'>Đây là cách khách hàng nhìn thấy thương hiệu của bạn.</p>
-          <div className='card compact' style={{ marginTop: '1rem' }}>
-            <div className='account' style={{ background: 'transparent', border: 0, padding: 0 }}>
-              {form.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={form.logoUrl}
-                  alt=''
-                  style={{
-                    width: '3rem',
-                    height: '3rem',
-                    borderRadius: '50%',
-                    objectFit: 'cover'
-                  }}
-                />
-              ) : (
-                <div className='avatar' style={{ width: '3rem', height: '3rem' }}>
-                  {previewName.trim().charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div>
-                <div className='product-name'>{previewName}</div>
-                <div className='product-meta'>{form.tagline || 'Đối tác của esim.vn'}</div>
-              </div>
-            </div>
-          </div>
-          <div className='callout' style={{ marginTop: '0.875rem' }}>
-            <strong>Phạm vi áp dụng</strong>
-            <p className='card-sub'>
-              Cấu hình này áp dụng cho trang đối tác của bạn. Nếu muốn hiển thị luôn trên trang đích
-              mà link tiếp thị trỏ tới, cần bật thêm ở phía website bán hàng.
-            </p>
-          </div>
-        </article>
-      </div>
-    </section>
+          <p className='text-muted-foreground text-xs'>
+            Cấu hình này áp dụng cho trang đối tác của bạn. Muốn hiển thị luôn trên trang đích mà
+            link tiếp thị trỏ tới thì cần bật thêm ở phía website bán hàng.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
