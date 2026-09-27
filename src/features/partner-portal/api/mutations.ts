@@ -5,6 +5,7 @@ import {
   createMyDepositRequest,
   createMyLink,
   updateMyLink,
+  deleteMyLink,
   createMyPayout,
   applyAsPartner,
   createMyTicket,
@@ -51,6 +52,11 @@ export const createLinkMutation = mutationOptions({
 
 export const updateLinkMutation = mutationOptions({
   mutationFn: ({ id, data }: { id: number; data: UpdateLinkPayload }) => updateMyLink(id, data),
+  onSettled: invalidateAll
+});
+
+export const deleteLinkMutation = mutationOptions({
+  mutationFn: (id: number) => deleteMyLink(id),
   onSettled: invalidateAll
 });
 

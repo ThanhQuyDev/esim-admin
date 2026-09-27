@@ -109,6 +109,11 @@ export async function updateMyLink(id: number, data: UpdateLinkPayload): Promise
   });
 }
 
+/** Retire a marketing link (#016). */
+export async function deleteMyLink(id: number): Promise<void> {
+  await apiClient(`/partner-portal/links/${id}`, { method: 'DELETE' });
+}
+
 export async function getMyCommissions(): Promise<{ data: MyCommission[]; totalCount: number }> {
   return apiClient('/partner-portal/commissions');
 }

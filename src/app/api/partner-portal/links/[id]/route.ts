@@ -6,3 +6,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const body = await request.text();
   return proxyPartnerPortal(request, `/me/links/${id}`, { method: 'PATCH', body });
 }
+
+/** Retire a marketing link (#016). */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  return proxyPartnerPortal(request, `/me/links/${id}`, { method: 'DELETE' });
+}

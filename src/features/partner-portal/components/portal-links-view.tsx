@@ -38,10 +38,20 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 
-import { createLinkMutation, updateLinkMutation } from '../api/mutations';
+import { createLinkMutation, deleteLinkMutation, updateLinkMutation } from '../api/mutations';
 import { myLinksQueryOptions, myProfileQueryOptions, partnerPortalKeys } from '../api/queries';
 import type { MyLink } from '../api/types';
 
@@ -84,6 +94,13 @@ function buildTargetPath(landing: string, channel: string, subid: string): strin
 }
 
 /** Read the channel back out of a stored target path. */
+/** The landing page a link points at, without the utm parameters we add. */
+function landingOf(targetPath: string | null): string {
+  if (!targetPath) return 'Trang chủ';
+  const path = targetPath.split('?')[0];
+  return path || 'Trang chủ';
+}
+
 function channelOf(targetPath: string | null): string {
   if (!targetPath) return '—';
   const source = new URLSearchParams(targetPath.split('?')[1] ?? '').get('utm_source');
@@ -135,13 +152,26 @@ export function PortalLinksView() {
     onError: (e: Error) => toast.error(e.message || 'Không tạo được liên kết.')
   });
 
-  const deactivate = useMutation({
+  // One button that turns a link off and back on (#016): a partner pausing a
+  // campaign for a week should not have to create a new link to resume it.
+  const toggleLink = useMutation({
     ...updateLinkMutation,
+    onSuccess: (updated: MyLink) => {
+      queryClient.invalidateQueries({ queryKey: partnerPortalKeys.links() });
+      toast.success(updated.status === 'active' ? 'Đã mở lại liên kết.' : 'Đã tắt liên kết.');
+    },
+    onError: (e: Error) => toast.error(e.message || 'Không đổi được trạng thái liên kết.')
+  });
+
+  const [pendingDelete, setPendingDelete] = useState<MyLink | null>(null);
+  const removeLink = useMutation({
+    ...deleteLinkMutation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: partnerPortalKeys.links() });
-      toast.success('Đã tắt liên kết.');
+      setPendingDelete(null);
+      toast.success('Đã xóa liên kết.');
     },
-    onError: (e: Error) => toast.error(e.message || 'Không tắt được liên kết.')
+    onError: (e: Error) => toast.error(e.message || 'Không xóa được liên kết.')
   });
 
   const submit = () => {
@@ -366,6 +396,30 @@ export function PortalLinksView() {
         </Card>
       </div>
 
+      <AlertDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa liên kết “{pendingDelete?.label}”?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Liên kết sẽ ngừng hoạt động và biến mất khỏi danh sách. Hoa hồng của các đơn đã phát
+              sinh qua liên kết này vẫn được giữ nguyên.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => pendingDelete && removeLink.mutate(pendingDelete.id)}
+              disabled={removeLink.isPending}
+            >
+              Xóa liên kết
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card>
         <CardHeader>
           <CardTitle className='flex flex-wrap items-center gap-2'>
@@ -413,9 +467,9 @@ export function PortalLinksView() {
             <Table>
               <TableHeader className='bg-muted'>
                 <TableRow>
-                  <TableHead>Tên liên kết</TableHead>
-                  <TableHead>Link rút gọn</TableHead>
-                  <TableHead>Kênh</TableHead>
+                  <TableHead>Tên chiến dịch</TableHead>
+                  <TableHead>Trang đích</TableHead>
+                  <TableHead>Link tiếp thị</TableHead>
                   <TableHead className='text-right'>Nhấp</TableHead>
                   <TableHead className='text-right'>Đơn</TableHead>
                   <TableHead className='text-right'>Hoa hồng</TableHead>
@@ -466,8 +520,11 @@ export function PortalLinksView() {
                         {r.status !== 'active' && <Badge variant='secondary'>Đã tắt</Badge>}
                       </div>
                     </TableCell>
+                    <TableCell className='text-muted-foreground max-w-[220px] truncate text-xs'>
+                      {landingOf(r.targetPath)}
+                      <span className='block'>{channelOf(r.targetPath)}</span>
+                    </TableCell>
                     <TableCell className='font-mono text-xs'>{shortLinkOf(r.code)}</TableCell>
-                    <TableCell>{channelOf(r.targetPath)}</TableCell>
                     <TableCell className='text-right tabular-nums'>
                       {r.clickCount.toLocaleString('vi-VN')}
                     </TableCell>
@@ -489,18 +546,27 @@ export function PortalLinksView() {
                           <Icons.copy />
                           Sao chép
                         </Button>
-                        {r.status === 'active' && (
-                          <Button
-                            size='sm'
-                            variant='ghost'
-                            className='text-destructive hover:text-destructive'
-                            onClick={() =>
-                              deactivate.mutate({ id: r.id, data: { isActive: false } })
-                            }
-                          >
-                            Tắt
-                          </Button>
-                        )}
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          onClick={() =>
+                            toggleLink.mutate({
+                              id: r.id,
+                              data: { isActive: r.status !== 'active' }
+                            })
+                          }
+                        >
+                          {r.status === 'active' ? 'Tắt' : 'Mở'}
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          className='text-destructive hover:text-destructive'
+                          onClick={() => setPendingDelete(r)}
+                        >
+                          <Icons.trash />
+                          Xóa
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
