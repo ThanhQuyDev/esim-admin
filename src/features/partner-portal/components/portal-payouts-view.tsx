@@ -77,6 +77,10 @@ const PAYOUT_STATUS: Record<string, { label: string; className: string }> = {
   }
 };
 
+/** What the partner is promised when they press the button (#030). */
+const PAYOUT_FEE_LABEL = '0đ';
+const PAYOUT_ETA_LABEL = '1–3 ngày làm việc';
+
 /** "•••• 1234" — the account is shown, never the full number. */
 function maskAccount(accountNumber: string | null | undefined): string {
   if (!accountNumber) return 'Chưa cập nhật';
@@ -183,8 +187,8 @@ export function PortalPayoutsView() {
                 </p>
               ) : (
                 <p id='payoutAmount-help' className='text-muted-foreground text-xs'>
-                  Tối thiểu {formatVnd(MIN_PAYOUT_VND)}. Yêu cầu thường được xử lý trong 1–3 ngày
-                  làm việc.
+                  Tối thiểu {formatVnd(MIN_PAYOUT_VND)} · Phí rút {PAYOUT_FEE_LABEL} · Nhận tiền
+                  trong {PAYOUT_ETA_LABEL.toLowerCase()}.
                 </p>
               )}
             </div>
@@ -237,8 +241,10 @@ export function PortalPayoutsView() {
             ))}
           </CardContent>
           <CardFooter>
+            {/* Changing the account needs the emailed code (#005), which lives
+                on the profile screen. */}
             <Button asChild variant='outline' size='sm'>
-              <Link href='/dashboard/portal/profile'>Cập nhật trong Hồ sơ</Link>
+              <Link href='/dashboard/portal/profile'>Đổi tài khoản</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -323,7 +329,10 @@ export function PortalPayoutsView() {
               ['Số tiền rút', formatVnd(requested)],
               ['Số dư sau khi rút', formatVnd(available - requested)],
               ['Ngân hàng', me?.bankName ?? '—'],
-              ['Số tài khoản', maskAccount(me?.bankAccountNumber)]
+              ['Số tài khoản', maskAccount(me?.bankAccountNumber)],
+              // Both are promises the partner is owed before they commit (#030).
+              ['Phí rút', PAYOUT_FEE_LABEL],
+              ['Thời gian dự kiến', PAYOUT_ETA_LABEL]
             ].map(([label, value]) => (
               <div key={label} className='bg-muted/40 rounded-lg border p-3'>
                 <p className='text-muted-foreground text-xs'>{label}</p>
