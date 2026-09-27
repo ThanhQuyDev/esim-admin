@@ -56,8 +56,13 @@ export const myCommissionsQueryOptions = () =>
 export const myPayoutsQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.payouts(), queryFn: getMyPayouts });
 
-export const mySummaryQueryOptions = () =>
-  queryOptions({ queryKey: partnerPortalKeys.summary(), queryFn: getMySummary });
+export const mySummaryQueryOptions = (range?: { from?: string; to?: string }) =>
+  queryOptions({
+    // The window is part of the key: switching period must refetch, not reuse
+    // the numbers of the previous one (#010).
+    queryKey: [...partnerPortalKeys.summary(), range?.from ?? '', range?.to ?? ''],
+    queryFn: () => getMySummary(range)
+  });
 
 export const myOrdersQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.orders(), queryFn: getMyOrders });

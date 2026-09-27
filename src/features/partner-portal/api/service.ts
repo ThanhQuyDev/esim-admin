@@ -110,8 +110,12 @@ export async function createMyPayout(data: CreatePayoutPayload): Promise<MyPayou
   });
 }
 
-export async function getMySummary(): Promise<MySummary> {
-  return apiClient<MySummary>('/partner-portal/summary');
+export async function getMySummary(range?: { from?: string; to?: string }): Promise<MySummary> {
+  const search = new URLSearchParams();
+  if (range?.from) search.set('from', range.from);
+  if (range?.to) search.set('to', range.to);
+  const query = search.toString();
+  return apiClient<MySummary>(`/partner-portal/summary${query ? `?${query}` : ''}`);
 }
 
 export async function getMyOrders(): Promise<MyOrder[]> {

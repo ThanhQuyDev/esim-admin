@@ -107,7 +107,7 @@ export function PortalTierView() {
           <CardContent className='space-y-3'>
             {[
               ['Doanh số tích luỹ', formatVnd(summary?.lifetime.revenueVnd)],
-              ['Đơn hợp lệ 30 ngày', (summary?.performance30d.orders ?? 0).toLocaleString('vi-VN')],
+              ['Đơn hợp lệ 30 ngày', (summary?.performance.orders ?? 0).toLocaleString('vi-VN')],
               ['Hoa hồng đã ghi nhận', formatVnd(summary?.lifetime.commissionVnd)],
               ['Ngưỡng hạng hiện tại', current ? formatVnd(Number(current.minVolumeVnd)) : '—']
             ].map(([label, value]) => (

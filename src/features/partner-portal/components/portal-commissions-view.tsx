@@ -136,7 +136,7 @@ export function PortalCommissionsView() {
       value: formatVnd(summary?.lifetime.commissionVnd),
       badge: 'Tất cả thời gian',
       icon: Icons.trendingUp,
-      footerStrong: `${formatVnd(summary?.performance30d.commissionVnd)} trong 30 ngày`,
+      footerStrong: `${formatVnd(summary?.performance.commissionVnd)} trong 30 ngày`,
       footer: `Trên ${formatVnd(summary?.lifetime.revenueVnd)} doanh số tích luỹ`
     },
     {
@@ -186,7 +186,7 @@ export function PortalCommissionsView() {
               <CardTitle className='flex flex-wrap items-center gap-2'>
                 Hoa hồng 14 ngày
                 <Badge variant='outline'>
-                  Đã duyệt {formatVnd(summary?.performance30d.commissionVnd)}
+                  Đã duyệt {formatVnd(summary?.performance.commissionVnd)}
                 </Badge>
               </CardTitle>
               <CardDescription>Khoản phát sinh theo ngày và phần đã qua đối soát.</CardDescription>

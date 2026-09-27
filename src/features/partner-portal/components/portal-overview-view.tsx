@@ -10,7 +10,7 @@
  * the portal follows the active theme and dark mode like every admin screen.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -44,8 +44,16 @@ import {
   myTicketsQueryOptions
 } from '../api/queries';
 import type { MyOrder } from '../api/types';
+import {
+  DEFAULT_PORTAL_PERIOD,
+  PortalPeriodFilter,
+  periodLabel,
+  resolvePeriod,
+  type PortalPeriod
+} from './portal-period-filter';
 
-const DAYS = 30;
+/** A day per bar; a longer window is capped so the chart stays readable. */
+const DAYS_MAX = 120;
 
 const performanceConfig = {
   revenue: { label: 'Doanh số', color: 'var(--chart-1)' },
@@ -58,11 +66,16 @@ const performanceConfig = {
  * The summary endpoint returns totals only, so the series is bucketed from the
  * partner's own orders — the same rows the orders screen lists.
  */
-function buildSeries(orders: MyOrder[]) {
-  const today = new Date();
-  const days = Array.from({ length: DAYS }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - (DAYS - 1 - i));
+function buildSeries(orders: MyOrder[], range: { from: string; to: string }) {
+  const start = new Date(`${range.from}T00:00:00`);
+  const end = new Date(`${range.to}T00:00:00`);
+  const span = Math.max(
+    1,
+    Math.min(DAYS_MAX, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1)
+  );
+  const days = Array.from({ length: span }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
     return d;
   });
 
@@ -71,7 +84,9 @@ function buildSeries(orders: MyOrder[]) {
   const commission = new Map<string, number>();
 
   for (const order of orders) {
-    const k = key(new Date(order.createdAt));
+    const placed = new Date(order.createdAt);
+    if (placed < start || placed > new Date(end.getTime() + 86_400_000)) continue;
+    const k = key(placed);
     revenue.set(k, (revenue.get(k) ?? 0) + (order.vndPrice ?? 0));
     if (order.commissionStatus === 'credited') {
       commission.set(k, (commission.get(k) ?? 0) + (order.commissionVnd ?? 0));
@@ -96,14 +111,18 @@ function age(iso: string | undefined): string {
 }
 
 export function PortalOverviewView() {
-  const { data: summary, isLoading } = useQuery(mySummaryQueryOptions());
+  const [period, setPeriod] = useState<PortalPeriod>(DEFAULT_PORTAL_PERIOD);
+  const range = useMemo(() => resolvePeriod(period), [period]);
+  const rangeLabel = periodLabel(period);
+
+  const { data: summary, isLoading } = useQuery(mySummaryQueryOptions(range));
   const { data: orders } = useQuery(myOrdersQueryOptions());
   const { data: me } = useQuery(myProfileQueryOptions());
   const { data: tickets } = useQuery(myTicketsQueryOptions());
 
-  const chartData = useMemo(() => buildSeries(orders ?? []), [orders]);
+  const chartData = useMemo(() => buildSeries(orders ?? [], range), [orders, range]);
 
-  const p30 = summary?.performance30d;
+  const p30 = summary?.performance;
   const conversion = p30 && p30.clicks > 0 ? (p30.orders / p30.clicks) * 100 : 0;
   const tier = summary?.tier;
   const progress = Math.max(0, Math.min(100, Math.round(tier?.progressPercent ?? 0)));
@@ -127,15 +146,15 @@ export function PortalOverviewView() {
       footer: `${formatVnd(summary?.wallet.availableBalanceVnd)} đang khả dụng để rút`
     },
     {
-      label: 'Lượt nhấp 30 ngày',
+      label: `Lượt nhấp · ${rangeLabel}`,
       value: (p30?.clicks ?? 0).toLocaleString('vi-VN'),
-      badge: '30 ngày',
+      badge: rangeLabel,
       icon: Icons.link,
       footerStrong: `Tỷ lệ chuyển đổi ${conversion.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`,
       footer: `${(summary?.lifetime.clicks ?? 0).toLocaleString('vi-VN')} lượt nhấp tích luỹ`
     },
     {
-      label: 'Doanh số 30 ngày',
+      label: `Doanh số · ${rangeLabel}`,
       value: formatVnd(p30?.revenueVnd),
       badge: `${(p30?.orders ?? 0).toLocaleString('vi-VN')} đơn`,
       icon: Icons.order,
@@ -146,7 +165,7 @@ export function PortalOverviewView() {
       footer: `${formatVnd(summary?.lifetime.revenueVnd)} tích luỹ`
     },
     {
-      label: 'Hoa hồng 30 ngày',
+      label: `Hoa hồng · ${rangeLabel}`,
       value: formatVnd(p30?.commissionVnd),
       badge: tier?.current ? `Hạng ${tier.current.tierName}` : 'Chưa gán hạng',
       icon: Icons.trendingUp,
@@ -198,6 +217,8 @@ export function PortalOverviewView() {
 
   return (
     <div className='flex flex-1 flex-col space-y-4'>
+      <PortalPeriodFilter value={period} onChange={setPeriod} />
+
       {/*
         Money on the left, tier progress on the right — the two-column band the
         design opens with (#008). The three figures are the ones a partner
@@ -315,7 +336,7 @@ export function PortalOverviewView() {
           <Card>
             <CardHeader>
               <CardTitle className='flex flex-wrap items-center gap-2'>
-                Hiệu suất 30 ngày
+                Hiệu suất · {rangeLabel}
                 <Badge variant='outline'>Doanh số {formatVnd(p30?.revenueVnd)}</Badge>
               </CardTitle>
               <CardDescription>

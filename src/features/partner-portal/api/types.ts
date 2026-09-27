@@ -147,7 +147,9 @@ export type PartnerTier = {
 
 /** Read model behind the portal overview screen. */
 export type MySummary = {
-  performance30d: {
+  /** Window the performance figures cover (#010). */
+  range?: { from: string; to: string };
+  performance: {
     clicks: number;
     orders: number;
     revenueVnd: number;
