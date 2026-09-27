@@ -42,7 +42,7 @@ import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 
 import { createLinkMutation, updateLinkMutation } from '../api/mutations';
-import { myLinksQueryOptions, partnerPortalKeys } from '../api/queries';
+import { myLinksQueryOptions, myProfileQueryOptions, partnerPortalKeys } from '../api/queries';
 import type { MyLink } from '../api/types';
 
 const CHANNELS = [
@@ -55,7 +55,12 @@ const CHANNELS = [
   { value: 'other', label: 'Kênh khác' }
 ];
 
-const EMPTY_FORM = { landing: '', label: '', channel: 'youtube', subid: '' };
+const EMPTY_FORM = { landing: '', label: '', channel: 'youtube', subid: '', code: '' };
+
+/** Bounds the API enforces for a code the partner names themselves (#014). */
+const CODE_MIN = 8;
+const CODE_MAX = 50;
+const CODE_PATTERN = /^[A-Za-z0-9]+$/;
 
 function shortLinkOf(code: string): string {
   return `esim.vn/r/${code}`;
@@ -91,6 +96,10 @@ export function PortalLinksView() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [labelError, setLabelError] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  // Only partners an admin ticked may name their own code (#014).
+  const { data: me } = useQuery(myProfileQueryOptions());
+  const mayNameCode = Boolean(me?.canCustomLinkCode);
   const [qrLink, setQrLink] = useState('');
 
   const rows = useMemo(() => links ?? [], [links]);
@@ -121,9 +130,24 @@ export function PortalLinksView() {
       setLabelError('Nhập tên để nhận ra liên kết này về sau.');
       return;
     }
+
+    const code = form.code.trim();
+    if (mayNameCode && code) {
+      if (code.length < CODE_MIN || code.length > CODE_MAX) {
+        setCodeError(`Tên link cần ${CODE_MIN}–${CODE_MAX} ký tự.`);
+        return;
+      }
+      if (!CODE_PATTERN.test(code)) {
+        setCodeError('Tên link chỉ gồm chữ và số, không dấu và không khoảng trắng.');
+        return;
+      }
+    }
+    setCodeError(null);
+
     createLink.mutate({
       label: form.label.trim(),
-      targetPath: buildTargetPath(form.landing, form.channel, form.subid)
+      targetPath: buildTargetPath(form.landing, form.channel, form.subid),
+      ...(mayNameCode && code ? { code } : {})
     });
   };
 
@@ -199,6 +223,36 @@ export function PortalLinksView() {
                 </p>
               )}
             </div>
+
+            {mayNameCode && (
+              <div className='space-y-2'>
+                <Label htmlFor='linkCode'>Tên link tùy chọn</Label>
+                <div className='flex items-center gap-2'>
+                  <span className='text-muted-foreground shrink-0 text-sm'>esim.vn/r/</span>
+                  <Input
+                    id='linkCode'
+                    placeholder='TENCHIENDICH'
+                    value={form.code}
+                    aria-invalid={Boolean(codeError)}
+                    aria-describedby='linkCode-help linkCode-error'
+                    onChange={(e) => {
+                      setForm({ ...form, code: e.target.value });
+                      if (codeError) setCodeError(null);
+                    }}
+                  />
+                </div>
+                {codeError ? (
+                  <p id='linkCode-error' className='text-destructive text-xs'>
+                    {codeError}
+                  </p>
+                ) : (
+                  <p id='linkCode-help' className='text-muted-foreground text-xs'>
+                    {CODE_MIN}–{CODE_MAX} ký tự, chỉ chữ và số, duy nhất trên hệ thống. Bỏ trống thì
+                    hệ thống tự tạo mã.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className='space-y-2'>
               <Label htmlFor='channel'>Kênh quảng bá</Label>

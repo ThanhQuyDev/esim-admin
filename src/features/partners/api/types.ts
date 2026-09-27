@@ -28,6 +28,8 @@ export type Partner = {
   approvedAt: string | null;
   approvedByAdminId: number | null;
   rejectionReason: string | null;
+  /** Ticked by an admin: this partner may name their own link code (#014). */
+  canCustomLinkCode?: boolean;
   notes: string | null;
   createdAt: string;
   updatedAt: string;

@@ -5,6 +5,7 @@ import {
   rejectPartner,
   updatePartnerStatus,
   assignPartnerTier,
+  setPartnerLinkCodePermission,
   adjustPartnerWallet,
   confirmDepositRequest,
   approvePayout,
@@ -45,6 +46,12 @@ export const updatePartnerStatusMutation = mutationOptions({
 export const assignPartnerTierMutation = mutationOptions({
   mutationFn: ({ id, data }: { id: number; data: AssignTierPayload }) =>
     assignPartnerTier(id, data),
+  onSettled: invalidateAll
+});
+
+export const setPartnerLinkCodePermissionMutation = mutationOptions({
+  mutationFn: ({ id, canCustomLinkCode }: { id: number; canCustomLinkCode: boolean }) =>
+    setPartnerLinkCodePermission(id, canCustomLinkCode),
   onSettled: invalidateAll
 });
 

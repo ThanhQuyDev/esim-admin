@@ -14,9 +14,11 @@ import {
   rejectPartnerMutation,
   updatePartnerStatusMutation,
   assignPartnerTierMutation,
-  adjustPartnerWalletMutation
+  adjustPartnerWalletMutation,
+  setPartnerLinkCodePermissionMutation
 } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { toast } from 'sonner';
@@ -109,6 +111,19 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
       refetch();
     },
     onError: (e: Error) => toast.error(e.message || 'Gán hạng thất bại')
+  });
+
+  const linkCodeMutation = useMutation({
+    ...setPartnerLinkCodePermissionMutation,
+    onSuccess: (updated) => {
+      toast.success(
+        updated.canCustomLinkCode
+          ? 'Đã cho phép đối tác đặt tên link tiếp thị.'
+          : 'Đã tắt quyền đặt tên link tiếp thị.'
+      );
+      refetch();
+    },
+    onError: (e: Error) => toast.error(e.message || 'Cập nhật quyền thất bại')
   });
 
   const adjustMutation = useMutation({
@@ -239,6 +254,26 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             </SelectContent>
           </Select>
         </div>
+
+        {partner.partnerType === 'kol' && (
+          <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
+            <div>
+              <p className='text-sm font-medium'>Được đặt tên link tiếp thị</p>
+              <p className='text-muted-foreground text-xs'>
+                Cho phép đối tác tự đặt tên link (esim.vn/r/TENCHIENDICH, 8–50 ký tự chữ và số).
+                Thường chỉ bật cho đối tác hạng cao cần tên dễ nhớ cho chiến dịch.
+              </p>
+            </div>
+            <Switch
+              checked={Boolean(partner.canCustomLinkCode)}
+              disabled={linkCodeMutation.isPending}
+              onCheckedChange={(checked) =>
+                linkCodeMutation.mutate({ id: partnerId, canCustomLinkCode: checked })
+              }
+              aria-label='Cho phép đặt tên link tiếp thị'
+            />
+          </div>
+        )}
       </div>
 
       {/*

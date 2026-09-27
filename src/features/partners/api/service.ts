@@ -64,6 +64,17 @@ export async function assignPartnerTier(id: number, data: AssignTierPayload): Pr
   });
 }
 
+/** Tick/untick "được đặt tên link tiếp thị" for this partner (#014). */
+export async function setPartnerLinkCodePermission(
+  id: number,
+  canCustomLinkCode: boolean
+): Promise<Partner> {
+  return apiClient<Partner>(`/partners/${id}/link-code-permission`, {
+    method: 'PATCH',
+    body: JSON.stringify({ canCustomLinkCode })
+  });
+}
+
 export async function adjustPartnerWallet(
   id: number,
   data: AdjustWalletPayload

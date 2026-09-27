@@ -3,6 +3,8 @@ export type PartnerLegalType = 'individual' | 'company';
 export type PartnerStatus = 'pending' | 'active' | 'hold' | 'disabled' | 'rejected';
 
 export type MyPartner = {
+  /** Admin ticked this partner as allowed to name their own link code (#014). */
+  canCustomLinkCode?: boolean;
   id: number;
   userId: number;
   partnerType: PartnerType;
