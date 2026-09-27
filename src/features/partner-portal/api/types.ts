@@ -55,6 +55,8 @@ export type MyWalletSummary = {
   balanceVnd: number;
   availableBalanceVnd: number;
   pendingPayoutVnd: number;
+  /** Commission clawed back after payout, netted off the next period (#007). */
+  carriedDebtVnd?: number;
   status: 'active' | 'locked';
 };
 

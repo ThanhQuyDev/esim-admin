@@ -106,6 +106,7 @@ export function PortalCommissionsView() {
 
   const pendingCount = ledger.filter((o) => o.commissionStatus === 'pending').length;
   const rate = summary?.tier.current ? Number(summary.tier.current.commissionPercent) : 0;
+  const carriedDebt = summary?.wallet.carriedDebtVnd ?? 0;
 
   const cards = [
     {
@@ -121,8 +122,14 @@ export function PortalCommissionsView() {
       value: formatVnd(summary?.wallet.availableBalanceVnd),
       badge: 'Khả dụng',
       icon: Icons.wallet,
-      footerStrong: 'Đã đủ điều kiện thanh toán',
-      footer: 'Tạo yêu cầu rút ở màn Rút tiền'
+      // A clawed-back commission leaves a debt the next period pays off, so
+      // saying only "0đ khả dụng" would hide why (#007).
+      footerStrong:
+        carriedDebt > 0 ? `Đang bị trừ ${formatVnd(carriedDebt)}` : 'Đã đủ điều kiện thanh toán',
+      footer:
+        carriedDebt > 0
+          ? 'Hoa hồng của đơn bị hoàn tiền/hủy, cấn trừ vào kỳ thanh toán tiếp theo'
+          : 'Tạo yêu cầu rút ở màn Rút tiền'
     },
     {
       label: 'Đã ghi nhận lũy kế',

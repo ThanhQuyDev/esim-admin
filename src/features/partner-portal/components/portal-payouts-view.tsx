@@ -89,6 +89,9 @@ export function PortalPayoutsView() {
   const { data: payouts } = useQuery(myPayoutsQueryOptions());
 
   const available = summary?.wallet.availableBalanceVnd ?? 0;
+  // Commission taken back after it was already paid out: the next periods pay
+  // it off before anything is withdrawable again (#007).
+  const carriedDebt = summary?.wallet.carriedDebtVnd ?? 0;
   const hasBank = Boolean(me?.bankAccountNumber);
 
   const [amount, setAmount] = useState('');
@@ -144,6 +147,12 @@ export function PortalPayoutsView() {
             <CardDescription>
               {formatVnd(summary?.commissionPendingVnd)} đang chờ đối soát, chưa rút được.
             </CardDescription>
+            {carriedDebt > 0 && (
+              <CardDescription className='text-destructive'>
+                Đang bị trừ {formatVnd(carriedDebt)} do đơn đã nhận hoa hồng bị hoàn tiền hoặc hủy —
+                số này cấn trừ vào hoa hồng của kỳ thanh toán tiếp theo.
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent className='space-y-4'>
             <Separator />
