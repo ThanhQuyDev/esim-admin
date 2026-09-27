@@ -230,6 +230,17 @@ export const columns: ColumnDef<MyOrder>[] = [
     enableSorting: false
   },
   {
+    id: 'commissionPercent',
+    accessorKey: 'commissionPercent',
+    header: '% hoa hồng',
+    cell: ({ row }) => (
+      <span className='tabular-nums'>
+        {row.original.commissionPercent == null ? '—' : `${row.original.commissionPercent}%`}
+      </span>
+    ),
+    enableSorting: false
+  },
+  {
     id: 'commissionVnd',
     accessorKey: 'commissionVnd',
     header: 'Hoa hồng',
@@ -257,6 +268,35 @@ export const columns: ColumnDef<MyOrder>[] = [
       options: COMMISSION_STATUS_OPTIONS
     },
     enableColumnFilter: true,
+    enableSorting: false
+  },
+  {
+    id: 'createdAt',
+    accessorKey: 'createdAt',
+    header: 'Ngày đặt hàng',
+    cell: ({ row }) => (
+      <span className='text-sm whitespace-nowrap'>{formatDateVn(row.original.createdAt)}</span>
+    ),
+    enableSorting: false
+  },
+  {
+    id: 'actions',
+    header: '',
+    // The dialog belongs to the table, which hands the opener down through the
+    // table meta rather than every row carrying its own state.
+    cell: ({ row, table }) => (
+      <Button
+        size='sm'
+        variant='ghost'
+        onClick={() =>
+          (
+            table.options.meta as { onViewDetail?: (orderNumber: string) => void } | undefined
+          )?.onViewDetail?.(row.original.orderNumber)
+        }
+      >
+        Xem chi tiết
+      </Button>
+    ),
     enableSorting: false
   }
 ];

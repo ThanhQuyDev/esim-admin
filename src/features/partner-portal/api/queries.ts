@@ -9,6 +9,7 @@ import {
   getMyPayouts,
   getMySummary,
   getMyTopDestinations,
+  getMyOrderDetail,
   getMyOrders,
   getMyTiers,
   getMyTickets,
@@ -73,6 +74,13 @@ export const myTopDestinationsQueryOptions = (range?: { from?: string; to?: stri
 
 export const myOrdersQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.orders(), queryFn: getMyOrders });
+
+export const myOrderDetailQueryOptions = (orderNumber: string | null) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.orders(), 'detail', orderNumber ?? ''],
+    queryFn: () => getMyOrderDetail(orderNumber as string),
+    enabled: Boolean(orderNumber)
+  });
 
 export const myTiersQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.tiers(), queryFn: getMyTiers });

@@ -21,6 +21,7 @@ import type {
   MyCoupon,
   MyTierEvaluation,
   MyTopDestination,
+  MyOrderDetail,
   BankAccountChangePayload,
   BankAccountChangeRequested
 } from './types';
@@ -58,6 +59,11 @@ export async function confirmBankAccountChange(otp: string): Promise<MyPartner> 
     method: 'POST',
     body: JSON.stringify({ otp })
   });
+}
+
+/** One order with its attribution timeline (#026). */
+export async function getMyOrderDetail(orderNumber: string): Promise<MyOrderDetail> {
+  return apiClient<MyOrderDetail>(`/partner-portal/orders/${encodeURIComponent(orderNumber)}`);
 }
 
 export async function getMyTopDestinations(range?: {

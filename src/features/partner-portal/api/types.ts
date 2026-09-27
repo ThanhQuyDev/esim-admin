@@ -207,6 +207,8 @@ export type MyOrder = {
   commissionVnd: number | null;
   commissionStatus: 'pending' | 'credited' | 'reversed' | null;
   linkCode: string | null;
+  /** Rate this order paid, read back from the money (#026). */
+  commissionPercent?: number | null;
   /** Discount code the order came in on, when it was not a link (#024). */
   couponCode?: string | null;
   /** Whether esim.vn had seen this buyer before this order (#021). */
@@ -261,4 +263,25 @@ export type PartnerBrandInfo = {
   displayName?: string;
   logoUrl?: string;
   tagline?: string;
+};
+
+/** One attributed order in full, with its attribution timeline (#026). */
+export type MyOrderDetail = {
+  orderNumber: string;
+  status: string;
+  createdAt: string;
+  items: MyOrderItem[];
+  revenueVnd: number;
+  refundedVnd: number;
+  commissionVnd: number | null;
+  commissionPercent: number | null;
+  commissionStatus: 'pending' | 'credited' | 'reversed' | null;
+  source: { type: 'link' | 'coupon'; code: string | null };
+  timeline: {
+    clickedAt: string | null;
+    placedAt: string;
+    activatedAt: string | null;
+    creditedAt: string | null;
+    reversedAt: string | null;
+  };
 };

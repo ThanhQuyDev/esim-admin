@@ -10,7 +10,7 @@
  * component the admin tables use.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 
@@ -21,6 +21,7 @@ import { useDataTable } from '@/hooks/use-data-table';
 import { myOrdersQueryOptions } from '../../api/queries';
 import type { MyOrder } from '../../api/types';
 import { columns } from './columns';
+import { OrderDetailDialog } from '../order-detail-dialog';
 
 function matchesSource(order: MyOrder, selected: string[]): boolean {
   if (selected.length === 0) return true;
@@ -90,20 +91,30 @@ export function PortalOrdersTable() {
     [filtered, page, params.perPage]
   );
 
+  // Which order the detail dialog is showing (#026).
+  const [detailOrder, setDetailOrder] = useState<string | null>(null);
+
   const { table } = useDataTable({
     data: pageRows,
     columns,
     pageCount,
     shallow: true,
-    debounceMs: 500
+    debounceMs: 500,
+    meta: { onViewDetail: setDetailOrder }
   });
 
   if (isLoading) return <PortalOrdersTableSkeleton />;
 
   return (
-    <DataTable table={table} totalRowCount={filtered.length}>
-      <DataTableToolbar table={table} />
-    </DataTable>
+    <>
+      <OrderDetailDialog
+        orderNumber={detailOrder}
+        onOpenChange={(open) => !open && setDetailOrder(null)}
+      />
+      <DataTable table={table} totalRowCount={filtered.length}>
+        <DataTableToolbar table={table} />
+      </DataTable>
+    </>
   );
 }
 
