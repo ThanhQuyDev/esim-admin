@@ -161,6 +161,8 @@ export type MySummary = {
     revenueVnd: number;
     commissionVnd: number;
   };
+  /** Buyers in the window, split by whether esim.vn had seen them before (#011). */
+  customers?: { newCount: number; returningCount: number };
   commissionPendingVnd: number;
   /** This month so far vs the same days of last month (#008). */
   monthOverMonth?: {

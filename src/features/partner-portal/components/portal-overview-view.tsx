@@ -130,6 +130,8 @@ export function PortalOverviewView() {
   const carriedDebt = summary?.wallet.carriedDebtVnd ?? 0;
 
   const pendingOrders = (orders ?? []).filter((o) => o.commissionStatus === 'pending').length;
+  const newCustomers = summary?.customers?.newCount ?? 0;
+  const returningCustomers = summary?.customers?.returningCount ?? 0;
   const avgRevenuePerOrder = p30 && p30.orders > 0 ? Math.round(p30.revenueVnd / p30.orders) : 0;
   const avgCommissionPerOrder =
     p30 && p30.orders > 0 ? Math.round(p30.commissionVnd / p30.orders) : 0;
@@ -144,6 +146,20 @@ export function PortalOverviewView() {
       icon: Icons.clock,
       footerStrong: 'Sẽ vào ví sau 24h đặt hàng',
       footer: `${formatVnd(summary?.wallet.availableBalanceVnd)} đang khả dụng để rút`
+    },
+    {
+      // Who bought, not just how many orders (#011): a partner bringing new
+      // buyers is worth something different from one re-selling to the same
+      // people, and the two used to be indistinguishable here.
+      label: `Khách hàng · ${rangeLabel}`,
+      value: (newCustomers + returningCustomers).toLocaleString('vi-VN'),
+      badge: `${newCustomers.toLocaleString('vi-VN')} mới`,
+      icon: Icons.user,
+      footerStrong: `${returningCustomers.toLocaleString('vi-VN')} khách quay lại`,
+      footer:
+        newCustomers + returningCustomers > 0
+          ? `${Math.round((newCustomers / (newCustomers + returningCustomers)) * 100)}% là khách mua lần đầu`
+          : 'Chưa có khách mua trong kỳ'
     },
     {
       label: `Lượt nhấp · ${rangeLabel}`,
@@ -305,7 +321,7 @@ export function PortalOverviewView() {
         </Card>
       </div>
 
-      <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
+      <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
         {cards.map((card) => {
           const Icon = card.icon;
           return (
