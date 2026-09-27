@@ -160,6 +160,12 @@ export type MySummary = {
     commissionVnd: number;
   };
   commissionPendingVnd: number;
+  /** This month so far vs the same days of last month (#008). */
+  monthOverMonth?: {
+    commissionVnd: number;
+    previousCommissionVnd: number;
+    commissionGrowthPercent: number;
+  };
   wallet: MyWalletSummary;
   tier: {
     current: PartnerTier | null;

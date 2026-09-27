@@ -107,6 +107,8 @@ export function PortalOverviewView() {
   const conversion = p30 && p30.clicks > 0 ? (p30.orders / p30.clicks) * 100 : 0;
   const tier = summary?.tier;
   const progress = Math.max(0, Math.min(100, Math.round(tier?.progressPercent ?? 0)));
+  const growth = summary?.monthOverMonth?.commissionGrowthPercent ?? 0;
+  const carriedDebt = summary?.wallet.carriedDebtVnd ?? 0;
 
   const cards = [
     {
@@ -186,6 +188,92 @@ export function PortalOverviewView() {
 
   return (
     <div className='flex flex-1 flex-col space-y-4'>
+      {/*
+        Money on the left, tier progress on the right — the two-column band the
+        design opens with (#008). The three figures are the ones a partner
+        checks first, so they sit on the accent panel rather than in the KPI
+        grid below.
+      */}
+      <div className='grid grid-cols-1 gap-4 lg:grid-cols-3'>
+        <Card className='bg-primary text-primary-foreground border-transparent lg:col-span-2'>
+          <CardHeader>
+            <CardDescription className='text-primary-foreground/70'>Số dư ví</CardDescription>
+            <CardTitle className='text-3xl font-semibold tabular-nums'>
+              {isLoading ? '…' : formatVnd(summary?.wallet.balanceVnd)}
+            </CardTitle>
+            <CardAction>
+              <Badge
+                variant='outline'
+                className='border-primary-foreground/30 text-primary-foreground'
+              >
+                {growth >= 0 ? <Icons.trendingUp /> : <Icons.trendingDown />}
+                {growth > 0 ? '+' : ''}
+                {growth}% so với cùng kỳ tháng trước
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className='grid gap-4 sm:grid-cols-2'>
+            <div>
+              <p className='text-primary-foreground/70 text-sm'>Khả dụng để rút</p>
+              <p className='text-2xl font-semibold tabular-nums'>
+                {formatVnd(summary?.wallet.availableBalanceVnd)}
+              </p>
+            </div>
+            <div>
+              <p className='text-primary-foreground/70 text-sm'>Hoa hồng chờ duyệt</p>
+              <p className='text-2xl font-semibold tabular-nums'>
+                {formatVnd(summary?.commissionPendingVnd)}
+              </p>
+            </div>
+            {carriedDebt > 0 && (
+              <p className='text-primary-foreground/80 text-xs sm:col-span-2'>
+                Đang bị trừ {formatVnd(carriedDebt)} do đơn đã nhận hoa hồng bị hoàn tiền hoặc hủy.
+              </p>
+            )}
+          </CardContent>
+          <CardFooter className='gap-2'>
+            <Button asChild variant='secondary' size='sm'>
+              <Link href='/dashboard/portal/payouts'>Rút tiền</Link>
+            </Button>
+            <Button
+              asChild
+              size='sm'
+              variant='outline'
+              className='border-primary-foreground/30 bg-transparent hover:bg-primary-foreground/10 text-primary-foreground hover:text-primary-foreground'
+            >
+              <Link href='/dashboard/portal/commissions'>Xem hoa hồng</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardDescription>Tiến trình lên hạng</CardDescription>
+            <CardTitle className='text-2xl font-semibold'>
+              {tier?.current ? `Hạng ${tier.current.tierName}` : 'Chưa gán hạng'}
+            </CardTitle>
+            <CardAction>
+              <Badge variant='outline'>{progress}%</Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className='space-y-3'>
+            <div className='bg-muted h-2 w-full overflow-hidden rounded-full'>
+              <div className='bg-primary h-full rounded-full' style={{ width: `${progress}%` }} />
+            </div>
+            <p className='text-muted-foreground text-sm'>
+              {tier?.next
+                ? `Còn ${formatVnd(tier.toNextTierVnd)} doanh số để lên hạng ${tier.next.tierName}.`
+                : 'Bạn đang ở hạng cao nhất của chương trình.'}
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild variant='outline' size='sm'>
+              <Link href='/dashboard/portal/tier'>Xem hạng đối tác</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+
       <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
         {cards.map((card) => {
           const Icon = card.icon;
