@@ -201,6 +201,8 @@ export type MyOrder = {
   commissionVnd: number | null;
   commissionStatus: 'pending' | 'credited' | 'reversed' | null;
   linkCode: string | null;
+  /** Whether esim.vn had seen this buyer before this order (#021). */
+  customerType?: 'new' | 'returning';
   esimCount: number;
   items: MyOrderItem[];
 };

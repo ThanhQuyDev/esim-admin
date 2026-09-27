@@ -97,6 +97,29 @@ export const columns: ColumnDef<MyOrder>[] = [
     enableSorting: false
   },
   {
+    id: 'customerType',
+    // A partner bringing first-time buyers is doing something different from
+    // one re-selling to the same people (#021).
+    accessorFn: (row) => row.customerType ?? 'returning',
+    header: 'Khách hàng',
+    cell: ({ row }) =>
+      row.original.customerType === 'new' ? (
+        <Badge variant='secondary'>Khách mới</Badge>
+      ) : (
+        <Badge variant='outline'>Khách quay lại</Badge>
+      ),
+    enableColumnFilter: true,
+    meta: {
+      label: 'Khách hàng',
+      variant: 'multiSelect' as const,
+      options: [
+        { value: 'new', label: 'Khách mới' },
+        { value: 'returning', label: 'Khách quay lại' }
+      ]
+    },
+    enableSorting: false
+  },
+  {
     id: 'source',
     // The toolbar only builds a filter for a column it can read a value from,
     // and attribution is derived rather than stored as its own field.
