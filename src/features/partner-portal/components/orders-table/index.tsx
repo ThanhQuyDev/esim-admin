@@ -35,25 +35,52 @@ export function PortalOrdersTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     orderNumber: parseAsString.withDefault(''),
+    product: parseAsString.withDefault(''),
     commissionStatus: parseAsArrayOf(parseAsString).withDefault([]),
+    customerType: parseAsArrayOf(parseAsString).withDefault([]),
     source: parseAsArrayOf(parseAsString).withDefault([])
   });
 
   const filtered = useMemo(() => {
-    const q = params.orderNumber.trim().toLowerCase();
+    // Order code and product are separate criteria (#022): one box doing both
+    // meant a partner could not narrow "đơn Nhật Bản" down to one order.
+    const code = params.orderNumber.trim().toLowerCase();
+    const product = params.product.trim().toLowerCase();
+
     return (orders ?? []).filter((order) => {
-      const haystack =
-        `${order.orderNumber} ${order.items.map((i) => i.planName).join(' ')}`.toLowerCase();
-      if (q && !haystack.includes(q)) return false;
+      if (code && !order.orderNumber.toLowerCase().includes(code)) return false;
+      if (
+        product &&
+        !order.items
+          .map((i) => i.planName)
+          .join(' ')
+          .toLowerCase()
+          .includes(product)
+      ) {
+        return false;
+      }
       if (
         params.commissionStatus.length > 0 &&
         !params.commissionStatus.includes(order.commissionStatus ?? '')
       ) {
         return false;
       }
+      if (
+        params.customerType.length > 0 &&
+        !params.customerType.includes(order.customerType ?? 'returning')
+      ) {
+        return false;
+      }
       return matchesSource(order, params.source);
     });
-  }, [orders, params.orderNumber, params.commissionStatus, params.source]);
+  }, [
+    orders,
+    params.orderNumber,
+    params.product,
+    params.commissionStatus,
+    params.customerType,
+    params.source
+  ]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / params.perPage));
   // A filter that shrinks the list can leave the URL pointing past the end.

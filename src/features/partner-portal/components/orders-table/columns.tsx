@@ -64,7 +64,16 @@ export const columns: ColumnDef<MyOrder>[] = [
   },
   {
     id: 'product',
+    // Its own filter (#022): searching a plan name through the order-code box
+    // worked, but nobody would guess that is where to type it.
+    accessorFn: (row) => row.items.map((i) => i.planName).join(' '),
     header: 'Sản phẩm',
+    enableColumnFilter: true,
+    meta: {
+      label: 'Sản phẩm',
+      placeholder: 'Tên gói...',
+      variant: 'text' as const
+    },
     cell: ({ row }) => (
       <div className='min-w-0'>
         <p className='truncate text-sm font-medium'>
