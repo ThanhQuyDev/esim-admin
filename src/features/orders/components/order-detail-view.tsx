@@ -6,7 +6,7 @@ import { orderQueryOptions } from '../api/queries';
 import { refundOrderMutation, retryOrderProvisioningMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { OrderItemEsim, OrderItemPlan } from '../api/types';
 import { Icons } from '@/components/icons';
 import { QRCodeSVG } from 'qrcode.react';
@@ -551,7 +551,19 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               <Badge variant={commissionStatusVariant(order.partnerCommission.status)}>
                 {commissionStatusLabel(order.partnerCommission.status)}
               </Badge>
+              {order.attributionWarning && (
+                <Badge variant='outline' className='border-amber-300 text-amber-700'>
+                  <Icons.warning className='mr-1 size-3' />
+                  Cùng thiết bị / IP
+                </Badge>
+              )}
             </CardTitle>
+            {order.attributionWarning && (
+              <CardDescription>
+                Đơn này phát sinh từ cùng thiết bị hoặc cùng IP với một đơn khác của đối tác. Hoa
+                hồng vẫn được ghi nhận — nên xem thêm các giao dịch khác của đối tác này.
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent className='grid gap-4 md:grid-cols-2'>
             <div className='space-y-3'>

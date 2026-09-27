@@ -42,6 +42,8 @@ export type Order = {
   referralCode?: string | null;
   /** Set when the order came through an affiliate (#095). */
   partnerCommission?: OrderPartnerCommission | null;
+  /** Same device or network as another order for this partner (#036). */
+  attributionWarning?: string | null;
   referralDiscountVndAmount?: number | null;
   discountAmount: number;
   vndPrice: number;
