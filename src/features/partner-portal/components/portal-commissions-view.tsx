@@ -110,12 +110,12 @@ export function PortalCommissionsView() {
 
   const cards = [
     {
-      label: 'Chờ đối soát',
+      label: 'Chờ xác nhận',
       value: formatVnd(summary?.commissionPendingVnd),
       badge: `${pendingCount} đơn`,
       icon: Icons.clock,
-      footerStrong: 'Chưa thể rút',
-      footer: 'Chuyển sang khả dụng sau thời gian kiểm tra hoàn tiền'
+      footerStrong: `${pendingCount} đơn đang trong thời gian đối soát`,
+      footer: 'Vào ví sau 24h kể từ khi khách đặt hàng thành công'
     },
     {
       label: 'Có thể rút',
@@ -132,19 +132,23 @@ export function PortalCommissionsView() {
           : 'Tạo yêu cầu rút ở màn Rút tiền'
     },
     {
-      label: 'Đã ghi nhận lũy kế',
-      value: formatVnd(summary?.lifetime.commissionVnd),
-      badge: 'Tất cả thời gian',
+      // Money actually received, not commission recorded — the two differ by
+      // whatever is still pending or unclaimed (#029).
+      label: 'Đã nhận lũy kế',
+      value: formatVnd(summary?.wallet.withdrawnVnd ?? 0),
+      badge: `${(summary?.wallet.payoutCount ?? 0).toLocaleString('vi-VN')} lần`,
       icon: Icons.trendingUp,
-      footerStrong: `${formatVnd(summary?.performance.commissionVnd)} trong 30 ngày`,
-      footer: `Trên ${formatVnd(summary?.lifetime.revenueVnd)} doanh số tích luỹ`
+      footerStrong: `Từ ${(summary?.wallet.payoutCount ?? 0).toLocaleString('vi-VN')} lần thanh toán`,
+      footer: `${formatVnd(summary?.lifetime.commissionVnd)} hoa hồng đã ghi nhận`
     },
     {
-      label: 'Tỷ lệ hoa hồng',
+      label: 'Tỷ lệ hoa hồng hiện tại',
       value: `${rate}%`,
       badge: summary?.tier.current ? summary.tier.current.tierName : 'Chưa gán hạng',
       icon: Icons.award,
-      footerStrong: 'Theo hạng hiện tại',
+      footerStrong: summary?.tier.current
+        ? `Quyền lợi ${summary.tier.current.tierName}`
+        : 'Chưa gán hạng',
       footer: summary?.tier.next
         ? `Lên hạng ${summary.tier.next.tierName} để tăng tỷ lệ`
         : 'Bạn đang ở hạng cao nhất'
@@ -294,8 +298,12 @@ export function PortalCommissionsView() {
                 )}
                 {ledger.map((o) => {
                   const status = COMMISSION_STATUS[o.commissionStatus ?? ''];
+                  // The API works the rate out from the money on the order
+                  // (#026); recomputing it here would be a second answer to
+                  // the same question.
                   const effectiveRate =
-                    o.vndPrice > 0 ? ((o.commissionVnd ?? 0) / o.vndPrice) * 100 : 0;
+                    o.commissionPercent ??
+                    (o.vndPrice > 0 ? ((o.commissionVnd ?? 0) / o.vndPrice) * 100 : 0);
                   return (
                     <TableRow key={o.orderNumber}>
                       <TableCell className='whitespace-nowrap'>

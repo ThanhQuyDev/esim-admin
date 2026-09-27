@@ -59,6 +59,9 @@ export type MyWalletSummary = {
   pendingPayoutVnd: number;
   /** Commission clawed back after payout, netted off the next period (#007). */
   carriedDebtVnd?: number;
+  /** Lifetime paid out and how many payments that was (#029). */
+  withdrawnVnd?: number;
+  payoutCount?: number;
   status: 'active' | 'locked';
 };
 
