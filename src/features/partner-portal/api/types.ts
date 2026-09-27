@@ -193,7 +193,10 @@ export type MyOrderItem = { planName: string; quantity: number };
 export type MyOrder = {
   orderNumber: string;
   status: string;
+  /** Revenue after refunds — what the order is worth now (#018). */
   vndPrice: number;
+  grossVndPrice?: number;
+  refundedVnd?: number;
   createdAt: string;
   commissionVnd: number | null;
   commissionStatus: 'pending' | 'credited' | 'reversed' | null;

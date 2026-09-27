@@ -78,7 +78,21 @@ export const columns: ColumnDef<MyOrder>[] = [
     id: 'vndPrice',
     accessorKey: 'vndPrice',
     header: 'Giá trị',
-    cell: ({ row }) => <span className='tabular-nums'>{formatVnd(row.original.vndPrice)}</span>,
+    // Net of refunds (#018); the original is kept beside it so a partner can
+    // see why the number moved rather than doubting the report.
+    cell: ({ row }) => {
+      const refunded = row.original.refundedVnd ?? 0;
+      return (
+        <div className='flex flex-col'>
+          <span className='tabular-nums'>{formatVnd(row.original.vndPrice)}</span>
+          {refunded > 0 && (
+            <span className='text-muted-foreground text-xs line-through'>
+              {formatVnd(row.original.grossVndPrice ?? row.original.vndPrice + refunded)}
+            </span>
+          )}
+        </div>
+      );
+    },
     enableSorting: false
   },
   {
