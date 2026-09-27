@@ -188,7 +188,13 @@ export type MyTopDestination = {
   revenueVnd: number;
 };
 
-export type MyOrderItem = { planName: string; quantity: number };
+export type MyOrderItem = {
+  planName: string;
+  quantity: number;
+  /** Line price and whether this product was refunded (#023). */
+  vndPrice?: number;
+  refunded?: boolean;
+};
 
 export type MyOrder = {
   orderNumber: string;

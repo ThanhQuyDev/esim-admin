@@ -3,12 +3,16 @@
 import type { Column, ColumnDef } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import { Icons } from '@/components/icons';
 import { formatDateVn } from '@/lib/format';
 import { formatVnd } from '@/lib/format';
 
-import type { MyOrder } from '../../api/types';
+import { cn } from '@/lib/utils';
+
+import type { MyOrder, MyOrderItem } from '../../api/types';
 
 /**
  * Commission lifecycle, with the light/dark pairs the admin console uses for
@@ -37,6 +41,69 @@ export const COMMISSION_STATUS: Record<string, { label: string; className: strin
 export const COMMISSION_STATUS_OPTIONS = Object.entries(COMMISSION_STATUS).map(
   ([value, { label }]) => ({ value, label })
 );
+
+/**
+ * The products in one order (#023).
+ *
+ * Two names fit in the column; the rest hide behind a "+N" the partner can
+ * open, with each line's price beside it. A refunded product is greyed and
+ * labelled rather than removed — the partner needs to see why the commission
+ * on this order is smaller than the order looks.
+ */
+function ProductLine({ item }: { item: MyOrderItem }) {
+  return (
+    <div
+      className={cn(
+        'flex items-baseline justify-between gap-3 text-sm',
+        item.refunded && 'text-muted-foreground'
+      )}
+    >
+      <span className={cn('truncate', item.refunded && 'line-through')}>
+        {item.planName}
+        {item.quantity > 1 && ` ×${item.quantity}`}
+      </span>
+      <span className='flex shrink-0 items-center gap-2'>
+        {item.refunded && (
+          <Badge variant='secondary' className='px-1.5 py-0 text-[10px]'>
+            Hoàn
+          </Badge>
+        )}
+        <span className='tabular-nums'>{item.vndPrice ? formatVnd(item.vndPrice) : '—'}</span>
+      </span>
+    </div>
+  );
+}
+
+function OrderProducts({ items, createdAt }: { items: MyOrderItem[]; createdAt: string }) {
+  const shown = items.slice(0, 2);
+  const hidden = items.length - shown.length;
+
+  return (
+    <div className='min-w-0 space-y-1'>
+      {shown.map((item, index) => (
+        <ProductLine key={`${item.planName}-${index}`} item={item} />
+      ))}
+      {items.length === 0 && <p className='text-sm'>—</p>}
+      {hidden > 0 && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant='ghost' size='sm' className='h-6 px-1.5 text-xs'>
+              <Icons.add className='mr-1 size-3' />
+              {hidden} sản phẩm khác
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align='start' className='w-80 space-y-1'>
+            <p className='text-muted-foreground mb-2 text-xs'>{items.length} sản phẩm trong đơn</p>
+            {items.map((item, index) => (
+              <ProductLine key={`all-${item.planName}-${index}`} item={item} />
+            ))}
+          </PopoverContent>
+        </Popover>
+      )}
+      <p className='text-muted-foreground text-xs'>{formatDateVn(createdAt)}</p>
+    </div>
+  );
+}
 
 export const SOURCE_OPTIONS = [
   { value: 'link', label: 'Liên kết tiếp thị' },
@@ -75,12 +142,7 @@ export const columns: ColumnDef<MyOrder>[] = [
       variant: 'text' as const
     },
     cell: ({ row }) => (
-      <div className='min-w-0'>
-        <p className='truncate text-sm font-medium'>
-          {row.original.items.map((i) => i.planName).join(' + ') || '—'}
-        </p>
-        <p className='text-muted-foreground text-xs'>{formatDateVn(row.original.createdAt)}</p>
-      </div>
+      <OrderProducts items={row.original.items} createdAt={row.original.createdAt} />
     ),
     enableSorting: false
   },
