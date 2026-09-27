@@ -196,14 +196,23 @@ export const columns: ColumnDef<MyOrder>[] = [
     // and attribution is derived rather than stored as its own field.
     accessorFn: (row) => (row.linkCode ? 'link' : 'code'),
     header: 'Nguồn ghi nhận',
+    // The path is what the partner handed out, so print it as such (#024) —
+    // /go/<code>, which is the route the site really serves.
     cell: ({ row }) =>
       row.original.linkCode ? (
-        <div className='min-w-0'>
-          <Badge variant='secondary'>Liên kết</Badge>
-          <p className='text-muted-foreground mt-1 font-mono text-xs'>{row.original.linkCode}</p>
+        <div className='flex min-w-0 items-center gap-2'>
+          <Badge variant='secondary'>Link</Badge>
+          <span className='text-muted-foreground truncate font-mono text-xs'>
+            /go/{row.original.linkCode}
+          </span>
         </div>
       ) : (
-        <Badge variant='outline'>Mã đối tác</Badge>
+        <div className='flex min-w-0 items-center gap-2'>
+          <Badge variant='outline'>Mã</Badge>
+          <span className='text-muted-foreground truncate font-mono text-xs'>
+            {row.original.couponCode ?? '—'}
+          </span>
+        </div>
       ),
     meta: {
       label: 'Nguồn ghi nhận',

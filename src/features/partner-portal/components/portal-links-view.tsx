@@ -74,7 +74,8 @@ const CODE_MAX = 50;
 const CODE_PATTERN = /^[A-Za-z0-9]+$/;
 
 function shortLinkOf(code: string): string {
-  return `esim.vn/r/${code}`;
+  // /go/<code> is the route the site actually serves — /r/ 404s (#024).
+  return `esim.vn/go/${code}`;
 }
 
 /**
@@ -279,7 +280,7 @@ export function PortalLinksView() {
               <div className='space-y-2'>
                 <Label htmlFor='linkCode'>Tên link tùy chọn</Label>
                 <div className='flex items-center gap-2'>
-                  <span className='text-muted-foreground shrink-0 text-sm'>esim.vn/r/</span>
+                  <span className='text-muted-foreground shrink-0 text-sm'>esim.vn/go/</span>
                   <Input
                     id='linkCode'
                     placeholder='TENCHIENDICH'
@@ -375,7 +376,7 @@ export function PortalLinksView() {
               <Input
                 id='qrLink'
                 value={qrValue}
-                placeholder='https://esim.vn/r/...'
+                placeholder='https://esim.vn/go/...'
                 onChange={(e) => setQrLink(e.target.value)}
               />
             </div>

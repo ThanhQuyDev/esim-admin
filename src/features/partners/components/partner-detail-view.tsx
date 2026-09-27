@@ -260,7 +260,7 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             <div>
               <p className='text-sm font-medium'>Được đặt tên link tiếp thị</p>
               <p className='text-muted-foreground text-xs'>
-                Cho phép đối tác tự đặt tên link (esim.vn/r/TENCHIENDICH, 8–50 ký tự chữ và số).
+                Cho phép đối tác tự đặt tên link (esim.vn/go/TENCHIENDICH, 8–50 ký tự chữ và số).
                 Thường chỉ bật cho đối tác hạng cao cần tên dễ nhớ cho chiến dịch.
               </p>
             </div>

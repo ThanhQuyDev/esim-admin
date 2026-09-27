@@ -207,6 +207,8 @@ export type MyOrder = {
   commissionVnd: number | null;
   commissionStatus: 'pending' | 'credited' | 'reversed' | null;
   linkCode: string | null;
+  /** Discount code the order came in on, when it was not a link (#024). */
+  couponCode?: string | null;
   /** Whether esim.vn had seen this buyer before this order (#021). */
   customerType?: 'new' | 'returning';
   esimCount: number;
