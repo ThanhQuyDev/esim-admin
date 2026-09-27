@@ -35,10 +35,20 @@ export type UpdateMyProfilePayload = {
   businessAddress?: string;
   channelInfo?: Record<string, unknown>;
   brandInfo?: Record<string, unknown>;
-  bankName?: string;
-  bankAccountNumber?: string;
-  bankAccountHolder?: string;
+  // Bank details are not here: changing them needs the emailed code (#005).
+};
+
+export type BankAccountChangePayload = {
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountHolder: string;
   bankBranch?: string;
+};
+
+export type BankAccountChangeRequested = {
+  /** Masked address the code went to, e.g. `th****@esim.vn`. */
+  sentTo: string;
+  expiresAt: string;
 };
 
 export type MyWalletSummary = {

@@ -29,6 +29,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { changePassword } from '@/features/auth/api/service';
+import {
+  confirmBankAccountChangeMutation,
+  requestBankAccountChangeMutation
+} from '../api/mutations';
 
 import { updateMyProfileMutation } from '../api/mutations';
 import { myProfileQueryOptions, mySummaryQueryOptions } from '../api/queries';
@@ -110,6 +114,40 @@ export function PortalProfileView() {
       bankBranch: me.bankBranch ?? ''
     });
   }, [me]);
+
+  // Changing where the money goes needs the code emailed to the partner (#005).
+  const [otp, setOtp] = useState('');
+  const [codeSentTo, setCodeSentTo] = useState<string | null>(null);
+
+  const requestBankCode = useMutation({
+    ...requestBankAccountChangeMutation,
+    onSuccess: (result) => {
+      setCodeSentTo(result.sentTo);
+      setOtp('');
+      toast.success(`Đã gửi mã xác nhận tới ${result.sentTo}.`);
+    },
+    onError: (e: Error) => toast.error(e.message || 'Không gửi được mã xác nhận.')
+  });
+
+  const confirmBankCode = useMutation({
+    ...confirmBankAccountChangeMutation,
+    onSuccess: () => {
+      setCodeSentTo(null);
+      setOtp('');
+      toast.success('Đã cập nhật tài khoản nhận tiền.');
+    },
+    onError: (e: Error) => toast.error(e.message || 'Mã xác nhận không đúng hoặc đã hết hạn.')
+  });
+
+  const bankChanged =
+    bank.bankName !== (me?.bankName ?? '') ||
+    bank.bankAccountNumber !== (me?.bankAccountNumber ?? '') ||
+    bank.bankAccountHolder !== (me?.bankAccountHolder ?? '') ||
+    bank.bankBranch !== (me?.bankBranch ?? '');
+
+  const bankFilled = Boolean(
+    bank.bankName.trim() && bank.bankAccountNumber.trim() && bank.bankAccountHolder.trim()
+  );
 
   const save = useMutation({
     ...updateMyProfileMutation,
@@ -324,10 +362,82 @@ export function PortalProfileView() {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button isLoading={save.isPending} onClick={() => submit(bank)}>
-                  Lưu thay đổi
-                </Button>
+              <CardFooter className='flex-col items-stretch gap-4'>
+                {codeSentTo ? (
+                  <div className='space-y-3'>
+                    <div className='space-y-2'>
+                      <Label htmlFor='bankOtp'>Mã xác nhận đã gửi tới {codeSentTo}</Label>
+                      <Input
+                        id='bankOtp'
+                        inputMode='numeric'
+                        maxLength={6}
+                        placeholder='6 chữ số'
+                        className='max-w-40 tracking-[0.4em]'
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      />
+                      <p className='text-muted-foreground text-xs'>
+                        Mã có hiệu lực 10 phút. Tài khoản chỉ đổi sau khi nhập đúng mã.
+                      </p>
+                    </div>
+                    <div className='flex flex-wrap gap-2'>
+                      <Button
+                        isLoading={confirmBankCode.isPending}
+                        disabled={otp.length !== 6}
+                        onClick={() => confirmBankCode.mutate(otp)}
+                      >
+                        Xác nhận đổi tài khoản
+                      </Button>
+                      <Button
+                        variant='outline'
+                        isLoading={requestBankCode.isPending}
+                        onClick={() =>
+                          requestBankCode.mutate({
+                            bankName: bank.bankName.trim(),
+                            bankAccountNumber: bank.bankAccountNumber.trim(),
+                            bankAccountHolder: bank.bankAccountHolder.trim(),
+                            ...(bank.bankBranch.trim()
+                              ? { bankBranch: bank.bankBranch.trim() }
+                              : {})
+                          })
+                        }
+                      >
+                        Gửi lại mã
+                      </Button>
+                      <Button
+                        variant='ghost'
+                        onClick={() => {
+                          setCodeSentTo(null);
+                          setOtp('');
+                        }}
+                      >
+                        Hủy
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className='flex flex-wrap items-center gap-3'>
+                    <Button
+                      isLoading={requestBankCode.isPending}
+                      disabled={!bankFilled || !bankChanged}
+                      onClick={() =>
+                        requestBankCode.mutate({
+                          bankName: bank.bankName.trim(),
+                          bankAccountNumber: bank.bankAccountNumber.trim(),
+                          bankAccountHolder: bank.bankAccountHolder.trim(),
+                          ...(bank.bankBranch.trim() ? { bankBranch: bank.bankBranch.trim() } : {})
+                        })
+                      }
+                    >
+                      Gửi mã xác nhận
+                    </Button>
+                    <p className='text-muted-foreground text-xs'>
+                      {bankChanged
+                        ? 'Chúng tôi gửi mã 6 số về email đã đăng ký để xác nhận thay đổi.'
+                        : 'Sửa thông tin tài khoản để đổi, thay đổi cần xác nhận qua email.'}
+                    </p>
+                  </div>
+                )}
               </CardFooter>
             </Card>
           </TabsContent>

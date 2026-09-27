@@ -19,7 +19,9 @@ import type {
   MyTicket,
   CreateTicketPayload,
   MyCoupon,
-  MyTierEvaluation
+  MyTierEvaluation,
+  BankAccountChangePayload,
+  BankAccountChangeRequested
 } from './types';
 
 export async function applyAsPartner(
@@ -36,6 +38,24 @@ export async function updateMyPartnerProfile(data: UpdateMyProfilePayload): Prom
   return apiClient<MyPartner>('/partner-portal/me', {
     method: 'PATCH',
     body: JSON.stringify(data)
+  });
+}
+
+/** Step one of a bank account change: mail the partner a code (#005). */
+export async function requestBankAccountChange(
+  data: BankAccountChangePayload
+): Promise<BankAccountChangeRequested> {
+  return apiClient<BankAccountChangeRequested>('/partner-portal/bank-account/otp', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+/** Step two: the code applies the account that was requested (#005). */
+export async function confirmBankAccountChange(otp: string): Promise<MyPartner> {
+  return apiClient<MyPartner>('/partner-portal/bank-account/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ otp })
   });
 }
 

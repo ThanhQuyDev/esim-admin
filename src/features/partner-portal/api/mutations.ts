@@ -7,7 +7,9 @@ import {
   updateMyLink,
   createMyPayout,
   applyAsPartner,
-  createMyTicket
+  createMyTicket,
+  requestBankAccountChange,
+  confirmBankAccountChange
 } from './service';
 import { partnerPortalKeys } from './queries';
 import type {
@@ -17,13 +19,23 @@ import type {
   UpdateLinkPayload,
   CreatePayoutPayload,
   PartnerApplyPayload,
-  CreateTicketPayload
+  CreateTicketPayload,
+  BankAccountChangePayload
 } from './types';
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: partnerPortalKeys.all });
 
 export const updateMyProfileMutation = mutationOptions({
   mutationFn: (data: UpdateMyProfilePayload) => updateMyPartnerProfile(data),
+  onSettled: invalidateAll
+});
+
+export const requestBankAccountChangeMutation = mutationOptions({
+  mutationFn: (data: BankAccountChangePayload) => requestBankAccountChange(data)
+});
+
+export const confirmBankAccountChangeMutation = mutationOptions({
+  mutationFn: (otp: string) => confirmBankAccountChange(otp),
   onSettled: invalidateAll
 });
 
