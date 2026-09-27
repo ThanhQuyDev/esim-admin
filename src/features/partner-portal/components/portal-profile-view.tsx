@@ -33,6 +33,7 @@ import {
   confirmBankAccountChangeMutation,
   requestBankAccountChangeMutation
 } from '../api/mutations';
+import { PortalEmailChangeCard } from './portal-email-change-card';
 
 import { updateMyProfileMutation } from '../api/mutations';
 import { myProfileQueryOptions, mySummaryQueryOptions } from '../api/queries';
@@ -442,7 +443,11 @@ export function PortalProfileView() {
             </Card>
           </TabsContent>
 
-          <TabsContent value='security' className='mt-4'>
+          <TabsContent value='security' className='mt-4 space-y-4'>
+            {/* A partner is keyed by partner id, so the login address is theirs
+                to change like any customer's (#031). */}
+            <PortalEmailChangeCard currentEmail={me?.contactEmail} />
+
             <Card>
               <CardHeader>
                 <CardTitle>Đổi mật khẩu</CardTitle>

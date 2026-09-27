@@ -76,3 +76,48 @@ export async function changePassword(payload: {
     throw new Error(error.message || 'Đổi mật khẩu thất bại');
   }
 }
+
+/** The address change waiting to be confirmed, and which step it is on (#031). */
+export type PendingEmailChange = {
+  email: string | null;
+  stage: string | null;
+};
+
+async function emailChangeStep(
+  step: 'request' | 'verify-current' | 'confirm',
+  payload: Record<string, unknown>
+): Promise<unknown> {
+  const res = await fetch('/api/auth/email-change', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ step, ...payload })
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || 'Không thực hiện được yêu cầu.');
+  }
+
+  return res.json().catch(() => ({}));
+}
+
+export async function getPendingEmailChange(): Promise<PendingEmailChange | null> {
+  const res = await fetch('/api/auth/email-change');
+  if (!res.ok) return null;
+  return res.json().catch(() => null);
+}
+
+/** Step one: mail a code to the address currently on the account. */
+export async function requestEmailChange(email: string): Promise<void> {
+  await emailChangeStep('request', { email });
+}
+
+/** Step two: prove the current address, which sends a code to the new one. */
+export async function verifyCurrentEmailCode(code: string): Promise<void> {
+  await emailChangeStep('verify-current', { code });
+}
+
+/** Step three: the code from the new address moves the account over. */
+export async function confirmEmailChange(email: string, code: string): Promise<void> {
+  await emailChangeStep('confirm', { email, code });
+}
