@@ -52,6 +52,7 @@ import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 
 import { createLinkMutation, deleteLinkMutation, updateLinkMutation } from '../api/mutations';
+import { exportMyLinks } from '../api/service';
 import { myLinksQueryOptions, myProfileQueryOptions, partnerPortalKeys } from '../api/queries';
 import type { MyLink } from '../api/types';
 
@@ -163,6 +164,7 @@ export function PortalLinksView() {
     onError: (e: Error) => toast.error(e.message || 'Không đổi được trạng thái liên kết.')
   });
 
+  const [exporting, setExporting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<MyLink | null>(null);
   const removeLink = useMutation({
     ...deleteLinkMutation,
@@ -435,10 +437,28 @@ export function PortalLinksView() {
             {totals.conversions.toLocaleString('vi-VN')} đơn · {formatVnd(totals.commission)} hoa
             hồng
           </CardDescription>
-          <CardAction>
+          <CardAction className='flex items-center gap-2'>
             <Badge variant='secondary'>
               {rows.filter((r) => r.status === 'active').length} đang chạy
             </Badge>
+            <Button
+              size='sm'
+              variant='outline'
+              disabled={exporting || allRows.length === 0}
+              onClick={async () => {
+                setExporting(true);
+                try {
+                  await exportMyLinks();
+                } catch (e) {
+                  toast.error((e as Error).message);
+                } finally {
+                  setExporting(false);
+                }
+              }}
+            >
+              {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
+              Xuất Excel
+            </Button>
           </CardAction>
         </CardHeader>
         <CardContent className='space-y-4'>
