@@ -1,10 +1,12 @@
 'use client';
 
 /**
- * Discount codes issued to this partner.
+ * Discount codes a partner funds out of their own commission (#028).
  *
- * The portal has no self-serve coupon creation — an admin issues the code — so
- * "Đề nghị mã mới" files a support ticket rather than pretending to create one.
+ * The code is how a partner decides to split the commission they already earn:
+ * keep it, or hand part of it to the customer as a discount. The two shares
+ * always add up to the original commission, never more — so the form shows both
+ * as the partner types, and the API caps the discount at their own rate.
  */
 
 import { useState } from 'react';
@@ -32,16 +34,36 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 import { formatDateVn, formatVnd } from '@/lib/format';
 
-import { createTicketMutation } from '../api/mutations';
-import { myCouponsQueryOptions, myProfileQueryOptions } from '../api/queries';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+
+import { createCouponMutation, setCouponActiveMutation } from '../api/mutations';
+import {
+  myCouponsQueryOptions,
+  myProfileQueryOptions,
+  mySummaryQueryOptions
+} from '../api/queries';
 import type { MyCoupon } from '../api/types';
 
 /** Codes inside this window get a "sắp hết hạn" warning. */
 const EXPIRING_SOON_DAYS = 30;
+
+/** Bounds the API enforces on a code the partner names (#028). */
+const CODE_MIN = 6;
+const CODE_MAX = 20;
+
+const EMPTY_COUPON = {
+  code: '',
+  discountPercent: '',
+  maxDiscountAmount: '',
+  minOrderAmount: '',
+  expiresAt: '',
+  maxUsage: '',
+  maxUsagePerUser: ''
+};
 
 function couponState(coupon: MyCoupon): {
   label: string;
@@ -63,19 +85,63 @@ export function PortalCouponsView() {
   const { data: coupons, isLoading } = useQuery(myCouponsQueryOptions());
   const { data: me } = useQuery(myProfileQueryOptions());
 
+  const { data: summary } = useQuery(mySummaryQueryOptions());
+  const commissionPercent = summary?.tier.current
+    ? Number(summary.tier.current.commissionPercent)
+    : 0;
+
   const [open, setOpen] = useState(false);
-  const [note, setNote] = useState('');
+  const [form, setForm] = useState(EMPTY_COUPON);
   const [error, setError] = useState<string | null>(null);
 
-  const requestCoupon = useMutation({
-    ...createTicketMutation,
-    onSuccess: () => {
+  const discount = Number(form.discountPercent || 0);
+  const keptPercent = Math.max(0, Math.round((commissionPercent - discount) * 100) / 100);
+
+  const createCoupon = useMutation({
+    ...createCouponMutation,
+    onSuccess: (created) => {
       setOpen(false);
-      setNote('');
-      toast.success('Đã gửi đề nghị cấp mã giảm giá.');
+      setForm(EMPTY_COUPON);
+      toast.success(`Đã tạo mã ${created.code}, bạn giữ lại ${created.keptPercent}% hoa hồng.`);
     },
-    onError: (e: Error) => toast.error(e.message || 'Không gửi được đề nghị.')
+    onError: (e: Error) => setError(e.message || 'Không tạo được mã giảm giá.')
   });
+
+  const toggleCoupon = useMutation({
+    ...setCouponActiveMutation,
+    onSuccess: () => toast.success('Đã cập nhật trạng thái mã.'),
+    onError: (e: Error) => toast.error(e.message || 'Không đổi được trạng thái mã.')
+  });
+
+  const submitCoupon = () => {
+    const code = form.code.trim();
+    if (code.length < CODE_MIN || code.length > CODE_MAX || !/^[A-Za-z0-9]+$/.test(code)) {
+      setError(`Mã cần ${CODE_MIN}–${CODE_MAX} ký tự, chỉ gồm chữ và số.`);
+      return;
+    }
+    if (!(discount > 0)) {
+      setError('Nhập mức giảm cho khách.');
+      return;
+    }
+    if (commissionPercent > 0 && discount > commissionPercent) {
+      setError(
+        `Mức giảm tối đa bằng đúng tỷ lệ hoa hồng của bạn (${commissionPercent}%) — phần giữ lại cộng phần nhường khách luôn bằng hoa hồng gốc.`
+      );
+      return;
+    }
+    setError(null);
+
+    const asNumber = (value: string) => (value.trim() ? Number(value) : undefined);
+    createCoupon.mutate({
+      code,
+      discountPercent: discount,
+      maxDiscountAmount: asNumber(form.maxDiscountAmount),
+      minOrderAmount: asNumber(form.minOrderAmount),
+      maxUsage: asNumber(form.maxUsage),
+      maxUsagePerUser: asNumber(form.maxUsagePerUser),
+      ...(form.expiresAt ? { expiresAt: new Date(form.expiresAt).toISOString() } : {})
+    });
+  };
 
   const copy = async (code: string) => {
     await navigator.clipboard?.writeText(code);
@@ -92,12 +158,21 @@ export function PortalCouponsView() {
         <AlertDescription>
           <ul className='list-disc space-y-1 pl-4'>
             <li>
-              Mã giúp ghi nhận đơn hàng cho bạn khi khách không bấm link tiếp thị hoặc mua trên
-              thiết bị khác.
+              Mã giúp ghi nhận đơn cho bạn khi khách xem link trên máy tính nhưng lại mua trên điện
+              thoại, hoặc vào thẳng web để mua.
             </li>
             <li>
-              Hoa hồng tính trên doanh thu sau giảm giá. Mức giảm nằm trong quyền hạn quản trị viên
-              cấp cho hạng của bạn.
+              Mã giảm là cách bạn tự chia ngân sách hoa hồng của mình: giữ lại bao nhiêu, nhường
+              khách bao nhiêu.{' '}
+              <span className='font-medium'>
+                Tổng hai phần luôn bằng đúng hoa hồng gốc, không bao giờ vượt quá.
+              </span>
+              {commissionPercent > 0 && ` Hoa hồng hiện tại của bạn là ${commissionPercent}%.`}
+            </li>
+            <li>
+              Mã của bạn <span className='font-medium'>không hiện sẵn</span> ở trang giỏ hàng —
+              khách phải tự nhập. Mã giảm chung của web vẫn hiện bình thường, và khi khách dùng mã
+              chung thì hoa hồng của bạn tính trên giá trị đơn sau khi đã trừ mã đó.
             </li>
           </ul>
         </AlertDescription>
@@ -106,14 +181,14 @@ export function PortalCouponsView() {
       <Card>
         <CardHeader>
           <CardTitle className='flex flex-wrap items-center gap-2'>
-            Mã được cấp
+            Mã giảm giá của bạn
             <Badge variant='outline'>{list.length} mã</Badge>
           </CardTitle>
           <CardDescription>Theo dõi lượt sử dụng và doanh số từ từng mã.</CardDescription>
           <CardAction>
-            <Button size='sm' variant='outline' onClick={() => setOpen(true)}>
+            <Button size='sm' onClick={() => setOpen(true)}>
               <Icons.add />
-              Đề nghị mã mới
+              Tạo mã giảm giá
             </Button>
           </CardAction>
         </CardHeader>
@@ -124,12 +199,12 @@ export function PortalCouponsView() {
             <div className='rounded-lg border border-dashed py-12 text-center'>
               <p className='text-sm font-medium'>Chưa có mã giảm giá nào</p>
               <p className='text-muted-foreground mx-auto mt-1 max-w-md text-xs'>
-                Mã giảm giá do quản trị viên cấp. Gửi đề nghị kèm mức giảm, thời hạn và kênh bạn
-                định dùng để được xét.
+                Tạo mã của riêng bạn để khách nhập khi thanh toán. Phần bạn nhường khách được trừ
+                vào hoa hồng của chính bạn.
               </p>
               <Button size='sm' className='mt-4' onClick={() => setOpen(true)}>
                 <Icons.add />
-                Đề nghị mã mới
+                Tạo mã giảm giá
               </Button>
             </div>
           )}
@@ -177,16 +252,19 @@ export function PortalCouponsView() {
                       </span>
                     </div>
                   </CardContent>
-                  <CardFooter>
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      className='w-full'
-                      onClick={() => copy(coupon.code)}
-                    >
+                  <CardFooter className='justify-between gap-2'>
+                    <Button size='sm' variant='outline' onClick={() => copy(coupon.code)}>
                       <Icons.copy />
                       Sao chép mã
                     </Button>
+                    <Switch
+                      checked={coupon.isActive}
+                      disabled={toggleCoupon.isPending}
+                      onCheckedChange={(checked) =>
+                        toggleCoupon.mutate({ id: coupon.id, isActive: checked })
+                      }
+                      aria-label={coupon.isActive ? 'Tắt mã' : 'Bật mã'}
+                    />
                   </CardFooter>
                 </Card>
               );
@@ -196,59 +274,121 @@ export function PortalCouponsView() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className='sm:max-w-lg'>
           <DialogHeader>
-            <DialogTitle>Đề nghị cấp mã giảm giá</DialogTitle>
+            <DialogTitle>Tạo mã giảm giá</DialogTitle>
             <DialogDescription>
-              Đề nghị được gửi tới đội vận hành dưới dạng một yêu cầu hỗ trợ.
+              Phần bạn nhường khách được trừ vào hoa hồng của chính bạn — phần giữ lại cộng phần
+              nhường khách luôn bằng hoa hồng gốc.
             </DialogDescription>
           </DialogHeader>
-          <div className='space-y-2'>
-            <Label htmlFor='couponNote'>
-              Nội dung đề nghị <span className='text-destructive'>*</span>
-            </Label>
-            <Textarea
-              id='couponNote'
-              rows={5}
-              value={note}
-              placeholder='Ví dụ: mã giảm 10% cho chiến dịch Nhật Bản tháng 8, dự kiến 200 lượt dùng, chạy tới 30/09.'
-              aria-invalid={Boolean(error)}
-              aria-describedby='couponNote-error'
-              onChange={(e) => {
-                setNote(e.target.value);
-                if (error) setError(null);
-              }}
-              onBlur={() => setError(note.trim() ? null : 'Mô tả đề nghị của bạn.')}
-            />
-            {error ? (
-              <p id='couponNote-error' className='text-destructive text-xs'>
-                {error}
-              </p>
-            ) : (
+
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <div className='space-y-2 sm:col-span-2'>
+              <Label htmlFor='couponCode'>
+                Tên mã <span className='text-destructive'>*</span>
+              </Label>
+              <Input
+                id='couponCode'
+                placeholder='VANA2026'
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+              />
               <p className='text-muted-foreground text-xs'>
-                Nêu rõ mức giảm mong muốn, thời hạn và kênh sẽ dùng mã.
+                {CODE_MIN}–{CODE_MAX} ký tự, chỉ chữ và số, duy nhất trên hệ thống.
               </p>
-            )}
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='couponPercent'>
+                Mức giảm cho khách (%) <span className='text-destructive'>*</span>
+              </Label>
+              <Input
+                id='couponPercent'
+                type='number'
+                min={1}
+                max={commissionPercent || 100}
+                value={form.discountPercent}
+                onChange={(e) => setForm({ ...form, discountPercent: e.target.value })}
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='couponMaxDiscount'>Giảm tối đa (đ)</Label>
+              <Input
+                id='couponMaxDiscount'
+                type='number'
+                min={0}
+                step={10000}
+                placeholder='50000'
+                value={form.maxDiscountAmount}
+                onChange={(e) => setForm({ ...form, maxDiscountAmount: e.target.value })}
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='couponMinOrder'>Đơn tối thiểu (đ)</Label>
+              <Input
+                id='couponMinOrder'
+                type='number'
+                min={0}
+                step={50000}
+                placeholder='500000'
+                value={form.minOrderAmount}
+                onChange={(e) => setForm({ ...form, minOrderAmount: e.target.value })}
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='couponExpires'>Hiệu lực đến</Label>
+              <Input
+                id='couponExpires'
+                type='date'
+                value={form.expiresAt}
+                onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='couponMaxUsage'>Tổng lượt dùng tối đa</Label>
+              <Input
+                id='couponMaxUsage'
+                type='number'
+                min={1}
+                placeholder='100'
+                value={form.maxUsage}
+                onChange={(e) => setForm({ ...form, maxUsage: e.target.value })}
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='couponPerUser'>Lượt dùng mỗi khách</Label>
+              <Input
+                id='couponPerUser'
+                type='number'
+                min={1}
+                placeholder='1'
+                value={form.maxUsagePerUser}
+                onChange={(e) => setForm({ ...form, maxUsagePerUser: e.target.value })}
+              />
+            </div>
           </div>
+
+          {commissionPercent > 0 && (
+            <div className='bg-muted/50 rounded-lg border p-3 text-sm'>
+              <p className='font-medium'>Hoa hồng gốc {commissionPercent}% được chia thành:</p>
+              <p className='text-muted-foreground mt-1'>
+                Nhường khách <span className='text-foreground font-medium'>{discount || 0}%</span> ·
+                Bạn giữ lại <span className='text-foreground font-medium'>{keptPercent}%</span>
+              </p>
+            </div>
+          )}
+
+          {error && <p className='text-destructive text-sm'>{error}</p>}
+
           <DialogFooter>
             <Button variant='outline' onClick={() => setOpen(false)}>
               Huỷ
             </Button>
-            <Button
-              isLoading={requestCoupon.isPending}
-              onClick={() => {
-                if (!note.trim()) {
-                  setError('Mô tả đề nghị của bạn.');
-                  return;
-                }
-                requestCoupon.mutate({
-                  customerEmail: me?.contactEmail ?? '',
-                  subject: 'Đề nghị cấp mã giảm giá',
-                  description: note.trim()
-                });
-              }}
-            >
-              Gửi đề nghị
+            <Button onClick={submitCoupon} disabled={createCoupon.isPending}>
+              Tạo mã
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -235,6 +235,17 @@ export type CreateTicketPayload = {
   orderId?: string;
 };
 
+/** A discount a partner funds out of their own commission (#028). */
+export type CreateCouponPayload = {
+  code: string;
+  discountPercent: number;
+  maxDiscountAmount?: number;
+  minOrderAmount?: number;
+  expiresAt?: string;
+  maxUsage?: number;
+  maxUsagePerUser?: number;
+};
+
 export type MyCoupon = {
   id: number;
   code: string;

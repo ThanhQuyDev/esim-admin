@@ -22,6 +22,7 @@ import type {
   MyTierEvaluation,
   MyTopDestination,
   MyOrderDetail,
+  CreateCouponPayload,
   BankAccountChangePayload,
   BankAccountChangeRequested
 } from './types';
@@ -190,6 +191,27 @@ export async function createMyTicket(data: CreateTicketPayload): Promise<MyTicke
   return apiClient<MyTicket>('/tickets/mine', {
     method: 'POST',
     body: JSON.stringify(data)
+  });
+}
+
+/** Create a discount code funded by the partner's own commission (#028). */
+export async function createMyCoupon(data: CreateCouponPayload): Promise<{
+  id: number;
+  code: string;
+  discountPercent: number;
+  commissionPercent: number;
+  keptPercent: number;
+}> {
+  return apiClient('/partner-portal/coupons', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export async function setMyCouponActive(id: number, isActive: boolean): Promise<void> {
+  await apiClient(`/partner-portal/coupons/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isActive })
   });
 }
 

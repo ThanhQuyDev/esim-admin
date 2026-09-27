@@ -6,6 +6,8 @@ import {
   createMyLink,
   updateMyLink,
   deleteMyLink,
+  createMyCoupon,
+  setMyCouponActive,
   createMyPayout,
   applyAsPartner,
   createMyTicket,
@@ -21,7 +23,8 @@ import type {
   CreatePayoutPayload,
   PartnerApplyPayload,
   CreateTicketPayload,
-  BankAccountChangePayload
+  BankAccountChangePayload,
+  CreateCouponPayload
 } from './types';
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: partnerPortalKeys.all });
@@ -57,6 +60,17 @@ export const updateLinkMutation = mutationOptions({
 
 export const deleteLinkMutation = mutationOptions({
   mutationFn: (id: number) => deleteMyLink(id),
+  onSettled: invalidateAll
+});
+
+export const createCouponMutation = mutationOptions({
+  mutationFn: (data: CreateCouponPayload) => createMyCoupon(data),
+  onSettled: invalidateAll
+});
+
+export const setCouponActiveMutation = mutationOptions({
+  mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+    setMyCouponActive(id, isActive),
   onSettled: invalidateAll
 });
 
