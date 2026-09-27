@@ -10,6 +10,7 @@ import {
   getMySummary,
   getMyTopDestinations,
   getMyOrderDetail,
+  getTicketMessages,
   getMyOrders,
   getMyTiers,
   getMyTickets,
@@ -80,6 +81,13 @@ export const myOrderDetailQueryOptions = (orderNumber: string | null) =>
     queryKey: [...partnerPortalKeys.orders(), 'detail', orderNumber ?? ''],
     queryFn: () => getMyOrderDetail(orderNumber as string),
     enabled: Boolean(orderNumber)
+  });
+
+export const ticketMessagesQueryOptions = (ticketId: number | null) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'ticket-messages', ticketId ?? 0],
+    queryFn: () => getTicketMessages(ticketId as number),
+    enabled: Boolean(ticketId)
   });
 
 export const myTiersQueryOptions = () =>

@@ -45,6 +45,8 @@ import { Icons } from '@/components/icons';
 import { formatDateTimeVn } from '@/lib/format';
 
 import { createTicketMutation } from '../api/mutations';
+import { TicketThreadDialog } from './ticket-thread-dialog';
+import type { MyTicket } from '../api/types';
 import { myProfileQueryOptions, myTicketsQueryOptions } from '../api/queries';
 
 const TAB_VALUES = ['create', 'mine'] as const;
@@ -110,6 +112,8 @@ export function PortalSupportView() {
     parseAsStringLiteral(TAB_VALUES).withDefault('create').withOptions({ shallow: true })
   );
 
+  // Which ticket's conversation is open (#032).
+  const [openTicket, setOpenTicket] = useState<MyTicket | null>(null);
   const [topic, setTopic] = useState(TOPICS[0]!.value);
   const [reference, setReference] = useState('');
   const [message, setMessage] = useState('');
@@ -148,190 +152,206 @@ export function PortalSupportView() {
   };
 
   return (
-    <Tabs value={tab} onValueChange={(v) => setTab(v as (typeof TAB_VALUES)[number])}>
-      <TabsList>
-        <TabsTrigger value='create'>Tạo yêu cầu</TabsTrigger>
-        <TabsTrigger value='mine'>
-          Yêu cầu của tôi
-          {open > 0 && (
-            <Badge variant='secondary' className='ml-2'>
-              {open}
-            </Badge>
-          )}
-        </TabsTrigger>
-      </TabsList>
+    <>
+      <TicketThreadDialog
+        ticket={openTicket}
+        onOpenChange={(open) => !open && setOpenTicket(null)}
+      />
+      <Tabs value={tab} onValueChange={(v) => setTab(v as (typeof TAB_VALUES)[number])}>
+        <TabsList>
+          <TabsTrigger value='create'>Tạo yêu cầu</TabsTrigger>
+          <TabsTrigger value='mine'>
+            Yêu cầu của tôi
+            {open > 0 && (
+              <Badge variant='secondary' className='ml-2'>
+                {open}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      <TabsContent value='create' className='mt-4'>
-        <div className='grid gap-4 lg:grid-cols-3'>
-          <Card className='lg:col-span-2'>
-            <CardHeader>
-              <CardTitle>Tạo yêu cầu hỗ trợ</CardTitle>
-              <CardDescription>
-                Chọn đúng chủ đề để đội phụ trách tiếp nhận và phản hồi nhanh hơn.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='supportTopic'>Chủ đề</Label>
-                <Select value={topic} onValueChange={setTopic}>
-                  <SelectTrigger id='supportTopic' className='w-full'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TOPICS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className='bg-muted/40 flex gap-3 rounded-lg border p-3'>
-                  <Icons.info className='text-muted-foreground mt-0.5 size-4 shrink-0' />
-                  <div>
-                    <p className='text-xs font-medium'>Thông tin nên cung cấp</p>
-                    <p className='text-muted-foreground mt-0.5 text-xs'>{hint.hint}</p>
+        <TabsContent value='create' className='mt-4'>
+          <div className='grid gap-4 lg:grid-cols-3'>
+            <Card className='lg:col-span-2'>
+              <CardHeader>
+                <CardTitle>Tạo yêu cầu hỗ trợ</CardTitle>
+                <CardDescription>
+                  Chọn đúng chủ đề để đội phụ trách tiếp nhận và phản hồi nhanh hơn.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='supportTopic'>Chủ đề</Label>
+                  <Select value={topic} onValueChange={setTopic}>
+                    <SelectTrigger id='supportTopic' className='w-full'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TOPICS.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className='bg-muted/40 flex gap-3 rounded-lg border p-3'>
+                    <Icons.info className='text-muted-foreground mt-0.5 size-4 shrink-0' />
+                    <div>
+                      <p className='text-xs font-medium'>Thông tin nên cung cấp</p>
+                      <p className='text-muted-foreground mt-0.5 text-xs'>{hint.hint}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className='space-y-2'>
-                <Label htmlFor='supportReference'>Mã đơn hoặc mã yêu cầu</Label>
-                <Input
-                  id='supportReference'
-                  placeholder='Không bắt buộc'
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                />
-              </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='supportReference'>Mã đơn hoặc mã yêu cầu</Label>
+                  <Input
+                    id='supportReference'
+                    placeholder='Không bắt buộc'
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                  />
+                </div>
 
-              <div className='space-y-2'>
-                <Label htmlFor='supportMessage'>
-                  Nội dung <span className='text-destructive'>*</span>
-                </Label>
-                <Textarea
-                  id='supportMessage'
-                  rows={6}
-                  placeholder='Mô tả chi tiết vấn đề cần hỗ trợ.'
-                  value={message}
-                  aria-invalid={Boolean(error)}
-                  aria-describedby='supportMessage-error'
-                  onChange={(e) => {
-                    setMessage(e.target.value);
-                    if (error) setError(null);
-                  }}
-                  onBlur={() => setError(message.trim() ? null : 'Mô tả vấn đề bạn đang gặp.')}
-                />
-                {error ? (
-                  <p id='supportMessage-error' className='text-destructive text-xs'>
-                    {error}
-                  </p>
-                ) : (
-                  <p className='text-muted-foreground text-xs'>
-                    Ghi rõ thời điểm phát sinh và các bước bạn đã thử.
-                  </p>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={submit} isLoading={createTicket.isPending}>
-                Gửi yêu cầu
-              </Button>
-            </CardFooter>
-          </Card>
+                <div className='space-y-2'>
+                  <Label htmlFor='supportMessage'>
+                    Nội dung <span className='text-destructive'>*</span>
+                  </Label>
+                  <Textarea
+                    id='supportMessage'
+                    rows={6}
+                    placeholder='Mô tả chi tiết vấn đề cần hỗ trợ.'
+                    value={message}
+                    aria-invalid={Boolean(error)}
+                    aria-describedby='supportMessage-error'
+                    onChange={(e) => {
+                      setMessage(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    onBlur={() => setError(message.trim() ? null : 'Mô tả vấn đề bạn đang gặp.')}
+                  />
+                  {error ? (
+                    <p id='supportMessage-error' className='text-destructive text-xs'>
+                      {error}
+                    </p>
+                  ) : (
+                    <p className='text-muted-foreground text-xs'>
+                      Ghi rõ thời điểm phát sinh và các bước bạn đã thử.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={submit} isLoading={createTicket.isPending}>
+                  Gửi yêu cầu
+                </Button>
+              </CardFooter>
+            </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle className='text-base'>Kênh hỗ trợ đối tác</CardTitle>
+                <CardDescription>
+                  Mỗi yêu cầu có mã riêng để theo dõi và trao đổi tiếp.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-3'>
+                {[
+                  ['Email', 'partner@esim.vn'],
+                  ['Thời gian phản hồi', 'Trong 8 giờ làm việc'],
+                  ['Giờ hỗ trợ', '08:00–18:00, thứ Hai đến thứ Bảy']
+                ].map(([label, value]) => (
+                  <div key={label} className='space-y-0.5'>
+                    <p className='text-muted-foreground text-xs'>{label}</p>
+                    <p className='text-sm font-medium'>{value}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value='mine' className='mt-4'>
           <Card>
             <CardHeader>
-              <CardTitle className='text-base'>Kênh hỗ trợ đối tác</CardTitle>
-              <CardDescription>
-                Mỗi yêu cầu có mã riêng để theo dõi và trao đổi tiếp.
-              </CardDescription>
+              <CardTitle className='flex flex-wrap items-center gap-2'>
+                Yêu cầu hỗ trợ của tôi
+                <Badge variant='outline'>{(tickets ?? []).length} yêu cầu</Badge>
+              </CardTitle>
+              <CardDescription>Theo dõi trạng thái và phản hồi từ đội vận hành.</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-3'>
-              {[
-                ['Email', 'partner@esim.vn'],
-                ['Thời gian phản hồi', 'Trong 8 giờ làm việc'],
-                ['Giờ hỗ trợ', '08:00–18:00, thứ Hai đến thứ Bảy']
-              ].map(([label, value]) => (
-                <div key={label} className='space-y-0.5'>
-                  <p className='text-muted-foreground text-xs'>{label}</p>
-                  <p className='text-sm font-medium'>{value}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </TabsContent>
-
-      <TabsContent value='mine' className='mt-4'>
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex flex-wrap items-center gap-2'>
-              Yêu cầu hỗ trợ của tôi
-              <Badge variant='outline'>{(tickets ?? []).length} yêu cầu</Badge>
-            </CardTitle>
-            <CardDescription>Theo dõi trạng thái và phản hồi từ đội vận hành.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='rounded-lg border'>
-              <Table>
-                <TableHeader className='bg-muted'>
-                  <TableRow>
-                    <TableHead>Mã</TableHead>
-                    <TableHead>Chủ đề</TableHead>
-                    <TableHead>Tham chiếu</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead>Cập nhật</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(tickets ?? []).length === 0 && (
+            <CardContent>
+              <div className='rounded-lg border'>
+                <Table>
+                  <TableHeader className='bg-muted'>
                     <TableRow>
-                      <TableCell colSpan={5} className='h-24 text-center'>
-                        <p className='text-muted-foreground text-sm'>Chưa có yêu cầu nào.</p>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          className='mt-3'
-                          onClick={() => setTab('create')}
-                        >
-                          Tạo yêu cầu đầu tiên
-                        </Button>
-                      </TableCell>
+                      <TableHead>Mã</TableHead>
+                      <TableHead>Chủ đề</TableHead>
+                      <TableHead>Tham chiếu</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead>Cập nhật</TableHead>
+                      <TableHead />
                     </TableRow>
-                  )}
-                  {(tickets ?? []).map((t) => {
-                    const status = TICKET_STATUS[t.status];
-                    return (
-                      <TableRow key={t.id}>
-                        <TableCell className='font-mono text-xs'>#{t.id}</TableCell>
-                        <TableCell>
-                          <p className='text-sm font-medium'>{t.subject}</p>
-                          <p className='text-muted-foreground line-clamp-1 text-xs'>
-                            {t.description}
-                          </p>
-                        </TableCell>
-                        <TableCell className='font-mono text-xs'>{t.orderId ?? '—'}</TableCell>
-                        <TableCell>
-                          {status ? (
-                            <Badge variant='outline' className={status.className}>
-                              {status.label}
-                            </Badge>
-                          ) : (
-                            <Badge variant='outline'>{t.status}</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className='whitespace-nowrap text-xs'>
-                          {formatDateTimeVn(t.updatedAt)}
+                  </TableHeader>
+                  <TableBody>
+                    {(tickets ?? []).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className='h-24 text-center'>
+                          <p className='text-muted-foreground text-sm'>Chưa có yêu cầu nào.</p>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            className='mt-3'
+                            onClick={() => setTab('create')}
+                          >
+                            Tạo yêu cầu đầu tiên
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+                    )}
+                    {(tickets ?? []).map((t) => {
+                      const status = TICKET_STATUS[t.status];
+                      return (
+                        <TableRow
+                          key={t.id}
+                          className='hover:bg-accent/50 cursor-pointer'
+                          onClick={() => setOpenTicket(t)}
+                        >
+                          <TableCell className='font-mono text-xs'>#{t.id}</TableCell>
+                          <TableCell>
+                            <p className='text-sm font-medium'>{t.subject}</p>
+                            <p className='text-muted-foreground line-clamp-1 text-xs'>
+                              {t.description}
+                            </p>
+                          </TableCell>
+                          <TableCell className='font-mono text-xs'>{t.orderId ?? '—'}</TableCell>
+                          <TableCell>
+                            {status ? (
+                              <Badge variant='outline' className={status.className}>
+                                {status.label}
+                              </Badge>
+                            ) : (
+                              <Badge variant='outline'>{t.status}</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className='whitespace-nowrap text-xs'>
+                            {formatDateTimeVn(t.updatedAt)}
+                          </TableCell>
+                          <TableCell className='text-right'>
+                            <Button size='sm' variant='ghost'>
+                              Xem trao đổi
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </>
   );
 }

@@ -299,3 +299,14 @@ export type MyOrderDetail = {
     reversedAt: string | null;
   };
 };
+
+/** One message in a support ticket thread (#032). */
+export type TicketMessage = {
+  id: number;
+  ticketId: number;
+  authorRole: 'customer' | 'admin';
+  authorName: string | null;
+  body: string;
+  attachments: string[] | null;
+  createdAt: string;
+};

@@ -23,6 +23,7 @@ import type {
   MyTopDestination,
   MyOrderDetail,
   CreateCouponPayload,
+  TicketMessage,
   BankAccountChangePayload,
   BankAccountChangeRequested
 } from './types';
@@ -180,6 +181,45 @@ export async function getMyOrders(): Promise<MyOrder[]> {
 
 export async function getMyTiers(): Promise<PartnerTier[]> {
   return apiClient<PartnerTier[]>('/partner-portal/tiers');
+}
+
+/** Upload one attachment and get back the URL to store on the ticket (#032). */
+export async function uploadAttachment(file: File): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+
+  const res = await fetch('/api/files/upload', { method: 'POST', body: form });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || 'Không tải được tệp lên.');
+  }
+
+  const { url } = (await res.json()) as { url: string };
+  return url;
+}
+
+/** The conversation on one support ticket (#032). */
+export async function getTicketMessages(ticketId: number): Promise<TicketMessage[]> {
+  const res = await fetch(`/api/partner-portal/tickets/${ticketId}/messages`);
+  if (!res.ok) throw new Error('Không tải được nội dung trao đổi.');
+  return res.json();
+}
+
+export async function replyToTicket(
+  ticketId: number,
+  body: string,
+  attachments: string[] = []
+): Promise<TicketMessage> {
+  const res = await fetch(`/api/partner-portal/tickets/${ticketId}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body, attachments })
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || 'Không gửi được phản hồi.');
+  }
+  return res.json();
 }
 
 export async function getMyTickets(): Promise<MyTicket[]> {
