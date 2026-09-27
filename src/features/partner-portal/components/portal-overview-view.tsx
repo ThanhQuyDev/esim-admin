@@ -13,7 +13,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,7 @@ import {
   myOrdersQueryOptions,
   myProfileQueryOptions,
   mySummaryQueryOptions,
+  myTopDestinationsQueryOptions,
   myTicketsQueryOptions
 } from '../api/queries';
 import type { MyOrder } from '../api/types';
@@ -58,6 +59,10 @@ const DAYS_MAX = 120;
 const performanceConfig = {
   revenue: { label: 'Doanh số', color: 'var(--chart-1)' },
   commission: { label: 'Hoa hồng đã duyệt', color: 'var(--chart-2)' }
+} satisfies ChartConfig;
+
+const destinationConfig = {
+  plansPurchased: { label: 'eSIM đã bán', color: 'var(--chart-3)' }
 } satisfies ChartConfig;
 
 /**
@@ -117,6 +122,7 @@ export function PortalOverviewView() {
 
   const { data: summary, isLoading } = useQuery(mySummaryQueryOptions(range));
   const { data: orders } = useQuery(myOrdersQueryOptions());
+  const { data: destinations = [] } = useQuery(myTopDestinationsQueryOptions(range));
   const { data: me } = useQuery(myProfileQueryOptions());
   const { data: tickets } = useQuery(myTicketsQueryOptions());
 
@@ -433,60 +439,61 @@ export function PortalOverviewView() {
           <Card className='h-full'>
             <CardHeader>
               <CardTitle className='flex flex-wrap items-center gap-2'>
-                Hạng đối tác
-                <Badge variant='outline'>
-                  {tier?.current ? tier.current.tierName : 'Chưa gán hạng'}
-                </Badge>
+                Điểm đến mua nhiều
+                <Badge variant='outline'>{rangeLabel}</Badge>
               </CardTitle>
               <CardDescription>
-                {tier?.next
-                  ? `Còn ${formatVnd(tier.toNextTierVnd)} doanh số để đạt hạng ${tier.next.tierName}.`
-                  : 'Bạn đang ở hạng cao nhất hiện có.'}
+                Xếp theo số eSIM đã bán từ đơn ghi nhận cho bạn — biết khách mua gì để chọn nội dung
+                tiếp theo.
               </CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='space-y-2'>
-                <div className='flex items-center justify-between text-sm'>
-                  <span className='text-muted-foreground'>Tiến độ lên hạng</span>
-                  <span className='font-medium tabular-nums'>{progress}%</span>
-                </div>
-                <div className='bg-muted h-2 overflow-hidden rounded-full'>
-                  <div
-                    className='bg-primary h-full rounded-full transition-[width] duration-500'
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className='grid grid-cols-3 gap-2 border-t pt-4 text-xs'>
-                <div>
-                  <p className='text-muted-foreground'>Hoa hồng</p>
-                  <p className='text-foreground font-medium tabular-nums'>
-                    {tier?.current ? `${Number(tier.current.commissionPercent)}%` : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className='text-muted-foreground'>Giảm tối đa</p>
-                  <p className='text-foreground font-medium tabular-nums'>
-                    {tier?.current ? `${Number(tier.current.maxDiscountPercent)}%` : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className='text-muted-foreground'>Đơn 30 ngày</p>
-                  <p className='text-foreground font-medium tabular-nums'>
-                    {(p30?.orders ?? 0).toLocaleString('vi-VN')}
-                  </p>
-                </div>
-              </div>
-
-              <div className='flex flex-wrap gap-2'>
-                <Button asChild size='sm'>
-                  <Link href='/dashboard/portal/payouts'>Yêu cầu rút tiền</Link>
-                </Button>
-                <Button asChild size='sm' variant='outline'>
-                  <Link href='/dashboard/portal/tier'>Xem quyền lợi hạng</Link>
-                </Button>
-              </div>
+            <CardContent>
+              {destinations.length === 0 ? (
+                <p className='text-muted-foreground py-16 text-center text-sm'>
+                  Chưa có đơn nào trong kỳ này.
+                </p>
+              ) : (
+                <ChartContainer config={destinationConfig} className='h-[280px] w-full'>
+                  <BarChart
+                    accessibilityLayer
+                    layout='vertical'
+                    data={destinations}
+                    margin={{ left: 8, right: 16 }}
+                  >
+                    <CartesianGrid horizontal={false} strokeDasharray='3 3' />
+                    <XAxis
+                      type='number'
+                      dataKey='plansPurchased'
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      type='category'
+                      dataKey='name'
+                      tickLine={false}
+                      axisLine={false}
+                      width={110}
+                      tickMargin={8}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value, _name, item) => (
+                            <div className='flex min-w-[180px] flex-col gap-0.5'>
+                              <span className='font-medium'>{Number(value)} eSIM</span>
+                              <span className='text-muted-foreground'>
+                                {formatVnd(Number(item?.payload?.revenueVnd ?? 0))} doanh số
+                              </span>
+                            </div>
+                          )}
+                        />
+                      }
+                    />
+                    <Bar dataKey='plansPurchased' fill='var(--color-plansPurchased)' radius={4} />
+                  </BarChart>
+                </ChartContainer>
+              )}
             </CardContent>
           </Card>
         </div>

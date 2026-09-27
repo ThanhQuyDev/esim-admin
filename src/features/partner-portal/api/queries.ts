@@ -8,6 +8,7 @@ import {
   getMyCommissions,
   getMyPayouts,
   getMySummary,
+  getMyTopDestinations,
   getMyOrders,
   getMyTiers,
   getMyTickets,
@@ -62,6 +63,12 @@ export const mySummaryQueryOptions = (range?: { from?: string; to?: string }) =>
     // the numbers of the previous one (#010).
     queryKey: [...partnerPortalKeys.summary(), range?.from ?? '', range?.to ?? ''],
     queryFn: () => getMySummary(range)
+  });
+
+export const myTopDestinationsQueryOptions = (range?: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'top-destinations', range?.from ?? '', range?.to ?? ''],
+    queryFn: () => getMyTopDestinations(range)
   });
 
 export const myOrdersQueryOptions = () =>

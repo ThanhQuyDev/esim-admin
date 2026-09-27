@@ -179,6 +179,13 @@ export type MySummary = {
   };
 };
 
+/** One row of "điểm đến mua nhiều" on the partner dashboard (#012). */
+export type MyTopDestination = {
+  name: string;
+  plansPurchased: number;
+  revenueVnd: number;
+};
+
 export type MyOrderItem = { planName: string; quantity: number };
 
 export type MyOrder = {

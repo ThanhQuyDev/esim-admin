@@ -20,6 +20,7 @@ import type {
   CreateTicketPayload,
   MyCoupon,
   MyTierEvaluation,
+  MyTopDestination,
   BankAccountChangePayload,
   BankAccountChangeRequested
 } from './types';
@@ -57,6 +58,19 @@ export async function confirmBankAccountChange(otp: string): Promise<MyPartner> 
     method: 'POST',
     body: JSON.stringify({ otp })
   });
+}
+
+export async function getMyTopDestinations(range?: {
+  from?: string;
+  to?: string;
+}): Promise<MyTopDestination[]> {
+  const search = new URLSearchParams();
+  if (range?.from) search.set('from', range.from);
+  if (range?.to) search.set('to', range.to);
+  const query = search.toString();
+  return apiClient<MyTopDestination[]>(
+    `/partner-portal/top-destinations${query ? `?${query}` : ''}`
+  );
 }
 
 export async function getMyWallet(): Promise<MyWalletSummary> {
