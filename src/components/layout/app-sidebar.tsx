@@ -26,7 +26,8 @@ import {
 } from '@/components/ui/sidebar';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { navGroups } from '@/config/nav-config';
-import { portalNavGroups } from '@/config/portal-nav-config';
+import { DISTRIBUTION_ONLY_PORTAL_URLS, portalNavGroups } from '@/config/portal-nav-config';
+import { myProfileQueryOptions } from '@/features/partner-portal/api/queries';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useQuery } from '@tanstack/react-query';
@@ -55,7 +56,21 @@ export default function AppSidebar() {
   const { isOpen } = useMediaQuery();
   const { data: user } = useQuery(authMeQueryOptions);
   const router = useRouter();
-  const filteredNavGroups = useFilteredNavGroups(IS_PARTNER_PORTAL ? portalNavGroups : navGroups);
+  // In the portal the menu also depends on what kind of partner is signed in
+  // (#013): a marketing partner has no deposit wallet and no brand page.
+  const { data: partner } = useQuery({
+    ...myProfileQueryOptions(),
+    enabled: IS_PARTNER_PORTAL
+  });
+  const portalGroups = React.useMemo(() => {
+    if (!IS_PARTNER_PORTAL || partner?.partnerType !== 'kol') return portalNavGroups;
+    return portalNavGroups.map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !DISTRIBUTION_ONLY_PORTAL_URLS.includes(item.url))
+    }));
+  }, [partner?.partnerType]);
+
+  const filteredNavGroups = useFilteredNavGroups(IS_PARTNER_PORTAL ? portalGroups : navGroups);
 
   const handleLogout = async () => {
     await logout();

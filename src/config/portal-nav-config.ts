@@ -97,3 +97,16 @@ export const portalNavGroups: NavGroup[] = [
     ]
   }
 ];
+
+/**
+ * Routes that only make sense for a partner who buys stock (#013).
+ *
+ * A marketing partner earns commission on orders placed on esim.vn; they never
+ * hold a deposit balance and have no storefront of their own to brand, so these
+ * two menus are removed for them rather than left to open a screen that cannot
+ * apply. `PortalFeatureGate` enforces the same rule on the routes themselves.
+ */
+export const DISTRIBUTION_ONLY_PORTAL_URLS = [
+  '/dashboard/portal/wallet',
+  '/dashboard/portal/brand'
+];
