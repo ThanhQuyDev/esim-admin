@@ -105,7 +105,7 @@ export function PartnerTiersView() {
                 <p className='text-muted-foreground text-sm'>
                   Ngưỡng doanh số: {tier.minVolumeVnd.toLocaleString('vi-VN')} VND
                   {activeType === 'kol'
-                    ? ` · Hoa hồng: ${tier.commissionPercent}%`
+                    ? ` · Hoa hồng: ${tier.commissionPercent}% · Ghi nhận: ${tier.attributionDays ?? 30} ngày`
                     : ` · Giảm giá tối đa: ${tier.maxDiscountPercent}%`}
                 </p>
               </div>

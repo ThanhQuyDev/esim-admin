@@ -155,6 +155,8 @@ export type PartnerTier = {
   minVolumeVnd: number;
   commissionPercent: number;
   maxDiscountPercent: number;
+  /** Days a click keeps earning this tier the order (#037). */
+  attributionDays?: number;
   sortOrder: number;
   isActive: boolean;
 };
@@ -171,6 +173,7 @@ export type CreateTierPayload = {
   minVolumeVnd?: number;
   commissionPercent?: number;
   maxDiscountPercent?: number;
+  attributionDays?: number;
   sortOrder?: number;
   isActive?: boolean;
 };

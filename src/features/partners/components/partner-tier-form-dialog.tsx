@@ -29,6 +29,7 @@ const EMPTY_FORM = {
   minVolumeVnd: '0',
   commissionPercent: '0',
   maxDiscountPercent: '0',
+  attributionDays: '30',
   sortOrder: '0',
   isActive: true
 };
@@ -53,6 +54,7 @@ export function PartnerTierFormDialog({
         minVolumeVnd: String(tier.minVolumeVnd),
         commissionPercent: String(tier.commissionPercent),
         maxDiscountPercent: String(tier.maxDiscountPercent),
+        attributionDays: String(tier.attributionDays ?? 30),
         sortOrder: String(tier.sortOrder),
         isActive: tier.isActive
       });
@@ -71,13 +73,18 @@ export function PartnerTierFormDialog({
       minVolumeVnd: Number(form.minVolumeVnd) || 0,
       commissionPercent: Number(form.commissionPercent) || 0,
       maxDiscountPercent: Number(form.maxDiscountPercent) || 0,
+      attributionDays: Number(form.attributionDays) || 30,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive
     };
     if (isEdit) {
       onSubmit(shared);
     } else {
-      onSubmit({ ...shared, partnerType, tierCode: form.tierCode.trim().toUpperCase() });
+      onSubmit({
+        ...shared,
+        partnerType,
+        tierCode: form.tierCode.trim().toUpperCase()
+      });
     }
   }
 
@@ -147,6 +154,23 @@ export function PartnerTierFormDialog({
                 value={form.maxDiscountPercent}
                 onChange={(e) => setForm((f) => ({ ...f, maxDiscountPercent: e.target.value }))}
               />
+            </div>
+          )}
+
+          {isKol && (
+            <div className='space-y-2'>
+              <Label htmlFor='attributionDays'>Số ngày ghi nhận hoa hồng</Label>
+              <Input
+                id='attributionDays'
+                type='number'
+                min='1'
+                value={form.attributionDays}
+                onChange={(e) => setForm((f) => ({ ...f, attributionDays: e.target.value }))}
+              />
+              <p className='text-muted-foreground text-xs'>
+                Sau khi khách bấm link, đối tác hạng này còn được ghi nhận đơn trong bấy nhiêu ngày.
+                Mỗi lần khách bấm lại link thì thời gian được tính lại từ đầu.
+              </p>
             </div>
           )}
 
