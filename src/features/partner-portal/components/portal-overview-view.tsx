@@ -110,14 +110,21 @@ export function PortalOverviewView() {
   const growth = summary?.monthOverMonth?.commissionGrowthPercent ?? 0;
   const carriedDebt = summary?.wallet.carriedDebtVnd ?? 0;
 
+  const pendingOrders = (orders ?? []).filter((o) => o.commissionStatus === 'pending').length;
+  const avgRevenuePerOrder = p30 && p30.orders > 0 ? Math.round(p30.revenueVnd / p30.orders) : 0;
+  const avgCommissionPerOrder =
+    p30 && p30.orders > 0 ? Math.round(p30.commissionVnd / p30.orders) : 0;
+
   const cards = [
     {
-      label: 'Khả dụng để thanh toán',
-      value: formatVnd(summary?.wallet.availableBalanceVnd),
-      badge: 'Số dư',
-      icon: Icons.wallet,
-      footerStrong: 'Đã đủ điều kiện rút',
-      footer: `${formatVnd(summary?.commissionPendingVnd)} đang chờ đối soát`
+      // The balance itself is on the accent panel above (#008); this tile is
+      // the money still on its way there (#009).
+      label: 'Hoa hồng chờ duyệt',
+      value: formatVnd(summary?.commissionPendingVnd),
+      badge: `${pendingOrders} đơn`,
+      icon: Icons.clock,
+      footerStrong: 'Sẽ vào ví sau 24h đặt hàng',
+      footer: `${formatVnd(summary?.wallet.availableBalanceVnd)} đang khả dụng để rút`
     },
     {
       label: 'Lượt nhấp 30 ngày',
@@ -133,8 +140,8 @@ export function PortalOverviewView() {
       badge: `${(p30?.orders ?? 0).toLocaleString('vi-VN')} đơn`,
       icon: Icons.order,
       footerStrong:
-        p30 && p30.orders > 0
-          ? `Trung bình ${formatVnd(Math.round(p30.revenueVnd / p30.orders))}/đơn`
+        avgRevenuePerOrder > 0
+          ? `Doanh số trung bình mỗi đơn ${formatVnd(avgRevenuePerOrder)}`
           : 'Chưa có đơn hợp lệ',
       footer: `${formatVnd(summary?.lifetime.revenueVnd)} tích luỹ`
     },
@@ -143,10 +150,13 @@ export function PortalOverviewView() {
       value: formatVnd(p30?.commissionVnd),
       badge: tier?.current ? `Hạng ${tier.current.tierName}` : 'Chưa gán hạng',
       icon: Icons.trendingUp,
-      footerStrong: tier?.current
-        ? `Tỷ lệ ${Number(tier.current.commissionPercent)}%`
-        : 'Chưa áp dụng tỷ lệ',
-      footer: `${formatVnd(summary?.lifetime.commissionVnd)} đã ghi nhận`
+      footerStrong:
+        avgCommissionPerOrder > 0
+          ? `Hoa hồng trung bình mỗi đơn ${formatVnd(avgCommissionPerOrder)}`
+          : 'Chưa có đơn hợp lệ',
+      footer: tier?.current
+        ? `Tỷ lệ ${Number(tier.current.commissionPercent)}% · ${formatVnd(summary?.lifetime.commissionVnd)} đã ghi nhận`
+        : `${formatVnd(summary?.lifetime.commissionVnd)} đã ghi nhận`
     }
   ];
 
@@ -171,8 +181,8 @@ export function PortalOverviewView() {
     },
     (summary?.commissionPendingVnd ?? 0) > 0 && {
       key: 'pending',
-      title: `${formatVnd(summary?.commissionPendingVnd)} hoa hồng chờ đối soát`,
-      description: 'Khoản này chuyển sang số dư khả dụng sau khi đơn qua thời gian kiểm tra.',
+      title: `${formatVnd(summary?.commissionPendingVnd)} hoa hồng chờ duyệt`,
+      description: 'Khoản này vào ví sau 24h kể từ khi khách đặt hàng thành công.',
       href: '/dashboard/portal/commissions',
       tone: 'outline' as const,
       meta: 'Đang chờ'
