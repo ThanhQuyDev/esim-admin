@@ -115,24 +115,34 @@ export async function updateMyLink(id: number, data: UpdateLinkPayload): Promise
   });
 }
 
+/** Download the order list as a spreadsheet (#027). */
+export async function exportMyOrders(): Promise<void> {
+  await downloadPortalFile('/api/partner-portal/orders/export', 'don-hang-doi-tac.xlsx');
+}
+
 /** Download the link list as a spreadsheet (#017). */
 export async function exportMyLinks(): Promise<void> {
-  const res = await fetch('/api/partner-portal/links/export');
+  await downloadPortalFile('/api/partner-portal/links/export', 'link-tiep-thi.xlsx');
+}
+
+/** Fetch a file the API generated and hand it to the browser as a download. */
+async function downloadPortalFile(url: string, fallbackName: string): Promise<void> {
+  const res = await fetch(url);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || 'Không xuất được danh sách liên kết.');
+    throw new Error(body.message || 'Không tải được file.');
   }
 
   const blob = await res.blob();
   const disposition = res.headers.get('content-disposition');
-  const filename = disposition?.match(/filename="?([^"]+)"?/)?.[1] || 'link-tiep-thi.xlsx';
+  const filename = disposition?.match(/filename="?([^"]+)"?/)?.[1] || fallbackName;
 
-  const url = URL.createObjectURL(blob);
+  const objectUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = objectUrl;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(objectUrl);
 }
 
 /** Retire a marketing link (#016). */

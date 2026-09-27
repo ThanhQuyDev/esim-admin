@@ -8,14 +8,18 @@
  * toolbar, filters and pagination.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 
 import { myOrdersQueryOptions } from '../api/queries';
+import { exportMyOrders } from '../api/service';
 import { PortalOrdersTable } from './orders-table';
 
 export function PortalOrdersView() {
@@ -34,8 +38,31 @@ export function PortalOrdersView() {
     };
   }, [orders]);
 
+  const [exporting, setExporting] = useState(false);
+
   return (
     <div className='flex flex-1 flex-col space-y-4'>
+      <div className='flex justify-end'>
+        <Button
+          size='sm'
+          variant='outline'
+          disabled={exporting || stats.total === 0}
+          onClick={async () => {
+            setExporting(true);
+            try {
+              await exportMyOrders();
+            } catch (e) {
+              toast.error((e as Error).message);
+            } finally {
+              setExporting(false);
+            }
+          }}
+        >
+          {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
+          Xuất Excel
+        </Button>
+      </div>
+
       <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs sm:grid-cols-3'>
         <Card className='@container/card'>
           <CardHeader>
