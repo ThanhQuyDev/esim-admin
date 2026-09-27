@@ -102,8 +102,27 @@ export function PortalLinksView() {
   const mayNameCode = Boolean(me?.canCustomLinkCode);
   const [qrLink, setQrLink] = useState('');
 
-  const rows = useMemo(() => links ?? [], [links]);
-  const qrValue = qrLink || (rows[0] ? `https://${shortLinkOf(rows[0].code)}` : '');
+  const allRows = useMemo(() => links ?? [], [links]);
+
+  // Filter by campaign name and landing page (#015). A partner running a
+  // dozen campaigns at once was left scrolling to find the one link they
+  // needed to copy.
+  const [filters, setFilters] = useState({ label: '', landing: '' });
+  const rows = useMemo(() => {
+    const label = filters.label.trim().toLowerCase();
+    const landing = filters.landing.trim().toLowerCase();
+    if (!label && !landing) return allRows;
+
+    return allRows.filter((r) => {
+      const matchesLabel = !label || (r.label ?? '').toLowerCase().includes(label);
+      // The landing page is the path before the utm parameters the portal adds.
+      const path = (r.targetPath ?? '').split('?')[0].toLowerCase();
+      const matchesLanding =
+        !landing || path.includes(landing) || (r.code ?? '').toLowerCase().includes(landing);
+      return matchesLabel && matchesLanding;
+    });
+  }, [allRows, filters]);
+  const qrValue = qrLink || (allRows[0] ? `https://${shortLinkOf(allRows[0].code)}` : '');
 
   const createLink = useMutation({
     ...createLinkMutation,
@@ -351,7 +370,11 @@ export function PortalLinksView() {
         <CardHeader>
           <CardTitle className='flex flex-wrap items-center gap-2'>
             Danh sách liên kết
-            <Badge variant='outline'>{rows.length} liên kết</Badge>
+            <Badge variant='outline'>
+              {rows.length === allRows.length
+                ? `${allRows.length} liên kết`
+                : `${rows.length}/${allRows.length} liên kết`}
+            </Badge>
           </CardTitle>
           <CardDescription>
             {totals.clicks.toLocaleString('vi-VN')} lượt nhấp ·{' '}
@@ -364,7 +387,28 @@ export function PortalLinksView() {
             </Badge>
           </CardAction>
         </CardHeader>
-        <CardContent>
+        <CardContent className='space-y-4'>
+          <div className='grid gap-3 sm:grid-cols-2 lg:max-w-2xl'>
+            <div className='space-y-1.5'>
+              <Label htmlFor='filterLabel'>Tên chiến dịch</Label>
+              <Input
+                id='filterLabel'
+                placeholder='Ví dụ: Video Nhật Bản'
+                value={filters.label}
+                onChange={(e) => setFilters({ ...filters, label: e.target.value })}
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label htmlFor='filterLanding'>Trang đích hoặc tên link</Label>
+              <Input
+                id='filterLanding'
+                placeholder='/esim-nhat-ban'
+                value={filters.landing}
+                onChange={(e) => setFilters({ ...filters, landing: e.target.value })}
+              />
+            </div>
+          </div>
+
           <div className='rounded-lg border'>
             <Table>
               <TableHeader className='bg-muted'>
@@ -389,10 +433,28 @@ export function PortalLinksView() {
                 {!isLoading && rows.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className='h-24 text-center'>
-                      <p className='text-muted-foreground text-sm'>Chưa có liên kết nào.</p>
-                      <p className='text-muted-foreground mt-1 text-xs'>
-                        Tạo liên kết đầu tiên ở khung phía trên để bắt đầu theo dõi hiệu suất.
-                      </p>
+                      {allRows.length === 0 ? (
+                        <>
+                          <p className='text-muted-foreground text-sm'>Chưa có liên kết nào.</p>
+                          <p className='text-muted-foreground mt-1 text-xs'>
+                            Tạo liên kết đầu tiên ở khung phía trên để bắt đầu theo dõi hiệu suất.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className='text-muted-foreground text-sm'>
+                            Không có liên kết nào khớp bộ lọc.
+                          </p>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            className='mt-2'
+                            onClick={() => setFilters({ label: '', landing: '' })}
+                          >
+                            Xóa bộ lọc
+                          </Button>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 )}
