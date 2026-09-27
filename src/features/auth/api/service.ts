@@ -1,5 +1,16 @@
 import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from './types';
 
+/** A login the API refused, carrying the reason code it sent back (#001). */
+export class LoginError extends Error {
+  constructor(
+    message: string,
+    readonly code?: string
+  ) {
+    super(message);
+    this.name = 'LoginError';
+  }
+}
+
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
   const res = await fetch('/api/auth/login', {
     method: 'POST',
@@ -9,7 +20,7 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || 'Login failed');
+    throw new LoginError(error.message || 'Đăng nhập thất bại', error?.errors?.email);
   }
 
   return res.json();

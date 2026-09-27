@@ -11,9 +11,12 @@ import { useRouter } from 'next/navigation';
 import { useAppForm } from '@/components/ui/tanstack-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { login } from '../api/service';
+import { useState } from 'react';
+import { LoginError, login } from '../api/service';
 import { InteractiveGridPattern } from './interactive-grid';
 import { HOME_PATH } from '@/config/app-mode';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Icons } from '@/components/icons';
 
 export const metadata: Metadata = {
   title: 'Đăng nhập',
@@ -27,13 +30,22 @@ const loginSchema = z.object({
 
 export default function SignInViewPage() {
   const router = useRouter();
+  // A partner application still waiting on approval is told so right here,
+  // instead of being let into a portal with nothing behind its menus (#001).
+  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: () => {
+      setPendingNotice(null);
       router.push(HOME_PATH);
     },
     onError: (error: Error) => {
+      if (error instanceof LoginError && error.code === 'partnerPending') {
+        setPendingNotice(error.message);
+        return;
+      }
+      setPendingNotice(null);
       toast.error(error.message || 'Đăng nhập thất bại');
     }
   });
@@ -103,6 +115,13 @@ export default function SignInViewPage() {
               Nhập thông tin đăng nhập để truy cập tài khoản
             </p>
           </div>
+          {pendingNotice && (
+            <Alert>
+              <Icons.clock />
+              <AlertTitle>Hồ sơ đối tác đang chờ xét duyệt</AlertTitle>
+              <AlertDescription>{pendingNotice}</AlertDescription>
+            </Alert>
+          )}
           <form.AppForm>
             <form.Form className='space-y-4'>
               <form.AppField

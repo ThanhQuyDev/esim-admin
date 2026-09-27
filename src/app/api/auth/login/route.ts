@@ -15,7 +15,12 @@ export async function POST(req: NextRequest) {
   const data = await res.json();
 
   if (!res.ok) {
-    return NextResponse.json({ message: data.message || 'Login failed' }, { status: res.status });
+    // `errors` carries the reason code (e.g. partnerPending, #001) that the
+    // sign-in page turns into its own notice instead of a generic toast.
+    return NextResponse.json(
+      { message: data.message || 'Login failed', errors: data.errors },
+      { status: res.status }
+    );
   }
 
   const cookieStore = await cookies();
