@@ -20,7 +20,8 @@ import type {
   PartnerRevenueByType,
   PartnerActivityByType,
   PartnerSeriesByType,
-  PartnerTopDestination
+  PartnerTopDestination,
+  TopPartnerRow
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -175,6 +176,20 @@ export async function getPartnerSeriesByType(params?: {
   if (params?.groupBy) search.set('groupBy', params.groupBy);
   const query = search.toString();
   return apiClient<PartnerSeriesByType>(`/partners/series-by-type${query ? `?${query}` : ''}`);
+}
+
+/** The partners bringing in the most (#054). */
+export async function getTopPartners(params?: {
+  from?: string;
+  to?: string;
+  limit?: number;
+}): Promise<TopPartnerRow[]> {
+  const search = new URLSearchParams();
+  if (params?.from) search.set('from', params.from);
+  if (params?.to) search.set('to', params.to);
+  if (params?.limit) search.set('limit', String(params.limit));
+  const query = search.toString();
+  return apiClient<TopPartnerRow[]>(`/partners/top-partners${query ? `?${query}` : ''}`);
 }
 
 /** Where partner-driven orders are going (#052). */

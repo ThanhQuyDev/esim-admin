@@ -11,7 +11,8 @@ import {
   getPartnerRevenueByType,
   getPartnerActivityByType,
   getPartnerSeriesByType,
-  getPartnerTopDestinations
+  getPartnerTopDestinations,
+  getTopPartners
 } from './service';
 import type { PartnerFilters } from './types';
 
@@ -85,6 +86,19 @@ export const partnerSeriesByTypeQueryOptions = (params?: {
       params?.groupBy ?? 'day'
     ],
     queryFn: () => getPartnerSeriesByType(params)
+  });
+
+/** The partners bringing in the most, for the foot of the overview (#054). */
+export const topPartnersQueryOptions = (params?: { from?: string; to?: string; limit?: number }) =>
+  queryOptions({
+    queryKey: [
+      ...partnerKeys.all,
+      'top-partners',
+      params?.from ?? '',
+      params?.to ?? '',
+      params?.limit ?? 30
+    ],
+    queryFn: () => getTopPartners(params)
   });
 
 /** Where partner-driven orders are going (#052). */

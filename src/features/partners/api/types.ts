@@ -279,3 +279,15 @@ export type PartnerTopDestination = {
   plansPurchased: number;
   revenueVnd: number;
 };
+
+/** A row of the top-30 table at the foot of the overview (#054). */
+export type TopPartnerRow = {
+  id: number;
+  contactName: string | null;
+  partnerType: string;
+  tierCode: string | null;
+  status: string;
+  revenueVnd: number;
+  orders: number;
+  commissionVnd: number;
+};

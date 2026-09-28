@@ -8,6 +8,14 @@ import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -31,7 +39,8 @@ import {
   partnerOverviewQueryOptions,
   partnerRevenueByTypeQueryOptions,
   partnerSeriesByTypeQueryOptions,
-  partnerTopDestinationsQueryOptions
+  partnerTopDestinationsQueryOptions,
+  topPartnersQueryOptions
 } from '../api/queries';
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -178,6 +187,7 @@ export function PartnerOverviewView() {
     partnerSeriesByTypeQueryOptions({ ...range, groupBy: period.groupBy })
   );
   const { data: destinations = [] } = useQuery(partnerTopDestinationsQueryOptions(range));
+  const { data: leaders = [] } = useQuery(topPartnersQueryOptions({ ...range, limit: 30 }));
 
   // Recharts wants one row per bucket with a column per series, so the types
   // are pivoted here rather than shipped that way — which types exist is a
@@ -242,7 +252,7 @@ export function PartnerOverviewView() {
     );
   }
 
-  const { partners, queue, money, topPartners } = data;
+  const { partners, queue, money } = data;
 
   return (
     <div className='space-y-6'>
@@ -564,34 +574,76 @@ export function PartnerOverviewView() {
         </div>
       </div>
 
-      {/* Who is driving it */}
-      <div>
-        <p className='mb-3 text-sm font-medium'>Đối tác dẫn đầu 30 ngày</p>
-        {topPartners.length === 0 ? (
-          <p className='text-muted-foreground rounded-lg border p-6 text-center text-sm'>
-            Chưa có đơn hàng nào quy về đối tác trong 30 ngày qua.
-          </p>
-        ) : (
-          <div className='space-y-2'>
-            {topPartners.map((t) => (
-              <Link
-                key={t.id}
-                href={`/dashboard/partners/${t.id}`}
-                className='hover:bg-accent flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 transition-colors'
-              >
-                <div className='min-w-0'>
-                  <p className='truncate text-sm font-medium'>{t.contactName}</p>
-                  <p className='text-muted-foreground mt-1 text-xs'>
-                    {PARTNER_TYPE_LABEL[t.partnerType] ?? t.partnerType}
-                    {t.tierCode ? ` · Hạng ${t.tierCode}` : ''} · {t.orders30d} đơn
-                  </p>
-                </div>
-                <p className='text-sm font-semibold'>{formatVnd(t.revenue30dVnd)}</p>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+      {/*
+        Top 30 by revenue, at the foot of the page (#054). Ranked on the same
+        money as everything above — what esim.vn keeps — so the table and the
+        totals cannot tell different stories.
+      */}
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex flex-wrap items-center gap-2'>
+            Top 30 đối tác dẫn đầu về doanh thu
+            <Badge variant='outline'>{rangeLabel}</Badge>
+          </CardTitle>
+          <CardDescription>
+            Doanh thu là số tiền esim.vn thu về: đối tác tiếp thị đã trừ hoa hồng, đối tác phân phối
+            là giá mua vào.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {leaders.length === 0 ? (
+            <p className='text-muted-foreground py-12 text-center text-sm'>
+              Chưa có đơn hàng nào quy về đối tác trong kỳ này.
+            </p>
+          ) : (
+            <div className='overflow-x-auto rounded-lg border'>
+              <Table>
+                <TableHeader className='bg-muted'>
+                  <TableRow>
+                    <TableHead className='w-12'>#</TableHead>
+                    <TableHead>Đối tác</TableHead>
+                    <TableHead>Loại</TableHead>
+                    <TableHead>Hạng</TableHead>
+                    <TableHead className='text-right'>Số đơn</TableHead>
+                    <TableHead className='text-right'>Hoa hồng</TableHead>
+                    <TableHead className='text-right'>Doanh thu</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {leaders.map((row, index) => (
+                    <TableRow key={row.id}>
+                      <TableCell className='text-muted-foreground tabular-nums'>
+                        {index + 1}
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/dashboard/partners/${row.id}`}
+                          className='font-medium hover:underline'
+                        >
+                          {row.contactName || `#${row.id}`}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant='outline'>
+                          {PARTNER_TYPE_LABEL[row.partnerType] ?? row.partnerType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className='text-xs'>{row.tierCode ?? '—'}</TableCell>
+                      <TableCell className='text-right tabular-nums'>{row.orders}</TableCell>
+                      <TableCell className='text-right tabular-nums'>
+                        {row.commissionVnd > 0 ? formatVnd(row.commissionVnd) : '—'}
+                      </TableCell>
+                      <TableCell className='text-right font-medium tabular-nums'>
+                        {formatVnd(row.revenueVnd)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
