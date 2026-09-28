@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { formatDateVn, formatVnd } from '@/lib/format';
+import { formatDateVn, formatVnd, formatDateTimeVn } from '@/lib/format';
 
 import {
   myTierEvaluationsQueryOptions,
@@ -67,6 +67,12 @@ export function PortalTierView() {
                 {current ? `Hoa hồng ${Number(current.commissionPercent)}%` : 'Chưa áp dụng'}
               </Badge>
             </CardAction>
+            {current && summary?.tier.effectiveFrom && (
+              <p className='text-muted-foreground text-xs'>
+                Áp dụng từ {formatDateTimeVn(summary.tier.effectiveFrom)}. Đơn phát sinh trước thời
+                điểm này vẫn giữ mức hoa hồng của hạng cũ — hệ thống không tính hồi tố.
+              </p>
+            )}
           </CardHeader>
           <CardContent className='space-y-4'>
             <div className='space-y-2'>

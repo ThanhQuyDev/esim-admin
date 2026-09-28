@@ -24,6 +24,8 @@ export type Partner = {
   channelInfo: Record<string, unknown> | null;
   status: PartnerStatus;
   tierCode: string | null;
+  /** When the current tier took effect — never applied backwards (#042). */
+  tierEffectiveFrom?: string | null;
   assignedManagerId: number | null;
   approvedAt: string | null;
   approvedByAdminId: number | null;

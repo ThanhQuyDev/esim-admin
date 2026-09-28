@@ -34,8 +34,14 @@ import {
 } from '@/components/ui/select';
 import type { PartnerStatus } from '../api/types';
 
-const PARTNER_TYPE_LABELS = { distribution: 'Đối tác phân phối', kol: 'KOL' } as const;
-const LEGAL_TYPE_LABELS = { individual: 'Cá nhân', company: 'Doanh nghiệp' } as const;
+const PARTNER_TYPE_LABELS = {
+  distribution: 'Đối tác phân phối',
+  kol: 'KOL'
+} as const;
+const LEGAL_TYPE_LABELS = {
+  individual: 'Cá nhân',
+  company: 'Doanh nghiệp'
+} as const;
 const STATUS_LABELS: Record<PartnerStatus, string> = {
   pending: 'Chờ duyệt',
   active: 'Đang hoạt động',
@@ -183,7 +189,12 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             <Button
               size='sm'
               variant='outline'
-              onClick={() => statusMutation.mutate({ id: partnerId, data: { status: 'hold' } })}
+              onClick={() =>
+                statusMutation.mutate({
+                  id: partnerId,
+                  data: { status: 'hold' }
+                })
+              }
             >
               Tạm giữ
             </Button>
@@ -191,7 +202,12 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
           {(partner.status === 'hold' || partner.status === 'disabled') && (
             <Button
               size='sm'
-              onClick={() => statusMutation.mutate({ id: partnerId, data: { status: 'active' } })}
+              onClick={() =>
+                statusMutation.mutate({
+                  id: partnerId,
+                  data: { status: 'active' }
+                })
+              }
             >
               Kích hoạt lại
             </Button>
@@ -200,7 +216,12 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             <Button
               size='sm'
               variant='destructive'
-              onClick={() => statusMutation.mutate({ id: partnerId, data: { status: 'disabled' } })}
+              onClick={() =>
+                statusMutation.mutate({
+                  id: partnerId,
+                  data: { status: 'disabled' }
+                })
+              }
             >
               Khóa
             </Button>
@@ -254,6 +275,11 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             </SelectContent>
           </Select>
         </div>
+        <p className='text-muted-foreground mt-2 text-xs'>
+          {partner.tierEffectiveFrom
+            ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`
+            : 'Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ, hệ thống không tính hồi tố.'}
+        </p>
 
         {partner.partnerType === 'kol' && (
           <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
@@ -268,7 +294,10 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
               checked={Boolean(partner.canCustomLinkCode)}
               disabled={linkCodeMutation.isPending}
               onCheckedChange={(checked) =>
-                linkCodeMutation.mutate({ id: partnerId, canCustomLinkCode: checked })
+                linkCodeMutation.mutate({
+                  id: partnerId,
+                  canCustomLinkCode: checked
+                })
               }
               aria-label='Cho phép đặt tên link tiếp thị'
             />

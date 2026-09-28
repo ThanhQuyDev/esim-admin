@@ -102,7 +102,11 @@ export type MyLink = {
 };
 
 export type CreateLinkPayload = { label: string; targetPath?: string };
-export type UpdateLinkPayload = { label?: string; targetPath?: string; isActive?: boolean };
+export type UpdateLinkPayload = {
+  label?: string;
+  targetPath?: string;
+  isActive?: boolean;
+};
 
 export type MyCommission = {
   id: number;
@@ -122,7 +126,10 @@ export type MyPayout = {
   createdAt: string;
 };
 
-export type CreatePayoutPayload = { amountVnd: number; bankAccountInfo?: string };
+export type CreatePayoutPayload = {
+  amountVnd: number;
+  bankAccountInfo?: string;
+};
 
 export type PartnerApplyPayload = {
   partnerType: PartnerType;
@@ -179,6 +186,12 @@ export type MySummary = {
   tier: {
     current: PartnerTier | null;
     next: PartnerTier | null;
+    /**
+     * When the current tier took effect (#042). Orders placed before it keep
+     * the rate of the tier that was in force then — nothing is recalculated
+     * backwards.
+     */
+    effectiveFrom?: string | null;
     toNextTierVnd: number;
     progressPercent: number;
   };
