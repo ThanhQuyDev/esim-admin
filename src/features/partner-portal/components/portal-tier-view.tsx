@@ -33,12 +33,19 @@ import { cn } from '@/lib/utils';
 import { formatDateVn, formatVnd, formatDateTimeVn } from '@/lib/format';
 
 import {
+  myProfileQueryOptions,
   myTierEvaluationsQueryOptions,
   myTiersQueryOptions,
   mySummaryQueryOptions
 } from '../api/queries';
 
 export function PortalTierView() {
+  // The same screen serves both programmes (#049). A marketing partner's tier
+  // is worth a commission rate; a distribution partner's is worth a discount on
+  // what they buy, and their attribution window means nothing to them.
+  const { data: me } = useQuery(myProfileQueryOptions());
+  const isDistribution = me?.partnerType === 'distribution';
+  const benefitLabel = isDistribution ? 'Chiết khấu' : 'Hoa hồng';
   const { data: summary } = useQuery(mySummaryQueryOptions());
   const { data: tiers } = useQuery(myTiersQueryOptions());
   const { data: evaluations } = useQuery(myTierEvaluationsQueryOptions());
@@ -64,7 +71,11 @@ export function PortalTierView() {
             <CardAction>
               <Badge variant='outline'>
                 <Icons.award />
-                {current ? `Hoa hồng ${Number(current.commissionPercent)}%` : 'Chưa áp dụng'}
+                {current
+                  ? `${benefitLabel} ${Number(
+                      isDistribution ? current.maxDiscountPercent : current.commissionPercent
+                    )}%`
+                  : 'Chưa áp dụng'}
               </Badge>
             </CardAction>
             {current && summary?.tier.effectiveFrom && (
@@ -99,7 +110,13 @@ export function PortalTierView() {
                 <Link href='/dashboard/portal/tier-rules'>Xem quy định xét hạng</Link>
               </Button>
               <Button asChild size='sm' variant='outline'>
-                <Link href='/dashboard/portal/commissions'>Xem hoa hồng</Link>
+                <Link
+                  href={
+                    isDistribution ? '/dashboard/portal/orders' : '/dashboard/portal/commissions'
+                  }
+                >
+                  {isDistribution ? 'Xem đơn hàng' : 'Xem hoa hồng'}
+                </Link>
               </Button>
             </div>
           </CardContent>
@@ -112,9 +129,17 @@ export function PortalTierView() {
           </CardHeader>
           <CardContent className='space-y-3'>
             {[
-              ['Doanh số tích luỹ', formatVnd(summary?.lifetime.revenueVnd)],
+              [
+                isDistribution ? 'Tiền đã chi tích luỹ' : 'Doanh số tích luỹ',
+                formatVnd(summary?.lifetime.revenueVnd)
+              ],
               ['Đơn hợp lệ 30 ngày', (summary?.performance.orders ?? 0).toLocaleString('vi-VN')],
-              ['Hoa hồng đã ghi nhận', formatVnd(summary?.lifetime.commissionVnd)],
+              ...(isDistribution
+                ? []
+                : ([['Hoa hồng đã ghi nhận', formatVnd(summary?.lifetime.commissionVnd)]] as [
+                    string,
+                    string
+                  ][])),
               ['Ngưỡng hạng hiện tại', current ? formatVnd(Number(current.minVolumeVnd)) : '—']
             ].map(([label, value]) => (
               <div key={label} className='flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4'>
@@ -157,18 +182,35 @@ export function PortalTierView() {
                       : 'Mặc định khi được duyệt'}
                   </p>
                   <div className='mt-3 space-y-1 text-xs'>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-muted-foreground'>Hoa hồng</span>
-                      <span className='font-medium tabular-nums'>
-                        {Number(t.commissionPercent)}%
-                      </span>
-                    </div>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-muted-foreground'>Giảm tối đa</span>
-                      <span className='font-medium tabular-nums'>
-                        {Number(t.maxDiscountPercent)}%
-                      </span>
-                    </div>
+                    {isDistribution ? (
+                      <div className='flex items-center justify-between'>
+                        <span className='text-muted-foreground'>Chiết khấu</span>
+                        <span className='font-medium tabular-nums'>
+                          {Number(t.maxDiscountPercent)}%
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className='flex items-center justify-between'>
+                          <span className='text-muted-foreground'>Hoa hồng</span>
+                          <span className='font-medium tabular-nums'>
+                            {Number(t.commissionPercent)}%
+                          </span>
+                        </div>
+                        <div className='flex items-center justify-between'>
+                          <span className='text-muted-foreground'>Giảm tối đa</span>
+                          <span className='font-medium tabular-nums'>
+                            {Number(t.maxDiscountPercent)}%
+                          </span>
+                        </div>
+                        <div className='flex items-center justify-between'>
+                          <span className='text-muted-foreground'>Ghi nhận</span>
+                          <span className='font-medium tabular-nums'>
+                            {Number(t.attributionDays ?? 30)} ngày
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );

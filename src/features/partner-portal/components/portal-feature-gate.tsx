@@ -23,13 +23,25 @@ import type { PartnerType } from '../api/types';
 interface PortalFeatureGateProps {
   /** Partner types this screen is meant for. */
   allow: PartnerType[];
+  /**
+   * Also open to a partner who has been granted the affiliate programme (#048).
+   * Set on the four marketing screens, so a distributor with the grant reaches
+   * them and one without is told why not.
+   */
+  allowIfAffiliate?: boolean;
   /** What the screen is, for the explanation shown to everyone else. */
   title: string;
   description: string;
   children: React.ReactNode;
 }
 
-export function PortalFeatureGate({ allow, title, description, children }: PortalFeatureGateProps) {
+export function PortalFeatureGate({
+  allow,
+  allowIfAffiliate,
+  title,
+  description,
+  children
+}: PortalFeatureGateProps) {
   const { data: me, isLoading } = useQuery(myProfileQueryOptions());
 
   // Say nothing until the profile is known: flashing either the screen or the
@@ -37,6 +49,7 @@ export function PortalFeatureGate({ allow, title, description, children }: Porta
   if (isLoading || !me) return null;
 
   if (allow.includes(me.partnerType)) return <>{children}</>;
+  if (allowIfAffiliate && me.canAffiliate) return <>{children}</>;
 
   return (
     <Card>

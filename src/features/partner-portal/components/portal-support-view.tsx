@@ -51,8 +51,14 @@ import { myProfileQueryOptions, myTicketsQueryOptions } from '../api/queries';
 
 const TAB_VALUES = ['create', 'mine'] as const;
 
-/** Topic → what to include. Steers the request toward something answerable. */
-const TOPICS = [
+/**
+ * Topic → what to include. Steers the request toward something answerable.
+ *
+ * Two lists, because the two programmes go wrong in different ways (#049): a
+ * marketing partner writes in about an order that was not credited to them, a
+ * distribution partner about an eSIM they paid for and cannot deliver.
+ */
+const AFFILIATE_TOPICS = [
   {
     value: 'missing',
     label: 'Đơn hàng chưa được ghi nhận',
@@ -72,6 +78,34 @@ const TOPICS = [
     value: 'link',
     label: 'Link hoặc mã giảm giá',
     hint: 'Gửi link hoặc mã gặp lỗi, kèm thiết bị và trình duyệt đã thử.'
+  },
+  {
+    value: 'account',
+    label: 'Tài khoản',
+    hint: 'Mô tả lỗi đăng nhập hoặc thông tin hồ sơ cần thay đổi.'
+  }
+];
+
+const DISTRIBUTION_TOPICS = [
+  {
+    value: 'order',
+    label: 'Đơn lấy hàng',
+    hint: 'Gửi mã đơn và thời điểm mua. Nếu đơn thiếu eSIM, ghi rõ thiếu bao nhiêu mã.'
+  },
+  {
+    value: 'esim',
+    label: 'eSIM lỗi hoặc không kích hoạt được',
+    hint: 'Gửi ICCID, mã đơn và mô tả lỗi khách gặp khi kích hoạt.'
+  },
+  {
+    value: 'topup',
+    label: 'Nạp tiền ký quỹ',
+    hint: 'Gửi mã đối chiếu, số tiền và ảnh giao dịch ngân hàng nếu có.'
+  },
+  {
+    value: 'pricing',
+    label: 'Giá vốn và bảng giá',
+    hint: 'Ghi rõ gói và mức giá bạn thấy chưa đúng so với hạng hiện tại.'
   },
   {
     value: 'account',
@@ -114,12 +148,15 @@ export function PortalSupportView() {
 
   // Which ticket's conversation is open (#032).
   const [openTicket, setOpenTicket] = useState<MyTicket | null>(null);
-  const [topic, setTopic] = useState(TOPICS[0]!.value);
+  const topics = me?.partnerType === 'distribution' ? DISTRIBUTION_TOPICS : AFFILIATE_TOPICS;
+  const [topic, setTopic] = useState(AFFILIATE_TOPICS[0]!.value);
   const [reference, setReference] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const hint = TOPICS.find((t) => t.value === topic) ?? TOPICS[0]!;
+  // A partner who switched programmes could be holding a topic the other list
+  // does not have; fall back rather than show an empty hint.
+  const hint = topics.find((t) => t.value === topic) ?? topics[0]!;
 
   const open = useMemo(
     () => (tickets ?? []).filter((t) => t.status !== 'closed' && t.status !== 'resolved').length,
@@ -187,7 +224,7 @@ export function PortalSupportView() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {TOPICS.map((t) => (
+                      {topics.map((t) => (
                         <SelectItem key={t.value} value={t.value}>
                           {t.label}
                         </SelectItem>

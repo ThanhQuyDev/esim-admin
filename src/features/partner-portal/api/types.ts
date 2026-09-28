@@ -18,6 +18,12 @@ export type MyPartner = {
   channelInfo: Record<string, unknown> | null;
   status: PartnerStatus;
   tierCode: string | null;
+  /**
+   * Ticked by an admin: this distribution partner may also run the affiliate
+   * programme, which is what puts the four marketing menus in their portal
+   * (#048).
+   */
+  canAffiliate?: boolean;
   rejectionReason: string | null;
   notes: string | null;
   createdAt: string;
@@ -177,6 +183,8 @@ export type PartnerTier = {
   minVolumeVnd: string | number;
   commissionPercent: string | number;
   maxDiscountPercent: string | number;
+  /** Days a click keeps earning this tier the order (#037). */
+  attributionDays?: string | number | null;
   sortOrder: number;
   isActive: boolean;
 };

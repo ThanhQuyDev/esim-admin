@@ -26,7 +26,11 @@ import {
 } from '@/components/ui/sidebar';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { navGroups } from '@/config/nav-config';
-import { DISTRIBUTION_ONLY_PORTAL_URLS, portalNavGroups } from '@/config/portal-nav-config';
+import {
+  AFFILIATE_ONLY_PORTAL_URLS,
+  DISTRIBUTION_ONLY_PORTAL_URLS,
+  portalNavGroups
+} from '@/config/portal-nav-config';
 import { myProfileQueryOptions } from '@/features/partner-portal/api/queries';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -63,12 +67,23 @@ export default function AppSidebar() {
     enabled: IS_PARTNER_PORTAL
   });
   const portalGroups = React.useMemo(() => {
-    if (!IS_PARTNER_PORTAL || partner?.partnerType !== 'kol') return portalNavGroups;
+    if (!IS_PARTNER_PORTAL || !partner) return portalNavGroups;
+
+    // A marketing partner never buys stock (#013); a distribution partner only
+    // gets the affiliate screens once esim.vn grants them (#048).
+    const hidden =
+      partner.partnerType === 'kol'
+        ? DISTRIBUTION_ONLY_PORTAL_URLS
+        : partner.canAffiliate
+          ? []
+          : AFFILIATE_ONLY_PORTAL_URLS;
+    if (hidden.length === 0) return portalNavGroups;
+
     return portalNavGroups.map((group) => ({
       ...group,
-      items: group.items.filter((item) => !DISTRIBUTION_ONLY_PORTAL_URLS.includes(item.url))
+      items: group.items.filter((item) => !hidden.includes(item.url))
     }));
-  }, [partner?.partnerType]);
+  }, [partner]);
 
   const filteredNavGroups = useFilteredNavGroups(IS_PARTNER_PORTAL ? portalGroups : navGroups);
 

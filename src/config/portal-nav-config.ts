@@ -121,3 +121,17 @@ export const DISTRIBUTION_ONLY_PORTAL_URLS = [
   // Stock only a distribution partner holds (#046).
   '/dashboard/portal/esims'
 ];
+
+/**
+ * The affiliate programme's own screens (#048).
+ *
+ * A marketing partner always has them. A distribution partner only does once
+ * esim.vn grants the affiliate programme, so until then these four are removed
+ * from their menu — the routes themselves are gated too, for a bookmark.
+ */
+export const AFFILIATE_ONLY_PORTAL_URLS = [
+  '/dashboard/portal/links',
+  '/dashboard/portal/coupons',
+  '/dashboard/portal/commissions',
+  '/dashboard/portal/payouts'
+];

@@ -75,6 +75,17 @@ export async function setPartnerLinkCodePermission(
   });
 }
 
+/** Tick/untick "được phân quyền affiliate" for this partner (#048). */
+export async function setPartnerAffiliateGrant(
+  id: number,
+  canAffiliate: boolean
+): Promise<Partner> {
+  return apiClient<Partner>(`/partners/${id}/affiliate-grant`, {
+    method: 'PATCH',
+    body: JSON.stringify({ canAffiliate })
+  });
+}
+
 export async function adjustPartnerWallet(
   id: number,
   data: AdjustWalletPayload

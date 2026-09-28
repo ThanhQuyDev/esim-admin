@@ -15,6 +15,7 @@ import {
   updatePartnerStatusMutation,
   assignPartnerTierMutation,
   adjustPartnerWalletMutation,
+  setPartnerAffiliateGrantMutation,
   setPartnerLinkCodePermissionMutation
 } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
@@ -126,6 +127,19 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
         updated.canCustomLinkCode
           ? 'Đã cho phép đối tác đặt tên link tiếp thị.'
           : 'Đã tắt quyền đặt tên link tiếp thị.'
+      );
+      refetch();
+    },
+    onError: (e: Error) => toast.error(e.message || 'Cập nhật quyền thất bại')
+  });
+
+  const affiliateGrantMutation = useMutation({
+    ...setPartnerAffiliateGrantMutation,
+    onSuccess: (updated) => {
+      toast.success(
+        updated.canAffiliate
+          ? 'Đã bật chương trình tiếp thị cho đối tác này.'
+          : 'Đã tắt chương trình tiếp thị của đối tác này.'
       );
       refetch();
     },
@@ -280,6 +294,31 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`
             : 'Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ, hệ thống không tính hồi tố.'}
         </p>
+
+        {partner.partnerType === 'distribution' && (
+          <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
+            <div>
+              <p className='text-sm font-medium'>Được phân quyền affiliate</p>
+              <p className='text-muted-foreground text-xs'>
+                Cho phép đối tác phân phối tham gia luôn chương trình tiếp thị. Khi bật, cổng đối
+                tác của họ mới hiện các mục Link tiếp thị, Mã giảm giá, Hoa hồng và Rút tiền (#048).
+                Tắt đi thì các mục đó ẩn lại, nhưng link và mã đã tạo vẫn còn hiệu lực và hoa hồng
+                đã ghi nhận vẫn là của họ.
+              </p>
+            </div>
+            <Switch
+              checked={Boolean(partner.canAffiliate)}
+              disabled={affiliateGrantMutation.isPending}
+              onCheckedChange={(checked) =>
+                affiliateGrantMutation.mutate({
+                  id: partnerId,
+                  canAffiliate: checked
+                })
+              }
+              aria-label='Cho phép tham gia chương trình tiếp thị'
+            />
+          </div>
+        )}
 
         {partner.partnerType === 'kol' && (
           <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>

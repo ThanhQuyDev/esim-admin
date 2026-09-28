@@ -32,6 +32,12 @@ export type Partner = {
   rejectionReason: string | null;
   /** Ticked by an admin: this partner may name their own link code (#014). */
   canCustomLinkCode?: boolean;
+  /**
+   * Ticked by an admin: this distribution partner may also run the affiliate
+   * programme, which is what puts the four marketing menus in their portal
+   * (#048). Always effectively true for a marketing partner.
+   */
+  canAffiliate?: boolean;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
