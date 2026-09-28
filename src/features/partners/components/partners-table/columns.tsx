@@ -1,5 +1,6 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatDateVn, formatVnd } from '@/lib/format';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Partner } from '../../api/types';
@@ -30,6 +31,29 @@ const STATUS_LABEL: Record<string, string> = {
 
 function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
   return [
+    {
+      // Ticking rows is what makes the bulk status change possible (#059).
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label='Chọn tất cả'
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label='Chọn dòng'
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false
+    },
     {
       // "ID đối tác" — reconciliation queries and support tickets refer to
       // partners by id, and it was the one identifier the list did not show (#095).

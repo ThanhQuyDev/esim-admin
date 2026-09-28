@@ -26,6 +26,11 @@ export interface AuthUser {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  /**
+   * The password was minted by an admin and emailed, so it has to be replaced
+   * before the account is really theirs (#059).
+   */
+  mustChangePassword?: boolean;
 }
 
 export interface AuthResponse {

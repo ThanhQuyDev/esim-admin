@@ -316,3 +316,36 @@ export type PartnerListStats = {
   newThisMonth: { count: number; byType: { partnerType: string; count: number }[] };
   onHold: { count: number; byType: { partnerType: string; count: number }[] };
 };
+
+/** Change several partners' status at once (#059). */
+export type BulkPartnerStatusPayload = {
+  ids: number[];
+  status: PartnerStatus;
+  /** Required for a hold or a lock — an admin has to say why (#060). */
+  reason?: string;
+};
+
+/** An account an admin creates by hand; no password, the system mints it (#059). */
+export type AdminCreatePartnerPayload = {
+  partnerType: PartnerType;
+  legalType: 'individual' | 'company';
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  companyName?: string;
+  taxCode?: string;
+  businessAddress?: string;
+  channelInfo?: Record<string, unknown>;
+  notes?: string;
+};
+
+/** One entry of a partner's status history, with the reason (#060). */
+export type PartnerStatusChange = {
+  id: number;
+  partnerId: number;
+  fromStatus: string | null;
+  toStatus: string;
+  reason: string | null;
+  changedByAdminId: number | null;
+  createdAt: string;
+};

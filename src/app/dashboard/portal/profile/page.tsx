@@ -1,4 +1,5 @@
 import PageContainer from '@/components/layout/page-container';
+import { MustChangePasswordGate } from '@/features/partner-portal/components/must-change-password-gate';
 import { PortalProfileView } from '@/features/partner-portal/components/portal-profile-view';
 
 export const metadata = {
@@ -12,6 +13,7 @@ export default function PortalProfilePage() {
       pageTitle='Hồ sơ'
       pageDescription='Thông tin pháp lý, kênh tiếp thị, thanh toán và bảo mật.'
     >
+      <MustChangePasswordGate />
       <PortalProfileView />
     </PageContainer>
   );

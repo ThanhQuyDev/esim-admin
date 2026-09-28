@@ -22,7 +22,10 @@ import type {
   PartnerSeriesByType,
   PartnerTopDestination,
   TopPartnerRow,
-  PartnerListStats
+  PartnerListStats,
+  AdminCreatePartnerPayload,
+  BulkPartnerStatusPayload,
+  PartnerStatusChange
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -79,6 +82,31 @@ export async function setPartnerLinkCodePermission(
     method: 'PATCH',
     body: JSON.stringify({ canCustomLinkCode })
   });
+}
+
+/** Create a partner account by hand (#059). */
+export async function adminCreatePartner(
+  data: AdminCreatePartnerPayload
+): Promise<{ partnerId: number; userId: number }> {
+  return apiClient<{ partnerId: number; userId: number }>('/partners', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+/** Change several partners' status at once (#059). */
+export async function bulkUpdatePartnerStatus(
+  data: BulkPartnerStatusPayload
+): Promise<{ updated: number; skipped: number[] }> {
+  return apiClient<{ updated: number; skipped: number[] }>('/partners/bulk-status', {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+/** A partner's status history, with the reason each time (#060). */
+export async function getPartnerStatusHistory(id: number): Promise<PartnerStatusChange[]> {
+  return apiClient<PartnerStatusChange[]>(`/partners/${id}/status-history`);
 }
 
 /** Record an admin's own note on this partner (#056). */

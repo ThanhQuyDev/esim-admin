@@ -13,6 +13,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { myProfileQueryOptions } from '../api/queries';
+import { MustChangePasswordGate } from './must-change-password-gate';
 import { PortalDistributionOverviewView } from './portal-distribution-overview-view';
 import { PortalOverviewView } from './portal-overview-view';
 
@@ -23,9 +24,15 @@ export function PortalOverviewSwitch() {
   // be wrong half the time, and both of these are full of numbers.
   if (isLoading || !me) return null;
 
-  return me.partnerType === 'distribution' ? (
-    <PortalDistributionOverviewView />
-  ) : (
-    <PortalOverviewView />
+  return (
+    <>
+      {/* Sends a partner on a temporary password to the profile page (#059). */}
+      <MustChangePasswordGate />
+      {me.partnerType === 'distribution' ? (
+        <PortalDistributionOverviewView />
+      ) : (
+        <PortalOverviewView />
+      )}
+    </>
   );
 }
