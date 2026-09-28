@@ -33,6 +33,11 @@ export type Partner = {
   /** Ticked by an admin: this partner may name their own link code (#014). */
   canCustomLinkCode?: boolean;
   /**
+   * The reviewer's own note (#056) — kept apart from `notes`, which is what the
+   * applicant wrote about themselves.
+   */
+  adminNote?: string | null;
+  /**
    * Ticked by an admin: this distribution partner may also run the affiliate
    * programme, which is what puts the four marketing menus in their portal
    * (#048). Always effectively true for a marketing partner.

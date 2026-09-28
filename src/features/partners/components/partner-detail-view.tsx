@@ -15,15 +15,17 @@ import {
   updatePartnerStatusMutation,
   assignPartnerTierMutation,
   adjustPartnerWalletMutation,
+  setPartnerAdminNoteMutation,
   setPartnerAffiliateGrantMutation,
   setPartnerLinkCodePermissionMutation
 } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AdjustPartnerWalletModal } from './adjust-partner-wallet-modal';
 import { RejectPartnerModal } from './reject-partner-modal';
 import {
@@ -76,12 +78,19 @@ function formatChannelValue(key: string, value: unknown): string {
 export function PartnerDetailView({ partnerId }: { partnerId: number }) {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
-
   const { data: partner, refetch } = useSuspenseQuery(partnerQueryOptions(partnerId));
   const { data: tiers = [] } = useQuery(tiersQueryOptions());
   // Not suspense: the partner's own details should render even if this extra
   // call is slow or fails.
   const { data: marketing } = useQuery(partnerMarketingQueryOptions(partnerId));
+
+  // Seeded from the partner and kept local while the admin types; the Save
+  // button is the only thing that writes it back (#056).
+  const [adminNote, setAdminNote] = useState('');
+  const loadedNote = partner.adminNote ?? '';
+  useEffect(() => {
+    setAdminNote(loadedNote);
+  }, [loadedNote]);
 
   const approveMutation = useMutation({
     ...approvePartnerMutation,
@@ -131,6 +140,15 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
       refetch();
     },
     onError: (e: Error) => toast.error(e.message || 'Cập nhật quyền thất bại')
+  });
+
+  const adminNoteMutation = useMutation({
+    ...setPartnerAdminNoteMutation,
+    onSuccess: () => {
+      toast.success('Đã lưu ghi chú.');
+      refetch();
+    },
+    onError: (e: Error) => toast.error(e.message || 'Lưu ghi chú thất bại')
   });
 
   const affiliateGrantMutation = useMutation({
@@ -240,9 +258,16 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
               Khóa
             </Button>
           )}
-          <Button size='sm' variant='outline' onClick={() => setAdjustOpen(true)}>
-            <Icons.wallet className='mr-2 h-4 w-4' /> Điều chỉnh ví
-          </Button>
+          {/*
+            No wallet while the application is still being decided (#056): a
+            partner who has not been approved has no balance to adjust, and the
+            button only invites a change with nothing behind it.
+          */}
+          {partner.status !== 'pending' && partner.status !== 'rejected' && (
+            <Button size='sm' variant='outline' onClick={() => setAdjustOpen(true)}>
+              <Icons.wallet className='mr-2 h-4 w-4' /> Điều chỉnh ví
+            </Button>
+          )}
         </div>
       </div>
 
@@ -438,10 +463,41 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
 
       {partner.notes && (
         <div className='rounded-lg border p-4'>
-          <p className='text-muted-foreground text-xs font-medium'>Ghi chú</p>
+          <p className='text-muted-foreground text-xs font-medium'>Ghi chú của đối tác</p>
           <p className='text-sm'>{partner.notes}</p>
         </div>
       )}
+
+      {/*
+        The reviewer's own note (#056). Separate from the applicant's: this is
+        who was called, what was checked, and what to look at next time — and it
+        is what support reads back when the partner asks why.
+      */}
+      <div className='rounded-lg border p-4'>
+        <p className='text-muted-foreground text-xs font-medium'>Ghi chú của quản trị viên</p>
+        <Textarea
+          className='mt-2'
+          rows={3}
+          placeholder='Ví dụ: đã gọi xác minh kênh bán, giấy phép hợp lệ.'
+          value={adminNote}
+          onChange={(e) => setAdminNote(e.target.value)}
+        />
+        <div className='mt-2 flex items-center gap-2'>
+          <Button
+            size='sm'
+            isLoading={adminNoteMutation.isPending}
+            disabled={adminNote === (partner.adminNote ?? '')}
+            onClick={() => adminNoteMutation.mutate({ id: partnerId, adminNote })}
+          >
+            Lưu ghi chú
+          </Button>
+          {adminNote !== (partner.adminNote ?? '') && (
+            <Button size='sm' variant='ghost' onClick={() => setAdminNote(partner.adminNote ?? '')}>
+              Hoàn tác
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

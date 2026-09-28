@@ -5,6 +5,7 @@ import {
   rejectPartner,
   updatePartnerStatus,
   assignPartnerTier,
+  setPartnerAdminNote,
   setPartnerAffiliateGrant,
   setPartnerLinkCodePermission,
   adjustPartnerWallet,
@@ -53,6 +54,12 @@ export const assignPartnerTierMutation = mutationOptions({
 export const setPartnerLinkCodePermissionMutation = mutationOptions({
   mutationFn: ({ id, canCustomLinkCode }: { id: number; canCustomLinkCode: boolean }) =>
     setPartnerLinkCodePermission(id, canCustomLinkCode),
+  onSettled: invalidateAll
+});
+
+export const setPartnerAdminNoteMutation = mutationOptions({
+  mutationFn: ({ id, adminNote }: { id: number; adminNote: string }) =>
+    setPartnerAdminNote(id, adminNote),
   onSettled: invalidateAll
 });
 

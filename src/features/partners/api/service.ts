@@ -80,6 +80,14 @@ export async function setPartnerLinkCodePermission(
   });
 }
 
+/** Record an admin's own note on this partner (#056). */
+export async function setPartnerAdminNote(id: number, adminNote: string): Promise<Partner> {
+  return apiClient<Partner>(`/partners/${id}/admin-note`, {
+    method: 'PATCH',
+    body: JSON.stringify({ adminNote })
+  });
+}
+
 /** Tick/untick "được phân quyền affiliate" for this partner (#048). */
 export async function setPartnerAffiliateGrant(
   id: number,
