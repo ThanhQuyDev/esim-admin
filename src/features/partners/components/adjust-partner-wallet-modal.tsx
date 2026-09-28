@@ -35,10 +35,14 @@ export function AdjustPartnerWalletModal({
   const amountVnd = parseInt(amount, 10);
   const isValidAmount = !isNaN(amountVnd) && amountVnd !== 0;
   const isCredit = amountVnd > 0;
+  // Required (#060): the reason is what the partner reads in their transaction
+  // history and what an admin reads back a month later. Moving somebody's money
+  // with nothing recorded is the gap the brief calls out.
+  const hasReason = reason.trim().length > 0;
 
   function handleSubmit() {
-    if (!isValidAmount) return;
-    onSubmit({ amountVnd, reason: reason.trim() || undefined });
+    if (!isValidAmount || !hasReason) return;
+    onSubmit({ amountVnd, reason: reason.trim() });
   }
 
   function handleOpenChange(newOpen: boolean) {
@@ -71,14 +75,19 @@ export function AdjustPartnerWalletModal({
             />
           </div>
           <div className='space-y-2'>
-            <Label htmlFor='partner-adjust-reason'>Lý do</Label>
+            <Label htmlFor='partner-adjust-reason'>
+              Lý do <span className='text-destructive'>*</span>
+            </Label>
             <Textarea
               id='partner-adjust-reason'
-              placeholder='Nhập lý do điều chỉnh'
+              placeholder='Ví dụ: bù hoa hồng đơn DS-18342 đối soát thiếu'
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
             />
+            <p className='text-muted-foreground text-xs'>
+              Lý do này hiện trong lịch sử giao dịch của đối tác, nên hãy ghi cụ thể.
+            </p>
           </div>
         </div>
 
@@ -88,7 +97,7 @@ export function AdjustPartnerWalletModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isValidAmount || isSubmitting}
+            disabled={!isValidAmount || !hasReason || isSubmitting}
             isLoading={isSubmitting}
           >
             {isCredit ? 'Nạp' : 'Trừ'}

@@ -8,6 +8,16 @@ import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { PartnerCellAction } from './cell-action';
 
+/** The partner's main sales channel, out of the free-form apply payload (#060). */
+function mainChannel(channelInfo: Record<string, unknown> | null | undefined): string {
+  if (!channelInfo) return '—';
+  const entries = Object.entries(channelInfo).filter(
+    ([, value]) => typeof value === 'string' && value.trim()
+  );
+  if (entries.length === 0) return '—';
+  return entries.map(([key, value]) => `${key}: ${String(value)}`).join(' · ');
+}
+
 const PARTNER_TYPE_LABEL: Record<string, string> = {
   distribution: 'Đối tác phân phối',
   kol: 'KOL'
@@ -73,8 +83,12 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
       ),
       cell: ({ row }) => (
         <div className='flex flex-col'>
-          <span className='text-sm font-medium'>{row.original.contactName}</span>
+          <span className='text-sm font-medium'>
+            {row.original.companyName || row.original.contactName}
+          </span>
+          <span className='text-muted-foreground font-mono text-xs'>#{row.original.id}</span>
           <span className='text-muted-foreground text-xs'>{row.original.contactEmail}</span>
+          <span className='text-muted-foreground text-xs'>{row.original.contactPhone}</span>
         </div>
       ),
       meta: {
@@ -108,10 +122,25 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
       enableSorting: false
     },
     {
-      id: 'companyName',
-      accessorKey: 'companyName',
-      header: 'Công ty',
-      cell: ({ row }) => row.original.companyName || '—'
+      id: 'legalType',
+      accessorKey: 'legalType',
+      header: 'Pháp nhân',
+      cell: ({ row }) => (
+        <span className='text-xs'>
+          {row.original.legalType === 'company' ? 'Công ty' : 'Cá nhân'}
+        </span>
+      ),
+      enableSorting: false
+    },
+    {
+      id: 'channel',
+      header: 'Kênh bán',
+      cell: ({ row }) => (
+        <span className='text-muted-foreground line-clamp-2 max-w-[200px] text-xs'>
+          {mainChannel(row.original.channelInfo)}
+        </span>
+      ),
+      enableSorting: false
     },
     {
       id: 'status',
@@ -146,6 +175,41 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
         options: tierCodes.map((code) => ({ value: code, label: code }))
       },
       enableColumnFilter: true,
+      enableSorting: false
+    },
+    {
+      id: 'finance',
+      header: 'Tài chính',
+      cell: ({ row }) => {
+        // A marketing partner's wallet is their commission; a distribution
+        // partner's is the deposit they buy stock from. Same column, and the
+        // label says which, so the two are never read as the same money (#060).
+        const isKol = row.original.partnerType === 'kol';
+        return (
+          <div className='flex flex-col'>
+            <span className='text-sm tabular-nums'>
+              {formatVnd(row.original.availableBalanceVnd ?? 0)}
+            </span>
+            <span className='text-muted-foreground text-xs'>
+              {isKol ? 'Hoa hồng khả dụng' : 'Số dư ký quỹ'}
+            </span>
+          </div>
+        );
+      },
+      enableSorting: false
+    },
+    {
+      id: 'lastActivityAt',
+      header: 'Hoạt động gần nhất',
+      cell: ({ row }) => {
+        const at = row.original.lastLoginAt ?? row.original.lastActivityAt;
+        return (
+          <div className='flex flex-col'>
+            <span className='text-xs'>{at ? formatDateVn(at) : 'Chưa đăng nhập'}</span>
+            {at && <span className='text-muted-foreground text-xs'>Lần đăng nhập gần nhất</span>}
+          </div>
+        );
+      },
       enableSorting: false
     },
     {

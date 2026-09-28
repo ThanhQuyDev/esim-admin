@@ -58,6 +58,11 @@ export type Partner = {
   profitVnd?: number;
   /** Lifetime commission credited to this partner — what we have paid them. */
   totalCommissionVnd?: number;
+  /** Balance less anything already claimed and waiting to be paid (#060). */
+  availableBalanceVnd?: number;
+  /** When the partner last signed in — the list's "hoạt động gần nhất" (#060). */
+  lastLoginAt?: string | null;
+  lastOrderAt?: string | null;
   /** Share of their orders that ended up refunded, 0–100 by order count. */
   refundRatePercent?: number;
 };
@@ -181,7 +186,8 @@ export type PartnerTier = {
 export type RejectPartnerPayload = { reason: string };
 export type UpdatePartnerStatusPayload = { status: PartnerStatus };
 export type AssignTierPayload = { tierCode: string };
-export type AdjustWalletPayload = { amountVnd: number; reason?: string };
+/** The reason is required (#060) — it is what the partner sees in their history. */
+export type AdjustWalletPayload = { amountVnd: number; reason: string };
 export type ProcessPayoutPayload = { adminNote?: string };
 export type CreateTierPayload = {
   partnerType: PartnerType;
