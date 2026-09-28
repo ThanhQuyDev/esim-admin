@@ -10,6 +10,7 @@ import {
   updatePartnerByAdmin,
   bulkUpdatePartnerStatus,
   setPartnerAdminNote,
+  setReconciliationStatus,
   setPartnerAffiliateGrant,
   setPartnerLinkCodePermission,
   adjustPartnerWallet,
@@ -31,7 +32,8 @@ import type {
   UpdateTierPayload,
   AdminCreatePartnerPayload,
   BulkPartnerStatusPayload,
-  UpdatePartnerProfileByAdminPayload
+  UpdatePartnerProfileByAdminPayload,
+  SetReconciliationStatusPayload
 } from './types';
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: partnerKeys.all });
@@ -88,6 +90,11 @@ export const adminCreateLinkForPartnerMutation = mutationOptions({
     id: number;
     data: { code?: string; label?: string; targetPath?: string };
   }) => adminCreateLinkForPartner(id, data),
+  onSettled: invalidateAll
+});
+
+export const setReconciliationStatusMutation = mutationOptions({
+  mutationFn: (data: SetReconciliationStatusPayload) => setReconciliationStatus(data),
   onSettled: invalidateAll
 });
 

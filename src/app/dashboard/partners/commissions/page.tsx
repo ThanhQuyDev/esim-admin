@@ -1,5 +1,6 @@
 import PageContainer from '@/components/layout/page-container';
-import { CommissionsView } from '@/features/partners/components/commissions-view';
+import { CommissionSummaryTiles } from '@/features/partners/components/commission-summary-tiles';
+import { CommissionsSwitch } from '@/features/partners/components/commissions-switch';
 
 export const metadata = {
   title: 'Dashboard: Hoa hồng & Đối soát'
@@ -10,9 +11,12 @@ export default function PartnerCommissionsPage() {
     <PageContainer
       scrollable
       pageTitle='Hoa hồng & Đối soát'
-      pageDescription='Hoa hồng phát sinh, đã duyệt, đang chờ chi và các khoản đã điều chỉnh.'
+      pageDescription='Đối soát hoa hồng theo kỳ và toàn bộ hoa hồng phát sinh theo từng đơn.'
     >
-      <CommissionsView />
+      <div className='space-y-4'>
+        <CommissionSummaryTiles />
+        <CommissionsSwitch />
+      </div>
     </PageContainer>
   );
 }

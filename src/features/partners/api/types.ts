@@ -423,3 +423,28 @@ export type CommissionFilters = {
   from?: string;
   to?: string;
 };
+
+/** One partner's month on the reconciliation list (#065). */
+export type ReconciliationRow = {
+  partnerId: number;
+  contactName: string | null;
+  contactEmail: string | null;
+  validOrders: number;
+  esimsSold: number;
+  /** Share of completed orders that arrived through a discount code. */
+  viaCouponPercent: number;
+  revenueVnd: number;
+  commissionVnd: number;
+  /** pending (chờ xác nhận) | reviewing (đang kiểm tra) | approved (đã duyệt) */
+  status: string;
+  note: string | null;
+};
+
+export type ReconciliationList = { period: string; rows: ReconciliationRow[] };
+
+export type SetReconciliationStatusPayload = {
+  partnerIds: number[];
+  period: string;
+  status: string;
+  note?: string;
+};

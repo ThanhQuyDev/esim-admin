@@ -29,7 +29,9 @@ import type {
   PartnerPerformance,
   UpdatePartnerProfileByAdminPayload,
   CommissionSummary,
-  CommissionFilters
+  CommissionFilters,
+  ReconciliationList,
+  SetReconciliationStatusPayload
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -241,6 +243,25 @@ export async function getPartnerSeriesByType(params?: {
   if (params?.groupBy) search.set('groupBy', params.groupBy);
   const query = search.toString();
   return apiClient<PartnerSeriesByType>(`/partners/series-by-type${query ? `?${query}` : ''}`);
+}
+
+/** The reconciliation list: one row per partner for one period (#065). */
+export async function getReconciliations(params: {
+  period?: string;
+  search?: string;
+  status?: string;
+}): Promise<ReconciliationList> {
+  return apiClient<ReconciliationList>(`/partners/reconciliations${toQuery(params)}`);
+}
+
+/** Sign off (or hold) one or more statements (#065). */
+export async function setReconciliationStatus(
+  data: SetReconciliationStatusPayload
+): Promise<{ updated: number }> {
+  return apiClient<{ updated: number }>('/partners/reconciliations/status', {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
 }
 
 /** The five figures at the head of "Hoa hồng & Đối soát" (#063). */

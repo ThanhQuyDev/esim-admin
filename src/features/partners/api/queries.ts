@@ -15,7 +15,8 @@ import {
   getTopPartners,
   getPartnerListStats,
   getPartnerPerformance,
-  getCommissionSummary
+  getCommissionSummary,
+  getReconciliations
 } from './service';
 import type { PartnerFilters, CommissionFilters } from './types';
 
@@ -91,6 +92,23 @@ export const partnerPerformanceQueryOptions = (id: number) =>
   queryOptions({
     queryKey: [...partnerKeys.detail(id), 'performance'],
     queryFn: () => getPartnerPerformance(id)
+  });
+
+/** The reconciliation list: one row per partner for one period (#065). */
+export const reconciliationsQueryOptions = (params: {
+  period?: string;
+  search?: string;
+  status?: string;
+}) =>
+  queryOptions({
+    queryKey: [
+      ...partnerKeys.all,
+      'reconciliations',
+      params.period ?? '',
+      params.search ?? '',
+      params.status ?? ''
+    ],
+    queryFn: () => getReconciliations(params)
   });
 
 /** The five figures at the head of "Hoa hồng & Đối soát" (#063). */
