@@ -9,7 +9,9 @@ import {
   getTiers,
   getPartnerOverview,
   getPartnerRevenueByType,
-  getPartnerActivityByType
+  getPartnerActivityByType,
+  getPartnerSeriesByType,
+  getPartnerTopDestinations
 } from './service';
 import type { PartnerFilters } from './types';
 
@@ -67,6 +69,30 @@ export const tiersQueryOptions = () =>
 
 export const partnerOverviewQueryOptions = () =>
   queryOptions({ queryKey: [...partnerKeys.all, 'overview'], queryFn: getPartnerOverview });
+
+/** Revenue and orders over time, split by partner type (#052). */
+export const partnerSeriesByTypeQueryOptions = (params?: {
+  from?: string;
+  to?: string;
+  groupBy?: string;
+}) =>
+  queryOptions({
+    queryKey: [
+      ...partnerKeys.all,
+      'series-by-type',
+      params?.from ?? '',
+      params?.to ?? '',
+      params?.groupBy ?? 'day'
+    ],
+    queryFn: () => getPartnerSeriesByType(params)
+  });
+
+/** Where partner-driven orders are going (#052). */
+export const partnerTopDestinationsQueryOptions = (range?: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'top-destinations', range?.from ?? '', range?.to ?? ''],
+    queryFn: () => getPartnerTopDestinations(range)
+  });
 
 /** Orders, live partners and settlement queue, split by partner type (#051). */
 export const partnerActivityByTypeQueryOptions = (range?: { from?: string; to?: string }) =>

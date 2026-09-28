@@ -263,3 +263,19 @@ export type PartnerActivityByType = {
   };
   commissionToReconcile: { totalVnd: number; partners: number };
 };
+
+/** Revenue and orders over time, split by partner type (#052). */
+export type PartnerSeriesByType = {
+  range: { from: string; to: string };
+  points: {
+    bucket: string;
+    byType: { partnerType: string; revenueVnd: number; orders: number }[];
+  }[];
+};
+
+/** Where partner-driven orders are going (#052). */
+export type PartnerTopDestination = {
+  name: string;
+  plansPurchased: number;
+  revenueVnd: number;
+};

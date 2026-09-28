@@ -18,7 +18,9 @@ import type {
   UpdateTierPayload,
   PartnerMarketing,
   PartnerRevenueByType,
-  PartnerActivityByType
+  PartnerActivityByType,
+  PartnerSeriesByType,
+  PartnerTopDestination
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -159,6 +161,34 @@ export async function updateTier(id: number, data: UpdateTierPayload): Promise<P
 
 export async function getPartnerOverview(): Promise<PartnerOverview> {
   return apiClient<PartnerOverview>('/partners/overview');
+}
+
+/** Revenue and orders over time, split by partner type (#052). */
+export async function getPartnerSeriesByType(params?: {
+  from?: string;
+  to?: string;
+  groupBy?: string;
+}): Promise<PartnerSeriesByType> {
+  const search = new URLSearchParams();
+  if (params?.from) search.set('from', params.from);
+  if (params?.to) search.set('to', params.to);
+  if (params?.groupBy) search.set('groupBy', params.groupBy);
+  const query = search.toString();
+  return apiClient<PartnerSeriesByType>(`/partners/series-by-type${query ? `?${query}` : ''}`);
+}
+
+/** Where partner-driven orders are going (#052). */
+export async function getPartnerTopDestinations(range?: {
+  from?: string;
+  to?: string;
+}): Promise<PartnerTopDestination[]> {
+  const search = new URLSearchParams();
+  if (range?.from) search.set('from', range.from);
+  if (range?.to) search.set('to', range.to);
+  const query = search.toString();
+  return apiClient<PartnerTopDestination[]>(
+    `/partners/top-destinations${query ? `?${query}` : ''}`
+  );
 }
 
 /** Orders, live partners and what is waiting to be settled (#051). */

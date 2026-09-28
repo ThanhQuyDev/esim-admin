@@ -1,16 +1,37 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig
+} from '@/components/ui/chart';
 import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
+// The portal's filter is the admin console's own filter with the provider
+// select left off (#053); sharing it keeps the two screens behaving the same
+// rather than drifting into two ideas of what "7 ngày qua" means.
+import {
+  DEFAULT_PORTAL_PERIOD,
+  PortalPeriodFilter,
+  periodLabel,
+  resolvePeriod,
+  type PortalPeriod
+} from '@/features/partner-portal/components/portal-period-filter';
 
 import {
   partnerActivityByTypeQueryOptions,
   partnerOverviewQueryOptions,
-  partnerRevenueByTypeQueryOptions
+  partnerRevenueByTypeQueryOptions,
+  partnerSeriesByTypeQueryOptions,
+  partnerTopDestinationsQueryOptions
 } from '../api/queries';
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -102,6 +123,28 @@ function StatByType({
   );
 }
 
+/** One colour per partner type, so the two charts read as one picture. */
+const TYPE_COLOR: Record<string, string> = {
+  kol: 'var(--chart-1)',
+  distribution: 'var(--chart-2)',
+  api: 'var(--chart-3)'
+};
+
+const destinationConfig = {
+  plansPurchased: { label: 'eSIM', color: 'var(--chart-1)' }
+} satisfies ChartConfig;
+
+/** A bucket start as the axis should read it. */
+function bucketLabel(bucket: string, groupBy: string): string {
+  const d = new Date(bucket);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  if (groupBy === 'year') return String(d.getFullYear());
+  if (groupBy === 'month') return `${mm}/${d.getFullYear()}`;
+  if (groupBy === 'week') return `Tuần ${dd}/${mm}`;
+  return `${dd}/${mm}`;
+}
+
 function GrowthBadge({ percent }: { percent: number }) {
   if (percent === 0) return <Badge variant='secondary'>Không đổi</Badge>;
   const up = percent > 0;
@@ -121,9 +164,75 @@ function GrowthBadge({ percent }: { percent: number }) {
 }
 
 export function PartnerOverviewView() {
+  // #053: the whole screen answers for one period, so the filter sits above it
+  // and every figure below follows it — a header that says "30 ngày" over
+  // numbers from another window is worse than no header.
+  const [period, setPeriod] = useState<PortalPeriod>(DEFAULT_PORTAL_PERIOD);
+  const range = useMemo(() => resolvePeriod(period), [period]);
+  const rangeLabel = periodLabel(period);
+
   const { data, isLoading } = useQuery(partnerOverviewQueryOptions());
-  const { data: revenue } = useQuery(partnerRevenueByTypeQueryOptions());
-  const { data: activity } = useQuery(partnerActivityByTypeQueryOptions());
+  const { data: revenue } = useQuery(partnerRevenueByTypeQueryOptions(range));
+  const { data: activity } = useQuery(partnerActivityByTypeQueryOptions(range));
+  const { data: series } = useQuery(
+    partnerSeriesByTypeQueryOptions({ ...range, groupBy: period.groupBy })
+  );
+  const { data: destinations = [] } = useQuery(partnerTopDestinationsQueryOptions(range));
+
+  // Recharts wants one row per bucket with a column per series, so the types
+  // are pivoted here rather than shipped that way — which types exist is a
+  // question for the data, not for this file.
+  const seriesTypes = useMemo(() => {
+    const all = new Set<string>();
+    for (const point of series?.points ?? []) {
+      for (const row of point.byType) all.add(row.partnerType);
+    }
+    return [...all].toSorted();
+  }, [series]);
+
+  const chartData = useMemo(
+    () =>
+      (series?.points ?? []).map((point) => {
+        const row: Record<string, string | number> = {
+          label: bucketLabel(point.bucket, period.groupBy)
+        };
+        for (const type of seriesTypes) {
+          const found = point.byType.find((r) => r.partnerType === type);
+          row[`revenue_${type}`] = found?.revenueVnd ?? 0;
+          row[`orders_${type}`] = found?.orders ?? 0;
+        }
+        return row;
+      }),
+    [series, seriesTypes, period.groupBy]
+  );
+
+  const revenueConfig = useMemo(
+    () =>
+      Object.fromEntries(
+        seriesTypes.map((type) => [
+          `revenue_${type}`,
+          {
+            label: PARTNER_TYPE_LABEL[type] ?? type,
+            color: TYPE_COLOR[type] ?? 'var(--chart-4)'
+          }
+        ])
+      ) satisfies ChartConfig,
+    [seriesTypes]
+  );
+
+  const ordersConfig = useMemo(
+    () =>
+      Object.fromEntries(
+        seriesTypes.map((type) => [
+          `orders_${type}`,
+          {
+            label: PARTNER_TYPE_LABEL[type] ?? type,
+            color: TYPE_COLOR[type] ?? 'var(--chart-4)'
+          }
+        ])
+      ) satisfies ChartConfig,
+    [seriesTypes]
+  );
 
   if (isLoading || !data) {
     return (
@@ -137,6 +246,8 @@ export function PartnerOverviewView() {
 
   return (
     <div className='space-y-6'>
+      <PortalPeriodFilter value={period} onChange={setPeriod} />
+
       {/* What needs a human today */}
       <div>
         <p className='mb-3 text-sm font-medium'>Luồng công việc hôm nay</p>
@@ -168,7 +279,7 @@ export function PartnerOverviewView() {
 
       {/* Programme size, measured by what actually happened (#051) */}
       <div>
-        <p className='mb-3 text-sm font-medium'>Quy mô chương trình · 30 ngày</p>
+        <p className='mb-3 text-sm font-medium'>Quy mô chương trình · {rangeLabel}</p>
         <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
           <StatByType
             label='Tổng số đơn hàng'
@@ -215,7 +326,7 @@ export function PartnerOverviewView() {
       {revenue && (
         <div>
           <div className='mb-3 flex flex-wrap items-center gap-2'>
-            <p className='text-sm font-medium'>Doanh thu esim.vn thu về · 30 ngày</p>
+            <p className='text-sm font-medium'>Doanh thu esim.vn thu về · {rangeLabel}</p>
             <Badge variant='outline'>{formatVnd(revenue.totalRevenueVnd)}</Badge>
             <GrowthBadge percent={revenue.growthPercent} />
           </div>
@@ -273,6 +384,183 @@ export function PartnerOverviewView() {
             value={formatVnd(money.commissionTotalVnd)}
             hint='Không tính khoản đã hoàn'
           />
+        </div>
+      </div>
+
+      {/* How it moved, and where it went (#052) */}
+      <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
+        <div className='lg:col-span-4'>
+          <Card>
+            <CardHeader>
+              <CardTitle className='flex flex-wrap items-center gap-2'>
+                Doanh thu theo loại đối tác
+                <Badge variant='outline'>{rangeLabel}</Badge>
+              </CardTitle>
+              <CardDescription>
+                Tiền esim.vn thu về thực tế — đối tác tiếp thị đã trừ hoa hồng, đối tác phân phối là
+                giá mua vào.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {chartData.length === 0 ? (
+                <p className='text-muted-foreground py-16 text-center text-sm'>
+                  Chưa có đơn nào trong kỳ này.
+                </p>
+              ) : (
+                <ChartContainer config={revenueConfig} className='h-[260px] w-full'>
+                  <BarChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
+                    <CartesianGrid vertical={false} strokeDasharray='3 3' />
+                    <XAxis
+                      dataKey='label'
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      interval='preserveStartEnd'
+                      minTickGap={24}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      width={56}
+                      tickFormatter={(value) =>
+                        new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(
+                          Number(value)
+                        )
+                      }
+                    />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                    <Legend />
+                    {seriesTypes.map((type) => (
+                      <Bar
+                        key={type}
+                        dataKey={`revenue_${type}`}
+                        stackId='revenue'
+                        fill={TYPE_COLOR[type] ?? 'var(--chart-4)'}
+                        name={PARTNER_TYPE_LABEL[type] ?? type}
+                        radius={2}
+                      />
+                    ))}
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className='mt-4'>
+            <CardHeader>
+              <CardTitle className='flex flex-wrap items-center gap-2'>
+                Số đơn theo loại đối tác
+                <Badge variant='outline'>{rangeLabel}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {chartData.length === 0 ? (
+                <p className='text-muted-foreground py-16 text-center text-sm'>
+                  Chưa có đơn nào trong kỳ này.
+                </p>
+              ) : (
+                <ChartContainer config={ordersConfig} className='h-[220px] w-full'>
+                  <BarChart accessibilityLayer data={chartData} margin={{ left: 8, right: 8 }}>
+                    <CartesianGrid vertical={false} strokeDasharray='3 3' />
+                    <XAxis
+                      dataKey='label'
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      interval='preserveStartEnd'
+                      minTickGap={24}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      width={40}
+                      allowDecimals={false}
+                    />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                    <Legend />
+                    {seriesTypes.map((type) => (
+                      <Bar
+                        key={type}
+                        dataKey={`orders_${type}`}
+                        stackId='orders'
+                        fill={TYPE_COLOR[type] ?? 'var(--chart-4)'}
+                        name={PARTNER_TYPE_LABEL[type] ?? type}
+                        radius={2}
+                      />
+                    ))}
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className='lg:col-span-3'>
+          <Card className='h-full'>
+            <CardHeader>
+              <CardTitle className='flex flex-wrap items-center gap-2'>
+                Điểm đến mua nhiều
+                <Badge variant='outline'>{rangeLabel}</Badge>
+              </CardTitle>
+              <CardDescription>
+                Xếp theo số eSIM bán ra từ đơn có đối tác — của cả hai chương trình.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {destinations.length === 0 ? (
+                <p className='text-muted-foreground py-16 text-center text-sm'>
+                  Chưa có đơn nào trong kỳ này.
+                </p>
+              ) : (
+                <ChartContainer config={destinationConfig} className='h-[420px] w-full'>
+                  <BarChart
+                    accessibilityLayer
+                    layout='vertical'
+                    data={destinations}
+                    margin={{ left: 8, right: 16 }}
+                  >
+                    <CartesianGrid horizontal={false} strokeDasharray='3 3' />
+                    <XAxis
+                      type='number'
+                      dataKey='plansPurchased'
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      type='category'
+                      dataKey='name'
+                      tickLine={false}
+                      axisLine={false}
+                      width={110}
+                      tickMargin={8}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          formatter={(
+                            value: unknown,
+                            _name: unknown,
+                            item: { payload?: { revenueVnd?: number } }
+                          ) => (
+                            <div className='flex min-w-[180px] flex-col gap-0.5'>
+                              <span className='font-medium'>{Number(value)} eSIM</span>
+                              <span className='text-muted-foreground'>
+                                {formatVnd(Number(item?.payload?.revenueVnd ?? 0))} doanh số
+                              </span>
+                            </div>
+                          )}
+                        />
+                      }
+                    />
+                    <Bar dataKey='plansPurchased' fill='var(--color-plansPurchased)' radius={4} />
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
