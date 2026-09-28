@@ -29,9 +29,12 @@ const EMPTY_FORM = {
   minVolumeVnd: '0',
   commissionPercent: '0',
   maxDiscountPercent: '0',
+  minDepositVnd: '0',
+  costMarkupPercent: '0',
   attributionDays: '30',
   sortOrder: '0',
-  isActive: true
+  isActive: true,
+  isInternal: false
 };
 
 export function PartnerTierFormDialog({
@@ -54,9 +57,12 @@ export function PartnerTierFormDialog({
         minVolumeVnd: String(tier.minVolumeVnd),
         commissionPercent: String(tier.commissionPercent),
         maxDiscountPercent: String(tier.maxDiscountPercent),
+        minDepositVnd: String(tier.minDepositVnd ?? 0),
+        costMarkupPercent: String(tier.costMarkupPercent ?? 0),
         attributionDays: String(tier.attributionDays ?? 30),
         sortOrder: String(tier.sortOrder),
-        isActive: tier.isActive
+        isActive: tier.isActive,
+        isInternal: tier.isInternal ?? false
       });
     } else {
       setForm(EMPTY_FORM);
@@ -73,9 +79,12 @@ export function PartnerTierFormDialog({
       minVolumeVnd: Number(form.minVolumeVnd) || 0,
       commissionPercent: Number(form.commissionPercent) || 0,
       maxDiscountPercent: Number(form.maxDiscountPercent) || 0,
+      minDepositVnd: Number(form.minDepositVnd) || 0,
+      costMarkupPercent: Number(form.costMarkupPercent) || 0,
       attributionDays: Number(form.attributionDays) || 30,
       sortOrder: Number(form.sortOrder) || 0,
-      isActive: form.isActive
+      isActive: form.isActive,
+      isInternal: form.isInternal
     };
     if (isEdit) {
       onSubmit(shared);
@@ -145,16 +154,47 @@ export function PartnerTierFormDialog({
               />
             </div>
           ) : (
-            <div className='space-y-2'>
-              <Label htmlFor='maxDiscountPercent'>Giảm giá tối đa (%)</Label>
-              <Input
-                id='maxDiscountPercent'
-                type='number'
-                step='0.1'
-                value={form.maxDiscountPercent}
-                onChange={(e) => setForm((f) => ({ ...f, maxDiscountPercent: e.target.value }))}
-              />
-            </div>
+            <>
+              <div className='space-y-2'>
+                <Label htmlFor='costMarkupPercent'>% cộng vào giá gốc</Label>
+                <Input
+                  id='costMarkupPercent'
+                  type='number'
+                  step='0.1'
+                  value={form.costMarkupPercent}
+                  onChange={(e) => setForm((f) => ({ ...f, costMarkupPercent: e.target.value }))}
+                />
+                <p className='text-muted-foreground text-xs'>
+                  Giá đối tác = giá gốc + (giá gốc × %). VD: 10% thì eSIM giá gốc 100.000đ được mua
+                  với 110.000đ. Hạng càng cao thì % này càng nhỏ.
+                </p>
+              </div>
+
+              <div className='space-y-2'>
+                <Label htmlFor='minDepositVnd'>Ngưỡng ký quỹ (VND)</Label>
+                <Input
+                  id='minDepositVnd'
+                  type='number'
+                  value={form.minDepositVnd}
+                  onChange={(e) => setForm((f) => ({ ...f, minDepositVnd: e.target.value }))}
+                />
+                <p className='text-muted-foreground text-xs'>
+                  Đạt HOẶC ngưỡng doanh số HOẶC ngưỡng ký quỹ là lên hạng — không cần cả hai. Để 0
+                  nếu hạng này chỉ xét theo doanh số.
+                </p>
+              </div>
+
+              <div className='space-y-2'>
+                <Label htmlFor='maxDiscountPercent'>Giảm giá tối đa (%)</Label>
+                <Input
+                  id='maxDiscountPercent'
+                  type='number'
+                  step='0.1'
+                  value={form.maxDiscountPercent}
+                  onChange={(e) => setForm((f) => ({ ...f, maxDiscountPercent: e.target.value }))}
+                />
+              </div>
+            </>
           )}
 
           {isKol && (
@@ -182,6 +222,22 @@ export function PartnerTierFormDialog({
               value={form.sortOrder}
               onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
             />
+          </div>
+
+          <div className='rounded-lg border p-3'>
+            <div className='flex items-center justify-between'>
+              <Label htmlFor='isInternal'>Hạng nội bộ</Label>
+              <Switch
+                id='isInternal'
+                checked={form.isInternal}
+                onCheckedChange={(checked) => setForm((f) => ({ ...f, isInternal: checked }))}
+              />
+            </div>
+            <p className='text-muted-foreground mt-2 text-xs'>
+              Hạng thương lượng riêng cho đối tác đặc biệt: không hiện trong bảng xếp hạng công khai
+              và không bị hệ thống tự động xét lại. Chỉ admin gán thủ công trong trang chi tiết đối
+              tác.
+            </p>
           </div>
 
           <div className='flex items-center justify-between rounded-lg border p-3'>

@@ -281,12 +281,19 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             <SelectContent>
               {relevantTiers.map((tier) => (
                 <SelectItem key={tier.tierCode} value={tier.tierCode}>
-                  {tier.tierName}
+                  {/* Internal tiers are assignable only from here, so the
+                      list has to say which is which (#074). */}
+                  {tier.isInternal ? `${tier.tierName} (nội bộ)` : tier.tierName}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+        {relevantTiers.find((t) => t.tierCode === partner.tierCode)?.isInternal && (
+          <p className='text-muted-foreground mt-2 text-xs'>
+            Đối tác đang ở hạng nội bộ — hệ thống sẽ không tự xét lại hạng cho đối tác này.
+          </p>
+        )}
         <p className='text-muted-foreground mt-2 text-xs'>
           {partner.tierEffectiveFrom
             ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`

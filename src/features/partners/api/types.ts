@@ -184,6 +184,12 @@ export type PartnerTier = {
   maxDiscountPercent: number;
   /** Days a click keeps earning this tier the order (#037). */
   attributionDays?: number;
+  /** Deposit that also earns this tier — an alternative to revenue (#073). */
+  minDepositVnd?: number;
+  /** % added to cost price for a distribution partner (#073). */
+  costMarkupPercent?: number;
+  /** Negotiated rather than earned: off the public ladder (#074). */
+  isInternal?: boolean;
   sortOrder: number;
   isActive: boolean;
 };

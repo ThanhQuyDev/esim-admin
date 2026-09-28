@@ -12,7 +12,7 @@ import type { PartnerTier, PartnerType } from '../api/types';
 
 const TABS: { value: PartnerType; label: string }[] = [
   { value: 'kol', label: 'KOL (hoa hồng)' },
-  { value: 'distribution', label: 'Đối tác phân phối (giảm giá tối đa)' }
+  { value: 'distribution', label: 'Đối tác phân phối (% cộng vào giá gốc)' }
 ];
 
 export function PartnerTiersView() {
@@ -101,12 +101,19 @@ export function PartnerTiersView() {
                   <span className='font-medium'>{tier.tierName}</span>
                   <Badge variant='outline'>{tier.tierCode}</Badge>
                   {!tier.isActive && <Badge variant='destructive'>Ngừng hoạt động</Badge>}
+                  {/* A negotiated tier: off the public ladder and never
+                      touched by the weekly review (#074). */}
+                  {tier.isInternal && <Badge variant='secondary'>Hạng nội bộ</Badge>}
                 </div>
                 <p className='text-muted-foreground text-sm'>
                   Ngưỡng doanh số: {tier.minVolumeVnd.toLocaleString('vi-VN')} VND
                   {activeType === 'kol'
                     ? ` · Hoa hồng: ${tier.commissionPercent}% · Ghi nhận: ${tier.attributionDays ?? 30} ngày`
-                    : ` · Giảm giá tối đa: ${tier.maxDiscountPercent}%`}
+                    : `${
+                        tier.minDepositVnd
+                          ? ` HOẶC ký quỹ: ${tier.minDepositVnd.toLocaleString('vi-VN')} VND`
+                          : ''
+                      } · Giá gốc + ${tier.costMarkupPercent ?? 0}%`}
                 </p>
               </div>
               <Button size='sm' variant='outline' onClick={() => setEditingTier(tier)}>
