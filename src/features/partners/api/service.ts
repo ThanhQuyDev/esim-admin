@@ -16,7 +16,8 @@ import type {
   ProcessPayoutPayload,
   CreateTierPayload,
   UpdateTierPayload,
-  PartnerMarketing
+  PartnerMarketing,
+  PartnerRevenueByType
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -157,6 +158,18 @@ export async function updateTier(id: number, data: UpdateTierPayload): Promise<P
 
 export async function getPartnerOverview(): Promise<PartnerOverview> {
   return apiClient<PartnerOverview>('/partners/overview');
+}
+
+/** What esim.vn keeps from each kind of partner, over a period (#050). */
+export async function getPartnerRevenueByType(range?: {
+  from?: string;
+  to?: string;
+}): Promise<PartnerRevenueByType> {
+  const search = new URLSearchParams();
+  if (range?.from) search.set('from', range.from);
+  if (range?.to) search.set('to', range.to);
+  const query = search.toString();
+  return apiClient<PartnerRevenueByType>(`/partners/revenue-by-type${query ? `?${query}` : ''}`);
 }
 
 /**

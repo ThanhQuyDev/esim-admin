@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 
-import { partnerOverviewQueryOptions } from '../api/queries';
+import { partnerOverviewQueryOptions, partnerRevenueByTypeQueryOptions } from '../api/queries';
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -49,11 +49,37 @@ function QueueRow({
 
 const PARTNER_TYPE_LABEL: Record<string, string> = {
   kol: 'KOL',
-  distribution: 'Phân phối'
+  distribution: 'Phân phối',
+  api: 'API'
 };
+
+/**
+ * Growth against the same span immediately before (#050).
+ *
+ * Shown beside the figure rather than as a number on its own: "12,4 triệu" says
+ * nothing until you know whether last month was 6 or 30.
+ */
+function GrowthBadge({ percent }: { percent: number }) {
+  if (percent === 0) return <Badge variant='secondary'>Không đổi</Badge>;
+  const up = percent > 0;
+  return (
+    <Badge
+      variant='outline'
+      className={
+        up
+          ? 'border-emerald-200 text-emerald-700 dark:border-emerald-900 dark:text-emerald-400'
+          : 'border-red-200 text-red-700 dark:border-red-900 dark:text-red-400'
+      }
+    >
+      {up ? '+' : ''}
+      {percent}% so với kỳ trước
+    </Badge>
+  );
+}
 
 export function PartnerOverviewView() {
   const { data, isLoading } = useQuery(partnerOverviewQueryOptions());
+  const { data: revenue } = useQuery(partnerRevenueByTypeQueryOptions());
 
   if (isLoading || !data) {
     return (
@@ -110,6 +136,61 @@ export function PartnerOverviewView() {
           <Stat label='Chờ duyệt' value={String(partners.pendingApprovals)} />
         </div>
       </div>
+
+      {/*
+        What esim.vn actually keeps, by kind of partner (#050). Deliberately
+        above the gross figures below: the money that stays is the one an admin
+        is answerable for, and reading the two the wrong way round is how a
+        programme looks twice as profitable as it is.
+      */}
+      {revenue && (
+        <div>
+          <div className='mb-3 flex flex-wrap items-center gap-2'>
+            <p className='text-sm font-medium'>Doanh thu esim.vn thu về · 30 ngày</p>
+            <Badge variant='outline'>{formatVnd(revenue.totalRevenueVnd)}</Badge>
+            <GrowthBadge percent={revenue.growthPercent} />
+          </div>
+          <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+            {revenue.byType.map((row) => (
+              <div key={row.partnerType} className='rounded-lg border p-4'>
+                <div className='flex items-center justify-between gap-2'>
+                  <p className='text-sm font-medium'>
+                    {PARTNER_TYPE_LABEL[row.partnerType] ?? row.partnerType}
+                  </p>
+                  <Badge variant='secondary'>{row.partners} đối tác</Badge>
+                </div>
+                <p className='mt-1 text-2xl font-semibold tabular-nums'>
+                  {formatVnd(row.revenueVnd)}
+                </p>
+                <div className='mt-2'>
+                  <GrowthBadge percent={row.growthPercent} />
+                </div>
+                <div className='text-muted-foreground mt-3 space-y-1 text-xs'>
+                  {row.attributedGrossVnd > 0 && (
+                    <div className='flex justify-between gap-2'>
+                      <span>Đơn ghi nhận</span>
+                      <span className='tabular-nums'>{formatVnd(row.attributedGrossVnd)}</span>
+                    </div>
+                  )}
+                  {row.commissionVnd > 0 && (
+                    <div className='flex justify-between gap-2'>
+                      <span>Trừ hoa hồng</span>
+                      <span className='tabular-nums'>−{formatVnd(row.commissionVnd)}</span>
+                    </div>
+                  )}
+                  {row.purchasesVnd > 0 && (
+                    <div className='flex justify-between gap-2'>
+                      <span>Đối tác mua vào</span>
+                      <span className='tabular-nums'>{formatVnd(row.purchasesVnd)}</span>
+                    </div>
+                  )}
+                  {row.revenueVnd === 0 && <p>Chưa phát sinh trong kỳ.</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Money moved through partners */}
       <div>

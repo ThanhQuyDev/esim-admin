@@ -218,3 +218,28 @@ export type PartnerMarketing = {
   links: PartnerLinkRow[];
   coupons: PartnerCouponRow[];
 };
+
+/**
+ * What esim.vn actually keeps from each kind of partner (#050).
+ *
+ * Not the order value: a marketing partner's revenue is what is left after the
+ * commission is paid away, a distribution or API partner's is what they paid us
+ * for the eSIMs.
+ */
+export type PartnerRevenueByType = {
+  range: { from: string; to: string };
+  previousRange: { from: string; to: string };
+  byType: {
+    partnerType: string;
+    partners: number;
+    revenueVnd: number;
+    previousRevenueVnd: number;
+    growthPercent: number;
+    attributedGrossVnd: number;
+    commissionVnd: number;
+    purchasesVnd: number;
+  }[];
+  totalRevenueVnd: number;
+  previousTotalRevenueVnd: number;
+  growthPercent: number;
+};

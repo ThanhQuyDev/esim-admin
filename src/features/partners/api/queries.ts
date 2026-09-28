@@ -7,7 +7,8 @@ import {
   getCommissions,
   getPayouts,
   getTiers,
-  getPartnerOverview
+  getPartnerOverview,
+  getPartnerRevenueByType
 } from './service';
 import type { PartnerFilters } from './types';
 
@@ -65,6 +66,13 @@ export const tiersQueryOptions = () =>
 
 export const partnerOverviewQueryOptions = () =>
   queryOptions({ queryKey: [...partnerKeys.all, 'overview'], queryFn: getPartnerOverview });
+
+/** Revenue esim.vn keeps, split by partner type (#050). */
+export const partnerRevenueByTypeQueryOptions = (range?: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'revenue-by-type', range?.from ?? '', range?.to ?? ''],
+    queryFn: () => getPartnerRevenueByType(range)
+  });
 
 /** One partner's links and discount codes, for the admin detail screen (#095). */
 export const partnerMarketingQueryOptions = (id: number) =>
