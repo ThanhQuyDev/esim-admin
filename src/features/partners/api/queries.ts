@@ -8,7 +8,8 @@ import {
   getPayouts,
   getTiers,
   getPartnerOverview,
-  getPartnerRevenueByType
+  getPartnerRevenueByType,
+  getPartnerActivityByType
 } from './service';
 import type { PartnerFilters } from './types';
 
@@ -66,6 +67,13 @@ export const tiersQueryOptions = () =>
 
 export const partnerOverviewQueryOptions = () =>
   queryOptions({ queryKey: [...partnerKeys.all, 'overview'], queryFn: getPartnerOverview });
+
+/** Orders, live partners and settlement queue, split by partner type (#051). */
+export const partnerActivityByTypeQueryOptions = (range?: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'activity-by-type', range?.from ?? '', range?.to ?? ''],
+    queryFn: () => getPartnerActivityByType(range)
+  });
 
 /** Revenue esim.vn keeps, split by partner type (#050). */
 export const partnerRevenueByTypeQueryOptions = (range?: { from?: string; to?: string }) =>

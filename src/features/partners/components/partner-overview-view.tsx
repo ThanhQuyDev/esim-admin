@@ -7,7 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 
-import { partnerOverviewQueryOptions, partnerRevenueByTypeQueryOptions } from '../api/queries';
+import {
+  partnerActivityByTypeQueryOptions,
+  partnerOverviewQueryOptions,
+  partnerRevenueByTypeQueryOptions
+} from '../api/queries';
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -59,6 +63,45 @@ const PARTNER_TYPE_LABEL: Record<string, string> = {
  * Shown beside the figure rather than as a number on its own: "12,4 triệu" says
  * nothing until you know whether last month was 6 or 30.
  */
+/**
+ * A headline number with its split by partner type underneath (#051).
+ *
+ * The split is the point: "42 đối tác đang hoạt động" hides whether that is 40
+ * KOLs and 2 distributors or the other way round, and the two mean different
+ * things for where the programme needs attention.
+ */
+function StatByType({
+  label,
+  value,
+  hint,
+  rows
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  rows: { partnerType: string; count: number }[];
+}) {
+  return (
+    <div className='rounded-lg border p-4'>
+      <p className='text-muted-foreground text-xs'>{label}</p>
+      <p className='mt-1 text-2xl font-semibold tabular-nums'>{value}</p>
+      {hint && <p className='text-muted-foreground mt-1 text-xs'>{hint}</p>}
+      {rows.length > 0 && (
+        <div className='mt-3 space-y-1'>
+          {rows.map((row) => (
+            <div key={row.partnerType} className='flex justify-between gap-2 text-xs'>
+              <span className='text-muted-foreground'>
+                {PARTNER_TYPE_LABEL[row.partnerType] ?? row.partnerType}
+              </span>
+              <span className='tabular-nums'>{row.count.toLocaleString('vi-VN')}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GrowthBadge({ percent }: { percent: number }) {
   if (percent === 0) return <Badge variant='secondary'>Không đổi</Badge>;
   const up = percent > 0;
@@ -80,6 +123,7 @@ function GrowthBadge({ percent }: { percent: number }) {
 export function PartnerOverviewView() {
   const { data, isLoading } = useQuery(partnerOverviewQueryOptions());
   const { data: revenue } = useQuery(partnerRevenueByTypeQueryOptions());
+  const { data: activity } = useQuery(partnerActivityByTypeQueryOptions());
 
   if (isLoading || !data) {
     return (
@@ -122,18 +166,43 @@ export function PartnerOverviewView() {
         </div>
       </div>
 
-      {/* Programme size */}
+      {/* Programme size, measured by what actually happened (#051) */}
       <div>
-        <p className='mb-3 text-sm font-medium'>Quy mô chương trình</p>
+        <p className='mb-3 text-sm font-medium'>Quy mô chương trình · 30 ngày</p>
         <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-          <Stat
-            label='Đối tác đang hoạt động'
-            value={String(partners.active)}
-            hint={`Tổng ${partners.total} hồ sơ`}
+          <StatByType
+            label='Tổng số đơn hàng'
+            value={(activity?.orders.total ?? 0).toLocaleString('vi-VN')}
+            rows={(activity?.orders.byType ?? []).map((r) => ({
+              partnerType: r.partnerType,
+              count: r.orders
+            }))}
           />
-          <Stat label='KOL / Phân phối' value={`${partners.kol} / ${partners.distribution}`} />
+          <StatByType
+            label='Đối tác đang hoạt động'
+            value={(activity?.activePartners.total ?? 0).toLocaleString('vi-VN')}
+            hint={`Có phát sinh giao dịch trong kỳ · tổng ${partners.total} hồ sơ`}
+            rows={(activity?.activePartners.byType ?? []).map((r) => ({
+              partnerType: r.partnerType,
+              count: r.partners
+            }))}
+          />
+          <StatByType
+            label='Hồ sơ chờ duyệt'
+            value={(activity?.pendingApprovals.total ?? 0).toLocaleString('vi-VN')}
+            rows={(activity?.pendingApprovals.byType ?? []).map((r) => ({
+              partnerType: r.partnerType,
+              count: r.partners
+            }))}
+          />
+          <Stat
+            label='Hoa hồng cần đối soát'
+            value={formatVnd(activity?.commissionToReconcile.totalVnd ?? 0)}
+            hint={`${activity?.commissionToReconcile.partners ?? 0} đối tác đang chờ đối soát`}
+          />
+        </div>
+        <div className='mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
           <Stat label='Tạm giữ / Đã khóa' value={`${partners.hold} / ${partners.disabled}`} />
-          <Stat label='Chờ duyệt' value={String(partners.pendingApprovals)} />
         </div>
       </div>
 

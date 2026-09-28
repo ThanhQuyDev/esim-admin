@@ -243,3 +243,23 @@ export type PartnerRevenueByType = {
   previousTotalRevenueVnd: number;
   growthPercent: number;
 };
+
+/**
+ * Orders, live partners and what is waiting to be settled (#051).
+ *
+ * "Đang hoạt động" is transaction-based, not the status field: a partner who
+ * has not sent an order in 30 days is active on paper and dormant in fact.
+ */
+export type PartnerActivityByType = {
+  range: { from: string; to: string };
+  orders: { total: number; byType: { partnerType: string; orders: number }[] };
+  activePartners: {
+    total: number;
+    byType: { partnerType: string; partners: number }[];
+  };
+  pendingApprovals: {
+    total: number;
+    byType: { partnerType: string; partners: number }[];
+  };
+  commissionToReconcile: { totalVnd: number; partners: number };
+};
