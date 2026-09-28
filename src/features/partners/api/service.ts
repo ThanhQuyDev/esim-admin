@@ -32,7 +32,10 @@ import type {
   CommissionFilters,
   ReconciliationList,
   SetReconciliationStatusPayload,
-  PayoutSummary
+  PayoutSummary,
+  BulkPayoutDecisionPayload,
+  AdminPayoutList,
+  PayoutFilters
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -188,8 +191,8 @@ export async function getCommissions(
   return apiClient(`/partners/commissions${toQuery(filters)}`);
 }
 
-export async function getPayouts(status?: string): Promise<PartnerPayout[]> {
-  return apiClient<PartnerPayout[]>(`/partners/payouts${toQuery({ status })}`);
+export async function getPayouts(filters: PayoutFilters = {}): Promise<AdminPayoutList> {
+  return apiClient<AdminPayoutList>(`/partners/payouts${toQuery(filters)}`);
 }
 
 export async function approvePayout(id: number): Promise<PartnerPayout> {
@@ -244,6 +247,16 @@ export async function getPartnerSeriesByType(params?: {
   if (params?.groupBy) search.set('groupBy', params.groupBy);
   const query = search.toString();
   return apiClient<PartnerSeriesByType>(`/partners/series-by-type${query ? `?${query}` : ''}`);
+}
+
+/** "Duyệt chi" or "Từ chối" for the rows an admin ticked (#069). */
+export async function bulkPayoutDecision(
+  data: BulkPayoutDecisionPayload
+): Promise<{ updated: number; skipped: number[] }> {
+  return apiClient<{ updated: number; skipped: number[] }>('/partners/payouts/bulk-decision', {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
 }
 
 /** The four figures at the head of "Tài chính" (#067). */

@@ -153,6 +153,8 @@ export type MyPayout = {
   amountVnd: number;
   bankAccountInfo: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'paid';
+  /** On a refusal, the reason the admin gave — the partner reads it here (#069). */
+  adminNote: string | null;
   createdAt: string;
 };
 

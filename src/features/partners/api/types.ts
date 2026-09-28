@@ -456,3 +456,44 @@ export type PayoutSummary = {
   paidAllTime: { totalVnd: number; partners: number };
   distributionDeposit: { totalVnd: number; partners: number };
 };
+
+/** A withdrawal request with the partner and the account behind it (#069). */
+export type AdminPayoutRow = {
+  id: number;
+  partnerId: number;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  partnerType: string | null;
+  amountVnd: number;
+  status: string;
+  /** On a refusal this is the reason, which the partner also sees. */
+  adminNote: string | null;
+  createdAt: string;
+  processedAt: string | null;
+  /** The month the request was made, as `YYYY-MM`. */
+  period: string;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
+  bankBranch: string | null;
+  bankAccountLast4: string | null;
+  bankAccountInfo: string | null;
+};
+
+export type AdminPayoutList = { data: AdminPayoutRow[]; totalCount: number };
+
+export type PayoutFilters = {
+  status?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+};
+
+export type BulkPayoutDecisionPayload = {
+  ids: number[];
+  decision: 'approve' | 'reject';
+  adminNote?: string;
+};

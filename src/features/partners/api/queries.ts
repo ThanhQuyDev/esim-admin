@@ -19,7 +19,7 @@ import {
   getPayoutSummary,
   getReconciliations
 } from './service';
-import type { PartnerFilters, CommissionFilters } from './types';
+import type { PartnerFilters, CommissionFilters, PayoutFilters } from './types';
 
 export const partnerKeys = {
   all: ['partners'] as const,
@@ -56,10 +56,10 @@ export const commissionsQueryOptions = (filters: CommissionFilters) =>
     queryFn: () => getCommissions(filters)
   });
 
-export const payoutsQueryOptions = (status?: string) =>
+export const payoutsQueryOptions = (filters: PayoutFilters = {}) =>
   queryOptions({
-    queryKey: partnerKeys.payouts(status),
-    queryFn: () => getPayouts(status)
+    queryKey: [...partnerKeys.payouts(filters.status), filters],
+    queryFn: () => getPayouts(filters)
   });
 
 export const tiersQueryOptions = () =>

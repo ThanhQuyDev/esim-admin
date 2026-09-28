@@ -306,6 +306,13 @@ export function PortalPayoutsView() {
                         ) : (
                           <Badge variant='outline'>{p.status}</Badge>
                         )}
+                        {/* A refusal with nothing after it is a support
+                            ticket, not an answer (#069). */}
+                        {p.status === 'rejected' && p.adminNote && (
+                          <p className='text-destructive mt-1 max-w-[280px] text-xs'>
+                            {p.adminNote}
+                          </p>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
