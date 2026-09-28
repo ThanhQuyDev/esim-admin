@@ -27,7 +27,8 @@ import type {
   BulkPartnerStatusPayload,
   PartnerStatusChange,
   PartnerPerformance,
-  UpdatePartnerProfileByAdminPayload
+  UpdatePartnerProfileByAdminPayload,
+  CommissionSummary
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -242,6 +243,11 @@ export async function getPartnerSeriesByType(params?: {
   if (params?.groupBy) search.set('groupBy', params.groupBy);
   const query = search.toString();
   return apiClient<PartnerSeriesByType>(`/partners/series-by-type${query ? `?${query}` : ''}`);
+}
+
+/** The five figures at the head of "Hoa hồng & Đối soát" (#063). */
+export async function getCommissionSummary(): Promise<CommissionSummary> {
+  return apiClient<CommissionSummary>('/partners/commission-summary');
 }
 
 /** The four figures at the head of the partner list (#057). */

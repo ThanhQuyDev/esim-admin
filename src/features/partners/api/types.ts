@@ -395,3 +395,17 @@ export type PartnerPerformance = {
     refundRatePercent: number;
   } | null;
 };
+
+/**
+ * The five figures at the head of "Hoa hồng & Đối soát" (#063).
+ *
+ * Five stages of the same money; the partner count beside each is what turns a
+ * total into something an admin can act on.
+ */
+export type CommissionSummary = {
+  pendingConfirmation: { totalVnd: number; partners: number };
+  approvedAwaitingPayout: { totalVnd: number; partners: number };
+  payoutRequested: { totalVnd: number; partners: number };
+  paidThisMonth: { totalVnd: number; partners: number };
+  reversed: { totalVnd: number; partners: number };
+};

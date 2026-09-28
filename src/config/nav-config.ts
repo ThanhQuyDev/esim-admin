@@ -233,7 +233,9 @@ export const navGroups: NavGroup[] = [
             access: { role: [1] }
           },
           {
-            title: 'Hoa hồng',
+            // Renamed per #063: the page is where commission is reconciled,
+            // not only listed.
+            title: 'Hoa hồng & Đối soát',
             url: '/dashboard/partners/commissions',
             access: { role: [1] }
           },

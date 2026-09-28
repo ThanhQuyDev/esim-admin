@@ -14,7 +14,8 @@ import {
   getPartnerTopDestinations,
   getTopPartners,
   getPartnerListStats,
-  getPartnerPerformance
+  getPartnerPerformance,
+  getCommissionSummary
 } from './service';
 import type { PartnerFilters } from './types';
 
@@ -95,6 +96,13 @@ export const partnerPerformanceQueryOptions = (id: number) =>
   queryOptions({
     queryKey: [...partnerKeys.detail(id), 'performance'],
     queryFn: () => getPartnerPerformance(id)
+  });
+
+/** The five figures at the head of "Hoa hồng & Đối soát" (#063). */
+export const commissionSummaryQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'commission-summary'],
+    queryFn: getCommissionSummary
   });
 
 /** The four figures at the head of the partner list (#057). */

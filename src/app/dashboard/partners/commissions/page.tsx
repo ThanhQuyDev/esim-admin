@@ -2,15 +2,15 @@ import PageContainer from '@/components/layout/page-container';
 import { CommissionsView } from '@/features/partners/components/commissions-view';
 
 export const metadata = {
-  title: 'Dashboard: Hoa hồng đối tác'
+  title: 'Dashboard: Hoa hồng & Đối soát'
 };
 
 export default function PartnerCommissionsPage() {
   return (
     <PageContainer
       scrollable
-      pageTitle='Hoa hồng đối tác'
-      pageDescription='Hoa hồng KOL phát sinh từ các đơn hàng quy về qua link tiếp thị.'
+      pageTitle='Hoa hồng & Đối soát'
+      pageDescription='Hoa hồng phát sinh, đã duyệt, đang chờ chi và các khoản đã điều chỉnh.'
     >
       <CommissionsView />
     </PageContainer>
