@@ -31,7 +31,8 @@ import type {
   CommissionSummary,
   CommissionFilters,
   ReconciliationList,
-  SetReconciliationStatusPayload
+  SetReconciliationStatusPayload,
+  PayoutSummary
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -243,6 +244,11 @@ export async function getPartnerSeriesByType(params?: {
   if (params?.groupBy) search.set('groupBy', params.groupBy);
   const query = search.toString();
   return apiClient<PartnerSeriesByType>(`/partners/series-by-type${query ? `?${query}` : ''}`);
+}
+
+/** The four figures at the head of "Tài chính" (#067). */
+export async function getPayoutSummary(): Promise<PayoutSummary> {
+  return apiClient<PayoutSummary>('/partners/payouts/summary');
 }
 
 /** The reconciliation list: one row per partner for one period (#065). */

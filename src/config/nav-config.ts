@@ -240,7 +240,7 @@ export const navGroups: NavGroup[] = [
             access: { role: [1] }
           },
           {
-            title: 'Yêu cầu rút tiền',
+            title: 'Tài chính',
             url: '/dashboard/partners/payouts',
             access: { role: [1] }
           },

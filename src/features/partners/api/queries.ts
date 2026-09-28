@@ -16,6 +16,7 @@ import {
   getPartnerListStats,
   getPartnerPerformance,
   getCommissionSummary,
+  getPayoutSummary,
   getReconciliations
 } from './service';
 import type { PartnerFilters, CommissionFilters } from './types';
@@ -92,6 +93,13 @@ export const partnerPerformanceQueryOptions = (id: number) =>
   queryOptions({
     queryKey: [...partnerKeys.detail(id), 'performance'],
     queryFn: () => getPartnerPerformance(id)
+  });
+
+/** The four figures at the head of "Tài chính" (#067). */
+export const payoutSummaryQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'payout-summary'],
+    queryFn: () => getPayoutSummary()
   });
 
 /** The reconciliation list: one row per partner for one period (#065). */
