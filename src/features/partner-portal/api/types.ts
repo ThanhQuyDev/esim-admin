@@ -347,3 +347,38 @@ export type MyDistributionSeriesPoint = {
   orders: number;
   activatedEsims: number;
 };
+
+/**
+ * One eSIM in a distribution partner's stock (#046).
+ *
+ * A marketing partner never holds stock, so this has no equivalent on that
+ * side: they never touch the eSIM at all.
+ */
+export type MyEsim = {
+  iccid: string | null;
+  status: string | null;
+  planName: string | null;
+  destination: string | null;
+  orderNumber: string | null;
+  /** What this one eSIM cost, the line total spread over the line. */
+  costVnd: number;
+  dataUsed: number | null;
+  dataTotal: number | null;
+  activatedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string | null;
+};
+
+/** An order the distribution partner placed themselves (#046). */
+export type MyPurchase = {
+  orderNumber: string;
+  status: string;
+  orderType: string | null;
+  paidVnd: number;
+  /** Before any discount, so the page can show the margin. */
+  listVnd: number;
+  refundedVnd: number;
+  esimCount: number;
+  createdAt: string;
+  items: { planName: string | null; quantity: number; vndPrice: number }[];
+};

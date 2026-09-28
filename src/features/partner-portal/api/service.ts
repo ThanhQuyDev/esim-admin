@@ -27,7 +27,9 @@ import type {
   BankAccountChangePayload,
   BankAccountChangeRequested,
   MyDistributionSummary,
-  MyDistributionSeriesPoint
+  MyDistributionSeriesPoint,
+  MyEsim,
+  MyPurchase
 } from './types';
 
 export async function applyAsPartner(
@@ -203,6 +205,31 @@ export async function getMyDistributionSeries(params?: {
   return apiClient<MyDistributionSeriesPoint[]>(
     `/partner-portal/distribution-series${query ? `?${query}` : ''}`
   );
+}
+
+function listQuery(filters?: { search?: string; status?: string; limit?: number }) {
+  const search = new URLSearchParams();
+  if (filters?.search) search.set('search', filters.search);
+  if (filters?.status) search.set('status', filters.status);
+  if (filters?.limit) search.set('limit', String(filters.limit));
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
+
+export async function getMyEsims(filters?: {
+  search?: string;
+  status?: string;
+  limit?: number;
+}): Promise<MyEsim[]> {
+  return apiClient<MyEsim[]>(`/partner-portal/esims${listQuery(filters)}`);
+}
+
+export async function getMyPurchases(filters?: {
+  search?: string;
+  status?: string;
+  limit?: number;
+}): Promise<MyPurchase[]> {
+  return apiClient<MyPurchase[]>(`/partner-portal/purchases${listQuery(filters)}`);
 }
 
 export async function getMyOrders(): Promise<MyOrder[]> {

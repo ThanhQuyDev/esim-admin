@@ -39,6 +39,13 @@ export const portalNavGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Quản lý eSIM',
+        url: '/dashboard/portal/esims',
+        icon: 'simCard',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Đơn hàng',
         url: '/dashboard/portal/orders',
         icon: 'billing',
@@ -108,5 +115,7 @@ export const portalNavGroups: NavGroup[] = [
  */
 export const DISTRIBUTION_ONLY_PORTAL_URLS = [
   '/dashboard/portal/wallet',
-  '/dashboard/portal/brand'
+  '/dashboard/portal/brand',
+  // Stock only a distribution partner holds (#046).
+  '/dashboard/portal/esims'
 ];
