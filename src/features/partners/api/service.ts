@@ -25,7 +25,9 @@ import type {
   PartnerListStats,
   AdminCreatePartnerPayload,
   BulkPartnerStatusPayload,
-  PartnerStatusChange
+  PartnerStatusChange,
+  PartnerPerformance,
+  UpdatePartnerProfileByAdminPayload
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -107,6 +109,33 @@ export async function bulkUpdatePartnerStatus(
 /** A partner's status history, with the reason each time (#060). */
 export async function getPartnerStatusHistory(id: number): Promise<PartnerStatusChange[]> {
   return apiClient<PartnerStatusChange[]>(`/partners/${id}/status-history`);
+}
+
+/** Contract details and this partner's own deposit limits (#061). */
+export async function updatePartnerByAdmin(
+  id: number,
+  data: UpdatePartnerProfileByAdminPayload
+): Promise<Partner> {
+  return apiClient<Partner>(`/partners/${id}/profile`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+/** Link and code performance over the last 30 days (#061). */
+export async function getPartnerPerformance(id: number): Promise<PartnerPerformance> {
+  return apiClient<PartnerPerformance>(`/partners/${id}/performance`);
+}
+
+/** Create a marketing link on a partner's behalf (#061). */
+export async function adminCreateLinkForPartner(
+  id: number,
+  data: { code?: string; label?: string; targetPath?: string }
+): Promise<unknown> {
+  return apiClient<unknown>(`/partners/${id}/links`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
 }
 
 /** Record an admin's own note on this partner (#056). */

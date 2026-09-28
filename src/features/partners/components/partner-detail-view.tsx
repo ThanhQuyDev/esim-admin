@@ -12,7 +12,6 @@ const PUBLIC_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL || 'https://esim.vn';
 import {
   approvePartnerMutation,
   rejectPartnerMutation,
-  updatePartnerStatusMutation,
   assignPartnerTierMutation,
   adjustPartnerWalletMutation,
   setPartnerAdminNoteMutation,
@@ -27,6 +26,9 @@ import { Icons } from '@/components/icons';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { AdjustPartnerWalletModal } from './adjust-partner-wallet-modal';
+import { BulkStatusModal } from './bulk-status-modal';
+import { PartnerContractCard } from './partner-contract-card';
+import { PartnerPerformanceCard } from './partner-performance-card';
 import { RejectPartnerModal } from './reject-partner-modal';
 import {
   Select,
@@ -78,6 +80,7 @@ function formatChannelValue(key: string, value: unknown): string {
 export function PartnerDetailView({ partnerId }: { partnerId: number }) {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const { data: partner, refetch } = useSuspenseQuery(partnerQueryOptions(partnerId));
   const { data: tiers = [] } = useQuery(tiersQueryOptions());
   // Not suspense: the partner's own details should render even if this extra
@@ -109,15 +112,6 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
       refetch();
     },
     onError: (e: Error) => toast.error(e.message || 'Từ chối thất bại')
-  });
-
-  const statusMutation = useMutation({
-    ...updatePartnerStatusMutation,
-    onSuccess: () => {
-      toast.success('Đã cập nhật trạng thái.');
-      refetch();
-    },
-    onError: (e: Error) => toast.error(e.message || 'Cập nhật thất bại')
   });
 
   const tierMutation = useMutation({
@@ -217,45 +211,24 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
               </Button>
             </>
           )}
+          {/*
+            Every one of these opens the same dialog, which is where the reason
+            is collected (#061). The server refuses a hold or a lock without
+            one, so a button that fired straight off would only ever 400.
+          */}
           {partner.status === 'active' && (
-            <Button
-              size='sm'
-              variant='outline'
-              onClick={() =>
-                statusMutation.mutate({
-                  id: partnerId,
-                  data: { status: 'hold' }
-                })
-              }
-            >
-              Tạm giữ
+            <Button size='sm' variant='outline' onClick={() => setStatusOpen(true)}>
+              Tạm khoá
             </Button>
           )}
           {(partner.status === 'hold' || partner.status === 'disabled') && (
-            <Button
-              size='sm'
-              onClick={() =>
-                statusMutation.mutate({
-                  id: partnerId,
-                  data: { status: 'active' }
-                })
-              }
-            >
-              Kích hoạt lại
+            <Button size='sm' onClick={() => setStatusOpen(true)}>
+              Mở khoá
             </Button>
           )}
           {partner.status === 'active' && (
-            <Button
-              size='sm'
-              variant='destructive'
-              onClick={() =>
-                statusMutation.mutate({
-                  id: partnerId,
-                  data: { status: 'disabled' }
-                })
-              }
-            >
-              Khóa
+            <Button size='sm' variant='destructive' onClick={() => setStatusOpen(true)}>
+              Khoá tài khoản
             </Button>
           )}
           {/*
@@ -460,6 +433,17 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
           </dl>
         </div>
       )}
+
+      <BulkStatusModal
+        open={statusOpen}
+        onOpenChange={setStatusOpen}
+        partnerIds={[partnerId]}
+        onDone={refetch}
+      />
+
+      {/* How the partner has been doing, and what the contract says (#061). */}
+      <PartnerPerformanceCard partnerId={partnerId} />
+      <PartnerContractCard partner={partner} onSaved={refetch} />
 
       {partner.notes && (
         <div className='rounded-lg border p-4'>

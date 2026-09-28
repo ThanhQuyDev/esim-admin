@@ -5,7 +5,9 @@ import {
   rejectPartner,
   updatePartnerStatus,
   assignPartnerTier,
+  adminCreateLinkForPartner,
   adminCreatePartner,
+  updatePartnerByAdmin,
   bulkUpdatePartnerStatus,
   setPartnerAdminNote,
   setPartnerAffiliateGrant,
@@ -28,7 +30,8 @@ import type {
   CreateTierPayload,
   UpdateTierPayload,
   AdminCreatePartnerPayload,
-  BulkPartnerStatusPayload
+  BulkPartnerStatusPayload,
+  UpdatePartnerProfileByAdminPayload
 } from './types';
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: partnerKeys.all });
@@ -68,6 +71,23 @@ export const adminCreatePartnerMutation = mutationOptions({
 
 export const bulkUpdatePartnerStatusMutation = mutationOptions({
   mutationFn: (data: BulkPartnerStatusPayload) => bulkUpdatePartnerStatus(data),
+  onSettled: invalidateAll
+});
+
+export const updatePartnerByAdminMutation = mutationOptions({
+  mutationFn: ({ id, data }: { id: number; data: UpdatePartnerProfileByAdminPayload }) =>
+    updatePartnerByAdmin(id, data),
+  onSettled: invalidateAll
+});
+
+export const adminCreateLinkForPartnerMutation = mutationOptions({
+  mutationFn: ({
+    id,
+    data
+  }: {
+    id: number;
+    data: { code?: string; label?: string; targetPath?: string };
+  }) => adminCreateLinkForPartner(id, data),
   onSettled: invalidateAll
 });
 

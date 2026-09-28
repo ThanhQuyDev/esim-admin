@@ -13,7 +13,8 @@ import {
   getPartnerSeriesByType,
   getPartnerTopDestinations,
   getTopPartners,
-  getPartnerListStats
+  getPartnerListStats,
+  getPartnerPerformance
 } from './service';
 import type { PartnerFilters } from './types';
 
@@ -87,6 +88,13 @@ export const partnerSeriesByTypeQueryOptions = (params?: {
       params?.groupBy ?? 'day'
     ],
     queryFn: () => getPartnerSeriesByType(params)
+  });
+
+/** Link and code performance over the last 30 days (#061). */
+export const partnerPerformanceQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: [...partnerKeys.detail(id), 'performance'],
+    queryFn: () => getPartnerPerformance(id)
   });
 
 /** The four figures at the head of the partner list (#057). */

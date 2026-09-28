@@ -37,6 +37,11 @@ export type Partner = {
    * applicant wrote about themselves.
    */
   adminNote?: string | null;
+  /** Contract details quoted in the monthly reconciliation file (#061). */
+  contractInfo?: { label: string; value: string }[] | null;
+  /** This partner's own top-up limits; null means the programme default (#061). */
+  depositMinVnd?: number | null;
+  depositMaxVnd?: number | null;
   /**
    * Ticked by an admin: this distribution partner may also run the affiliate
    * programme, which is what puts the four marketing menus in their portal
@@ -354,4 +359,39 @@ export type PartnerStatusChange = {
   reason: string | null;
   changedByAdminId: number | null;
   createdAt: string;
+};
+
+/** Contract details and per-partner deposit limits (#061). */
+export type UpdatePartnerProfileByAdminPayload = {
+  contractInfo?: { label: string; value: string }[];
+  depositMinVnd?: number | null;
+  depositMaxVnd?: number | null;
+};
+
+/** Link and code performance over the last 30 days (#061). */
+export type PartnerPerformance = {
+  partnerType: string;
+  links: {
+    id: number;
+    code: string;
+    label: string | null;
+    clicks: number;
+    orders: number;
+    commissionVnd: number;
+    refundedOrders: number;
+    refundRatePercent: number;
+  }[];
+  coupons: {
+    code: string;
+    orders: number;
+    commissionVnd: number;
+    refundedOrders: number;
+    refundRatePercent: number;
+  }[];
+  distribution: {
+    revenueVnd: number;
+    orders: number;
+    refundedOrders: number;
+    refundRatePercent: number;
+  } | null;
 };
