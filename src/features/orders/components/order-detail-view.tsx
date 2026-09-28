@@ -31,6 +31,42 @@ const orderStatusVariant: Record<string, 'default' | 'secondary' | 'destructive'
   refunded: 'destructive'
 };
 
+/**
+ * What each attribution warning on an order means (#036, #040).
+ *
+ * The column carries one or more codes, comma-separated, and none of them
+ * withholds the commission — they mark a pattern worth a look at the partner's
+ * other orders.
+ */
+const attributionWarningLabels: Record<string, { badge: string; note: string }> = {
+  same_device_or_ip: {
+    badge: 'Cùng thiết bị / IP',
+    note: 'Đơn này phát sinh từ cùng thiết bị hoặc cùng IP với một đơn khác của đối tác.'
+  },
+  no_browsing: {
+    badge: 'Không xem gói nào',
+    note: 'Phiên mua này đi thẳng từ link tới trang thanh toán, không xem gói nào — dấu hiệu của đơn dựng bằng script (hoặc trình duyệt đã chặn đoạn mã theo dõi).'
+  },
+  inhuman_speed: {
+    badge: 'Xem gói quá nhanh',
+    note: 'Phiên mua này xem hàng chục gói chỉ trong vài giây, không phải tốc độ của người thật.'
+  }
+};
+
+function parseAttributionWarnings(warning?: string | null) {
+  return (warning ?? '')
+    .split(',')
+    .map((code) => code.trim())
+    .filter(Boolean)
+    .map(
+      (code) =>
+        attributionWarningLabels[code] ?? {
+          badge: code,
+          note: `Hệ thống đánh dấu đơn này: ${code}.`
+        }
+    );
+}
+
 const esimStatusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   available: 'outline',
   active: 'default',
@@ -551,17 +587,23 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               <Badge variant={commissionStatusVariant(order.partnerCommission.status)}>
                 {commissionStatusLabel(order.partnerCommission.status)}
               </Badge>
-              {order.attributionWarning && (
-                <Badge variant='outline' className='border-amber-300 text-amber-700'>
+              {parseAttributionWarnings(order.attributionWarning).map((warning) => (
+                <Badge
+                  key={warning.badge}
+                  variant='outline'
+                  className='border-amber-300 text-amber-700'
+                >
                   <Icons.warning className='mr-1 size-3' />
-                  Cùng thiết bị / IP
+                  {warning.badge}
                 </Badge>
-              )}
+              ))}
             </CardTitle>
             {order.attributionWarning && (
               <CardDescription>
-                Đơn này phát sinh từ cùng thiết bị hoặc cùng IP với một đơn khác của đối tác. Hoa
-                hồng vẫn được ghi nhận — nên xem thêm các giao dịch khác của đối tác này.
+                {parseAttributionWarnings(order.attributionWarning)
+                  .map((warning) => warning.note)
+                  .join(' ')}{' '}
+                Hoa hồng vẫn được ghi nhận — nên xem thêm các giao dịch khác của đối tác này.
               </CardDescription>
             )}
           </CardHeader>
