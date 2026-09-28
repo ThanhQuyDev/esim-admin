@@ -113,6 +113,8 @@ export type PartnerFilters = {
   partnerType?: PartnerType;
   status?: PartnerStatus;
   search?: string;
+  /** Filter the list to one tier (#058). */
+  tierCode?: string;
 };
 
 export type PartnerWalletTransaction = {

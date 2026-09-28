@@ -3,22 +3,41 @@
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
-import { partnersQueryOptions } from '../../api/queries';
-import { columns } from './columns';
+import { partnersQueryOptions, tiersQueryOptions } from '../../api/queries';
+import type { PartnerStatus, PartnerType } from '../../api/types';
+import { partnerColumns } from './columns';
 
 export function PartnersTable() {
+  // Every filter the brief asks for (#058). They live in the URL, so a filtered
+  // list is a link an admin can send to a colleague or come back to.
   const [params] = useQueryStates({
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
-    name: parseAsString
+    name: parseAsString,
+    partnerType: parseAsString,
+    status: parseAsString,
+    tierCode: parseAsString
   });
+
+  // The tier list comes from the programme's own tiers rather than a hardcoded
+  // set, so renaming or adding one needs no change here.
+  const { data: tiers = [] } = useQuery(tiersQueryOptions());
+  const tierCodes = useMemo(
+    () => [...new Set(tiers.map((tier) => tier.tierCode))].toSorted(),
+    [tiers]
+  );
+  const tableColumns = useMemo(() => partnerColumns(tierCodes), [tierCodes]);
 
   const filters = {
     page: params.page,
     limit: params.perPage,
-    ...(params.name && { search: params.name })
+    ...(params.name && { search: params.name }),
+    ...(params.partnerType && { partnerType: params.partnerType as PartnerType }),
+    ...(params.status && { status: params.status as PartnerStatus }),
+    ...(params.tierCode && { tierCode: params.tierCode })
   };
 
   const { data } = useSuspenseQuery(partnersQueryOptions(filters));
@@ -26,7 +45,7 @@ export function PartnersTable() {
 
   const { table } = useDataTable({
     data: data.data,
-    columns,
+    columns: tableColumns,
     pageCount,
     shallow: true,
     debounceMs: 500,

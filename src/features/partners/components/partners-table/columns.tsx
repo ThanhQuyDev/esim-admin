@@ -28,159 +28,201 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: 'Bị từ chối'
 };
 
-export const columns: ColumnDef<Partner>[] = [
-  {
-    // "ID đối tác" — reconciliation queries and support tickets refer to
-    // partners by id, and it was the one identifier the list did not show (#095).
-    id: 'partnerId',
-    accessorKey: 'id',
-    header: 'ID',
-    cell: ({ row }) => (
-      <span className='text-muted-foreground font-mono text-xs'>#{row.original.id}</span>
-    ),
-    enableSorting: false
-  },
-  {
-    id: 'name',
-    accessorFn: (row) => row.contactName,
-    header: ({ column }: { column: Column<Partner, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Đối tác' />
-    ),
-    cell: ({ row }) => (
-      <div className='flex flex-col'>
-        <span className='text-sm font-medium'>{row.original.contactName}</span>
-        <span className='text-muted-foreground text-xs'>{row.original.contactEmail}</span>
-      </div>
-    ),
-    meta: {
-      label: 'Tên/Email',
-      placeholder: 'Tìm theo tên, email, công ty...',
-      variant: 'text' as const,
-      icon: Icons.search
+function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
+  return [
+    {
+      // "ID đối tác" — reconciliation queries and support tickets refer to
+      // partners by id, and it was the one identifier the list did not show (#095).
+      id: 'partnerId',
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ row }) => (
+        <span className='text-muted-foreground font-mono text-xs'>#{row.original.id}</span>
+      ),
+      enableSorting: false
     },
-    enableColumnFilter: true
-  },
-  {
-    id: 'partnerType',
-    accessorKey: 'partnerType',
-    header: 'Loại',
-    cell: ({ row }) => (
-      <Badge variant='outline'>
-        {PARTNER_TYPE_LABEL[row.original.partnerType] ?? row.original.partnerType}
-      </Badge>
-    ),
-    enableSorting: false
-  },
-  {
-    id: 'companyName',
-    accessorKey: 'companyName',
-    header: 'Công ty',
-    cell: ({ row }) => row.original.companyName || '—'
-  },
-  {
-    id: 'status',
-    accessorKey: 'status',
-    header: 'Trạng thái',
-    cell: ({ row }) => {
-      const status = row.original.status;
-      return (
-        <Badge variant={STATUS_VARIANT[status] ?? 'default'}>
-          {STATUS_LABEL[status] ?? status}
+    {
+      id: 'name',
+      accessorFn: (row) => row.contactName,
+      header: ({ column }: { column: Column<Partner, unknown> }) => (
+        <DataTableColumnHeader column={column} title='Đối tác' />
+      ),
+      cell: ({ row }) => (
+        <div className='flex flex-col'>
+          <span className='text-sm font-medium'>{row.original.contactName}</span>
+          <span className='text-muted-foreground text-xs'>{row.original.contactEmail}</span>
+        </div>
+      ),
+      meta: {
+        label: 'Tên/Email/SĐT/ID',
+        // The server matches the id too, so an admin can paste what a
+        // reconciliation file or a support ticket quotes back (#058).
+        placeholder: 'Tìm tên, email, SĐT, công ty hoặc ID...',
+        variant: 'text' as const,
+        icon: Icons.search
+      },
+      enableColumnFilter: true
+    },
+    {
+      id: 'partnerType',
+      accessorKey: 'partnerType',
+      header: 'Loại',
+      cell: ({ row }) => (
+        <Badge variant='outline'>
+          {PARTNER_TYPE_LABEL[row.original.partnerType] ?? row.original.partnerType}
         </Badge>
-      );
+      ),
+      meta: {
+        label: 'Loại đối tác',
+        variant: 'select' as const,
+        options: Object.entries(PARTNER_TYPE_LABEL).map(([value, label]) => ({
+          value,
+          label
+        }))
+      },
+      enableColumnFilter: true,
+      enableSorting: false
     },
-    enableSorting: false
-  },
-  {
-    id: 'tierCode',
-    accessorKey: 'tierCode',
-    header: 'Hạng',
-    cell: ({ row }) => row.original.tierCode || '—'
-  },
-  {
-    accessorKey: 'totalOrders',
-    header: 'Tổng đơn',
-    cell: ({ row }) => <span className='text-sm tabular-nums'>{row.original.totalOrders ?? 0}</span>
-  },
-  {
-    accessorKey: 'totalRevenueVnd',
-    header: 'Tổng doanh thu',
-    cell: ({ row }) => (
-      <span className='text-sm tabular-nums'>{formatVnd(row.original.totalRevenueVnd ?? 0)}</span>
-    )
-  },
-  {
-    // What we have actually paid this partner, which is the figure a payout
-    // conversation starts from (#095).
-    accessorKey: 'totalCommissionVnd',
-    header: 'Tổng hoa hồng',
-    cell: ({ row }) => (
-      <span className='text-sm tabular-nums'>
-        {formatVnd(row.original.totalCommissionVnd ?? 0)}
-      </span>
-    )
-  },
-  {
-    accessorKey: 'profitVnd',
-    header: 'Lợi nhuận',
-    cell: ({ row }) => {
-      // Revenue less cost of goods less the commission paid to this partner, so
-      // it can legitimately be negative — a refunded month, or a rate set too
-      // high. Showing that in red is the whole point of the column.
-      const profit = row.original.profitVnd ?? 0;
-      return (
-        <span className={`text-sm tabular-nums ${profit < 0 ? 'text-destructive' : ''}`}>
-          {formatVnd(profit)}
-        </span>
-      );
-    }
-  },
-  {
-    accessorKey: 'refundRatePercent',
-    header: 'Tỷ lệ hoàn tiền',
-    cell: ({ row }) => {
-      const rate = row.original.refundRatePercent ?? 0;
-      return (
-        <span
-          className={`text-sm tabular-nums ${rate >= 10 ? 'text-destructive font-medium' : ''}`}
-        >
-          {rate}%
-        </span>
-      );
-    }
-  },
-  {
-    accessorKey: 'revenue30dVnd',
-    header: 'Giá trị 30 ngày',
-    cell: ({ row }) => <span className='text-sm'>{formatVnd(row.original.revenue30dVnd ?? 0)}</span>
-  },
-  {
-    accessorKey: 'walletBalanceVnd',
-    header: 'Số dư ví',
-    cell: ({ row }) => (
-      <span className='text-sm'>{formatVnd(row.original.walletBalanceVnd ?? 0)}</span>
-    )
-  },
-  {
-    accessorKey: 'lastActivityAt',
-    header: 'Hoạt động gần nhất',
-    cell: ({ row }) =>
-      row.original.lastActivityAt ? (
-        <span className='text-sm'>{formatDateVn(row.original.lastActivityAt)}</span>
-      ) : (
-        <span className='text-muted-foreground text-sm'>—</span>
+    {
+      id: 'companyName',
+      accessorKey: 'companyName',
+      header: 'Công ty',
+      cell: ({ row }) => row.original.companyName || '—'
+    },
+    {
+      id: 'status',
+      accessorKey: 'status',
+      header: 'Trạng thái',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <Badge variant={STATUS_VARIANT[status] ?? 'default'}>
+            {STATUS_LABEL[status] ?? status}
+          </Badge>
+        );
+      },
+      meta: {
+        label: 'Trạng thái',
+        variant: 'select' as const,
+        options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }))
+      },
+      enableColumnFilter: true,
+      enableSorting: false
+    },
+    {
+      id: 'tierCode',
+      accessorKey: 'tierCode',
+      header: 'Hạng',
+      cell: ({ row }) => row.original.tierCode || '—',
+      meta: {
+        label: 'Hạng đối tác',
+        // Filled from the tiers the programme actually has, so a renamed or a
+        // newly added tier needs no change here (#058).
+        variant: 'select' as const,
+        options: tierCodes.map((code) => ({ value: code, label: code }))
+      },
+      enableColumnFilter: true,
+      enableSorting: false
+    },
+    {
+      accessorKey: 'totalOrders',
+      header: 'Tổng đơn',
+      cell: ({ row }) => (
+        <span className='text-sm tabular-nums'>{row.original.totalOrders ?? 0}</span>
       )
-  },
-  {
-    id: 'createdAt',
-    accessorKey: 'createdAt',
-    header: ({ column }: { column: Column<Partner, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Ngày đăng ký' />
-    ),
-    cell: ({ row }) => formatDateVn(row.original.createdAt)
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <PartnerCellAction data={row.original} />
-  }
-];
+    },
+    {
+      accessorKey: 'totalRevenueVnd',
+      header: 'Tổng doanh thu',
+      cell: ({ row }) => (
+        <span className='text-sm tabular-nums'>{formatVnd(row.original.totalRevenueVnd ?? 0)}</span>
+      )
+    },
+    {
+      // What we have actually paid this partner, which is the figure a payout
+      // conversation starts from (#095).
+      accessorKey: 'totalCommissionVnd',
+      header: 'Tổng hoa hồng',
+      cell: ({ row }) => (
+        <span className='text-sm tabular-nums'>
+          {formatVnd(row.original.totalCommissionVnd ?? 0)}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'profitVnd',
+      header: 'Lợi nhuận',
+      cell: ({ row }) => {
+        // Revenue less cost of goods less the commission paid to this partner, so
+        // it can legitimately be negative — a refunded month, or a rate set too
+        // high. Showing that in red is the whole point of the column.
+        const profit = row.original.profitVnd ?? 0;
+        return (
+          <span className={`text-sm tabular-nums ${profit < 0 ? 'text-destructive' : ''}`}>
+            {formatVnd(profit)}
+          </span>
+        );
+      }
+    },
+    {
+      accessorKey: 'refundRatePercent',
+      header: 'Tỷ lệ hoàn tiền',
+      cell: ({ row }) => {
+        const rate = row.original.refundRatePercent ?? 0;
+        return (
+          <span
+            className={`text-sm tabular-nums ${rate >= 10 ? 'text-destructive font-medium' : ''}`}
+          >
+            {rate}%
+          </span>
+        );
+      }
+    },
+    {
+      accessorKey: 'revenue30dVnd',
+      header: 'Giá trị 30 ngày',
+      cell: ({ row }) => (
+        <span className='text-sm'>{formatVnd(row.original.revenue30dVnd ?? 0)}</span>
+      )
+    },
+    {
+      accessorKey: 'walletBalanceVnd',
+      header: 'Số dư ví',
+      cell: ({ row }) => (
+        <span className='text-sm'>{formatVnd(row.original.walletBalanceVnd ?? 0)}</span>
+      )
+    },
+    {
+      accessorKey: 'lastActivityAt',
+      header: 'Hoạt động gần nhất',
+      cell: ({ row }) =>
+        row.original.lastActivityAt ? (
+          <span className='text-sm'>{formatDateVn(row.original.lastActivityAt)}</span>
+        ) : (
+          <span className='text-muted-foreground text-sm'>—</span>
+        )
+    },
+    {
+      id: 'createdAt',
+      accessorKey: 'createdAt',
+      header: ({ column }: { column: Column<Partner, unknown> }) => (
+        <DataTableColumnHeader column={column} title='Ngày đăng ký' />
+      ),
+      cell: ({ row }) => formatDateVn(row.original.createdAt)
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => <PartnerCellAction data={row.original} />
+    }
+  ];
+}
+
+/**
+ * Column definitions, with the tier filter filled from the tiers that exist
+ * (#058). `columns` without arguments keeps the old import working.
+ */
+export function partnerColumns(tierCodes: string[] = []): ColumnDef<Partner>[] {
+  return buildColumns(tierCodes);
+}
+
+export const columns: ColumnDef<Partner>[] = buildColumns([]);
