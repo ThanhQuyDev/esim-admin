@@ -12,7 +12,9 @@ import {
   applyAsPartner,
   createMyTicket,
   requestBankAccountChange,
-  confirmBankAccountChange
+  confirmBankAccountChange,
+  markMyNotificationRead,
+  markAllMyNotificationsRead
 } from './service';
 import { partnerPortalKeys } from './queries';
 import type {
@@ -86,4 +88,17 @@ export const applyAsPartnerMutation = mutationOptions({
 export const createTicketMutation = mutationOptions({
   mutationFn: (data: CreateTicketPayload) => createMyTicket(data),
   onSettled: invalidateAll
+});
+
+/** Opening an announcement clears its dot (#079). */
+export const markNotificationReadMutation = mutationOptions({
+  mutationFn: (id: number) => markMyNotificationRead(id),
+  onSettled: () =>
+    getQueryClient().invalidateQueries({ queryKey: partnerPortalKeys.notifications() })
+});
+
+export const markAllNotificationsReadMutation = mutationOptions({
+  mutationFn: () => markAllMyNotificationsRead(),
+  onSettled: () =>
+    getQueryClient().invalidateQueries({ queryKey: partnerPortalKeys.notifications() })
 });

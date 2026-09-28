@@ -572,3 +572,25 @@ export type PartnerProgramSettings = {
 };
 
 export type UpdateProgramSettingsPayload = Partial<PartnerProgramSettings>;
+
+/** An announcement an admin sent to partners (#079). */
+export type PartnerNotification = {
+  id: number;
+  title: string;
+  body: string;
+  /** all | kol | distribution */
+  audience: string;
+  sendEmail: boolean;
+  /** How many emails actually went out — not the size of the audience. */
+  emailsSent: number;
+  recipients: number;
+  readCount: number;
+  createdAt: string;
+};
+
+export type CreateNotificationPayload = {
+  title: string;
+  body: string;
+  audience?: string;
+  sendEmail?: boolean;
+};

@@ -16,6 +16,7 @@ import {
   getMyTickets,
   getMyCoupons,
   getMyTierEvaluations,
+  getMyNotifications,
   getMyDistributionSummary,
   getMyDistributionSeries,
   getMyEsims,
@@ -36,7 +37,8 @@ export const partnerPortalKeys = {
   tiers: () => [...partnerPortalKeys.all, 'tiers'] as const,
   tickets: () => [...partnerPortalKeys.all, 'tickets'] as const,
   coupons: () => [...partnerPortalKeys.all, 'coupons'] as const,
-  tierEvaluations: () => [...partnerPortalKeys.all, 'tier-evaluations'] as const
+  tierEvaluations: () => [...partnerPortalKeys.all, 'tier-evaluations'] as const,
+  notifications: () => [...partnerPortalKeys.all, 'notifications'] as const
 };
 
 export const myProfileQueryOptions = () =>
@@ -170,4 +172,11 @@ export const myTierEvaluationsQueryOptions = () =>
   queryOptions({
     queryKey: partnerPortalKeys.tierEvaluations(),
     queryFn: getMyTierEvaluations
+  });
+
+/** Announcements from esim.vn, for the bell (#079). */
+export const myNotificationsQueryOptions = () =>
+  queryOptions({
+    queryKey: partnerPortalKeys.notifications(),
+    queryFn: getMyNotifications
   });

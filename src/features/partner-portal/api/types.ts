@@ -421,3 +421,14 @@ export type MyPurchase = {
   createdAt: string;
   items: { planName: string | null; quantity: number; vndPrice: number }[];
 };
+
+/** An announcement from esim.vn, as this partner sees it (#079). */
+export type MyNotification = {
+  id: number;
+  title: string;
+  body: string;
+  createdAt: string;
+  isRead: boolean;
+};
+
+export type MyNotificationList = { unreadCount: number; data: MyNotification[] };

@@ -29,7 +29,8 @@ import type {
   MyDistributionSummary,
   MyDistributionSeriesPoint,
   MyEsim,
-  MyPurchase
+  MyPurchase,
+  MyNotificationList
 } from './types';
 
 export async function applyAsPartner(
@@ -318,4 +319,17 @@ export async function getMyCoupons(): Promise<MyCoupon[]> {
 
 export async function getMyTierEvaluations(): Promise<MyTierEvaluation[]> {
   return apiClient<MyTierEvaluation[]>('/partner-portal/tier-evaluations');
+}
+
+/** Announcements from esim.vn, for the bell (#079). */
+export async function getMyNotifications(): Promise<MyNotificationList> {
+  return apiClient<MyNotificationList>('/partner-portal/notifications');
+}
+
+export async function markMyNotificationRead(id: number): Promise<void> {
+  await apiClient(`/partner-portal/notifications/${id}/read`, { method: 'POST' });
+}
+
+export async function markAllMyNotificationsRead(): Promise<void> {
+  await apiClient('/partner-portal/notifications/read-all', { method: 'POST' });
 }

@@ -5,8 +5,9 @@ import { Breadcrumbs } from '../breadcrumbs';
 import SearchInput from '../search-input';
 import { ThemeSelector } from '../themes/theme-selector';
 import { ThemeModeToggle } from '../themes/theme-mode-toggle';
-import CtaGithub from './cta-github';
-import { NotificationCenter } from '@/features/notifications/components/notification-center';
+import { IS_PARTNER_PORTAL } from '@/config/app-mode';
+import { AdminNotificationBell } from '@/features/partners/components/admin-notification-bell';
+import { PortalNotificationBell } from '@/features/partner-portal/components/portal-notification-bell';
 
 export default function Header() {
   return (
@@ -25,7 +26,11 @@ export default function Header() {
         <div className='hidden sm:block'>
           <ThemeSelector />
         </div>
-        <NotificationCenter />
+        {/*
+          The same announcements on both sides (#079): the partner's bell is an
+          inbox with unread dots, the admin's is the record of what went out.
+        */}
+        {IS_PARTNER_PORTAL ? <PortalNotificationBell /> : <AdminNotificationBell />}
       </div>
     </header>
   );

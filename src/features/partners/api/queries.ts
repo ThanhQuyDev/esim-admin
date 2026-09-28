@@ -16,6 +16,7 @@ import {
   getPartnerListStats,
   getPartnerPerformance,
   getCommissionSummary,
+  getNotifications,
   getProgramSettings,
   getPartnerOrders,
   getPartnerOptions,
@@ -101,6 +102,13 @@ export const partnerPerformanceQueryOptions = (id: number) =>
   queryOptions({
     queryKey: [...partnerKeys.detail(id), 'performance'],
     queryFn: () => getPartnerPerformance(id)
+  });
+
+/** Everything an admin has announced (#079). */
+export const notificationsQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'notifications'],
+    queryFn: () => getNotifications()
   });
 
 /** The partner programme's settings (#075, #076, #077). */

@@ -39,7 +39,9 @@ import type {
   PartnerOption,
   PartnerOrderFilters,
   PartnerProgramSettings,
-  UpdateProgramSettingsPayload
+  UpdateProgramSettingsPayload,
+  PartnerNotification,
+  CreateNotificationPayload
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -259,6 +261,21 @@ export async function bulkPayoutDecision(
 ): Promise<{ updated: number; skipped: number[] }> {
   return apiClient<{ updated: number; skipped: number[] }>('/partners/payouts/bulk-decision', {
     method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+/** Everything an admin has announced, with how far it reached (#079). */
+export async function getNotifications(): Promise<PartnerNotification[]> {
+  return apiClient<PartnerNotification[]>('/partners/notifications');
+}
+
+/** Compose and send an announcement (#079). */
+export async function createNotification(
+  data: CreateNotificationPayload
+): Promise<PartnerNotification> {
+  return apiClient<PartnerNotification>('/partners/notifications', {
+    method: 'POST',
     body: JSON.stringify(data)
   });
 }

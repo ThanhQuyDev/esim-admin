@@ -257,6 +257,12 @@ export const navGroups: NavGroup[] = [
             title: 'Hạng đối tác',
             url: '/dashboard/partners/tiers',
             access: { role: [1] }
+          },
+          {
+            // Announcements to partners, by group or to everybody (#079).
+            title: 'Thông báo',
+            url: '/dashboard/partners/notifications',
+            access: { role: [1] }
           }
         ]
       },
