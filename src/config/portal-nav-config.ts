@@ -18,7 +18,9 @@ export const portalNavGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Ví & Ký quỹ',
+        // Renamed for #047: there is no request to raise any more, the partner
+        // just pays.
+        title: 'Thanh toán',
         url: '/dashboard/portal/wallet',
         icon: 'wallet',
         isActive: false,

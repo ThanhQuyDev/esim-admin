@@ -63,6 +63,16 @@ export type MyWalletSummary = {
   withdrawnVnd?: number;
   payoutCount?: number;
   status: 'active' | 'locked';
+  /**
+   * The rules the top-up form has to state, from the server (#047), so the
+   * screen and the validation cannot drift apart.
+   */
+  topupPolicy?: {
+    minVnd: number;
+    maxVnd: number;
+    /** Taken out of a card top-up: send 100.000đ, 94.000đ is credited. */
+    cardFeePercent: number;
+  };
 };
 
 export type MyWalletTransaction = {
@@ -75,19 +85,33 @@ export type MyWalletTransaction = {
   createdAt: string;
 };
 
+export type PartnerTopupMethod = 'bank_transfer' | 'card';
+
 export type MyDepositRequest = {
   id: number;
   amountVnd: number;
+  /** How the partner paid (#047). Older rows predate the choice. */
+  method?: PartnerTopupMethod;
+  /** OnePay's fee on a card top-up; zero for a transfer. */
+  feeVnd?: number;
+  /** What actually reached the wallet: amount less fee. */
+  creditedVnd?: number | null;
   bankTransferCode: string;
   qrUrl?: string;
   accountNumber?: string;
   accountName?: string;
   bankCode?: string;
+  /** Where to send the partner to pay by card (#047). */
+  paymentUrl?: string;
+  paymentRef?: string;
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
 };
 
-export type CreateDepositRequestPayload = { amountVnd: number };
+export type CreateDepositRequestPayload = {
+  amountVnd: number;
+  method?: PartnerTopupMethod;
+};
 
 export type MyLink = {
   id: number;
