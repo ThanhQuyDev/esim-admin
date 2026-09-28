@@ -240,6 +240,13 @@ export const navGroups: NavGroup[] = [
             access: { role: [1] }
           },
           {
+            // The same order screens the partners see, one tab per partner
+            // type, with the scope opened up to every partner (#071).
+            title: 'Đơn hàng đối tác',
+            url: '/dashboard/partners/orders',
+            access: { role: [1] }
+          },
+          {
             title: 'Tài chính',
             url: '/dashboard/partners/payouts',
             access: { role: [1] }

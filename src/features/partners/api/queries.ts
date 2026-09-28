@@ -16,10 +16,17 @@ import {
   getPartnerListStats,
   getPartnerPerformance,
   getCommissionSummary,
+  getPartnerOrders,
+  getPartnerOptions,
   getPayoutSummary,
   getReconciliations
 } from './service';
-import type { PartnerFilters, CommissionFilters, PayoutFilters } from './types';
+import type {
+  PartnerFilters,
+  CommissionFilters,
+  PayoutFilters,
+  PartnerOrderFilters
+} from './types';
 
 export const partnerKeys = {
   all: ['partners'] as const,
@@ -93,6 +100,20 @@ export const partnerPerformanceQueryOptions = (id: number) =>
   queryOptions({
     queryKey: [...partnerKeys.detail(id), 'performance'],
     queryFn: () => getPartnerPerformance(id)
+  });
+
+/** "Đơn hàng đối tác": the partner screens, with the scope opened up (#071). */
+export const partnerOrdersQueryOptions = <T>(filters: PartnerOrderFilters) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'orders', filters],
+    queryFn: () => getPartnerOrders<T>(filters)
+  });
+
+/** The names for the "lọc theo đối tác" select box (#071). */
+export const partnerOptionsQueryOptions = (partnerType?: string) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'partner-options', partnerType ?? ''],
+    queryFn: () => getPartnerOptions(partnerType)
   });
 
 /** The four figures at the head of "Tài chính" (#067). */

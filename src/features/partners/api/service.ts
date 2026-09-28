@@ -35,7 +35,9 @@ import type {
   PayoutSummary,
   BulkPayoutDecisionPayload,
   AdminPayoutList,
-  PayoutFilters
+  PayoutFilters,
+  PartnerOption,
+  PartnerOrderFilters
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -257,6 +259,16 @@ export async function bulkPayoutDecision(
     method: 'PATCH',
     body: JSON.stringify(data)
   });
+}
+
+/** "Đơn hàng đối tác": the partner screens, with the scope opened up (#071). */
+export async function getPartnerOrders<T>(filters: PartnerOrderFilters): Promise<T[]> {
+  return apiClient<T[]>(`/partners/orders${toQuery(filters)}`);
+}
+
+/** The names for the "lọc theo đối tác" select box (#071). */
+export async function getPartnerOptions(partnerType?: string): Promise<PartnerOption[]> {
+  return apiClient<PartnerOption[]>(`/partners/orders/partner-options${toQuery({ partnerType })}`);
 }
 
 /** The four figures at the head of "Tài chính" (#067). */

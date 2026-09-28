@@ -497,3 +497,57 @@ export type BulkPayoutDecisionPayload = {
   decision: 'approve' | 'reject';
   adminNote?: string;
 };
+
+/** One line of an order, on either tab of "Đơn hàng đối tác" (#071). */
+export type PartnerOrderItem = {
+  planName: string | null;
+  quantity: number;
+  vndPrice: number;
+};
+
+/** A marketing partner's attributed order, as the admin sees it (#071). */
+export type AdminMarketingOrderRow = {
+  orderNumber: string;
+  partnerId: number;
+  partnerName: string | null;
+  status: string;
+  vndPrice: number;
+  grossVndPrice: number;
+  refundedVnd: number;
+  createdAt: string;
+  commissionVnd: number | null;
+  commissionPercent: number | null;
+  commissionStatus: string | null;
+  linkCode: string | null;
+  couponCode: string | null;
+  customerType: 'new' | 'returning';
+  esimCount: number;
+  items: PartnerOrderItem[];
+  validity: string;
+  invalidReason: string | null;
+};
+
+/** A distribution partner's own purchase, as the admin sees it (#071). */
+export type AdminDistributionOrderRow = {
+  orderNumber: string;
+  partnerId: number;
+  partnerName: string | null;
+  status: string;
+  orderType: string | null;
+  paidVnd: number;
+  listVnd: number;
+  refundedVnd: number;
+  esimCount: number;
+  createdAt: string;
+  items: PartnerOrderItem[];
+};
+
+export type PartnerOption = { id: number; name: string; email: string | null };
+
+export type PartnerOrderFilters = {
+  partnerType?: string;
+  partnerId?: number;
+  search?: string;
+  status?: string;
+  limit?: number;
+};
