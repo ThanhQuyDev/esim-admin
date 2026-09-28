@@ -323,3 +323,19 @@ export type TicketMessage = {
   attachments: string[] | null;
   createdAt: string;
 };
+
+/**
+ * Dashboard figures for a distribution partner (#043).
+ *
+ * A different business from the marketing side: this partner buys the eSIMs and
+ * resells them, so what matters is their own buying — orders, cancellations and
+ * spend, split between eSIMs and top-ups — plus how many of the eSIMs they
+ * bought have actually been switched on, because one that has not is stock.
+ */
+export type MyDistributionSummary = {
+  range: { from: string; to: string };
+  total: { orders: number; cancelledOrders: number; revenueVnd: number };
+  esim: { orders: number; cancelledOrders: number; revenueVnd: number };
+  topup: { orders: number; cancelledOrders: number; revenueVnd: number };
+  activatedEsims: { count: number; revenueVnd: number };
+};

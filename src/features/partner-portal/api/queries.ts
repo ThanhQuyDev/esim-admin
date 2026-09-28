@@ -15,7 +15,8 @@ import {
   getMyTiers,
   getMyTickets,
   getMyCoupons,
-  getMyTierEvaluations
+  getMyTierEvaluations,
+  getMyDistributionSummary
 } from './service';
 
 export const partnerPortalKeys = {
@@ -65,6 +66,18 @@ export const mySummaryQueryOptions = (range?: { from?: string; to?: string }) =>
     // the numbers of the previous one (#010).
     queryKey: [...partnerPortalKeys.summary(), range?.from ?? '', range?.to ?? ''],
     queryFn: () => getMySummary(range)
+  });
+
+/** Distribution partner's own dashboard figures (#043). */
+export const myDistributionSummaryQueryOptions = (range?: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [
+      ...partnerPortalKeys.all,
+      'distribution-summary',
+      range?.from ?? '',
+      range?.to ?? ''
+    ],
+    queryFn: () => getMyDistributionSummary(range)
   });
 
 export const myTopDestinationsQueryOptions = (range?: { from?: string; to?: string }) =>

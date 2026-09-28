@@ -25,7 +25,8 @@ import type {
   CreateCouponPayload,
   TicketMessage,
   BankAccountChangePayload,
-  BankAccountChangeRequested
+  BankAccountChangeRequested,
+  MyDistributionSummary
 } from './types';
 
 export async function applyAsPartner(
@@ -173,6 +174,19 @@ export async function getMySummary(range?: { from?: string; to?: string }): Prom
   if (range?.to) search.set('to', range.to);
   const query = search.toString();
   return apiClient<MySummary>(`/partner-portal/summary${query ? `?${query}` : ''}`);
+}
+
+export async function getMyDistributionSummary(range?: {
+  from?: string;
+  to?: string;
+}): Promise<MyDistributionSummary> {
+  const search = new URLSearchParams();
+  if (range?.from) search.set('from', range.from);
+  if (range?.to) search.set('to', range.to);
+  const query = search.toString();
+  return apiClient<MyDistributionSummary>(
+    `/partner-portal/distribution-summary${query ? `?${query}` : ''}`
+  );
 }
 
 export async function getMyOrders(): Promise<MyOrder[]> {
