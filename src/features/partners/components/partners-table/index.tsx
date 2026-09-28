@@ -94,6 +94,24 @@ export function PartnersTable() {
             <Icons.settings className='mr-2 size-4' />
             Thay đổi trạng thái
           </Button>
+          <Button
+            size='sm'
+            variant='outline'
+            onClick={() => {
+              // The file follows the filters on screen (#062): exporting the
+              // whole programme when the admin is looking at one tier would be
+              // a trap.
+              const query = new URLSearchParams();
+              if (params.name) query.set('search', params.name);
+              if (params.partnerType) query.set('partnerType', params.partnerType);
+              if (params.status) query.set('status', params.status);
+              if (params.tierCode) query.set('tierCode', params.tierCode);
+              window.location.href = `/api/partners/export-excel?${query.toString()}`;
+            }}
+          >
+            <Icons.download className='mr-2 size-4' />
+            Xuất Excel
+          </Button>
           <Button size='sm' onClick={() => setAddOpen(true)}>
             <Icons.add className='mr-2 size-4' />
             Thêm đối tác
