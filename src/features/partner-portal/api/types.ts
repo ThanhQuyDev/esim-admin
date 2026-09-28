@@ -339,3 +339,11 @@ export type MyDistributionSummary = {
   topup: { orders: number; cancelledOrders: number; revenueVnd: number };
   activatedEsims: { count: number; revenueVnd: number };
 };
+
+/** One bucket of the distribution partner's chart (#045). */
+export type MyDistributionSeriesPoint = {
+  /** Start of the bucket, as an ISO timestamp. */
+  bucket: string;
+  orders: number;
+  activatedEsims: number;
+};

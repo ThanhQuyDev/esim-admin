@@ -26,7 +26,8 @@ import type {
   TicketMessage,
   BankAccountChangePayload,
   BankAccountChangeRequested,
-  MyDistributionSummary
+  MyDistributionSummary,
+  MyDistributionSeriesPoint
 } from './types';
 
 export async function applyAsPartner(
@@ -186,6 +187,21 @@ export async function getMyDistributionSummary(range?: {
   const query = search.toString();
   return apiClient<MyDistributionSummary>(
     `/partner-portal/distribution-summary${query ? `?${query}` : ''}`
+  );
+}
+
+export async function getMyDistributionSeries(params?: {
+  from?: string;
+  to?: string;
+  groupBy?: string;
+}): Promise<MyDistributionSeriesPoint[]> {
+  const search = new URLSearchParams();
+  if (params?.from) search.set('from', params.from);
+  if (params?.to) search.set('to', params.to);
+  if (params?.groupBy) search.set('groupBy', params.groupBy);
+  const query = search.toString();
+  return apiClient<MyDistributionSeriesPoint[]>(
+    `/partner-portal/distribution-series${query ? `?${query}` : ''}`
   );
 }
 

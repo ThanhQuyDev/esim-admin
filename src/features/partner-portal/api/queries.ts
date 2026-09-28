@@ -16,7 +16,8 @@ import {
   getMyTickets,
   getMyCoupons,
   getMyTierEvaluations,
-  getMyDistributionSummary
+  getMyDistributionSummary,
+  getMyDistributionSeries
 } from './service';
 
 export const partnerPortalKeys = {
@@ -78,6 +79,23 @@ export const myDistributionSummaryQueryOptions = (range?: { from?: string; to?: 
       range?.to ?? ''
     ],
     queryFn: () => getMyDistributionSummary(range)
+  });
+
+/** Orders bought and eSIMs activated over time (#045). */
+export const myDistributionSeriesQueryOptions = (params?: {
+  from?: string;
+  to?: string;
+  groupBy?: string;
+}) =>
+  queryOptions({
+    queryKey: [
+      ...partnerPortalKeys.all,
+      'distribution-series',
+      params?.from ?? '',
+      params?.to ?? '',
+      params?.groupBy ?? 'day'
+    ],
+    queryFn: () => getMyDistributionSeries(params)
   });
 
 export const myTopDestinationsQueryOptions = (range?: { from?: string; to?: string }) =>
