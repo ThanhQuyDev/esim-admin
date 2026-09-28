@@ -557,3 +557,18 @@ export type PartnerOrderFilters = {
   status?: string;
   limit?: number;
 };
+
+/** The partner programme's settings (#075, #076, #077). */
+export type PartnerProgramSettings = {
+  payoutMinKolVnd: number;
+  payoutMinDistributionVnd: number;
+  depositMinKolVnd: number;
+  depositMinDistributionVnd: number;
+  /** Below this, a distribution partner is nudged to top up (#077). */
+  lowDepositWarningVnd: number;
+  reconciliationEmailEnabled: boolean;
+  /** Day of month N+1 the statement for month N goes out (#076). */
+  reconciliationEmailDayOfMonth: number;
+};
+
+export type UpdateProgramSettingsPayload = Partial<PartnerProgramSettings>;

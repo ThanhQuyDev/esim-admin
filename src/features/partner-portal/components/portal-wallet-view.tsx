@@ -161,8 +161,22 @@ export function PortalWalletView() {
     }
   ];
 
+  // A nudge, not a block: stopping the partner early would cause exactly the
+  // thing this is meant to prevent, an order failing halfway (#077).
+  const warnVnd = wallet?.lowDepositWarningVnd ?? 0;
+  const lowBalance = !isLoading && warnVnd > 0 && (wallet?.availableBalanceVnd ?? 0) < warnVnd;
+
   return (
     <div className='flex flex-1 flex-col space-y-4'>
+      {lowBalance && (
+        <div className='border-amber-500/40 bg-amber-500/10 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm'>
+          <Icons.warning className='h-4 w-4 shrink-0 text-amber-600' />
+          <span>
+            Số dư ký quỹ khả dụng còn {formatVnd(wallet?.availableBalanceVnd)} — dưới mức nhắc nạp{' '}
+            {formatVnd(warnVnd)}. Bạn nên nạp thêm để không bị gián đoạn khi đặt đơn.
+          </span>
+        </div>
+      )}
       <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs sm:grid-cols-3'>
         {cards.map((card) => {
           const Icon = card.icon;

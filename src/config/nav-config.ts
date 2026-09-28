@@ -211,7 +211,9 @@ export const navGroups: NavGroup[] = [
             access: { role: [1] }
           },
           {
-            title: 'Cài đặt chương trình',
+            // Renamed per #075: the page now edits the programme's rules
+            // rather than only listing them.
+            title: 'Cấu hình chung',
             url: '/dashboard/partners/settings',
             access: { role: [1] }
           },

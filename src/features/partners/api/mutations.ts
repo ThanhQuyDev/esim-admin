@@ -11,6 +11,7 @@ import {
   bulkUpdatePartnerStatus,
   setPartnerAdminNote,
   bulkPayoutDecision,
+  updateProgramSettings,
   setReconciliationStatus,
   setPartnerAffiliateGrant,
   setPartnerLinkCodePermission,
@@ -35,7 +36,8 @@ import type {
   BulkPartnerStatusPayload,
   UpdatePartnerProfileByAdminPayload,
   SetReconciliationStatusPayload,
-  BulkPayoutDecisionPayload
+  BulkPayoutDecisionPayload,
+  UpdateProgramSettingsPayload
 } from './types';
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: partnerKeys.all });
@@ -92,6 +94,11 @@ export const adminCreateLinkForPartnerMutation = mutationOptions({
     id: number;
     data: { code?: string; label?: string; targetPath?: string };
   }) => adminCreateLinkForPartner(id, data),
+  onSettled: invalidateAll
+});
+
+export const updateProgramSettingsMutation = mutationOptions({
+  mutationFn: (data: UpdateProgramSettingsPayload) => updateProgramSettings(data),
   onSettled: invalidateAll
 });
 

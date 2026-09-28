@@ -16,6 +16,7 @@ import {
   getPartnerListStats,
   getPartnerPerformance,
   getCommissionSummary,
+  getProgramSettings,
   getPartnerOrders,
   getPartnerOptions,
   getPayoutSummary,
@@ -100,6 +101,13 @@ export const partnerPerformanceQueryOptions = (id: number) =>
   queryOptions({
     queryKey: [...partnerKeys.detail(id), 'performance'],
     queryFn: () => getPartnerPerformance(id)
+  });
+
+/** The partner programme's settings (#075, #076, #077). */
+export const programSettingsQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'program-settings'],
+    queryFn: () => getProgramSettings()
   });
 
 /** "Đơn hàng đối tác": the partner screens, with the scope opened up (#071). */

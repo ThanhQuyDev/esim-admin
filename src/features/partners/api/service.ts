@@ -37,7 +37,9 @@ import type {
   AdminPayoutList,
   PayoutFilters,
   PartnerOption,
-  PartnerOrderFilters
+  PartnerOrderFilters,
+  PartnerProgramSettings,
+  UpdateProgramSettingsPayload
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -256,6 +258,20 @@ export async function bulkPayoutDecision(
   data: BulkPayoutDecisionPayload
 ): Promise<{ updated: number; skipped: number[] }> {
   return apiClient<{ updated: number; skipped: number[] }>('/partners/payouts/bulk-decision', {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+/** The partner programme's settings (#075, #076, #077). */
+export async function getProgramSettings(): Promise<PartnerProgramSettings> {
+  return apiClient<PartnerProgramSettings>('/partners/program-settings');
+}
+
+export async function updateProgramSettings(
+  data: UpdateProgramSettingsPayload
+): Promise<PartnerProgramSettings> {
+  return apiClient<PartnerProgramSettings>('/partners/program-settings', {
     method: 'PATCH',
     body: JSON.stringify(data)
   });

@@ -79,6 +79,11 @@ export type MyWalletSummary = {
     /** Taken out of a card top-up: send 100.000đ, 94.000đ is credited. */
     cardFeePercent: number;
   };
+  /**
+   * Below this the screen nudges the partner to top up (#077). A warning,
+   * never a block: running out mid-order is what it exists to prevent.
+   */
+  lowDepositWarningVnd?: number;
 };
 
 export type MyWalletTransaction = {

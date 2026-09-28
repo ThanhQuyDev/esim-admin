@@ -8,9 +8,10 @@ import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 
 import { partnerOverviewQueryOptions, tiersQueryOptions } from '../api/queries';
+import { ProgramSettingsForm } from './program-settings-form';
 import type { PartnerTier } from '../api/types';
 
-const num = (v: string | number) => Number(v ?? 0);
+const num = (v: string | number | undefined) => Number(v ?? 0);
 
 function TierTable({
   tiers,
@@ -83,23 +84,7 @@ export function PartnerSettingsView() {
 
   return (
     <div className='space-y-6'>
-      <div className='rounded-lg border p-4'>
-        <p className='mb-3 text-sm font-medium'>Ngưỡng của chương trình</p>
-        <dl className='grid gap-4 sm:grid-cols-2'>
-          <div>
-            <dt className='text-muted-foreground text-xs'>Rút tiền tối thiểu</dt>
-            <dd className='text-lg font-semibold'>{formatVnd(overview.policy.payoutMinVnd)}</dd>
-          </div>
-          <div>
-            <dt className='text-muted-foreground text-xs'>Nạp ký quỹ tối thiểu</dt>
-            <dd className='text-lg font-semibold'>{formatVnd(overview.policy.depositMinVnd)}</dd>
-          </div>
-        </dl>
-        <p className='text-muted-foreground mt-3 text-xs'>
-          Các ngưỡng này được kiểm tra ở backend khi đối tác tạo yêu cầu, nên số hiển thị ở đây luôn
-          khớp với quy tắc đang chạy.
-        </p>
-      </div>
+      <ProgramSettingsForm />
 
       <div>
         <div className='mb-3 flex items-center justify-between'>
@@ -125,13 +110,13 @@ export function PartnerSettingsView() {
       <div>
         <p className='mb-3 text-sm font-medium'>Chính sách đối tác phân phối</p>
         <p className='text-muted-foreground mb-2 text-xs'>
-          Đối tác phân phối nạp ký quỹ và mua theo giá vốn; hạng quyết định mức chiết khấu tối đa
-          được áp dụng.
+          Đối tác phân phối nạp ký quỹ và mua theo giá gốc cộng thêm % theo hạng. Lên hạng khi đạt
+          ngưỡng doanh số HOẶC ngưỡng ký quỹ — chỉ cần một trong hai.
         </p>
         <TierTable
           tiers={distributionTiers}
-          metricLabel='Chiết khấu tối đa'
-          metric={(t) => `${num(t.maxDiscountPercent)}%`}
+          metricLabel='Giá gốc +%'
+          metric={(t) => `+${num(t.costMarkupPercent)}%`}
         />
       </div>
     </div>
