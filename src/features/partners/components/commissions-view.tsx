@@ -1,7 +1,16 @@
 'use client';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { commissionSummaryQueryOptions, commissionsQueryOptions } from '../api/queries';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
@@ -70,8 +79,39 @@ function StageTile({
   );
 }
 
+/** The last twelve reconciliation periods, newest first (#064). */
+function recentPeriods(): { value: string; label: string }[] {
+  const now = new Date();
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return {
+      value: `${d.getFullYear()}-${month}`,
+      label: `Tháng ${month}/${d.getFullYear()}`
+    };
+  });
+}
+
+const STATUS_FILTERS = [
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'pending', label: 'Chờ xác nhận' },
+  { value: 'reviewing', label: 'Đang kiểm tra' },
+  { value: 'credited', label: 'Đã duyệt' }
+];
+
 export function CommissionsView() {
-  const { data, isLoading } = useQuery(commissionsQueryOptions({ limit: 50 }));
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('all');
+  const [period, setPeriod] = useState('all');
+
+  const { data, isLoading } = useQuery(
+    commissionsQueryOptions({
+      limit: 50,
+      ...(search.trim() && { search: search.trim() }),
+      ...(status !== 'all' && { status }),
+      ...(period !== 'all' && { period })
+    })
+  );
   const { data: summary } = useQuery(commissionSummaryQueryOptions());
   const commissions = data?.data ?? [];
 
@@ -112,6 +152,40 @@ export function CommissionsView() {
           />
         </div>
       )}
+
+      <div className='flex flex-wrap items-center gap-2'>
+        <Input
+          placeholder='Tìm tên, email, SĐT hoặc ID đối tác'
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className='max-w-[280px]'
+        />
+        <Select value={period} onValueChange={setPeriod}>
+          <SelectTrigger className='w-[180px]'>
+            <SelectValue placeholder='Kỳ đối soát' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>Mọi kỳ đối soát</SelectItem>
+            {recentPeriods().map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className='w-[190px]'>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_FILTERS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {isLoading ? (
         <div className='flex justify-center py-12'>

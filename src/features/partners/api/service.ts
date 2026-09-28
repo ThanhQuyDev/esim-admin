@@ -28,7 +28,8 @@ import type {
   PartnerStatusChange,
   PartnerPerformance,
   UpdatePartnerProfileByAdminPayload,
-  CommissionSummary
+  CommissionSummary,
+  CommissionFilters
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -178,12 +179,9 @@ export async function confirmDepositRequest(id: number): Promise<PartnerDepositR
   });
 }
 
-export async function getCommissions(filters: {
-  page?: number;
-  limit?: number;
-  partnerId?: number;
-  status?: string;
-}): Promise<{ data: OrderPartnerCommission[]; totalCount: number }> {
+export async function getCommissions(
+  filters: CommissionFilters
+): Promise<{ data: OrderPartnerCommission[]; totalCount: number }> {
   return apiClient(`/partners/commissions${toQuery(filters)}`);
 }
 

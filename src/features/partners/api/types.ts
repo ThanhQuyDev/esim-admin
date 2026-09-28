@@ -409,3 +409,17 @@ export type CommissionSummary = {
   paidThisMonth: { totalVnd: number; partners: number };
   reversed: { totalVnd: number; partners: number };
 };
+
+/** Filters on "Hoa hồng & Đối soát" (#064). */
+export type CommissionFilters = {
+  page?: number;
+  limit?: number;
+  partnerId?: number;
+  /** all | pending (chờ xác nhận) | reviewing (đang kiểm tra) | credited (đã duyệt) */
+  status?: string;
+  search?: string;
+  /** Reconciliation period as `YYYY-MM`. */
+  period?: string;
+  from?: string;
+  to?: string;
+};

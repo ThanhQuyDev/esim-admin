@@ -17,7 +17,7 @@ import {
   getPartnerPerformance,
   getCommissionSummary
 } from './service';
-import type { PartnerFilters } from './types';
+import type { PartnerFilters, CommissionFilters } from './types';
 
 export const partnerKeys = {
   all: ['partners'] as const,
@@ -48,12 +48,7 @@ export const depositRequestsQueryOptions = (status?: string) =>
     queryFn: () => getDepositRequests(status)
   });
 
-export const commissionsQueryOptions = (filters: {
-  page?: number;
-  limit?: number;
-  partnerId?: number;
-  status?: string;
-}) =>
+export const commissionsQueryOptions = (filters: CommissionFilters) =>
   queryOptions({
     queryKey: partnerKeys.commissions(filters),
     queryFn: () => getCommissions(filters)
