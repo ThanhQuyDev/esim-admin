@@ -296,3 +296,21 @@ export type TopPartnerRow = {
   orders: number;
   commissionVnd: number;
 };
+
+/**
+ * The four figures at the head of the partner list (#057).
+ *
+ * All about the state of the accounts, which is what that page lists — locked
+ * accounts are left out of the total, because counting accounts nobody can use
+ * overstates the programme.
+ */
+export type PartnerListStats = {
+  total: { count: number; byType: { partnerType: string; count: number }[] };
+  active: {
+    count: number;
+    percentOfTotal: number;
+    byType: { partnerType: string; count: number }[];
+  };
+  newThisMonth: { count: number; byType: { partnerType: string; count: number }[] };
+  onHold: { count: number; byType: { partnerType: string; count: number }[] };
+};

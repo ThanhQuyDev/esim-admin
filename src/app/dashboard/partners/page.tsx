@@ -4,7 +4,7 @@ import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 
 export const metadata = {
-  title: 'Dashboard: Đối tác & KOL'
+  title: 'Dashboard: Danh sách đối tác'
 };
 
 type PageProps = {
@@ -18,8 +18,8 @@ export default async function PartnersPage(props: PageProps) {
   return (
     <PageContainer
       scrollable={false}
-      pageTitle='Đối tác & KOL'
-      pageDescription='Quản lý đối tác phân phối và KOL.'
+      pageTitle='Danh sách đối tác'
+      pageDescription='Quản lý đối tác tiếp thị và đối tác phân phối.'
     >
       <PartnerListingPage />
     </PageContainer>

@@ -216,7 +216,9 @@ export const navGroups: NavGroup[] = [
             access: { role: [1] }
           },
           {
-            title: 'Đối tác & KOL',
+            // Renamed per #057: the page lists every kind of partner, not
+            // only KOLs.
+            title: 'Danh sách đối tác',
             url: '/dashboard/partners',
             access: { role: [1] }
           },
