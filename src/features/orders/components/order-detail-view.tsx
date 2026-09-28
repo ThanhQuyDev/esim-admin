@@ -305,6 +305,7 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
 function commissionStatusLabel(status: string): string {
   if (status === 'credited') return 'Đã ghi có';
   if (status === 'reversed') return 'Đã hoàn lại';
+  if (status === 'rejected') return 'Bị loại hoa hồng';
   return 'Chờ đối soát';
 }
 
@@ -312,8 +313,27 @@ function commissionStatusVariant(
   status: string
 ): 'default' | 'secondary' | 'destructive' | 'outline' {
   if (status === 'credited') return 'default';
-  if (status === 'reversed') return 'destructive';
+  if (status === 'reversed' || status === 'rejected') return 'destructive';
   return 'secondary';
+}
+
+/**
+ * Why a commission was refused outright (#041).
+ *
+ * The partner will write in to ask, so whoever answers needs the detail that
+ * matched rather than "đơn này không phát sinh hoa hồng".
+ */
+const rejectionReasonLabels: Record<string, string> = {
+  self_account: 'Đơn do chính tài khoản của đối tác đặt.',
+  self_email: 'Email khách trùng email đăng ký của đối tác.',
+  self_phone: 'Số điện thoại khách trùng số đăng ký của đối tác.',
+  self_tax_code: 'Mã số thuế trên hoá đơn trùng mã số thuế của đối tác.',
+  self_bank_account: 'Tài khoản ngân hàng trùng tài khoản nhận hoa hồng của đối tác.'
+};
+
+function rejectionReasonLabel(reason?: string | null): string | null {
+  if (!reason) return null;
+  return rejectionReasonLabels[reason] ?? `Hệ thống loại hoa hồng đơn này: ${reason}.`;
 }
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
@@ -598,6 +618,12 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                 </Badge>
               ))}
             </CardTitle>
+            {rejectionReasonLabel(order.partnerCommission.rejectionReason) && (
+              <CardDescription className='text-destructive'>
+                Đơn này bị loại hoa hồng (tự giới thiệu).{' '}
+                {rejectionReasonLabel(order.partnerCommission.rejectionReason)}
+              </CardDescription>
+            )}
             {order.attributionWarning && (
               <CardDescription>
                 {parseAttributionWarnings(order.attributionWarning)

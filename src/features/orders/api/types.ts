@@ -9,6 +9,8 @@ export type OrderPartnerCommission = {
   /** Share of the order value, derived by the API. */
   commissionPercent: number;
   status: string;
+  /** Why a `rejected` commission earned nothing — a self-referral code (#041). */
+  rejectionReason?: string | null;
   tierSnapshot?: string | null;
 };
 export type OrderUser = {

@@ -132,7 +132,9 @@ export type OrderPartnerCommission = {
   linkId: number | null;
   commissionVnd: number;
   tierSnapshot: string | null;
-  status: 'pending' | 'credited' | 'reversed';
+  status: 'pending' | 'credited' | 'reversed' | 'rejected';
+  /** Why a `rejected` commission earned nothing — a self-referral code (#041). */
+  rejectionReason?: string | null;
   createdAt: string;
 };
 
