@@ -22,6 +22,16 @@ export type User = {
   referralCode?: string | null;
   /** Orders this customer has paid for; refunded orders are not counted (#056). */
   paidOrderCount?: number;
+  /** Spendable eXU: zero while locked or expired, net of holds (#038). */
+  exuBalanceVnd?: number;
+  /** What the ledger holds before expiry/lock/holds are applied (#038). */
+  exuGrossBalanceVnd?: number;
+  /** eXU committed to an order that has not been paid yet (#038). */
+  exuHeldVnd?: number;
+  /** When the balance expires — 365 days, pushed back on each credit (#038). */
+  exuExpiresAt?: string | null;
+  /** `active` unless an admin locked the wallet (#038). */
+  exuWalletStatus?: string | null;
   automaticTier: MembershipTier;
   membershipTier: MembershipTier;
   tierOverride: MembershipTier | null;

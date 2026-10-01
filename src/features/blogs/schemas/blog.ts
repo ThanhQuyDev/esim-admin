@@ -13,7 +13,8 @@ export const blogSchema = z.object({
   excerpt: z.string().optional(),
   isPublished: z.boolean().optional(),
   miniTagId: z.string().optional(),
-  planIdsText: z.string().optional(),
+  /** Comma-separated plan slugs / supplier package codes (#047). */
+  planCodesText: z.string().optional(),
   timeRead: z.number().optional(),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),

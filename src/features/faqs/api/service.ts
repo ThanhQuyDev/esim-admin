@@ -43,3 +43,22 @@ export async function updateFaq(id: number, data: UpdateFaqPayload): Promise<Faq
 export async function deleteFaq(id: number): Promise<void> {
   await apiClient(`/faqs/${id}`, { method: 'DELETE' });
 }
+
+/** Turn many FAQs on or off in one request (#051). Ids are uuids. */
+export async function bulkSetFaqsActive(
+  ids: string[],
+  isActive: boolean
+): Promise<{ updated: number }> {
+  return apiClient<{ updated: number }>('/faqs/bulk/status', {
+    method: 'PATCH',
+    body: JSON.stringify({ ids, isActive })
+  });
+}
+
+/** Delete many FAQs in one request (#051). */
+export async function bulkDeleteFaqs(ids: string[]): Promise<{ deleted: number }> {
+  return apiClient<{ deleted: number }>('/faqs/bulk', {
+    method: 'DELETE',
+    body: JSON.stringify({ ids })
+  });
+}

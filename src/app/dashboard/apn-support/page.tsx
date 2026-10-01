@@ -1,0 +1,24 @@
+import PageContainer from '@/components/layout/page-container';
+import ApnSupportListingPage from '@/features/apn-support/components/apn-support-listing';
+import { ImportApnDialogTrigger } from '@/features/apn-support/components/import-apn-dialog';
+import { searchParamsCache } from '@/lib/searchparams';
+import type { SearchParams } from 'nuqs/server';
+
+export const metadata = { title: 'Dashboard: APN TikTok & ChatGPT' };
+
+type PageProps = { searchParams: Promise<SearchParams> };
+
+export default async function ApnSupportPage(props: PageProps) {
+  const searchParams = await props.searchParams;
+  searchParamsCache.parse(searchParams);
+  return (
+    <PageContainer
+      scrollable={false}
+      pageTitle='APN TikTok & ChatGPT'
+      pageDescription='Bảng tra APN quyết định gói eSIM nào được hiện là dùng được TikTok / ChatGPT. Nạp từ file Excel; mỗi lần nạp sẽ thay toàn bộ bảng.'
+      pageHeaderAction={<ImportApnDialogTrigger />}
+    >
+      <ApnSupportListingPage />
+    </PageContainer>
+  );
+}

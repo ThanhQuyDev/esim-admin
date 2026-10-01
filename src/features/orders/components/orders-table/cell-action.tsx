@@ -16,6 +16,7 @@ import { Icons } from '@/components/icons';
 import type { Order, ResendEsimEmailSkipReason } from '../../api/types';
 import { resendEsimEmailMutation } from '../../api/mutations';
 import { CreateInvoiceDialog } from '../create-invoice-dialog';
+import { canIssueInvoice } from '../../utils/invoice-filter';
 
 interface CellActionProps {
   data: Order;
@@ -83,14 +84,16 @@ export function CellAction({ data }: CellActionProps) {
             <Icons.send className='mr-2 h-4 w-4' /> Gửi lại email eSIM
           </DropdownMenuItem>
           {data.hasInvoice ? (
+            // An invoice that already exists stays viewable whatever happened to
+            // the order afterwards — hiding it would hide the record (#011).
             <DropdownMenuItem onClick={() => router.push(`/dashboard/orders/${data.id}`)}>
               <Icons.eye className='mr-2 h-4 w-4' /> Xem hóa đơn
             </DropdownMenuItem>
-          ) : (
+          ) : canIssueInvoice(data.status) ? (
             <DropdownMenuItem onClick={() => setInvoiceOpen(true)}>
               <Icons.fileTypePdf className='mr-2 h-4 w-4' /> Xuất hóa đơn
             </DropdownMenuItem>
-          )}
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

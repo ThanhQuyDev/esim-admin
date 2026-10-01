@@ -13,10 +13,10 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { useState } from 'react';
 import { LoginError, login } from '../api/service';
-import { InteractiveGridPattern } from './interactive-grid';
 import { HOME_PATH } from '@/config/app-mode';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Icons } from '@/components/icons';
+import { AuthBrandPanel, useAuthPageContent } from './auth-brand-panel';
 
 export const metadata: Metadata = {
   title: 'Đăng nhập',
@@ -33,6 +33,9 @@ export default function SignInViewPage() {
   // A partner application still waiting on approval is told so right here,
   // instead of being let into a portal with nothing behind its menus (#001).
   const [pendingNotice, setPendingNotice] = useState<string | null>(null);
+
+  // Logo, cover image and copy come from the CMS (#006).
+  const content = useAuthPageContent();
 
   const mutation = useMutation({
     mutationFn: login,
@@ -74,46 +77,12 @@ export default function SignInViewPage() {
       >
         Đăng ký
       </Link>
-      <div className='bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r'>
-        <div className='absolute inset-0 bg-zinc-900' />
-        <div className='relative z-20 flex items-center text-lg font-medium'>
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            className='mr-2 h-6 w-6'
-          >
-            <path d='M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3' />
-          </svg>
-          Logo
-        </div>
-        <InteractiveGridPattern
-          className={cn(
-            'mask-[radial-gradient(400px_circle_at_center,white,transparent)]',
-            'inset-x-0 inset-y-[0%] h-full skew-y-12'
-          )}
-        />
-        <div className='relative z-20 mt-auto'>
-          <blockquote className='space-y-2'>
-            <p className='text-lg'>
-              &ldquo;Mẫu khởi đầu này đã giúp tôi tiết kiệm vô số giờ làm việc và giao dự án cho
-              khách hàng nhanh hơn bao giờ hết.&rdquo;
-            </p>
-            <footer className='text-sm'>Random Dude</footer>
-          </blockquote>
-        </div>
-      </div>
+      <AuthBrandPanel />
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-sm flex-col justify-center space-y-6'>
           <div className='flex flex-col space-y-2 text-center'>
-            <h1 className='text-2xl font-semibold tracking-tight'>Đăng nhập</h1>
-            <p className='text-muted-foreground text-sm'>
-              Nhập thông tin đăng nhập để truy cập tài khoản
-            </p>
+            <h1 className='text-2xl font-semibold tracking-tight'>{content.heading}</h1>
+            <p className='text-muted-foreground text-sm'>{content.subheading}</p>
           </div>
           {pendingNotice && (
             <Alert>

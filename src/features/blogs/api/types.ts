@@ -11,6 +11,9 @@ export type BlogMiniTag = {
 
 export type BlogPlan = { id: number; [key: string]: unknown };
 
+/** One option in the list filter's author select box (#046). */
+export type BlogAuthorOption = { slug: string; name: string };
+
 export type BlogAuthor = {
   id: number;
   userId: number;
@@ -40,6 +43,11 @@ export type Blog = {
   miniTagId?: string | null;
   miniTag?: BlogMiniTag | null;
   planIds?: number[];
+  /**
+   * Related plans by a provider-sourced reference — a plan slug or the supplier's
+   * package code (#047). Durable across a catalogue re-import, unlike `planIds`.
+   */
+  planCodes?: string[];
   plans?: BlogPlan[];
   timeRead: number | null;
   seoTitle?: string | null;
@@ -81,7 +89,10 @@ export type CreateBlogPayload = {
   slug?: string;
   title: string;
   miniTagId?: string;
+  /** @deprecated Use `planCodes` — plan ids do not survive a re-import (#047). */
   planIds?: number[];
+  /** Plan slugs / supplier package codes (#047). */
+  planCodes?: string[];
   timeRead?: number;
   seoTitle?: string;
   seoDescription?: string;

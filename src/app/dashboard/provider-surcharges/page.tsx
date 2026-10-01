@@ -1,20 +1,9 @@
-import { Suspense } from 'react';
-import PageContainer from '@/components/layout/page-container';
-import ProviderSurchargesListingPage from '@/features/provider-surcharges/components/provider-surcharges-listing';
-import { ProviderSurchargesTableSkeleton } from '@/features/provider-surcharges/components/provider-surcharges-table';
+import { redirect } from 'next/navigation';
 
-export const metadata = { title: 'Dashboard: Thuế phí nhà cung cấp' };
-
+/**
+ * Merged into the "Nhà cung cấp" page as a tab (#005). Kept as a redirect so
+ * bookmarks and older links still land on the right screen.
+ */
 export default function ProviderSurchargesPage() {
-  return (
-    <PageContainer
-      scrollable={false}
-      pageTitle='Thuế phí nhà cung cấp'
-      pageDescription='Cộng thêm thuế/phí cho từng nhà cung cấp trước khi hệ thống so sánh giá để chọn gói rẻ nhất.'
-    >
-      <Suspense fallback={<ProviderSurchargesTableSkeleton />}>
-        <ProviderSurchargesListingPage />
-      </Suspense>
-    </PageContainer>
-  );
+  redirect('/dashboard/providers?tab=surcharges');
 }

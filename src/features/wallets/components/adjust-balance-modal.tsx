@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatVnd } from '@/lib/format';
+import { customerCode } from '@/features/users/components/users-table/columns';
 import { useState } from 'react';
 import type { ManualWalletAdjustRequest } from '../api/types';
 
@@ -58,7 +59,10 @@ export function AdjustBalanceModal({
       <DialogContent className='sm:max-w-[450px]'>
         <DialogHeader>
           <DialogTitle>Điều chỉnh số dư</DialogTitle>
-          <DialogDescription>Thêm hoặc trừ eXu từ ví của user #{userId}</DialogDescription>
+          {/* The customer code, matching the sheet this opens from (#058). */}
+          <DialogDescription>
+            Thêm hoặc trừ eXu từ ví của khách {customerCode(userId)}
+          </DialogDescription>
         </DialogHeader>
 
         <div className='space-y-4'>

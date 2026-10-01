@@ -86,7 +86,8 @@ export function BarGraph({ filters }: BarGraphProps) {
   }
 
   return (
-    <Card>
+    // h-full so the two fixed-height charts in row 1 line up (#007).
+    <Card className='h-full'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           So sánh provider

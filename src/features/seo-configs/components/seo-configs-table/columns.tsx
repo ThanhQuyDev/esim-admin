@@ -1,5 +1,6 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import {
   SEO_PAGE_TYPE_LABELS,
@@ -12,6 +13,29 @@ import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<SeoConfig>[] = [
+  {
+    // Row selection for the bulk status / delete actions (#049).
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label='Chọn tất cả'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label='Chọn hàng'
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+    size: 40
+  },
   {
     id: 'name',
     accessorKey: 'url',
@@ -55,7 +79,14 @@ export const columns: ColumnDef<SeoConfig>[] = [
     header: ({ column }: { column: Column<SeoConfig, unknown> }) => (
       <DataTableColumnHeader column={column} title='Meta Title' />
     ),
-    cell: ({ row }) => <span className='max-w-[200px] truncate'>{row.original.metaTitle}</span>
+    cell: ({ row }) => <span className='max-w-[200px] truncate'>{row.original.metaTitle}</span>,
+    meta: {
+      label: 'Meta Title',
+      placeholder: 'Tìm trong Meta Title...',
+      variant: 'text' as const,
+      icon: Icons.text
+    },
+    enableColumnFilter: true
   },
   {
     id: 'metaDescription',
@@ -66,7 +97,14 @@ export const columns: ColumnDef<SeoConfig>[] = [
         {row.original.metaDescription || '—'}
       </span>
     ),
-    enableSorting: false
+    enableSorting: false,
+    meta: {
+      label: 'Meta Description',
+      placeholder: 'Tìm trong Meta Description...',
+      variant: 'text' as const,
+      icon: Icons.text
+    },
+    enableColumnFilter: true
   },
   {
     id: 'isActive',
@@ -77,7 +115,17 @@ export const columns: ColumnDef<SeoConfig>[] = [
         {row.original.isActive ? 'Hoạt động' : 'Tắt'}
       </Badge>
     ),
-    enableSorting: false
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Trạng thái',
+      // Single-select: the API filter is one boolean, not a set.
+      variant: 'select' as const,
+      options: [
+        { value: 'true', label: 'Hoạt động' },
+        { value: 'false', label: 'Tắt' }
+      ]
+    }
   },
   {
     id: 'actions',

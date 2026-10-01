@@ -9,12 +9,18 @@ import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'n
 import { getSortingStateParser } from '@/lib/parsers';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
-import { plansQueryOptions } from '../../api/queries';
+import { planApnOptionsQueryOptions, plansQueryOptions } from '../../api/queries';
+import { destinationsQueryOptions } from '@/features/destinations/api/queries';
+import { regionsQueryOptions } from '@/features/regions/api/queries';
 import { exportPlansExcel } from '../../api/service';
-import { columns } from './columns';
+import { buildPlanApiFilters } from '../../utils/plan-filters';
+import { buildColumns, columns } from './columns';
 import { BatchDiscountDialog } from '../batch-discount-dialog';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
+
+/** Enough to cover the whole catalogue; both lists are small and cached. */
+const OPTIONS_LIMIT = 500;
 
 export function PlansTable() {
   const [params] = useQueryStates({
@@ -28,41 +34,17 @@ export function PlansTable() {
     tags: parseAsArrayOf(parseAsString, ','),
     duration: parseAsString,
     data: parseAsString,
-    country: parseAsString,
+    // Now a list of `d:<id>` / `r:<id>` picked from a select box (#010).
+    country: parseAsArrayOf(parseAsString, ','),
     hasCallSms: parseAsArrayOf(parseAsString, ','),
+    apn: parseAsArrayOf(parseAsString, ','),
+    isNonHkIp: parseAsArrayOf(parseAsString, ','),
+    topUp: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
-  const apiFilters: Record<string, unknown> = {};
-  if (params.name) apiFilters.search = params.name;
-  if (params.provider && params.provider.length > 0) {
-    apiFilters.provider = params.provider;
-  }
-  if (params.isCheapest && params.isCheapest.length === 1) {
-    apiFilters.isCheapest = params.isCheapest[0] === 'true';
-  }
-  if (params.isActive && params.isActive.length === 1) {
-    apiFilters.isActive = params.isActive[0] === 'true';
-  }
-  if (params.type && params.type.length > 0) {
-    apiFilters.type = params.type.length === 1 ? params.type[0] : params.type;
-  }
-  if (params.tags && params.tags.length > 0) {
-    apiFilters.tags = params.tags;
-  }
-  if (params.duration) {
-    const durationNum = Number(params.duration);
-    if (!isNaN(durationNum)) apiFilters.duration = durationNum;
-  }
-  if (params.data) {
-    apiFilters.data = params.data;
-  }
-  if (params.country) {
-    apiFilters.country = params.country;
-  }
-  if (params.hasCallSms && params.hasCallSms.length === 1) {
-    apiFilters.hasCallSms = params.hasCallSms[0] === 'true';
-  }
+  // Same mapping the server used to prefetch, so the query keys match.
+  const apiFilters = buildPlanApiFilters(params);
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,
@@ -81,9 +63,37 @@ export function PlansTable() {
   const { data: responseData } = useSuspenseQuery(plansQueryOptions(filters));
   const pageCount = Math.ceil((responseData.totalCount ?? 0) / params.perPage);
 
+  // Filter option lists (#010). Cached and shared with the other screens that
+  // already load them.
+  const { data: apnValues } = useSuspenseQuery(planApnOptionsQueryOptions());
+  const { data: destinationsData } = useSuspenseQuery(
+    destinationsQueryOptions({ page: 1, limit: OPTIONS_LIMIT })
+  );
+  const { data: regionsData } = useSuspenseQuery(
+    regionsQueryOptions({ page: 1, limit: OPTIONS_LIMIT })
+  );
+
+  const tableColumns = useMemo(
+    () =>
+      buildColumns({
+        apnOptions: apnValues.map((apn) => ({ value: apn, label: apn })),
+        locationOptions: [
+          ...regionsData.data.map((region) => ({
+            value: `r:${region.id}`,
+            label: `Khu vực: ${region.name}`
+          })),
+          ...destinationsData.data.map((destination) => ({
+            value: `d:${destination.id}`,
+            label: destination.name
+          }))
+        ]
+      }),
+    [apnValues, destinationsData.data, regionsData.data]
+  );
+
   const { table } = useDataTable({
     data: responseData.data,
-    columns,
+    columns: tableColumns,
     pageCount,
     shallow: true,
     debounceMs: 500,

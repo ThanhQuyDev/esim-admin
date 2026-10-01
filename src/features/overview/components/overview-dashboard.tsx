@@ -166,15 +166,20 @@ export function OverviewDashboard() {
           })}
         </div>
 
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7'>
+        {/* Row 1 pairs the two fixed-height charts, row 2 the two tall ones
+            (#007). "Lợi nhuận theo provider" grows one block per supplier, so
+            next to a 280px chart it left a big gap that got worse with every
+            supplier added; it now sits beside the destination chart, which is
+            sized to match it. */}
+        <div className='grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-7'>
           <div className='col-span-4'>
             <BarGraph filters={queryFilters} />
           </div>
           <div className='col-span-4 md:col-span-3'>
-            <RecentSales filters={queryFilters} />
+            <AreaGraph filters={queryFilters} />
           </div>
           <div className='col-span-4'>
-            <AreaGraph filters={queryFilters} />
+            <RecentSales filters={queryFilters} />
           </div>
           <div className='col-span-4 min-h-0 md:col-span-3'>
             <PieGraph filters={queryFilters} />

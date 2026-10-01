@@ -1,5 +1,6 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
+import { formatDateVn } from '@/lib/format';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { HelpCenterArticle } from '../../api/types';
 import { getCategoryLabel, getParentLabel } from '../../api/types';
@@ -7,16 +8,25 @@ import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 
+/**
+ * Column headers are always Vietnamese, like every other table in this CMS.
+ *
+ * They used to follow `lang` — the CONTENT language filter — so with no language
+ * picked (the default) the whole header row rendered in English and "Thứ tự" read
+ * "Order" (#053). `lang` now only decides how a row's category / folder label is
+ * translated, which genuinely depends on the article's language.
+ */
 export function buildColumns(lang: string): ColumnDef<HelpCenterArticle>[] {
-  const isVi = lang === 'vi';
   const t = {
-    title: isVi ? 'Tiêu đề' : 'Title',
-    titleSearch: isVi ? 'Tìm kiếm tiêu đề...' : 'Search title...',
-    category: isVi ? 'Danh mục' : 'Category',
-    folder: isVi ? 'Thư mục' : 'Folder',
-    language: isVi ? 'Ngôn ngữ' : 'Language',
-    order: isVi ? 'Thứ tự' : 'Order',
-    popular: isVi ? 'Phổ biến' : 'Popular'
+    title: 'Tiêu đề',
+    titleSearch: 'Tìm kiếm tiêu đề...',
+    category: 'Danh mục',
+    folder: 'Thư mục',
+    language: 'Ngôn ngữ',
+    order: 'Thứ tự',
+    popular: 'Nổi bật',
+    published: 'Xuất bản',
+    updatedAt: 'Ngày chỉnh sửa'
   };
 
   return [
@@ -84,6 +94,22 @@ export function buildColumns(lang: string): ColumnDef<HelpCenterArticle>[] {
         ) : (
           <span className='text-muted-foreground/50 text-sm'>—</span>
         ),
+      // Filtered from the toolbar, not as a column filter: this table already
+      // drives category / folder / language from its own <Select>s, and a column
+      // filter would write an array-valued param where the API wants one boolean
+      // (#053).
+      enableSorting: false
+    },
+    {
+      // Publish status (#053). Drafts were indistinguishable from live articles.
+      id: 'isPublished',
+      accessorKey: 'isPublished',
+      header: t.published,
+      cell: ({ row }) => (
+        <Badge variant={row.original.isPublished ? 'default' : 'secondary'}>
+          {row.original.isPublished ? 'Đã xuất bản' : 'Bản nháp'}
+        </Badge>
+      ),
       enableSorting: false
     },
     {
@@ -91,6 +117,20 @@ export function buildColumns(lang: string): ColumnDef<HelpCenterArticle>[] {
       accessorKey: 'order',
       header: ({ column }: { column: Column<HelpCenterArticle, unknown> }) => (
         <DataTableColumnHeader column={column} title={t.order} />
+      )
+    },
+    {
+      // Ngày chỉnh sửa (#053) — which article was touched last is how an editor
+      // finds the one they were working on.
+      id: 'updatedAt',
+      accessorKey: 'updatedAt',
+      header: ({ column }: { column: Column<HelpCenterArticle, unknown> }) => (
+        <DataTableColumnHeader column={column} title={t.updatedAt} />
+      ),
+      cell: ({ row }) => (
+        <span className='text-sm whitespace-nowrap'>
+          {formatDateVn(row.original.updatedAt) || '—'}
+        </span>
       )
     },
     { id: 'actions', cell: ({ row }) => <CellAction data={row.original} /> }

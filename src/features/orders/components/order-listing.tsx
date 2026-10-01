@@ -4,22 +4,26 @@ import { searchParamsCache } from '@/lib/searchparams';
 import { Suspense } from 'react';
 import { ordersQueryOptions } from '../api/queries';
 import { OrdersTable, OrdersTableSkeleton } from './orders-table/index';
-import { invoiceFilterToApi } from '../utils/invoice-filter';
+import { buildOrderApiFilters } from '../utils/order-filters';
 
 export default function OrderListingPage() {
-  const page = searchParamsCache.get('page');
-  const pageLimit = searchParamsCache.get('perPage');
-  const status = searchParamsCache.get('status');
-  const invoice = searchParamsCache.get('invoice');
-
-  const apiFilters: Record<string, unknown> = {};
-  if (status) apiFilters.status = status;
-  // Same key order as OrdersTable, so the prefetched query is the one it reads (#051).
-  Object.assign(apiFilters, invoiceFilterToApi(invoice));
+  // One mapping shared with OrdersTable, so the prefetched query is the one it
+  // reads — the two had drifted apart by four filters (#017).
+  const apiFilters = buildOrderApiFilters({
+    orderNumber: searchParamsCache.get('orderNumber'),
+    userEmail: searchParamsCache.get('userEmail'),
+    iccid: searchParamsCache.get('iccid'),
+    planName: searchParamsCache.get('planName'),
+    status: searchParamsCache.get('status'),
+    invoice: searchParamsCache.get('invoice'),
+    kind: searchParamsCache.get('kind'),
+    createdFrom: searchParamsCache.get('createdFrom'),
+    createdTo: searchParamsCache.get('createdTo')
+  });
 
   const filters = {
-    page,
-    limit: pageLimit,
+    page: searchParamsCache.get('page'),
+    limit: searchParamsCache.get('perPage'),
     ...(Object.keys(apiFilters).length > 0 && {
       filters: JSON.stringify(apiFilters)
     })

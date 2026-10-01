@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatVnd } from '@/lib/format';
+import { customerCode } from '@/features/users/components/users-table/columns';
 import { useState } from 'react';
 import type { CancelWalletRequest } from '../api/types';
 
@@ -53,8 +54,10 @@ export function CancelBalanceModal({
       <DialogContent className='sm:max-w-[450px]'>
         <DialogHeader>
           <DialogTitle className='text-destructive'>Hủy toàn bộ số dư</DialogTitle>
+          {/* The customer code, not the raw id: this is the one confirmation an
+              admin must be able to match against another screen (#058). */}
           <DialogDescription>
-            Hành động này sẽ đưa số dư ví của user #{userId} về 0. Không thể hoàn tác.
+            Hành động này sẽ đưa số dư ví của khách {customerCode(userId)} về 0. Không thể hoàn tác.
           </DialogDescription>
         </DialogHeader>
 
@@ -85,7 +88,8 @@ export function CancelBalanceModal({
               onCheckedChange={(checked) => setConfirmed(checked === true)}
             />
             <Label htmlFor='confirm-cancel' className='text-sm leading-relaxed'>
-              Tôi xác nhận muốn hủy toàn bộ số dư {formatVnd(currentBalance)} của user #{userId}
+              Tôi xác nhận muốn hủy toàn bộ số dư {formatVnd(currentBalance)} của khách{' '}
+              {customerCode(userId)}
             </Label>
           </div>
         </div>

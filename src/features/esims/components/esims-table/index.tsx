@@ -5,7 +5,7 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery, useMutation } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
@@ -16,22 +16,34 @@ import { toast } from 'sonner';
 import { bulkDeleteEsimsMutation } from '../../api/mutations';
 import { ImportEsimExcelDialog } from '../import-esim-excel-dialog';
 import { EsimFormDialog } from '../esim-form-dialog';
+import { buildEsimApiFilters } from '../../utils/esim-filters';
+import { Input } from '@/components/ui/input';
 import { columns } from './columns';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
 export function EsimsTable() {
-  const [params] = useQueryStates({
+  const [params, setParams] = useQueryStates({
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
     planName: parseAsString,
+    // #020
+    packageType: parseAsArrayOf(parseAsString, ','),
+    // Named after the column id — see the note on that column.
+    esimStatus: parseAsArrayOf(parseAsString, ','),
+    provider: parseAsArrayOf(parseAsString, ','),
+    hasCallSms: parseAsArrayOf(parseAsString, ','),
+    topUp: parseAsArrayOf(parseAsString, ','),
+    createdFrom: parseAsString,
+    createdTo: parseAsString,
+    expiresFrom: parseAsString,
+    expiresTo: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
-  const apiFilters: Record<string, unknown> = {};
-  if (params.name) apiFilters.search = params.name;
-  if (params.planName) apiFilters.planName = params.planName;
+  // Same mapping the server used to prefetch, so the query keys match.
+  const apiFilters = buildEsimApiFilters({ ...params, status: params.esimStatus });
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,
@@ -101,6 +113,47 @@ export function EsimsTable() {
         title={`Xoá ${selectedIds.length} eSIM đã chọn?`}
         description='Các eSIM này sẽ biến mất khỏi danh sách quản lý. Hãy kiểm tra lại số lượng trước khi xác nhận.'
       />
+      {/* Date ranges (#020). The column filters above cover the select-style
+          conditions; a range needs two inputs, which the toolbar cannot express. */}
+      <div className='mb-4 flex flex-wrap items-center gap-2'>
+        <span className='text-muted-foreground text-sm'>Ngày tạo</span>
+        <Input
+          type='date'
+          aria-label='Ngày tạo từ'
+          className='w-40'
+          value={params.createdFrom ?? ''}
+          max={params.createdTo ?? undefined}
+          onChange={(e) => setParams({ createdFrom: e.target.value || null, page: 1 })}
+        />
+        <span className='text-muted-foreground text-sm'>đến</span>
+        <Input
+          type='date'
+          aria-label='Ngày tạo đến'
+          className='w-40'
+          value={params.createdTo ?? ''}
+          min={params.createdFrom ?? undefined}
+          onChange={(e) => setParams({ createdTo: e.target.value || null, page: 1 })}
+        />
+        <span className='text-muted-foreground ml-4 text-sm'>Ngày hết hạn</span>
+        <Input
+          type='date'
+          aria-label='Ngày hết hạn từ'
+          className='w-40'
+          value={params.expiresFrom ?? ''}
+          max={params.expiresTo ?? undefined}
+          onChange={(e) => setParams({ expiresFrom: e.target.value || null, page: 1 })}
+        />
+        <span className='text-muted-foreground text-sm'>đến</span>
+        <Input
+          type='date'
+          aria-label='Ngày hết hạn đến'
+          className='w-40'
+          value={params.expiresTo ?? ''}
+          min={params.expiresFrom ?? undefined}
+          onChange={(e) => setParams({ expiresTo: e.target.value || null, page: 1 })}
+        />
+      </div>
+
       <DataTable table={table} totalRowCount={data.totalCount}>
         <DataTableToolbar table={table}>
           {selectedIds.length > 0 ? (

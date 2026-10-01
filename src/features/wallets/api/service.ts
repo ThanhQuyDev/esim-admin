@@ -14,6 +14,10 @@ export async function getWallets(filters: WalletFilters): Promise<WalletsRespons
   if (filters.page) params.set('page', String(filters.page));
   if (filters.limit) params.set('limit', String(filters.limit));
   if (filters.email) params.set('email', filters.email);
+  // Customer code / name / tier, mirroring the customer list (#057).
+  if (filters.customerCode) params.set('customerCode', filters.customerCode);
+  if (filters.customerName) params.set('customerName', filters.customerName);
+  if (filters.membershipTiers) params.set('membershipTiers', filters.membershipTiers);
   if (filters.filters) params.set('filters', filters.filters);
   if (filters.sort) params.set('sort', filters.sort);
 

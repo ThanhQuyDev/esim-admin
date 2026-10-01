@@ -41,6 +41,14 @@ export const portalNavGroups: NavGroup[] = [
         items: []
       },
       {
+        // Đối tác phân phối đặt mua bằng ví ký quỹ (#046).
+        title: 'Sản phẩm & bảng giá',
+        url: '/dashboard/portal/catalogue',
+        icon: 'product',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Quản lý eSIM',
         url: '/dashboard/portal/esims',
         icon: 'simCard',
@@ -51,6 +59,14 @@ export const portalNavGroups: NavGroup[] = [
         title: 'Đơn hàng',
         url: '/dashboard/portal/orders',
         icon: 'billing',
+        isActive: false,
+        items: []
+      },
+      {
+        // Doanh thu bán ra − giá vốn đã trừ ví = chênh lệch (#046).
+        title: 'Doanh thu và đơn hàng',
+        url: '/dashboard/portal/revenue',
+        icon: 'trendingUp',
         isActive: false,
         items: []
       },
@@ -119,7 +135,10 @@ export const DISTRIBUTION_ONLY_PORTAL_URLS = [
   '/dashboard/portal/wallet',
   '/dashboard/portal/brand',
   // Stock only a distribution partner holds (#046).
-  '/dashboard/portal/esims'
+  '/dashboard/portal/esims',
+  // Mua hàng bằng ví ký quỹ, và đối chiếu giá vốn với giá niêm yết (#046).
+  '/dashboard/portal/catalogue',
+  '/dashboard/portal/revenue'
 ];
 
 /**

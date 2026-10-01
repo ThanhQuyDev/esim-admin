@@ -24,6 +24,12 @@ export type Esim = {
   updatedAt: string;
   deletedAt: string | null;
   plan: EsimPlan | null;
+  /**
+   * Paid topups against this eSIM's ICCID, derived server-side from the orders
+   * (#025). 0 means it has never been topped up.
+   */
+  topupCount?: number;
+  lastTopupAt?: string | null;
 };
 
 export type EsimUser = {
@@ -60,6 +66,9 @@ export type EsimPlan = {
   destination: EsimDestination | null;
   durationDays: number;
   dataMb: number;
+  /** Call minutes / SMS included; both null on a data-only plan (#008). */
+  call: number | null;
+  sms: number | null;
   costPrice: number;
   price: number;
   retailPrice: number;
@@ -74,9 +83,26 @@ export type EsimPlan = {
   deletedAt: string | null;
 };
 
+/** One topup applied to an eSIM, from the snapshot its order stored (#026). */
+export type EsimTopup = {
+  orderId: number;
+  orderNumber: string;
+  packageId: string | null;
+  packageName: string | null;
+  dataText: string | null;
+  durationDays: number | null;
+  isUnlimited: boolean;
+  vndPrice: number;
+  vndCostPrice: number;
+  provider: string | null;
+  createdAt: string;
+};
+
 export type EsimDetail = Esim & {
   user: EsimUser | null;
   plan: EsimPlan | null;
+  /** Newest first. Only the detail endpoint returns this (#026). */
+  topups?: EsimTopup[];
 };
 
 export type EsimFilters = {

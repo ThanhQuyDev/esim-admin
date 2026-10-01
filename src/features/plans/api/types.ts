@@ -1,5 +1,6 @@
 import type { Destination } from '@/features/destinations/api/types';
 import type { Region } from '@/features/regions/api/types';
+import type { DailyResetPolicy } from '../schemas/plan';
 
 export type Plan = {
   id: number;
@@ -23,6 +24,20 @@ export type Plan = {
   currency: string;
   type: string;
   topUp: boolean;
+  apn: string | null;
+  /**
+   * Exit IP is local rather than routed via Hong Kong, i.e. TikTok and ChatGPT
+   * work on this plan (#041). Filtered as "Tiktok & ChatGPT" in the CMS (#010).
+   */
+  isNonHkIp: boolean;
+  /**
+   * "Giờ làm mới mỗi ngày" (#063) — when the daily allowance starts over. Null
+   * where the supplier has not stated it, which the storefront omits rather than
+   * guessing at (#071).
+   */
+  dailyResetPolicy: DailyResetPolicy | null;
+  /** Hours east of UTC; only meaningful for a calendar-day reset. */
+  dailyResetUtcOffset: number | null;
   discount: number | null;
   isCheapest: boolean;
   isActive: boolean;
@@ -65,6 +80,10 @@ export type CreatePlanPayload = {
   topUp?: boolean;
   isActive?: boolean;
   tags?: string[] | null;
+  apn?: string | null;
+  isNonHkIp?: boolean;
+  dailyResetPolicy?: DailyResetPolicy | null;
+  dailyResetUtcOffset?: number | null;
 };
 
 export type UpdatePlanPayload = Partial<CreatePlanPayload>;

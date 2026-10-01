@@ -4,9 +4,10 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { usersQueryOptions } from '../../api/queries';
+import { buildUserApiFilters } from '../../utils/user-filters';
 import { roleIdsForTab, USER_TAB_DEFAULT, USER_TAB_VALUES } from '../user-tab-config';
 import { columns } from './columns';
 
@@ -18,6 +19,10 @@ export function UsersTable() {
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
     role: parseAsString,
+    // Filter params are keyed by column id — that is what `useDataTable` writes.
+    customerCode: parseAsString,
+    membershipTier: parseAsArrayOf(parseAsString, ','),
+    userStatus: parseAsArrayOf(parseAsString, ','),
     tab: parseAsString.withDefault(USER_TAB_DEFAULT),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
@@ -26,8 +31,7 @@ export function UsersTable() {
     ? (params.tab as (typeof USER_TAB_VALUES)[number])
     : USER_TAB_DEFAULT;
 
-  const apiFilters: Record<string, unknown> = {};
-  if (params.name) apiFilters.search = params.name;
+  const apiFilters = buildUserApiFilters(params);
 
   const filters = {
     page: params.page,

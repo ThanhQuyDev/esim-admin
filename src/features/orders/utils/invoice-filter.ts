@@ -17,6 +17,27 @@ export const INVOICE_FILTER_OPTIONS = [
 
 export type InvoiceFilterValue = (typeof INVOICE_FILTER_OPTIONS)[number]['value'];
 
+/**
+ * Order states with nothing left to invoice (#011).
+ *
+ * A failed order was never paid and a refunded one has been paid back, so a VAT
+ * invoice for either would be a document for money esim.vn does not hold.
+ * `cancelled` is included for the same reason — the orders list renders that
+ * badge, so the state is reachable.
+ */
+const NON_INVOICEABLE_STATUSES = new Set(['failed', 'refunded', 'cancelled']);
+
+/**
+ * Whether the "Xuất hóa đơn" action should be offered at all.
+ *
+ * A partially refunded order still has a payable remainder and keeps its
+ * `paid` status, so it stays invoiceable — the check is on status alone, never on
+ * `refundedAmountVnd`.
+ */
+export function canIssueInvoice(status: string | null | undefined): boolean {
+  return !NON_INVOICEABLE_STATUSES.has((status ?? '').toLowerCase());
+}
+
 export function invoiceFilterToApi(value: string | null | undefined): {
   hasInvoice?: boolean;
   invoiceStatus?: 'PENDING' | 'ISSUED' | 'FAILED';

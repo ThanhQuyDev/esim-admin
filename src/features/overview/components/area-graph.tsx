@@ -80,7 +80,8 @@ export function AreaGraph({ filters }: AreaGraphProps) {
   }
 
   return (
-    <Card>
+    // h-full so the two fixed-height charts in row 1 line up (#007).
+    <Card className='h-full'>
       <CardHeader>
         <CardTitle className='flex flex-wrap items-center gap-2'>
           Giá vốn / Doanh thu / Lợi nhuận

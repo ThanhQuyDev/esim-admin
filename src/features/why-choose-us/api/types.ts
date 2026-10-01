@@ -19,6 +19,15 @@ export type WhyChooseUsFilters = {
   page?: number;
   limit?: number;
   search?: string;
+  /**
+   * Page types, comma-separated (#054). Was missing from this type AND from the
+   * query string, so the Trang filter was built by the table and then silently
+   * dropped — an extra property on a variable is not an excess-property error, so
+   * nothing complained.
+   */
+  type?: string;
+  /** Trạng thái hoạt động; omitted shows both (#054). */
+  isActive?: boolean;
   filters?: string;
   sort?: string;
 };

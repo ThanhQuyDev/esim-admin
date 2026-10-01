@@ -69,7 +69,10 @@ export function TicketThreadDialog({ ticket, onOpenChange }: TicketThreadDialogP
       <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-2xl'>
         <DialogHeader>
           <DialogTitle>
-            #{ticket?.id} · {ticket?.subject}
+            {/* The mã phiếu, so this matches the subject line of the emails about
+                the same request (#060). */}
+            <span className='font-mono'>{ticket?.ticketNumber ?? `#${ticket?.id}`}</span> ·{' '}
+            {ticket?.subject}
           </DialogTitle>
           <DialogDescription>
             Trao đổi trực tiếp tại đây; mọi phản hồi cũng được gửi tới email của bạn.

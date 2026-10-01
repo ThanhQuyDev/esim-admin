@@ -3,7 +3,8 @@
 import { formatDateTimeVn } from '@/lib/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertModal } from '@/components/modal/alert-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { Icons } from '@/components/icons';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomPaymentLinkForm } from './custom-payment-link-form';
 import { PaymentLinkQrDialog } from './payment-link-qr-dialog';
+import { confirmCustomPaymentLinkMutation } from '../api/mutations';
 import { customPaymentLinkKeys, customPaymentLinksQueryOptions } from '../api/queries';
 import type { CustomPaymentLink, CustomPaymentLinkStatus } from '../api/types';
 
@@ -39,6 +41,21 @@ const STATUS_FILTERS: { key: 'ALL' | CustomPaymentLinkStatus; label: string }[] 
 ];
 
 const PAGE_SIZE = 20;
+
+/** OnePay's transaction window; matches CUSTOM_PAYMENT_LINK_EXPIRY_MINUTES (#056). */
+const EXPIRY_MINUTES = 30;
+
+/**
+ * Whether an admin may still set the outcome by hand (#056).
+ *
+ * Pending, or failed only because the sweep timed it out — a link OnePay really
+ * declined, or one another admin already confirmed, is left as the record of what
+ * happened.
+ */
+function canConfirm(link: CustomPaymentLink): boolean {
+  if (link.status === 'PENDING') return true;
+  return link.status === 'FAILED' && !!link.expiredAt && !link.confirmedAt;
+}
 
 function formatVnd(amount: number) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -68,6 +85,11 @@ export function CustomPaymentLinkListing() {
   const [justCreated, setJustCreated] = useState<string[]>([]);
   /** The order whose QR code is on screen (#085). */
   const [qrLink, setQrLink] = useState<CustomPaymentLink | null>(null);
+  /** The link an admin is about to confirm, and which way (#056). */
+  const [confirmTarget, setConfirmTarget] = useState<{
+    link: CustomPaymentLink;
+    isPaid: boolean;
+  } | null>(null);
 
   const filters = {
     page,
@@ -108,9 +130,68 @@ export function CustomPaymentLinkListing() {
     setPage(1);
   }
 
+  /**
+   * Clearing the box is not enough on its own: `search` only follows `searchInput`
+   * on submit, so the results would keep showing the old term. Both are reset
+   * together (#055).
+   */
+  function clearSearch() {
+    setSearchInput('');
+    setSearch('');
+    setPage(1);
+  }
+
+  /** Back to the unfiltered list — search term and status chip both (#055). */
+  function resetFilters() {
+    setSearchInput('');
+    setSearch('');
+    setStatus('ALL');
+    setPage(1);
+  }
+
+  const hasSearchText = searchInput.length > 0 || search.length > 0;
+  const hasAnyFilter = search.length > 0 || status !== 'ALL';
+
+  const { mutate: confirmLink, isPending: isConfirming } = useMutation({
+    ...confirmCustomPaymentLinkMutation,
+    onSuccess: (updated) => {
+      toast.success(
+        updated.status === 'PAID'
+          ? `Đã chuyển ${updated.virtualOrderId} sang Đã thanh toán`
+          : `Đã chuyển ${updated.virtualOrderId} sang Thất bại`
+      );
+      setConfirmTarget(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Không cập nhật được trạng thái');
+    }
+  });
+
   return (
     <div className='space-y-6'>
       <PaymentLinkQrDialog link={qrLink} onOpenChange={(open) => !open && setQrLink(null)} />
+
+      {/* Confirmed rather than one-click: this writes the outcome of a real
+          payment, and "Đã thanh toán" on the wrong row is not easy to notice
+          afterwards (#056). */}
+      <AlertModal
+        isOpen={confirmTarget !== null}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={() =>
+          confirmTarget && confirmLink({ id: confirmTarget.link.id, isPaid: confirmTarget.isPaid })
+        }
+        loading={isConfirming}
+        title={
+          confirmTarget?.isPaid
+            ? `Xác nhận ĐÃ THANH TOÁN cho ${confirmTarget?.link.virtualOrderId}?`
+            : `Xác nhận THẤT BẠI cho ${confirmTarget?.link.virtualOrderId}?`
+        }
+        description={
+          confirmTarget?.isPaid
+            ? `Lệnh ${formatVnd(confirmTarget?.link.amount ?? 0)} của ${confirmTarget?.link.customerEmail} sẽ chuyển sang tab Đã thanh toán. Hãy đối chiếu tiền về trước khi xác nhận.`
+            : `Lệnh của ${confirmTarget?.link.customerEmail} sẽ chuyển sang tab Thất bại. Khách sẽ cần một link mới nếu muốn thanh toán lại.`
+        }
+      />
 
       <CustomPaymentLinkForm onCreated={handleCreated} />
 
@@ -155,15 +236,43 @@ export function CustomPaymentLinkListing() {
             ))}
 
             <form onSubmit={submitSearch} className='ml-auto flex items-center gap-2'>
-              <Input
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder='Tìm email, nội dung, mã đơn...'
-                className='h-8 w-56'
-              />
+              <div className='relative'>
+                <Input
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder='Tìm email, nội dung, mã đơn...'
+                  aria-label='Tìm trong lịch sử lệnh thanh toán'
+                  className='h-8 w-56 pr-8'
+                />
+                {/* Inside the box, so it is where anyone looks for it (#055). */}
+                {hasSearchText && (
+                  <button
+                    type='button'
+                    onClick={clearSearch}
+                    data-testid='payment-link-search-clear'
+                    aria-label='Xoá từ khoá tìm kiếm'
+                    title='Xoá từ khoá tìm kiếm'
+                    className='text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 rounded p-0.5 transition-colors'
+                  >
+                    <Icons.close className='h-3.5 w-3.5' />
+                  </button>
+                )}
+              </div>
               <Button type='submit' size='sm' variant='outline'>
                 <Icons.search className='h-4 w-4' />
               </Button>
+              {/* Clears the status chip too, which the input's X does not (#055). */}
+              {hasAnyFilter && (
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='ghost'
+                  onClick={resetFilters}
+                  data-testid='payment-link-filter-reset'
+                >
+                  Đặt lại
+                </Button>
+              )}
             </form>
           </div>
         </CardHeader>
@@ -176,9 +285,24 @@ export function CustomPaymentLinkListing() {
             </div>
           ) : links.length === 0 ? (
             <div className='text-muted-foreground py-12 text-center text-sm'>
-              {search || status !== 'ALL'
-                ? 'Không có lệnh thanh toán nào khớp bộ lọc.'
-                : 'Chưa có lệnh thanh toán nào. Sau khi tạo, lệnh sẽ xuất hiện ở đây.'}
+              {hasAnyFilter ? (
+                <div className='space-y-3'>
+                  <p>Không có lệnh thanh toán nào khớp bộ lọc.</p>
+                  {/* The moment an admin is actually stuck, so the way back is
+                      offered right here as well as in the toolbar (#055). */}
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='outline'
+                    onClick={resetFilters}
+                    data-testid='payment-link-empty-reset'
+                  >
+                    <Icons.close className='mr-2 h-4 w-4' /> Xoá bộ lọc
+                  </Button>
+                </div>
+              ) : (
+                'Chưa có lệnh thanh toán nào. Sau khi tạo, lệnh sẽ xuất hiện ở đây.'
+              )}
             </div>
           ) : (
             <div className='space-y-3'>
@@ -224,6 +348,24 @@ export function CustomPaymentLinkListing() {
                           {formatDateTime(link.updatedAt)}
                         </div>
                       )}
+                      {/* Why it failed: nobody paid in time, an admin said so, or
+                          OnePay itself declined (#056). */}
+                      {link.status === 'FAILED' && (
+                        <div>
+                          <span className='font-medium'>Lý do:</span>{' '}
+                          {link.expiredAt
+                            ? `Hết hạn sau ${EXPIRY_MINUTES} phút, không có thanh toán`
+                            : link.confirmedAt
+                              ? 'Admin xác nhận thất bại'
+                              : 'Cổng thanh toán báo thất bại'}
+                        </div>
+                      )}
+                      {link.confirmedAt && (
+                        <div>
+                          <span className='font-medium'>Xác nhận lúc:</span>{' '}
+                          {formatDateTime(link.confirmedAt)}
+                        </div>
+                      )}
                       {link.createdBy?.email && (
                         <div>
                           <span className='font-medium'>Người tạo:</span> {link.createdBy.email}
@@ -260,6 +402,33 @@ export function CustomPaymentLinkListing() {
                         Mở
                       </a>
                     </Button>
+                    {/* An admin's verdict, for a link the gateway never reported on
+                        — or one the sweep gave up on (#056). */}
+                    {canConfirm(link) && (
+                      <>
+                        <Button
+                          type='button'
+                          size='sm'
+                          onClick={() => setConfirmTarget({ link, isPaid: true })}
+                          disabled={isConfirming}
+                          data-testid={`payment-link-confirm-paid-${link.virtualOrderId}`}
+                        >
+                          <Icons.check className='mr-2 h-4 w-4' />
+                          Đã thanh toán
+                        </Button>
+                        <Button
+                          type='button'
+                          size='sm'
+                          variant='destructive'
+                          onClick={() => setConfirmTarget({ link, isPaid: false })}
+                          disabled={isConfirming}
+                          data-testid={`payment-link-confirm-failed-${link.virtualOrderId}`}
+                        >
+                          <Icons.close className='mr-2 h-4 w-4' />
+                          Thất bại
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

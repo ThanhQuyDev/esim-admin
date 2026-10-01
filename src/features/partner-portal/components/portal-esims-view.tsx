@@ -11,11 +11,23 @@
  */
 
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -34,6 +46,7 @@ import {
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
+import { reportEsimFaultMutation } from '../api/mutations';
 import { myEsimsQueryOptions } from '../api/queries';
 
 /** How the provider's status words read to a partner counting stock. */
@@ -65,6 +78,23 @@ function formatData(mb: number | null): string {
 export function PortalEsimsView() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
+  /** eSIM đang được báo lỗi, hoặc null khi hộp thoại đóng (#046, A4). */
+  const [faulty, setFaulty] = useState<{ iccid: string; orderNumber: string } | null>(null);
+  const [reason, setReason] = useState('');
+
+  const closeFault = () => {
+    setFaulty(null);
+    setReason('');
+  };
+
+  const reportFault = useMutation({
+    ...reportEsimFaultMutation,
+    onSuccess: () => {
+      toast.success('Đã gửi báo lỗi. esim.vn sẽ kiểm tra và phản hồi.');
+      closeFault();
+    },
+    onError: (error: Error) => toast.error(error.message)
+  });
 
   const { data: esims = [], isLoading } = useQuery(
     myEsimsQueryOptions({
@@ -173,6 +203,7 @@ export function PortalEsimsView() {
                     <TableHead>Kích hoạt</TableHead>
                     <TableHead>Hết hạn</TableHead>
                     <TableHead>Trạng thái</TableHead>
+                    <TableHead className='text-right'>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -204,6 +235,25 @@ export function PortalEsimsView() {
                         <TableCell>
                           <Badge variant={badge.variant}>{badge.label}</Badge>
                         </TableCell>
+                        <TableCell className='text-right'>
+                          {esim.iccid && esim.orderNumber ? (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-auto p-0 text-xs'
+                              onClick={() =>
+                                setFaulty({
+                                  iccid: esim.iccid!,
+                                  orderNumber: esim.orderNumber!
+                                })
+                              }
+                            >
+                              Báo lỗi
+                            </Button>
+                          ) : (
+                            <span className='text-muted-foreground text-xs'>—</span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -213,6 +263,58 @@ export function PortalEsimsView() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={faulty !== null} onOpenChange={(open) => !open && closeFault()}>
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Báo eSIM lỗi</DialogTitle>
+            <DialogDescription>
+              esim.vn kiểm tra với nhà cung cấp rồi mới hoàn tiền vào ví — phiếu này không trừ hay
+              cộng tiền ngay.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='space-y-3'>
+            <div className='text-muted-foreground space-y-1 text-xs'>
+              <div>
+                ICCID: <span className='font-mono'>{faulty?.iccid}</span>
+              </div>
+              <div>
+                Đơn: <span className='font-mono'>{faulty?.orderNumber}</span>
+              </div>
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='fault-reason'>Mô tả lỗi</Label>
+              <Textarea
+                id='fault-reason'
+                rows={3}
+                placeholder='Ví dụ: quét QR báo mã đã được dùng'
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant='outline' onClick={closeFault}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={reason.trim().length < 5 || reportFault.isPending}
+              onClick={() =>
+                faulty &&
+                reportFault.mutate({
+                  orderNumber: faulty.orderNumber,
+                  iccid: faulty.iccid,
+                  reason: reason.trim()
+                })
+              }
+            >
+              {reportFault.isPending ? 'Đang gửi…' : 'Gửi báo lỗi'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

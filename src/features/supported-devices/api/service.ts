@@ -27,6 +27,21 @@ export async function saveSupportedDeviceOrdering(
   return response?.data ?? [];
 }
 
+/**
+ * Brand names for the Nhà sản xuất filter (#052).
+ *
+ * Empty on failure rather than throwing: a filter box must not take the device
+ * list down with it.
+ */
+export async function getSupportedDeviceManufacturers(): Promise<string[]> {
+  try {
+    const response = await apiClient<{ data: string[] }>('/supported-devices/manufacturers');
+    return response?.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export async function getSupportedDevices(
   filters?: SupportedDeviceFilters
 ): Promise<SupportedDevicesResponse> {
@@ -35,6 +50,7 @@ export async function getSupportedDevices(
   if (filters?.limit) params.set('limit', String(filters.limit));
   if (filters?.search) params.set('search', filters.search);
   if (filters?.type) params.set('type', filters.type);
+  if (filters?.manufacturer) params.set('manufacturer', filters.manufacturer);
   if (filters?.sort) params.set('sort', filters.sort);
 
   const queryString = params.toString();

@@ -17,6 +17,15 @@ export async function getHelpCenterArticles(
   if (filters.category) params.set('category', filters.category);
   if (filters.parent) params.set('parent', filters.parent);
   if (filters.language) params.set('language', filters.language);
+  // Sent only when actually picked: omitted, the API shows an admin drafts AND
+  // published, which is what the list should default to (#053).
+  if (filters.isPublished !== undefined) {
+    params.set('isPublished', String(filters.isPublished));
+  }
+  if (filters.isPopular !== undefined) {
+    params.set('isPopular', String(filters.isPopular));
+  }
+  if (filters.sort) params.set('sort', filters.sort);
   const query = params.toString();
   return apiClient<HelpCenterResponse>(`/help-center${query ? `?${query}` : ''}`);
 }

@@ -20,7 +20,10 @@ import {
   getMyDistributionSummary,
   getMyDistributionSeries,
   getMyEsims,
-  getMyPurchases
+  getMyPurchases,
+  getPartnerCatalogue,
+  getPurchaseQuote,
+  getMyEsimFaults
 } from './service';
 
 export const partnerPortalKeys = {
@@ -136,6 +139,28 @@ export const myPurchasesQueryOptions = (filters?: {
     queryFn: () => getMyPurchases(filters)
   });
 
+/** Bảng giá đối tác phân phối — "Sản phẩm & bảng giá" (#046). */
+export const partnerCatalogueQueryOptions = (filters?: { search?: string; limit?: number }) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'catalogue', filters?.search ?? '', filters?.limit ?? 0],
+    queryFn: () => getPartnerCatalogue(filters)
+  });
+
+/**
+ * Báo giá một lần mua (#046).
+ *
+ * `enabled` để màn hình tắt hẳn khi chưa chọn gói hay số lượng — gọi với
+ * `quantity = 0` chỉ tốn một vòng để nhận lại lỗi "từ 1 trở lên".
+ */
+export const purchaseQuoteQueryOptions = (planId: number, quantity: number) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'purchase-quote', planId, quantity],
+    queryFn: () => getPurchaseQuote(planId, quantity),
+    enabled: planId > 0 && quantity > 0,
+    // Số dư ví đổi theo từng lần mua, nên báo giá cũ không được dùng lại.
+    staleTime: 0
+  });
+
 export const myTopDestinationsQueryOptions = (range?: { from?: string; to?: string }) =>
   queryOptions({
     queryKey: [...partnerPortalKeys.all, 'top-destinations', range?.from ?? '', range?.to ?? ''],
@@ -179,4 +204,11 @@ export const myNotificationsQueryOptions = () =>
   queryOptions({
     queryKey: partnerPortalKeys.notifications(),
     queryFn: getMyNotifications
+  });
+
+/** Các phiếu báo eSIM lỗi của chính đối tác này (#046, A4). */
+export const myEsimFaultsQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'esim-faults'],
+    queryFn: getMyEsimFaults
   });

@@ -4,8 +4,9 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
+import { buildCatalogApiFilters } from '@/lib/catalog-filters';
 import { destinationsQueryOptions } from '../../api/queries';
 import { columns } from './columns';
 
@@ -16,11 +17,14 @@ export function DestinationsTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    // Filter params are keyed by column id — that is what `useDataTable` writes.
+    isPopular: parseAsArrayOf(parseAsString, ','),
+    isActive: parseAsArrayOf(parseAsString, ','),
+    providers: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
-  const apiFilters: Record<string, unknown> = {};
-  if (params.name) apiFilters.search = params.name;
+  const apiFilters = buildCatalogApiFilters(params);
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,

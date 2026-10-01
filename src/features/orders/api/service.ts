@@ -105,12 +105,18 @@ export async function exportOrdersExcel(filters: OrderFilters): Promise<void> {
  * Ask the supplier again for the eSIMs an order never received (#030).
  * Lines that already have an eSIM are skipped server-side.
  */
-export async function retryOrderProvisioning(orderId: number): Promise<{
+export async function retryOrderProvisioning(
+  orderId: number,
+  /** Chosen lines; omitted re-orders every eligible line (#014). */
+  itemIds?: number[]
+): Promise<{
   retriedItemIds: number[];
   skippedItemIds: number[];
+  emailsSent: number;
   message: string;
 }> {
   return apiClient(`/orders/${orderId}/retry-provisioning`, {
-    method: 'POST'
+    method: 'POST',
+    body: JSON.stringify(itemIds?.length ? { itemIds } : {})
   });
 }

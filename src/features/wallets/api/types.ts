@@ -2,6 +2,8 @@
 // Wallet Admin Types — Type contract for admin wallet management
 // ============================================================
 
+import type { MembershipTier } from '@/features/users/api/types';
+
 export type WalletStatus = 'active' | 'locked';
 
 export type WalletUser = {
@@ -9,6 +11,8 @@ export type WalletUser = {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  /** The effective tier, resolved as on the customer list (#057). */
+  membershipTier?: MembershipTier;
 };
 
 export type WalletListItem = {
@@ -73,6 +77,12 @@ export type WalletFilters = {
   page?: number;
   limit?: number;
   email?: string;
+  /** Mã khách hàng as typed — `KH-000123` or just the digits (#057). */
+  customerCode?: string;
+  /** Tên khách hàng, matched across first and last name (#057). */
+  customerName?: string;
+  /** Comma-separated effective tiers (#057). */
+  membershipTiers?: string;
   filters?: string;
   sort?: string;
 };

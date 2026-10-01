@@ -12,6 +12,11 @@ export async function getWhyChooseUs(filters: WhyChooseUsFilters): Promise<WhyCh
   if (filters.page) params.set('page', String(filters.page));
   if (filters.limit) params.set('limit', String(filters.limit));
   if (filters.search) params.set('search', filters.search);
+  // Both were absent, which is why the Trang filter did nothing (#054).
+  if (filters.type) params.set('type', filters.type);
+  if (filters.isActive !== undefined) {
+    params.set('isActive', String(filters.isActive));
+  }
   if (filters.filters) params.set('filters', filters.filters);
   if (filters.sort) params.set('sort', filters.sort);
   const query = params.toString();

@@ -31,6 +31,12 @@ export const TICKET_STATUS_OPTIONS: {
   }
 ];
 
+/**
+ * How long a resolved ticket waits before closing itself (#061). Mirrors
+ * `TICKET_AUTO_CLOSE_HOURS` in the backend, which is where the rule is enforced.
+ */
+export const TICKET_AUTO_CLOSE_HOURS = 48;
+
 export function getTicketStatusOption(status: TicketStatus) {
   return TICKET_STATUS_OPTIONS.find((opt) => opt.value === status) ?? TICKET_STATUS_OPTIONS[0];
 }

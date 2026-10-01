@@ -272,7 +272,21 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
 
   // Derive ids from nested objects (API returns miniTag/plans/faqs nested)
   const initialMiniTagId = blog?.miniTag?.id ?? blog?.miniTagId ?? '';
-  const initialPlanIds = blog?.plans?.length ? blog.plans.map((p) => p.id) : (blog?.planIds ?? []);
+  /**
+   * Related plans are addressed by a provider-sourced code now (#047): a plan
+   * slug or the supplier's package code. Numeric plan ids are reassigned by a
+   * full catalogue re-import, which silently emptied this field on older
+   * articles.
+   *
+   * `planCodes` is the stored value; an article saved before this existed falls
+   * back to the slugs of the plans it is still linked to, so opening it and
+   * saving migrates it.
+   */
+  const initialPlanCodes = blog?.planCodes?.length
+    ? blog.planCodes
+    : (blog?.plans ?? [])
+        .map((plan) => (typeof plan.slug === 'string' ? plan.slug : ''))
+        .filter(Boolean);
   const initialFaqIds = blog?.faqs?.length
     ? blog.faqs.map((f) => String(f.id))
     : (blog?.faqIds ?? []);
@@ -290,7 +304,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
       isPublished: blog?.isPublished ?? false,
       isPopular: blog?.isPopular ?? false,
       miniTagId: initialMiniTagId ? String(initialMiniTagId) : '',
-      planIdsText: initialPlanIds.length ? initialPlanIds.join(', ') : '',
+      planCodesText: initialPlanCodes.length ? initialPlanCodes.join(', ') : '',
       timeRead: blog?.timeRead ?? undefined,
       seoTitle: blog?.seoTitle ?? '',
       seoDescription: blog?.seoDescription ?? '',
@@ -318,11 +332,11 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
         let coverImage: string | undefined;
         if (coverFile) coverImage = await uploadToCloudinary(coverFile);
 
-        const planIds = value.planIdsText
-          ? value.planIdsText
+        const planCodes = value.planCodesText
+          ? value.planCodesText
               .split(',')
-              .map((s) => Number(s.trim()))
-              .filter((n) => !isNaN(n) && n > 0)
+              .map((s) => s.trim())
+              .filter(Boolean)
           : [];
 
         if (isEdit) {
@@ -338,7 +352,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             isPublished: value.isPublished,
             isPopular: value.isPopular ?? false,
             miniTagId: value.miniTagId || undefined,
-            planIds,
+            planCodes,
             timeRead: value.timeRead || undefined,
             seoTitle: value.seoTitle || undefined,
             seoDescription: value.seoDescription || undefined,
@@ -381,7 +395,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             ...(coverImage && { coverImage }),
             isPublished: value.isPublished ?? false,
             miniTagId: value.miniTagId || undefined,
-            planIds,
+            planCodes,
             timeRead: value.timeRead || undefined,
             seoTitle: value.seoTitle || undefined,
             seoDescription: value.seoDescription || undefined,
@@ -498,12 +512,23 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
                 }}
               </form.AppField>
 
-              {/* Plan IDs */}
+              {/* Related plans, by supplier code rather than by database id (#047) */}
               <FormTextField
-                name='planIdsText'
-                label='Plan IDs (liên quan)'
-                placeholder='Nhập ID gói, cách nhau bằng dấu phẩy: 1, 2, 3'
+                name='planCodesText'
+                label='Mã gói nhà cung cấp (liên quan)'
+                placeholder='VD: ID_1_7, jp-5gb-30days-fixed'
+                description='Mã gói của nhà cung cấp hoặc slug gói, cách nhau bằng dấu phẩy. Không dùng ID gói: ID đổi mỗi lần nạp lại dữ liệu API nên bài viết cũ sẽ mất thông tin gói.'
               />
+              {/* What those codes currently resolve to, so the editor can confirm
+                  the article is still linked to the right packages. */}
+              {(blog?.plans?.length ?? 0) > 0 && (
+                <p className='text-muted-foreground text-xs'>
+                  Đang liên kết:{' '}
+                  {(blog?.plans ?? [])
+                    .map((plan) => (typeof plan.name === 'string' ? plan.name : `#${plan.id}`))
+                    .join(' · ')}
+                </p>
+              )}
 
               <FormSwitchField name='isPublished' label='Xuất bản' />
               <FormSwitchField name='isPopular' label='Nổi bật' />

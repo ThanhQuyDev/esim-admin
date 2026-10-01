@@ -1,6 +1,12 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { createSeoConfig, updateSeoConfig, deleteSeoConfig } from './service';
+import {
+  createSeoConfig,
+  updateSeoConfig,
+  deleteSeoConfig,
+  bulkSetSeoConfigsActive,
+  bulkDeleteSeoConfigs
+} from './service';
 import { seoConfigKeys } from './queries';
 import type { CreateSeoConfigPayload, UpdateSeoConfigPayload } from './types';
 
@@ -21,5 +27,18 @@ export const updateSeoConfigMutation = mutationOptions({
 
 export const deleteSeoConfigMutation = mutationOptions({
   mutationFn: (id: number) => deleteSeoConfig(id),
+  onSettled: invalidateSeoConfigs
+});
+
+/** Bulk activate / deactivate from the list's row selection (#049). */
+export const bulkSetSeoConfigsActiveMutation = mutationOptions({
+  mutationFn: ({ ids, isActive }: { ids: number[]; isActive: boolean }) =>
+    bulkSetSeoConfigsActive(ids, isActive),
+  onSettled: invalidateSeoConfigs
+});
+
+/** Bulk delete from the list's row selection (#049). */
+export const bulkDeleteSeoConfigsMutation = mutationOptions({
+  mutationFn: (ids: number[]) => bulkDeleteSeoConfigs(ids),
   onSettled: invalidateSeoConfigs
 });

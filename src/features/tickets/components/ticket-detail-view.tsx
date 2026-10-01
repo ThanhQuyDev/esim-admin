@@ -18,6 +18,9 @@ import { ChangeStatusDropdown } from './change-status-dropdown';
 import { StatusTag } from './status-tag';
 import { SafeHtml } from './safe-html';
 import { AttachmentsGrid } from './attachments-grid';
+import { TicketConversation } from './ticket-conversation';
+import { TICKET_AUTO_CLOSE_HOURS } from '../constants/status';
+import { formatDateTimeVn } from '@/lib/format';
 import type { Ticket } from '../api/types';
 
 function formatDateTime(value: string) {
@@ -75,7 +78,12 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
           </Button>
           <div className='space-y-1'>
             <div className='flex items-center gap-2'>
-              <span className='text-muted-foreground font-mono text-sm'>#{ticket.id}</span>
+              {/* The ticket number, because that is what appears in the subject
+                  line of every email about it and what the customer quotes
+                  (#059). The raw id is no use to anyone outside the CMS. */}
+              <span className='text-muted-foreground font-mono text-sm'>
+                {ticket.ticketNumber ?? `#${ticket.id}`}
+              </span>
               <StatusTag status={ticket.status} />
             </div>
             <h1 className='text-xl font-semibold leading-tight break-words'>{ticket.subject}</h1>
@@ -88,6 +96,15 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
           </Button>
         </div>
       </div>
+
+      {/* When a resolved ticket will close itself (#061) — otherwise the 48-hour
+          rule is invisible and an admin cannot tell how long is left. */}
+      {ticket.status === 'resolved' && ticket.resolvedAt && (
+        <p className='text-muted-foreground text-xs'>
+          Đã giải quyết lúc {formatDateTimeVn(ticket.resolvedAt)} — sẽ tự chuyển sang &quot;Đã
+          đóng&quot; sau {TICKET_AUTO_CLOSE_HOURS} giờ và gửi email thông báo cho khách.
+        </p>
+      )}
 
       <Card>
         <CardHeader>
@@ -157,6 +174,14 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
           <AttachmentsGrid attachments={ticket.attachments} />
         </CardContent>
       </Card>
+
+      {/* The thread and the reply box (#059) — replying from here emails the
+          customer instead of support composing it by hand. */}
+      <TicketConversation
+        ticketId={ticket.id}
+        ticketNumber={ticket.ticketNumber}
+        customerEmail={ticket.customerEmail}
+      />
 
       <Separator />
 

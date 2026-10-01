@@ -19,6 +19,14 @@ export type CustomPaymentLink = {
   paymentId: string | null;
   createdById: number;
   createdBy?: CustomPaymentLinkCreatedBy;
+  /** When an admin confirmed the outcome by hand (#056). */
+  confirmedAt?: string | null;
+  confirmedByAdminId?: number | null;
+  /**
+   * When the sweep gave up on it after OnePay's 30-minute window (#056). Set
+   * only for an auto-expiry, so the list can say WHY a link failed.
+   */
+  expiredAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -4,9 +4,10 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
+import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { walletsQueryOptions } from '../../api/queries';
+import { buildWalletApiFilters } from '../../utils/wallet-filters';
 import { columns } from './columns';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
@@ -16,6 +17,10 @@ export function WalletsTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    // Customer code / name / tier filters (#057), keyed by column id.
+    customerCode: parseAsString,
+    customerName: parseAsString,
+    membershipTier: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
@@ -24,12 +29,11 @@ export function WalletsTable() {
     order: s.desc ? 'DESC' : 'ASC'
   }));
 
-  const filters = {
-    page: params.page,
+  const filters = buildWalletApiFilters({
+    ...params,
     limit: params.perPage,
-    ...(params.name && { email: params.name }),
-    ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
-  };
+    sort: apiSort.length > 0 ? JSON.stringify(apiSort) : undefined
+  });
 
   const { data } = useSuspenseQuery(walletsQueryOptions(filters));
   const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);

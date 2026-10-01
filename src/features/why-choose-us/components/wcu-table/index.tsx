@@ -6,6 +6,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { wcuQueryOptions } from '../../api/queries';
+import { buildWcuApiFilters } from '../../utils/wcu-filters';
 import { columns } from './columns';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
@@ -16,17 +17,16 @@ export function WcuTable() {
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
     type: parseAsArrayOf(parseAsString, ','),
+    // Status filter (#054), keyed by column id.
+    isActive: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
   const apiSort = params.sort.map((s) => ({ orderBy: s.id, order: s.desc ? 'DESC' : 'ASC' }));
-  const filters = {
-    page: params.page,
+  const filters = buildWcuApiFilters({
+    ...params,
     limit: params.perPage,
-    ...(params.name && { search: params.name }),
-    // Every selected page type; the API returns rows of any of them.
-    ...(params.type?.length && { type: params.type.join(',') }),
-    ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
-  };
+    sort: apiSort.length > 0 ? JSON.stringify(apiSort) : undefined
+  });
   const { data } = useSuspenseQuery(wcuQueryOptions(filters));
   const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
   const { table } = useDataTable({

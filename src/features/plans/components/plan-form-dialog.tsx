@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
+import { useAppForm, useFormContext, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FieldLabel } from '@/components/ui/field';
@@ -14,8 +14,10 @@ import * as z from 'zod';
 import {
   createPlanSchema,
   updatePlanSchema,
+  DAILY_RESET_OPTIONS,
   PLAN_TAG_OPTIONS,
   type CreatePlanFormValues,
+  type DailyResetPolicy,
   type PlanTag,
   type UpdatePlanFormValues
 } from '../schemas/plan';
@@ -64,6 +66,80 @@ function TagsPicker({
             </Badge>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The UTC offset belongs to a calendar-day reset and nothing else. Sending it
+ * for a rolling 24-hour cycle would store a timezone the cycle does not use —
+ * and the field is hidden in that case, so whatever is left in form state after
+ * switching the policy is stale rather than chosen.
+ */
+function dailyResetOffsetValue(value: CreatePlanFormValues): number | null {
+  if (value.dailyResetPolicy !== 'calendar_day') return null;
+  if (!value.dailyResetUtcOffset) return null;
+  return Number(value.dailyResetUtcOffset);
+}
+
+/**
+ * APN, TikTok/ChatGPT and "Giờ làm mới" (#063).
+ *
+ * All three were already stored and filterable in the list (#010, #041) but the
+ * detail form never showed them, so an admin could see a plan was filtered out
+ * as TikTok-incapable and had no way to correct it. One component, rendered by
+ * both dialogs — `UpdatePlanFormValues` is `CreatePlanFormValues`, and the fields
+ * resolve the form from context, so nothing has to be threaded through.
+ */
+function ConnectivityFields() {
+  const form = useFormContext();
+  const { FormTextField, FormSelectField, FormSwitchField } = useFormFields<CreatePlanFormValues>();
+
+  return (
+    <div className='space-y-5 rounded-lg border p-4'>
+      <div className='text-sm font-medium'>Kết nối & giới hạn</div>
+
+      <div className='grid grid-cols-2 gap-4'>
+        <FormTextField
+          name='apn'
+          label='APN'
+          placeholder='internet'
+          description='Nhà cung cấp trả về qua API; esimaccess không cung cấp APN.'
+        />
+        <FormSwitchField
+          name='isNonHkIp'
+          label='TikTok & ChatGPT'
+          description='IP ra là IP nội địa, không đi qua Hồng Kông.'
+        />
+      </div>
+
+      <div className='grid grid-cols-2 gap-4'>
+        <FormSelectField
+          name='dailyResetPolicy'
+          label='Giờ làm mới mỗi ngày'
+          options={DAILY_RESET_OPTIONS}
+          placeholder='Nhà cung cấp chưa nêu'
+        />
+        {/* The offset only means anything for a calendar day — a rolling cycle
+            starts whenever the customer installs, in no particular timezone. */}
+        {/* The form from context is untyped by design (any form can render these
+            fields), so the values are narrowed here rather than at the call. */}
+        <form.Subscribe
+          selector={(state) => (state.values as unknown as CreatePlanFormValues).dailyResetPolicy}
+        >
+          {(policy) =>
+            policy === 'calendar_day' ? (
+              <FormTextField
+                name='dailyResetUtcOffset'
+                label='Múi giờ (UTC+)'
+                placeholder='8'
+                type='number'
+                description='Viettel và eSIM nội địa: 7. Billion/MicroEsim: 8.'
+              />
+            ) : null
+          }
+        </form.Subscribe>
       </div>
     </div>
   );
@@ -119,7 +195,11 @@ function CreateDialog({
       type: '',
       topUp: false,
       isActive: true,
-      tags: [] as PlanTag[]
+      tags: [] as PlanTag[],
+      apn: '',
+      isNonHkIp: false,
+      dailyResetPolicy: '',
+      dailyResetUtcOffset: ''
     } as CreatePlanFormValues,
     validators: {
       onSubmit: createPlanSchema
@@ -143,6 +223,16 @@ function CreateDialog({
         ...(value.currency && { currency: value.currency }),
         ...(value.type && { type: value.type }),
         ...(value.tags && value.tags.length > 0 && { tags: value.tags }),
+        ...(value.apn && { apn: value.apn }),
+        // Leaving the policy blank sends nothing, so the backend fills in what
+        // the supplier is known to do rather than storing "unknown" (#063).
+        ...(value.dailyResetPolicy && {
+          dailyResetPolicy: value.dailyResetPolicy as DailyResetPolicy
+        }),
+        ...(dailyResetOffsetValue(value) != null && {
+          dailyResetUtcOffset: dailyResetOffsetValue(value)
+        }),
+        isNonHkIp: value.isNonHkIp ?? false,
         topUp: value.topUp ?? false,
         isActive: value.isActive ?? true
       };
@@ -234,6 +324,8 @@ function CreateDialog({
             )}
           </form.AppField>
 
+          <ConnectivityFields />
+
           <div className='grid grid-cols-2 gap-4'>
             <FormSwitchField name='topUp' label='Top-Up' />
             <FormSwitchField name='isActive' label='Hoạt động' />
@@ -282,7 +374,11 @@ function EditDialog({
       type: plan.type ?? '',
       topUp: plan.topUp,
       isActive: plan.isActive,
-      tags: (plan.tags ?? []) as PlanTag[]
+      tags: (plan.tags ?? []) as PlanTag[],
+      apn: plan.apn ?? '',
+      isNonHkIp: plan.isNonHkIp,
+      dailyResetPolicy: plan.dailyResetPolicy ?? '',
+      dailyResetUtcOffset: plan.dailyResetUtcOffset != null ? String(plan.dailyResetUtcOffset) : ''
     } as UpdatePlanFormValues,
     validators: {
       onSubmit: updatePlanSchema
@@ -307,7 +403,13 @@ function EditDialog({
         type: value.type || undefined,
         topUp: value.topUp,
         isActive: value.isActive,
-        tags: value.tags ?? []
+        tags: value.tags ?? [],
+        // null rather than undefined: an admin clearing APN or the reset policy
+        // means "we do not know", and undefined would silently keep the old value.
+        apn: value.apn || null,
+        isNonHkIp: value.isNonHkIp ?? false,
+        dailyResetPolicy: (value.dailyResetPolicy || null) as DailyResetPolicy | null,
+        dailyResetUtcOffset: dailyResetOffsetValue(value)
       };
       await updateMut.mutateAsync({ id: plan.id, values: payload });
     }
@@ -404,6 +506,8 @@ function EditDialog({
               />
             )}
           </form.AppField>
+
+          <ConnectivityFields />
 
           <div className='grid grid-cols-2 gap-4'>
             <FormSwitchField name='topUp' label='Top-Up' />

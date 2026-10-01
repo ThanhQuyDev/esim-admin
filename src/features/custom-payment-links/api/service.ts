@@ -33,3 +33,20 @@ export async function getCustomPaymentLinks(
   const query = params.toString();
   return apiClient<CustomPaymentLinksResponse>(`/custom-payment-links${query ? `?${query}` : ''}`);
 }
+
+/**
+ * An admin's verdict on a pending link (#056).
+ *
+ * The outcome used to arrive only through OnePay's IPN, so a customer who paid on
+ * a device that never came back — or never paid at all — left the link in "Chờ
+ * thanh toán" indefinitely.
+ */
+export async function confirmCustomPaymentLink(
+  id: string,
+  isPaid: boolean
+): Promise<CustomPaymentLink> {
+  return apiClient<CustomPaymentLink>(`/custom-payment-links/${encodeURIComponent(id)}/confirm`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isPaid })
+  });
+}

@@ -274,6 +274,11 @@ export type MyOrder = {
 
 export type MyTicket = {
   id: number;
+  /**
+   * `HT-000123` — the same reference that appears in the subject line of the
+   * support emails, so a partner can match the portal against their inbox (#060).
+   */
+  ticketNumber: string | null;
   customerEmail: string;
   subject: string;
   description: string;
@@ -417,9 +422,83 @@ export type MyPurchase = {
   /** Before any discount, so the page can show the margin. */
   listVnd: number;
   refundedVnd: number;
+  /** Doanh thu bán ra theo giá niêm yết esim.vn (chốt 02/10/2026, phương án a). */
+  listPriceVnd: number;
+  /** Giá vốn thật đã trừ ví, đã trừ phần hoàn lại. */
+  walletCostVnd: number;
+  /** Doanh thu bán ra − giá vốn đã trừ ví. Âm là có thật, đừng kẹp về 0. */
+  marginVnd: number;
   esimCount: number;
   createdAt: string;
   items: { planName: string | null; quantity: number; vndPrice: number }[];
+};
+
+/** Một dòng trong bảng giá đối tác phân phối (#046). */
+export type CataloguePlan = {
+  id: number;
+  name: string;
+  slug: string;
+  destinationName: string | null;
+  durationDays: number;
+  dataMb: number;
+  /** Giá niêm yết esim.vn. */
+  listPriceVnd: number;
+  /** Giá đối tác phải trả: giá vốn + % cộng thêm của hạng. */
+  unitPriceVnd: number;
+  marginVnd: number;
+  /** false khi gói chưa có giá vốn — hiện nhưng không bấm mua được. */
+  purchasable: boolean;
+};
+
+export type PartnerCatalogue = {
+  /** % cộng vào giá vốn theo hạng đang giữ. */
+  markupPercent: number;
+  plans: CataloguePlan[];
+};
+
+/** Báo giá một lần mua, tính trước khi bấm (#046). */
+export type PurchaseQuote = {
+  quantity: number;
+  unitPriceVnd: number;
+  totalVnd: number;
+  listUnitPriceVnd: number;
+  listTotalVnd: number;
+  marginVnd: number;
+  marginPercent: number;
+  /** Câu tiếng Việt vì sao chưa mua được, hoặc null khi mua được. */
+  rejection: string | null;
+};
+
+export type CreatePurchasePayload = { planId: number; quantity: number };
+
+/** Một phiếu đối tác báo eSIM lỗi (#046, A4 — admin duyệt tay mới hoàn tiền). */
+export type EsimFaultReport = {
+  id: number;
+  orderNumber: string;
+  iccid: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  refundVnd: number;
+  adminNote: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+};
+
+export type ReportEsimFaultPayload = {
+  orderNumber: string;
+  iccid: string;
+  reason: string;
+};
+
+export type PurchaseResult = {
+  orderNumber: string;
+  status: string;
+  quantity: number;
+  unitPriceVnd: number;
+  totalVnd: number;
+  listPriceVnd: number;
+  marginVnd: number;
+  esimCount: number;
 };
 
 /** An announcement from esim.vn, as this partner sees it (#079). */

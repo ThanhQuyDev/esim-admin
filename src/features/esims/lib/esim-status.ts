@@ -39,6 +39,22 @@ export function esimStatusVariant(
   return (status && ESIM_STATUS_VARIANTS[status]) || 'outline';
 }
 
+/**
+ * Unsold stock whose expiry has already passed (#021).
+ *
+ * Only `available` counts: a sold eSIM past its expiry is simply a finished eSIM,
+ * not a stock problem. This is dead inventory — the order flow skips it and the
+ * storefront no longer counts it as stock — so the CMS has to point at it.
+ */
+export function isExpiredStock(esim: {
+  status?: string | null;
+  expiresAt?: string | null;
+}): boolean {
+  if (esim.status !== 'available' || !esim.expiresAt) return false;
+  const expiry = new Date(esim.expiresAt);
+  return !Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now();
+}
+
 /** Options for the status filter, in the order an admin thinks about them. */
 export const ESIM_STATUS_OPTIONS = [
   'available',

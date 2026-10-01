@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/sheet';
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
+// The same code the customer and wallet lists show (#057, #058).
+import { customerCode } from '@/features/users/components/users-table/columns';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AdjustBalanceModal } from './adjust-balance-modal';
@@ -134,7 +136,12 @@ export function WalletDetailSheet({ userId, open, onOpenChange }: WalletDetailSh
         <SheetContent className='w-[500px] overflow-y-auto sm:max-w-[500px]'>
           <SheetHeader>
             <SheetTitle className='flex items-center gap-3'>
-              Ví User #{userId}
+              {/* The customer code, not the raw user id: the id appears nowhere
+                  else an admin can see, so "Ví User #6" could not be matched
+                  against any other screen (#058). */}
+              <span>
+                Ví <span className='font-mono'>{customerCode(userId)}</span>
+              </span>
               <Badge variant={wallet.status === 'active' ? 'default' : 'destructive'}>
                 {wallet.status === 'active' ? 'Đang hoạt động' : 'Đã khóa'}
               </Badge>

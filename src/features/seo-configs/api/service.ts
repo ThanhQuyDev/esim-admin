@@ -52,3 +52,22 @@ export async function deleteSeoConfig(id: number): Promise<void> {
     method: 'DELETE'
   });
 }
+
+/** Turn many configs on or off in one request (#049). */
+export async function bulkSetSeoConfigsActive(
+  ids: number[],
+  isActive: boolean
+): Promise<{ updated: number }> {
+  return apiClient<{ updated: number }>('/seo-configs/bulk/status', {
+    method: 'PATCH',
+    body: JSON.stringify({ ids, isActive })
+  });
+}
+
+/** Delete many configs in one request (#049). */
+export async function bulkDeleteSeoConfigs(ids: number[]): Promise<{ deleted: number }> {
+  return apiClient<{ deleted: number }>('/seo-configs/bulk', {
+    method: 'DELETE',
+    body: JSON.stringify({ ids })
+  });
+}

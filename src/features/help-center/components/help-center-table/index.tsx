@@ -6,12 +6,8 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { helpCenterQueryOptions } from '../../api/queries';
-import {
-  getCategoryOptions,
-  getParentOptions,
-  getCategoryApiKey,
-  getParentApiKey
-} from '../../api/types';
+import { getCategoryOptions, getParentOptions } from '../../api/types';
+import { buildHelpCenterApiFilters, toHelpCenterApiSort } from '../../utils/help-center-filters';
 import { buildColumns } from './columns';
 import {
   Select,
@@ -29,6 +25,9 @@ export function HelpCenterTable() {
     category: parseAsString,
     parent: parseAsString,
     language: parseAsString,
+    // Nổi bật / Xuất bản filters (#053), driven by the toolbar selects below.
+    popular: parseAsString,
+    isPublished: parseAsString,
     sort: getSortingStateParser(
       // build a stable list of column ids regardless of language
       buildColumns('en')
@@ -59,14 +58,11 @@ export function HelpCenterTable() {
   // URL params hold canonical ids (stable when the user toggles the filter
   // language). Translate to the localized kebab-case key the backend expects
   // (e.g. category=bat-dau when lang=vi, category=getting-started when lang=en).
-  const filters = {
-    page: params.page,
+  const filters = buildHelpCenterApiFilters({
+    ...params,
     limit: params.perPage,
-    ...(params.name && { search: params.name }),
-    ...(params.category && { category: getCategoryApiKey(params.category, lang) }),
-    ...(params.parent && { parent: getParentApiKey(params.parent, lang) }),
-    ...(params.language && { language: params.language })
-  };
+    sort: toHelpCenterApiSort(params.sort)
+  });
   const { data } = useSuspenseQuery(helpCenterQueryOptions(filters));
   const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
   const columns = buildColumns(lang);
@@ -133,6 +129,38 @@ export function HelpCenterTable() {
                 {opt.label}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        {/* Xuất bản / Nổi bật (#053). Toolbar selects rather than column filters,
+            to match the three above and because the API takes one boolean. */}
+        <Select
+          value={params.isPublished ?? 'all'}
+          onValueChange={(val) =>
+            setParams({ isPublished: val === 'all' ? null : val, page: 1 }, { shallow: true })
+          }
+        >
+          <SelectTrigger className='h-8 w-[160px]' aria-label='Lọc theo xuất bản'>
+            <SelectValue placeholder='Xuất bản' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>Xuất bản: Tất cả</SelectItem>
+            <SelectItem value='true'>Đã xuất bản</SelectItem>
+            <SelectItem value='false'>Bản nháp</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={params.popular ?? 'all'}
+          onValueChange={(val) =>
+            setParams({ popular: val === 'all' ? null : val, page: 1 }, { shallow: true })
+          }
+        >
+          <SelectTrigger className='h-8 w-[150px]' aria-label='Lọc theo nổi bật'>
+            <SelectValue placeholder='Nổi bật' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>Nổi bật: Tất cả</SelectItem>
+            <SelectItem value='true'>Nổi bật: Có</SelectItem>
+            <SelectItem value='false'>Nổi bật: Không</SelectItem>
           </SelectContent>
         </Select>
       </DataTableToolbar>

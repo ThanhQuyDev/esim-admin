@@ -47,8 +47,11 @@ export const updateInvoiceStatusMutation = mutationOptions({
 });
 
 export const retryOrderProvisioningMutation = mutationOptions({
-  mutationFn: (orderId: number) => retryOrderProvisioning(orderId),
+  mutationFn: ({ orderId, itemIds }: { orderId: number; itemIds?: number[] }) =>
+    retryOrderProvisioning(orderId, itemIds),
   onSettled: () => {
     getQueryClient().invalidateQueries({ queryKey: orderKeys.all });
+    // The eSIMs list gains rows when the supplier answers synchronously.
+    getQueryClient().invalidateQueries({ queryKey: ['esims'] });
   }
 });

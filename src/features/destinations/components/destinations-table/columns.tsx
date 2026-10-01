@@ -5,6 +5,7 @@ import type { Destination } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
+import { ACTIVE_OPTIONS, PROVIDER_OPTIONS, YES_NO_OPTIONS } from '@/lib/catalog-filters';
 
 export const columns: ColumnDef<Destination>[] = [
   {
@@ -64,7 +65,13 @@ export const columns: ColumnDef<Destination>[] = [
         {row.original.isPopular ? 'Có' : 'Không'}
       </Badge>
     ),
-    enableSorting: false
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Nổi bật',
+      variant: 'multiSelect' as const,
+      options: YES_NO_OPTIONS
+    }
   },
   {
     id: 'isActive',
@@ -75,7 +82,13 @@ export const columns: ColumnDef<Destination>[] = [
         {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
-    enableSorting: false
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Hoạt động',
+      variant: 'multiSelect' as const,
+      options: ACTIVE_OPTIONS
+    }
   },
   {
     id: 'description',
@@ -102,7 +115,13 @@ export const columns: ColumnDef<Destination>[] = [
     accessorKey: 'providers',
     header: 'Providers',
     cell: ({ row }) => <span className='text-sm'>{row.original.providers || '—'}</span>,
-    enableSorting: false
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Providers',
+      variant: 'multiSelect' as const,
+      options: PROVIDER_OPTIONS
+    }
   },
   {
     id: 'actions',

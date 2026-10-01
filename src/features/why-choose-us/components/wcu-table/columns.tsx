@@ -114,7 +114,17 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
         {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
       </Badge>
     ),
-    enableSorting: false
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Trạng thái',
+      // Single-select: the API filter is one boolean, not a set (#054).
+      variant: 'select' as const,
+      options: [
+        { value: 'true', label: 'Hoạt động' },
+        { value: 'false', label: 'Không hoạt động' }
+      ]
+    }
   },
   { id: 'actions', cell: ({ row }) => <CellAction data={row.original} /> }
 ];

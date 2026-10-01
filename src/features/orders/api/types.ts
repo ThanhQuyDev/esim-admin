@@ -93,6 +93,9 @@ export type OrderItemPlan = {
   slug: string;
   durationDays: number;
   dataMb: number;
+  /** Call minutes / SMS included; both null on a data-only plan (#008). */
+  call?: number | null;
+  sms?: number | null;
   price: number;
   vndPrice: number;
   currency: string;
@@ -151,6 +154,32 @@ export type OrderItem = {
   updatedAt: string;
 };
 
+/** The eSIM a topup was applied to, for reconciling the result (#015). */
+export type TopupTargetEsim = {
+  id: number;
+  iccid: string;
+  status: string;
+  provider: string | null;
+  planName: string | null;
+  dataUsed: string | null;
+  dataTotal: string | null;
+  expiresAt: string | null;
+  activatedAt: string | null;
+  originalOrderId: number | null;
+};
+
+/** A topup order in full; null on an ordinary order (#015). */
+export type OrderTopupDetail = {
+  targetIccid: string;
+  provider: string | null;
+  packageId: string | null;
+  packageName: string | null;
+  dataText: string | null;
+  durationDays: number | null;
+  isUnlimited: boolean;
+  targetEsim: TopupTargetEsim | null;
+};
+
 export type AdminOrderInvoice = {
   id: string;
   status: InvoiceStatus;
@@ -167,6 +196,9 @@ export type OrderDetail = Order & {
   coupon: OrderCoupon | null;
   items: OrderItem[];
   invoice: AdminOrderInvoice | null;
+  orderType?: string;
+  /** Present only on a topup order (#015). */
+  topup?: OrderTopupDetail | null;
 };
 
 export type OrderFilters = {
@@ -250,6 +282,8 @@ export type Invoice = {
 // Manual order
 export type SubmitManualOrderPayload = {
   email: string;
+  /** Used only when the email has no account yet — the backend creates one (#041). */
+  customerName?: string;
   packageCode: string;
   slug: string;
   quantity: number;

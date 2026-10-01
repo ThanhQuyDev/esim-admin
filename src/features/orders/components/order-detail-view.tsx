@@ -1,6 +1,8 @@
 'use client';
 
 import { esimQrLogoSettings } from '@/features/esims/lib/esim-qr';
+import { esimStatusLabel, esimStatusVariant } from '@/features/esims/lib/esim-status';
+import { callSmsSummary, hasCallOrSms, planDisplayName } from '@/features/plans/utils/plan-label';
 import { useSuspenseQuery, useMutation } from '@tanstack/react-query';
 import { orderQueryOptions } from '../api/queries';
 import { refundOrderMutation, retryOrderProvisioningMutation } from '../api/mutations';
@@ -9,13 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { OrderItemEsim, OrderItemPlan } from '../api/types';
 import { Icons } from '@/components/icons';
+import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { RefundOrderModal } from './refund-order-modal';
 import { ResendEsimEmailButton } from './resend-esim-email-button';
+import { RetryProvisioningDialog } from './retry-provisioning-dialog';
 import { CreateInvoiceDialog } from './create-invoice-dialog';
 import { InvoiceViewDialog } from './invoice-view-dialog';
+import { canIssueInvoice } from '../utils/invoice-filter';
 import { formatCountry, formatDateTimeVn } from '@/lib/format';
 
 interface OrderDetailViewProps {
@@ -67,12 +72,10 @@ function parseAttributionWarnings(warning?: string | null) {
     );
 }
 
-const esimStatusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  available: 'outline',
-  active: 'default',
-  expired: 'destructive',
-  deactivated: 'secondary'
-};
+// The local copy of this map had no `refunded` entry, so a refunded eSIM fell
+// back to a grey outline badge reading the raw status — invisible when scrolling
+// a multi-eSIM order (#019). The shared helper colours it red and labels it "Đã
+// hoàn tiền", and keeps this page in step with the eSIM list.
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -164,7 +167,7 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <span className='font-mono text-xs font-medium'>{esim.iccid}</span>
-          <Badge variant={esimStatusVariant[esim.status] ?? 'outline'}>{esim.status}</Badge>
+          <Badge variant={esimStatusVariant(esim.status)}>{esimStatusLabel(esim.status)}</Badge>
         </div>
         {esim.provider && <Badge variant='outline'>{esim.provider}</Badge>}
       </div>
@@ -214,14 +217,15 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
           <InfoRow label='Còn lại' value={remainingData(esim.dataUsed, esim.dataTotal)} />
           <InfoRow label='Tổng dung lượng' value={formatDataMb(esim.dataTotal)} />
           <InfoRow label='SĐT' value={esim.phoneNumber || '—'} />
-          <InfoRow
-            label='Roaming'
-            value={
-              <Badge variant={esim.isRoaming ? 'default' : 'secondary'}>
-                {esim.isRoaming ? 'Có' : 'Không'}
-              </Badge>
-            }
-          />
+          {/* Minutes / SMS instead of the Roaming flag, which said nothing useful
+              about the eSIM (#013). Shown only when the plan carries an
+              allowance, so a data-only eSIM does not grow a "Không" row. */}
+          {plan && hasCallOrSms(plan) && (
+            <InfoRow
+              label='Phút gọi / SMS'
+              value={<span className='font-medium'>{callSmsSummary(plan)}</span>}
+            />
+          )}
           <InfoRow label='Kích hoạt' value={formatDate(esim.activatedAt)} />
           <InfoRow label='Hết hạn' value={formatDate(esim.expiresAt)} />
         </div>
@@ -338,19 +342,21 @@ function rejectionReasonLabel(reason?: string | null): string | null {
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
   const [refundOpen, setRefundOpen] = useState(false);
+  const [retryOpen, setRetryOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceViewOpen, setInvoiceViewOpen] = useState(false);
 
   const retryMutation = useMutation({
     ...retryOrderProvisioningMutation,
     onSuccess: (result) => {
+      setRetryOpen(false);
       if (result.retriedItemIds.length === 0) {
         // Nothing was re-ordered — say so plainly instead of a green tick.
         toast.info(result.message);
       } else {
-        toast.success(
-          `${result.message} Nhà cung cấp giao bất đồng bộ có thể mất vài phút mới trả eSIM về.`
-        );
+        // The message already says whether the eSIM email went out, which
+        // depends on whether the supplier answers synchronously (#014).
+        toast.success(result.message);
       }
     },
     onError: (e) => toast.error(e.message || 'Gọi lại nhà cung cấp thất bại')
@@ -369,6 +375,8 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
 
   const canRefund = order.status === 'paid';
   const canResendEmail = order.status === 'paid';
+  const hasWalletPayment =
+    (order.walletSpentVndAmount ?? 0) > 0 || (order.cashbackAmountVnd ?? 0) > 0;
 
   return (
     <div className='grid gap-6'>
@@ -383,6 +391,14 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         onOpenChange={setRefundOpen}
         onSubmit={(data) => refundMutation.mutate({ id: order.id, data })}
         isSubmitting={refundMutation.isPending}
+      />
+      <RetryProvisioningDialog
+        orderNumber={order.orderNumber}
+        items={order.items}
+        open={retryOpen}
+        onOpenChange={setRetryOpen}
+        onSubmit={(itemIds) => retryMutation.mutate({ orderId: order.id, itemIds })}
+        isSubmitting={retryMutation.isPending}
       />
       <CreateInvoiceDialog
         orderId={order.id}
@@ -415,14 +431,15 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             size='sm'
           />
           {/* #030: re-ask the supplier for eSIMs this order never received,
-              e.g. after the deposit with them ran dry mid-order. */}
+              e.g. after the deposit with them ran dry mid-order. #014 added the
+              picker, so an order with several eSIMs can be retried line by line. */}
           {order.status === 'paid' && (
             <Button
               type='button'
               size='sm'
               variant='outline'
               disabled={retryMutation.isPending}
-              onClick={() => retryMutation.mutate(order.id)}
+              onClick={() => setRetryOpen(true)}
             >
               {retryMutation.isPending ? (
                 <Icons.spinner className='mr-2 h-4 w-4 animate-spin' />
@@ -433,6 +450,8 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             </Button>
           )}
           {order.invoice ? (
+            // An invoice that already exists stays viewable whatever happened to
+            // the order afterwards — hiding it would hide the record (#011).
             <Button
               type='button'
               size='sm'
@@ -448,10 +467,24 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                 {order.invoice.status}
               </Badge>
             </Button>
-          ) : (
+          ) : canIssueInvoice(order.status) ? (
             <Button type='button' size='sm' variant='outline' onClick={() => setInvoiceOpen(true)}>
               <Icons.fileTypePdf className='mr-2 h-4 w-4' />
               Xuất hóa đơn
+            </Button>
+          ) : null}
+          {/* Refund sits with the other admin actions instead of in a card of its
+              own further down the page (#012). */}
+          {canRefund && (
+            <Button
+              type='button'
+              variant='destructive'
+              size='sm'
+              onClick={() => setRefundOpen(true)}
+              title='Hoàn tiền về ví eXu hoặc chuyển khoản trực tiếp'
+            >
+              <Icons.undo className='mr-2 h-4 w-4' />
+              Hoàn tiền
             </Button>
           )}
         </CardContent>
@@ -518,81 +551,172 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         </CardContent>
       </Card>
 
-      {/* eXU Wallet Payment Breakdown */}
-      {(order.walletSpentVndAmount != null && order.walletSpentVndAmount > 0) ||
-      (order.cashbackAmountVnd != null && order.cashbackAmountVnd > 0) ? (
+      {/* Topup: what the package gave, what it cost, and the eSIM it was applied
+          to — none of which reached this page before (#015). */}
+      {order.topup && (
         <Card>
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
-              <Icons.creditCard className='h-4 w-4' />
-              Thanh toán eXU Wallet
+              <Icons.refresh className='h-4 w-4' />
+              Gói Topup
             </CardTitle>
+            <CardDescription>
+              Nạp thêm cho eSIM đã mua trước đó. Đối chiếu kết quả với eSIM ở cột bên phải.
+            </CardDescription>
           </CardHeader>
-          <CardContent className='space-y-3'>
-            {order.walletSpentVndAmount != null && order.walletSpentVndAmount > 0 && (
-              <>
-                <InfoRow
-                  label='Số tiền dùng từ ví eXU'
-                  value={
-                    <span className='font-semibold text-orange-600'>
-                      {formatCurrency(order.walletSpentVndAmount, 'VND')}
-                    </span>
-                  }
-                />
-                <InfoRow
-                  label='Còn lại thanh toán tiền'
-                  value={
-                    <span className='font-semibold'>{formatCurrency(order.vndPrice, 'VND')}</span>
-                  }
-                />
-              </>
-            )}
-            {order.cashbackAmountVnd != null && order.cashbackAmountVnd > 0 && (
+          <CardContent className='grid gap-6 md:grid-cols-2'>
+            <div className='space-y-3'>
+              <p className='text-muted-foreground text-xs font-semibold uppercase'>
+                Ưu đãi của gói
+              </p>
+              <InfoRow label='Tên gói' value={order.topup.packageName || '—'} />
               <InfoRow
-                label='Hoàn lại vào ví eXU'
+                label='Dung lượng'
+                value={order.topup.isUnlimited ? 'Không giới hạn' : order.topup.dataText || '—'}
+              />
+              <InfoRow
+                label='Thời hạn'
+                value={order.topup.durationDays ? `${order.topup.durationDays} ngày` : '—'}
+              />
+              <InfoRow label='Nhà cung cấp' value={order.topup.provider || '—'} />
+              <InfoRow
+                label='Mã gói'
                 value={
-                  <span className='font-semibold text-green-600'>
-                    +{formatCurrency(order.cashbackAmountVnd, 'VND')}
+                  <span className='font-mono text-xs break-all'>
+                    {order.topup.packageId || '—'}
                   </span>
                 }
               />
-            )}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {/* Refund Action */}
-      {canRefund && (
-        <Card>
-          <CardContent className='flex items-center justify-between pt-6'>
-            <div>
-              <p className='text-sm font-medium'>Hoàn tiền đơn hàng</p>
-              <p className='text-muted-foreground text-xs'>
-                Hoàn tiền về ví eXu hoặc chuyển khoản trực tiếp
-              </p>
+              <InfoRow label='Giá bán' value={formatCurrency(order.vndPrice, 'VND')} />
+              <InfoRow label='Giá vốn' value={formatCurrency(order.vndCostPrice, 'VND')} />
+              <InfoRow
+                label='Lợi nhuận'
+                value={
+                  <span className='font-semibold'>
+                    {formatCurrency(
+                      Number(order.vndPrice ?? 0) - Number(order.vndCostPrice ?? 0),
+                      'VND'
+                    )}
+                  </span>
+                }
+              />
             </div>
-            <Button variant='destructive' size='sm' onClick={() => setRefundOpen(true)}>
-              <Icons.undo className='mr-2 h-4 w-4' />
-              Hoàn tiền
-            </Button>
+
+            <div className='space-y-3'>
+              <p className='text-muted-foreground text-xs font-semibold uppercase'>eSIM được nạp</p>
+              <InfoRow
+                label='ICCID'
+                value={
+                  <span className='font-mono text-xs break-all'>{order.topup.targetIccid}</span>
+                }
+              />
+              {order.topup.targetEsim ? (
+                <>
+                  <InfoRow label='Gói eSIM gốc' value={order.topup.targetEsim.planName || '—'} />
+                  <InfoRow
+                    label='Trạng thái eSIM'
+                    value={
+                      <Badge variant={esimStatusVariant(order.topup.targetEsim.status)}>
+                        {esimStatusLabel(order.topup.targetEsim.status)}
+                      </Badge>
+                    }
+                  />
+                  <InfoRow label='Đã dùng' value={formatDataMb(order.topup.targetEsim.dataUsed)} />
+                  <InfoRow
+                    label='Tổng dung lượng'
+                    value={formatDataMb(order.topup.targetEsim.dataTotal)}
+                  />
+                  <InfoRow
+                    label='Kích hoạt'
+                    value={formatDate(order.topup.targetEsim.activatedAt)}
+                  />
+                  <InfoRow label='Hết hạn' value={formatDate(order.topup.targetEsim.expiresAt)} />
+                  {order.topup.targetEsim.originalOrderId && (
+                    <InfoRow
+                      label='Đơn mua gốc'
+                      value={
+                        <Link
+                          href={`/dashboard/orders/${order.topup.targetEsim.originalOrderId}`}
+                          className='text-primary underline underline-offset-4'
+                        >
+                          #{order.topup.targetEsim.originalOrderId}
+                        </Link>
+                      }
+                    />
+                  )}
+                </>
+              ) : (
+                <p className='text-muted-foreground text-sm'>
+                  Không tìm thấy eSIM với ICCID này trong hệ thống — kiểm tra lại mã ICCID khách đã
+                  nhập.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* User Info */}
-      {order.user && (
+      {/* Customer, with the eXU wallet breakdown as its right-hand column (#012)
+          — both were full-width cards of their own on an already long page. */}
+      {(order.user || hasWalletPayment) && (
         <Card>
           <CardHeader>
             <CardTitle>Khách hàng</CardTitle>
           </CardHeader>
-          <CardContent className='space-y-3'>
-            <InfoRow label='ID' value={order.user.id} />
-            <InfoRow label='Email' value={order.user.email} />
-            <InfoRow
-              label='Họ và tên'
-              value={[order.user.firstName, order.user.lastName].filter(Boolean).join(' ') || '—'}
-            />
-            <InfoRow label='Số điện thoại' value={order.user.phoneNumber || '—'} />
+          <CardContent
+            className={order.user && hasWalletPayment ? 'grid gap-6 md:grid-cols-2' : 'space-y-3'}
+          >
+            {order.user && (
+              <div className='space-y-3'>
+                <InfoRow label='ID' value={order.user.id} />
+                <InfoRow label='Email' value={order.user.email} />
+                <InfoRow
+                  label='Họ và tên'
+                  value={
+                    [order.user.firstName, order.user.lastName].filter(Boolean).join(' ') || '—'
+                  }
+                />
+                <InfoRow label='Số điện thoại' value={order.user.phoneNumber || '—'} />
+              </div>
+            )}
+            {hasWalletPayment && (
+              <div className='space-y-3'>
+                <p className='flex items-center gap-2 text-sm font-medium'>
+                  <Icons.creditCard className='h-4 w-4' />
+                  Thanh toán eXU Wallet
+                </p>
+                {order.walletSpentVndAmount != null && order.walletSpentVndAmount > 0 && (
+                  <>
+                    <InfoRow
+                      label='Số tiền dùng từ ví eXU'
+                      value={
+                        <span className='font-semibold text-orange-600'>
+                          {formatCurrency(order.walletSpentVndAmount, 'VND')}
+                        </span>
+                      }
+                    />
+                    <InfoRow
+                      label='Còn lại thanh toán tiền'
+                      value={
+                        <span className='font-semibold'>
+                          {formatCurrency(order.vndPrice, 'VND')}
+                        </span>
+                      }
+                    />
+                  </>
+                )}
+                {order.cashbackAmountVnd != null && order.cashbackAmountVnd > 0 && (
+                  <InfoRow
+                    label='Hoàn lại vào ví eXU'
+                    value={
+                      <span className='font-semibold text-green-600'>
+                        +{formatCurrency(order.cashbackAmountVnd, 'VND')}
+                      </span>
+                    }
+                  />
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -717,7 +841,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                 <div className='rounded-lg border p-4'>
                   <div className='mb-3 flex items-center justify-between'>
                     <h4 className='text-sm font-semibold'>
-                      {item.plan?.name || `Plan #${item.planId}`}
+                      {planDisplayName(item.plan, `Plan #${item.planId}`)}
                     </h4>
                     <Badge
                       variant={
@@ -757,6 +881,11 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                             }
                           />
                           <InfoRow label='Tốc độ' value={item.plan.speed} />
+                          {/* Allowance on the product line too, so it is visible
+                              without opening the eSIM cards below (#013). */}
+                          {hasCallOrSms(item.plan) && (
+                            <InfoRow label='Phút gọi / SMS' value={callSmsSummary(item.plan)} />
+                          )}
                           {item.plan.locationInfo && (
                             <InfoRow
                               label='Điểm đến'

@@ -27,6 +27,12 @@ export async function getPlan(id: number): Promise<Plan> {
   return apiClient<Plan>(`/plans/${id}`);
 }
 
+/** Distinct APN values, for the APN filter's select box (#010). */
+export async function getPlanApnOptions(): Promise<string[]> {
+  const res = await apiClient<{ data: string[] }>('/plans/apn-options');
+  return res.data ?? [];
+}
+
 export async function createPlan(data: CreatePlanPayload): Promise<Plan> {
   return apiClient<Plan>('/plans', {
     method: 'POST',

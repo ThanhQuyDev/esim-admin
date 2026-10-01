@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { planDisplayName } from '@/features/plans/utils/plan-label';
 import {
   Select,
   SelectContent,
@@ -172,7 +173,7 @@ export function RefundOrderModal({
                       onCheckedChange={(v) => toggleItem(item.id, !!v)}
                     />
                     <span className='min-w-0 flex-1 truncate'>
-                      {item.plan?.name ?? `Sản phẩm #${item.id}`}
+                      {planDisplayName(item.plan, `Sản phẩm #${item.id}`)}
                       {item.plan?.provider ? (
                         <span className='text-muted-foreground'> · {item.plan.provider}</span>
                       ) : null}

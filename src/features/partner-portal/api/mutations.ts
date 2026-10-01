@@ -14,7 +14,10 @@ import {
   requestBankAccountChange,
   confirmBankAccountChange,
   markMyNotificationRead,
-  markAllMyNotificationsRead
+  markAllMyNotificationsRead,
+  createPurchase,
+  cancelPurchase,
+  reportEsimFault
 } from './service';
 import { partnerPortalKeys } from './queries';
 import type {
@@ -26,7 +29,9 @@ import type {
   PartnerApplyPayload,
   CreateTicketPayload,
   BankAccountChangePayload,
-  CreateCouponPayload
+  CreateCouponPayload,
+  CreatePurchasePayload,
+  ReportEsimFaultPayload
 } from './types';
 
 const invalidateAll = () => getQueryClient().invalidateQueries({ queryKey: partnerPortalKeys.all });
@@ -101,4 +106,31 @@ export const markAllNotificationsReadMutation = mutationOptions({
   mutationFn: () => markAllMyNotificationsRead(),
   onSettled: () =>
     getQueryClient().invalidateQueries({ queryKey: partnerPortalKeys.notifications() })
+});
+
+/**
+ * Đặt mua và trừ ví (#046).
+ *
+ * `invalidateAll` vì một lần mua đổi cả số dư ví, danh sách đơn, tồn kho eSIM
+ * và bảng giá (số dư quyết định gói nào còn mua được).
+ */
+export const createPurchaseMutation = mutationOptions({
+  mutationFn: (data: CreatePurchasePayload) => createPurchase(data),
+  onSettled: invalidateAll
+});
+
+export const cancelPurchaseMutation = mutationOptions({
+  mutationFn: (orderNumber: string) => cancelPurchase(orderNumber),
+  onSettled: invalidateAll
+});
+
+/**
+ * Báo một eSIM đã mua bị lỗi (#046, A4).
+ *
+ * Không hoàn tiền ngay — phiếu nằm chờ esim.vn duyệt, nên chỉ cần làm mới
+ * danh sách phiếu chứ không phải cả ví.
+ */
+export const reportEsimFaultMutation = mutationOptions({
+  mutationFn: (data: ReportEsimFaultPayload) => reportEsimFault(data),
+  onSettled: invalidateAll
 });

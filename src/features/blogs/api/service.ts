@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import type {
   Blog,
+  BlogAuthorOption,
   BlogFilters,
   BlogsResponse,
   CreateBlogPayload,
@@ -36,6 +37,16 @@ export async function getBlogCategoryTree(): Promise<Record<string, string[]>> {
     if (category && !tree[category]) tree[category] = [];
   }
   return tree;
+}
+
+/**
+ * Authors that have articles, for the list filter's select box (#046).
+ *
+ * Empty on failure rather than throwing: the select box is a convenience and
+ * must not take the article list down with it.
+ */
+export async function getBlogAuthorOptions(): Promise<BlogAuthorOption[]> {
+  return apiClient<BlogAuthorOption[]>('/blogs/authors').catch(() => [] as BlogAuthorOption[]);
 }
 
 export async function getBlog(id: string): Promise<Blog> {

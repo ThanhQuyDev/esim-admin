@@ -300,17 +300,18 @@ function CreateDestinationDialog({
     >
       <form.AppForm>
         <form.Form id='destination-form-dialog' className='space-y-6'>
-          <FormTextField
-            name='name'
-            label='Tên'
-            required
-            placeholder='Nhật Bản'
-            validators={{
-              onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
-            }}
-          />
-
+          {/* Name and country code name the same thing, so they share a row —
+              which frees the next row for the two slugs side by side (#033). */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField
+              name='name'
+              label='Tên'
+              required
+              placeholder='Nhật Bản'
+              validators={{
+                onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
+              }}
+            />
             <FormTextField
               name='countryCode'
               label='Mã quốc gia'
@@ -320,10 +321,13 @@ function CreateDestinationDialog({
                 onBlur: z.string().min(2, 'Phải có ít nhất 2 ký tự').max(10, 'Tối đa 10 ký tự')
               }}
             />
-            <FormTextField name='slug' label='Slug (EN)' placeholder='japan' />
           </div>
 
-          <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='nhat-ban' />
+          {/* The two slugs are what an editor compares against each other. */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField name='slug' label='Slug (EN)' placeholder='japan' />
+            <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='nhat-ban' />
+          </div>
 
           <SearchableCountrySelect
             value={form.getFieldValue('parentId') ?? ''}
@@ -481,17 +485,18 @@ function EditDestinationDialog({
     >
       <form.AppForm>
         <form.Form id='destination-form-dialog' className='space-y-6'>
-          <FormTextField
-            name='name'
-            label='Tên'
-            required
-            placeholder='Nhật Bản'
-            validators={{
-              onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
-            }}
-          />
-
+          {/* Name and country code name the same thing, so they share a row —
+              which frees the next row for the two slugs side by side (#033). */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField
+              name='name'
+              label='Tên'
+              required
+              placeholder='Nhật Bản'
+              validators={{
+                onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
+              }}
+            />
             <FormTextField
               name='countryCode'
               label='Mã quốc gia'
@@ -501,10 +506,13 @@ function EditDestinationDialog({
                 onBlur: z.string().min(2, 'Phải có ít nhất 2 ký tự').max(10, 'Tối đa 10 ký tự')
               }}
             />
-            <FormTextField name='slug' label='Slug (EN)' placeholder='japan' />
           </div>
 
-          <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='nhat-ban' />
+          {/* The two slugs are what an editor compares against each other. */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormTextField name='slug' label='Slug (EN)' placeholder='japan' />
+            <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='nhat-ban' />
+          </div>
 
           <SearchableCountrySelect
             value={form.getFieldValue('parentId') ?? ''}

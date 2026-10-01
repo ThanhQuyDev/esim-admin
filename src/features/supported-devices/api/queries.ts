@@ -5,7 +5,8 @@ import {
   updateSupportedDevice,
   deleteSupportedDevice,
   getSupportedDeviceOrdering,
-  saveSupportedDeviceOrdering
+  saveSupportedDeviceOrdering,
+  getSupportedDeviceManufacturers
 } from './service';
 import type {
   SupportedDevice,
@@ -19,8 +20,18 @@ export const supportedDeviceKeys = {
   all: ['supported-devices'] as const,
   list: (filters: SupportedDeviceFilters) => [...supportedDeviceKeys.all, 'list', filters] as const,
   detail: (id: number) => [...supportedDeviceKeys.all, 'detail', id] as const,
-  ordering: () => [...supportedDeviceKeys.all, 'ordering'] as const
+  ordering: () => [...supportedDeviceKeys.all, 'ordering'] as const,
+  manufacturers: () => [...supportedDeviceKeys.all, 'manufacturers'] as const
 };
+
+/** Brand names for the list filter's select box (#052). */
+export function supportedDeviceManufacturersQueryOptions() {
+  return {
+    queryKey: supportedDeviceKeys.manufacturers(),
+    queryFn: () => getSupportedDeviceManufacturers(),
+    staleTime: 5 * 60 * 1000
+  };
+}
 
 export function supportedDeviceOrderingQueryOptions() {
   return {

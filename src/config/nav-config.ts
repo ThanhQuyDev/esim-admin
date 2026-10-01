@@ -106,6 +106,13 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Slide Main Menu',
+        url: '/dashboard/menu-slides',
+        icon: 'media',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Footers',
         url: '/dashboard/footers',
         icon: 'link',
@@ -134,6 +141,20 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Ghi chú theo hãng',
+        url: '/dashboard/manufacturer-notes',
+        icon: 'phone',
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'APN TikTok & ChatGPT',
+        url: '/dashboard/apn-support',
+        icon: 'global',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Email Templates',
         url: '/dashboard/email-templates',
         icon: 'mail',
@@ -141,9 +162,24 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        // Logo / ảnh / nội dung của trang đăng nhập quản trị và đối tác (#006).
+        title: 'Trang đăng nhập',
+        url: '/dashboard/auth-pages',
+        icon: 'login',
+        isActive: false,
+        items: []
+      },
+      {
         title: 'Cấu hình SEO',
         url: '/dashboard/seo-configs',
         icon: 'seo',
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Script toàn site',
+        url: '/dashboard/site-scripts',
+        icon: 'code',
         isActive: false,
         items: []
       },
@@ -169,16 +205,10 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        // Tax / fee added before prices are compared (#049).
-        title: 'Thuế phí nhà cung cấp',
-        url: '/dashboard/provider-surcharges',
-        icon: 'trendingUp',
-        isActive: false,
-        items: []
-      },
-      {
-        title: 'Ký quỹ nhà cung cấp',
-        url: '/dashboard/provider-deposits',
+        // One entry for everything supplier-related (#005): thuế phí (#049),
+        // ký quỹ and the on/off switch, split into tabs on the page itself.
+        title: 'Nhà cung cấp',
+        url: '/dashboard/providers',
         icon: 'wallet',
         isActive: false,
         items: []

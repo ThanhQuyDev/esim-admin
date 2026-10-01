@@ -1,5 +1,11 @@
 import { apiClient } from '@/lib/api-client';
-import type { Ticket, TicketFilters, TicketListResponse, UpdateTicketStatusPayload } from './types';
+import type {
+  Ticket,
+  TicketFilters,
+  TicketListResponse,
+  TicketMessage,
+  UpdateTicketStatusPayload
+} from './types';
 
 const BASE = '/tickets';
 
@@ -29,6 +35,22 @@ export async function updateTicketStatus(
 
 export async function deleteTicket(id: number): Promise<void> {
   await apiClient(`${BASE}/${id}`, { method: 'DELETE' });
+}
+
+/** The conversation on a ticket (#059). */
+export async function getTicketMessages(id: number): Promise<TicketMessage[]> {
+  return apiClient<TicketMessage[]>(`${BASE}/${id}/messages`);
+}
+
+/**
+ * Post an admin reply (#059). The backend also emails it to the customer, with
+ * the ticket number in the subject.
+ */
+export async function replyToTicket(id: number, body: string): Promise<TicketMessage> {
+  return apiClient<TicketMessage>(`${BASE}/${id}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ body })
+  });
 }
 
 /**

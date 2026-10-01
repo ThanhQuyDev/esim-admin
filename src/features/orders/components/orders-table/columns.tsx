@@ -152,9 +152,10 @@ export const columns: ColumnDef<Order>[] = [
     cell: ({ row }) => {
       const commission = row.original.partnerCommission;
       if (!commission) return <span className='text-muted-foreground'>—</span>;
+      // No "Affiliate" badge: the column header already says so, and the row
+      // only has space for what differs between orders (#016).
       return (
         <div className='space-y-1'>
-          <Badge variant='default'>Affiliate</Badge>
           <div className='text-xs'>{commission.partnerName ?? `#${commission.partnerId}`}</div>
           <div className='text-muted-foreground text-xs tabular-nums'>
             {commission.commissionVnd.toLocaleString('vi-VN')}đ

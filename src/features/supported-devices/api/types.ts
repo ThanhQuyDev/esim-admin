@@ -52,7 +52,10 @@ export interface SaveSupportedDeviceOrderingPayload {
 
 export interface SupportedDeviceFilters {
   search?: string;
+  /** Comma-separated device types; several widen the result (#052). */
   type?: string;
+  /** Exact manufacturer name (#052). */
+  manufacturer?: string;
   limit?: number;
   page?: number;
   sort?: string;

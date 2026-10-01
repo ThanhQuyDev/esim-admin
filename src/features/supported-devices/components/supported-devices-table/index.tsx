@@ -3,13 +3,17 @@
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
-import { supportedDevicesQueryOptions } from '../../api/queries';
-import { columns } from './columns';
+import {
+  supportedDeviceManufacturersQueryOptions,
+  supportedDevicesQueryOptions
+} from '../../api/queries';
+import { buildColumns, columns as baseColumns } from './columns';
 
-const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
+const columnIds = baseColumns.map((c) => c.id).filter(Boolean) as string[];
 
 const sortIdToApiField: Record<string, string> = {
   name: 'device'
@@ -20,7 +24,9 @@ export function SupportedDevicesTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    // Both keyed by column id — that is what `useDataTable` writes (#052).
     type: parseAsArrayOf(parseAsString, ','),
+    manufacturer: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
@@ -34,11 +40,25 @@ export function SupportedDevicesTable() {
     limit: params.perPage,
     ...(params.name && { search: params.name }),
     ...(params.type && params.type.length > 0 && { type: params.type.join(',') }),
+    // The API matches one exact brand, so only the first selection is sent.
+    ...(params.manufacturer?.[0] && { manufacturer: params.manufacturer[0] }),
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
 
   const { data } = useSuspenseQuery(supportedDevicesQueryOptions(filters));
+  const { data: manufacturers } = useQuery(supportedDeviceManufacturersQueryOptions());
   const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
+
+  const columns = useMemo(
+    () =>
+      buildColumns({
+        manufacturerOptions: (manufacturers ?? []).map((name) => ({
+          value: name,
+          label: name
+        }))
+      }),
+    [manufacturers]
+  );
 
   const { table } = useDataTable({
     data: data.data,

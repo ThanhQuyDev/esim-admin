@@ -30,6 +30,12 @@ import type {
   MyDistributionSeriesPoint,
   MyEsim,
   MyPurchase,
+  PartnerCatalogue,
+  PurchaseQuote,
+  CreatePurchasePayload,
+  PurchaseResult,
+  EsimFaultReport,
+  ReportEsimFaultPayload,
   MyNotificationList
 } from './types';
 
@@ -231,6 +237,56 @@ export async function getMyPurchases(filters?: {
   limit?: number;
 }): Promise<MyPurchase[]> {
   return apiClient<MyPurchase[]>(`/partner-portal/purchases${listQuery(filters)}`);
+}
+
+/** Bảng giá đối tác phân phối — "Sản phẩm & bảng giá" (#046). */
+export async function getPartnerCatalogue(filters?: {
+  search?: string;
+  limit?: number;
+}): Promise<PartnerCatalogue> {
+  const params = new URLSearchParams();
+  if (filters?.search) params.set('search', filters.search);
+  if (filters?.limit) params.set('limit', String(filters.limit));
+  const query = params.toString();
+  return apiClient<PartnerCatalogue>(`/partner-portal/catalogue${query ? `?${query}` : ''}`);
+}
+
+/** Số tiền sẽ bị trừ, tính trước khi bấm mua (#046). */
+export async function getPurchaseQuote(planId: number, quantity: number): Promise<PurchaseQuote> {
+  return apiClient<PurchaseQuote>(
+    `/partner-portal/purchases/quote?planId=${planId}&quantity=${quantity}`
+  );
+}
+
+/** Đặt mua và trừ ví ngay (#046). */
+export async function createPurchase(payload: CreatePurchasePayload): Promise<PurchaseResult> {
+  return apiClient<PurchaseResult>('/partner-portal/purchases', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+/** Đối tác tự huỷ đơn chưa cấp eSIM (#046, A5). */
+export async function cancelPurchase(
+  orderNumber: string
+): Promise<{ orderNumber: string; refundedVnd: number }> {
+  return apiClient<{ orderNumber: string; refundedVnd: number }>(
+    `/partner-portal/purchases/${encodeURIComponent(orderNumber)}/cancel`,
+    { method: 'POST' }
+  );
+}
+
+/** Các phiếu báo eSIM lỗi của chính đối tác này (#046, A4). */
+export async function getMyEsimFaults(): Promise<EsimFaultReport[]> {
+  return apiClient<EsimFaultReport[]>('/partner-portal/esim-faults');
+}
+
+/** Báo một eSIM đã mua bị lỗi — admin duyệt tay mới hoàn tiền (#046, A4). */
+export async function reportEsimFault(payload: ReportEsimFaultPayload): Promise<EsimFaultReport> {
+  return apiClient<EsimFaultReport>('/partner-portal/esim-faults', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
 }
 
 export async function getMyOrders(): Promise<MyOrder[]> {

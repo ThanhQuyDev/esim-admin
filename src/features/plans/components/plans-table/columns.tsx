@@ -12,6 +12,7 @@ import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 import { formatDataSize } from '@/lib/format';
 import { PLAN_TAG_OPTIONS } from '../../schemas/plan';
+import { planDisplayName } from '../../utils/plan-label';
 
 const PLAN_TAG_LABEL_MAP = new Map<string, string>(PLAN_TAG_OPTIONS.map((o) => [o.value, o.label]));
 
@@ -41,345 +42,420 @@ function CopyIdButton({ value }: { value: string }) {
   );
 }
 
-export const columns: ColumnDef<Plan>[] = [
-  {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Chọn tất cả'
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label='Chọn hàng'
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    size: 40
-  },
-  {
-    id: 'country',
-    accessorFn: (row) => row.region?.name ?? row.destination?.name ?? row.countryCode,
-    header: 'Điểm đến',
-    cell: ({ row }) => {
-      const dest = row.original.destination;
-      const region = row.original.region;
+export type PlanColumnOptions = {
+  /** APN values in use, fetched at runtime (#010). */
+  apnOptions?: { value: string; label: string }[];
+  /**
+   * One entry per destination and per region, `d:<id>` / `r:<id>`. Picking one
+   * filters on the exact id, which is the point of #010: typing "Trung quốc"
+   * matched China, China+Hong Kong and China+Macau all at once.
+   */
+  locationOptions?: { value: string; label: string }[];
+};
 
-      if (region && region.destinations && region.destinations.length > 0) {
+const YES_NO_OPTIONS = [
+  { value: 'true', label: 'Có' },
+  { value: 'false', label: 'Không' }
+];
+
+export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[] {
+  const { apnOptions = [], locationOptions = [] } = options;
+  return [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label='Chọn tất cả'
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label='Chọn hàng'
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 40
+    },
+    {
+      id: 'country',
+      accessorFn: (row) => row.region?.name ?? row.destination?.name ?? row.countryCode,
+      header: 'Điểm đến',
+      cell: ({ row }) => {
+        const dest = row.original.destination;
+        const region = row.original.region;
+
+        if (region && region.destinations && region.destinations.length > 0) {
+          return (
+            <div className='flex items-center gap-2'>
+              {region.avatarUrl && (
+                <img
+                  src={region.avatarUrl}
+                  alt={region.name}
+                  className='h-5 w-7 rounded object-cover'
+                />
+              )}
+              <span className='text-sm font-medium'>{region.name}</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant='ghost' size='sm' className='h-6 px-1.5 text-xs'>
+                    <Icons.eye className='mr-1 size-3' />
+                    {region.destinations.length} nước
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className='w-64 p-0' align='start'>
+                  <div className='border-b px-3 py-2'>
+                    <p className='text-sm font-medium'>{region.name}</p>
+                    <p className='text-muted-foreground text-xs'>
+                      {region.destinations.length} điểm đến
+                    </p>
+                  </div>
+                  <div className='max-h-60 overflow-y-auto p-2'>
+                    <div className='grid gap-1'>
+                      {region.destinations.map((d) => (
+                        <div key={d.id} className='flex items-center gap-2 rounded px-2 py-1'>
+                          {d.flagUrl && (
+                            <img
+                              src={d.flagUrl}
+                              alt={d.name}
+                              className='h-4 w-5 shrink-0 rounded object-cover'
+                            />
+                          )}
+                          <span className='text-sm'>{d.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          );
+        }
+
         return (
           <div className='flex items-center gap-2'>
-            {region.avatarUrl && (
-              <img
-                src={region.avatarUrl}
-                alt={region.name}
-                className='h-5 w-7 rounded object-cover'
-              />
+            {dest?.flagUrl && (
+              <img src={dest.flagUrl} alt={dest.name} className='h-5 w-7 rounded object-cover' />
             )}
-            <span className='text-sm font-medium'>{region.name}</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant='ghost' size='sm' className='h-6 px-1.5 text-xs'>
-                  <Icons.eye className='mr-1 size-3' />
-                  {region.destinations.length} nước
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className='w-64 p-0' align='start'>
-                <div className='border-b px-3 py-2'>
-                  <p className='text-sm font-medium'>{region.name}</p>
-                  <p className='text-muted-foreground text-xs'>
-                    {region.destinations.length} điểm đến
-                  </p>
-                </div>
-                <div className='max-h-60 overflow-y-auto p-2'>
-                  <div className='grid gap-1'>
-                    {region.destinations.map((d) => (
-                      <div key={d.id} className='flex items-center gap-2 rounded px-2 py-1'>
-                        {d.flagUrl && (
-                          <img
-                            src={d.flagUrl}
-                            alt={d.name}
-                            className='h-4 w-5 shrink-0 rounded object-cover'
-                          />
-                        )}
-                        <span className='text-sm'>{d.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <span className='text-sm'>{dest?.name ?? row.original.countryCode}</span>
           </div>
         );
+      },
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Quốc gia / khu vực',
+        // A select, not a text box (#010): searching "Trung quốc" matched China,
+        // China+Hong Kong and China+Macau together, so there was no way to see one
+        // destination on its own.
+        variant: 'multiSelect' as const,
+        options: locationOptions
       }
-
-      return (
-        <div className='flex items-center gap-2'>
-          {dest?.flagUrl && (
-            <img src={dest.flagUrl} alt={dest.name} className='h-5 w-7 rounded object-cover' />
-          )}
-          <span className='text-sm'>{dest?.name ?? row.original.countryCode}</span>
-        </div>
-      );
     },
-    enableSorting: false,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Quốc gia / khu vực',
-      placeholder: 'Tìm quốc gia hoặc khu vực...',
-      variant: 'text' as const
-    }
-  },
-  {
-    id: 'provider',
-    accessorKey: 'provider',
-    header: 'Nhà cung cấp',
-    cell: ({ row }) => {
-      const provider = row.original.provider;
-      return (
-        <Badge variant='outline' className='capitalize'>
-          {provider || '—'}
+    {
+      id: 'provider',
+      accessorKey: 'provider',
+      header: 'Nhà cung cấp',
+      cell: ({ row }) => {
+        const provider = row.original.provider;
+        return (
+          <Badge variant='outline' className='capitalize'>
+            {provider || '—'}
+          </Badge>
+        );
+      },
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Nhà cung cấp',
+        variant: 'multiSelect' as const,
+        options: [
+          { value: 'esimaccess', label: 'EsimAccess' },
+          { value: 'airalo', label: 'Airalo' },
+          { value: 'gadgetkorea', label: 'Gadget Korea' },
+          { value: 'microesim', label: 'MicroEsim' },
+          { value: 'billion', label: 'Billion Connect' },
+          { value: 'viettel', label: 'Viettel' }
+        ]
+      }
+    },
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: ({ column }: { column: Column<Plan, unknown> }) => (
+        <DataTableColumnHeader column={column} title='Tên gói' />
+      ),
+      cell: ({ row }) => (
+        <div className='flex flex-col'>
+          {/* Call/SMS allowance shown in the name so an admin can tell the plan
+            types apart at a glance (#008). */}
+          <span className='font-medium'>{planDisplayName(row.original)}</span>
+          <div className='text-muted-foreground flex items-center gap-1 text-xs'>
+            <span className='font-mono'>#{row.original.id}</span>
+            <CopyIdButton value={String(row.original.id)} />
+          </div>
+        </div>
+      ),
+      meta: {
+        label: 'Tên',
+        placeholder: 'Tìm kiếm gói...',
+        variant: 'text' as const,
+        icon: Icons.text
+      },
+      enableColumnFilter: true
+    },
+    {
+      id: 'duration',
+      accessorKey: 'durationDays',
+      header: ({ column }: { column: Column<Plan, unknown> }) => (
+        <DataTableColumnHeader column={column} title='Thời hạn' />
+      ),
+      cell: ({ row }) => <span>{row.original.durationDays} ngày</span>,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Thời hạn',
+        placeholder: 'Số ngày...',
+        variant: 'number' as const,
+        unit: 'ngày'
+      }
+    },
+    {
+      id: 'data',
+      accessorKey: 'dataMb',
+      header: 'Dữ liệu',
+      cell: ({ row }) => {
+        const mb = row.original.dataMb;
+        return <span>{formatDataSize(mb)}</span>;
+      },
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Dữ liệu',
+        placeholder: 'VD: 1GB, 50GB...',
+        variant: 'text' as const
+      }
+    },
+    {
+      id: 'hasCallSms',
+      accessorFn: (row) =>
+        Number(row.sms ?? 0) > 0 || Number(row.call ?? 0) > 0 ? 'true' : 'false',
+      header: 'Gọi / SMS',
+      cell: ({ row }) => {
+        const hasCallSms = Number(row.original.sms ?? 0) > 0 || Number(row.original.call ?? 0) > 0;
+        return (
+          <Badge variant={hasCallSms ? 'default' : 'secondary'}>
+            {hasCallSms ? 'Có' : 'Không'}
+          </Badge>
+        );
+      },
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Chức năng gọi / SMS',
+        variant: 'multiSelect' as const,
+        options: [
+          { value: 'true', label: 'Có' },
+          { value: 'false', label: 'Không' }
+        ]
+      }
+    },
+    {
+      id: 'sms',
+      accessorKey: 'sms',
+      header: 'SMS',
+      cell: ({ row }) => <span>{row.original.sms != null ? row.original.sms : '—'}</span>,
+      enableSorting: false
+    },
+    {
+      id: 'call',
+      accessorKey: 'call',
+      header: 'Gọi điện',
+      cell: ({ row }) => (
+        <span>{row.original.call != null ? `${row.original.call} phút` : '—'}</span>
+      ),
+      enableSorting: false
+    },
+    {
+      id: 'price',
+      accessorKey: 'price',
+      header: ({ column }: { column: Column<Plan, unknown> }) => (
+        <DataTableColumnHeader column={column} title='Giá' />
+      ),
+      cell: ({ row }) => (
+        <div className='flex flex-col'>
+          <span className='font-medium'>
+            ${row.original.price} {row.original.currency} -{' '}
+            {Number(row.original.vndPrice).toLocaleString('vi-VN')}đ
+          </span>
+          <span className='text-muted-foreground text-xs'>
+            Giá gốc: ${row.original.costPrice} · Giá bán: ${row.original.retailPrice}
+          </span>
+        </div>
+      )
+    },
+    {
+      id: 'discount',
+      accessorKey: 'discount',
+      header: 'Discount',
+      cell: ({ row }) => {
+        const discount = row.original.discount;
+        return discount != null ? `${discount}%` : '—';
+      },
+      enableSorting: false
+    },
+    {
+      id: 'tags',
+      accessorKey: 'tags',
+      header: 'Tags',
+      cell: ({ row }) => {
+        const tags = row.original.tags;
+        if (!tags || tags.length === 0) return <span className='text-muted-foreground'>—</span>;
+        return (
+          <div className='flex flex-wrap gap-1'>
+            {tags.map((tag) => (
+              <Badge key={tag} variant='secondary' className='capitalize'>
+                {PLAN_TAG_LABEL_MAP.get(tag) ?? tag}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Tags',
+        variant: 'multiSelect' as const,
+        options: PLAN_TAG_OPTIONS
+      }
+    },
+    {
+      id: 'topUp',
+      accessorFn: (row) => (row.topUp ? 'true' : 'false'),
+      header: 'Top-Up',
+      cell: ({ row }) => (
+        <Badge variant={row.original.topUp ? 'default' : 'secondary'}>
+          {row.original.topUp ? 'Có' : 'Không'}
         </Badge>
-      );
+      ),
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Topup',
+        variant: 'multiSelect' as const,
+        options: YES_NO_OPTIONS
+      }
     },
-    enableSorting: false,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Nhà cung cấp',
-      variant: 'multiSelect' as const,
-      options: [
-        { value: 'esimaccess', label: 'EsimAccess' },
-        { value: 'airalo', label: 'Airalo' },
-        { value: 'gadgetkorea', label: 'Gadget Korea' },
-        { value: 'microesim', label: 'MicroEsim' },
-        { value: 'billion', label: 'Billion Connect' },
-        { value: 'viettel', label: 'Viettel' }
-      ]
-    }
-  },
-  {
-    id: 'name',
-    accessorKey: 'name',
-    header: ({ column }: { column: Column<Plan, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Tên gói' />
-    ),
-    cell: ({ row }) => (
-      <div className='flex flex-col'>
-        <span className='font-medium'>{row.original.name}</span>
-        <div className='text-muted-foreground flex items-center gap-1 text-xs'>
-          <span className='font-mono'>#{row.original.id}</span>
-          <CopyIdButton value={String(row.original.id)} />
-        </div>
-      </div>
-    ),
-    meta: {
-      label: 'Tên',
-      placeholder: 'Tìm kiếm gói...',
-      variant: 'text' as const,
-      icon: Icons.text
+    {
+      id: 'apn',
+      accessorKey: 'apn',
+      header: 'APN',
+      cell: ({ row }) => <span className='font-mono text-xs'>{row.original.apn || '—'}</span>,
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'APN',
+        variant: 'multiSelect' as const,
+        options: apnOptions
+      }
     },
-    enableColumnFilter: true
-  },
-  {
-    id: 'duration',
-    accessorKey: 'durationDays',
-    header: ({ column }: { column: Column<Plan, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Thời hạn' />
-    ),
-    cell: ({ row }) => <span>{row.original.durationDays} ngày</span>,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Thời hạn',
-      placeholder: 'Số ngày...',
-      variant: 'number' as const,
-      unit: 'ngày'
-    }
-  },
-  {
-    id: 'data',
-    accessorKey: 'dataMb',
-    header: 'Dữ liệu',
-    cell: ({ row }) => {
-      const mb = row.original.dataMb;
-      return <span>{formatDataSize(mb)}</span>;
+    {
+      // `isNonHkIp` means the exit IP is local rather than routed via Hong Kong,
+      // which is what makes TikTok and ChatGPT work (#041) — so this is the
+      // "Tiktok & ChatGPT" filter asked for in #010.
+      id: 'isNonHkIp',
+      accessorFn: (row) => (row.isNonHkIp ? 'true' : 'false'),
+      header: 'Tiktok & ChatGPT',
+      cell: ({ row }) => (
+        <Badge variant={row.original.isNonHkIp ? 'default' : 'secondary'}>
+          {row.original.isNonHkIp ? 'Có' : 'Không'}
+        </Badge>
+      ),
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Tiktok & ChatGPT',
+        variant: 'multiSelect' as const,
+        options: YES_NO_OPTIONS
+      }
     },
-    enableSorting: false,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Dữ liệu',
-      placeholder: 'VD: 1GB, 50GB...',
-      variant: 'text' as const
-    }
-  },
-  {
-    id: 'hasCallSms',
-    accessorFn: (row) => (Number(row.sms ?? 0) > 0 || Number(row.call ?? 0) > 0 ? 'true' : 'false'),
-    header: 'Gọi / SMS',
-    cell: ({ row }) => {
-      const hasCallSms = Number(row.original.sms ?? 0) > 0 || Number(row.original.call ?? 0) > 0;
-      return (
-        <Badge variant={hasCallSms ? 'default' : 'secondary'}>{hasCallSms ? 'Có' : 'Không'}</Badge>
-      );
+    {
+      id: 'isCheapest',
+      accessorFn: (row) => (row.isCheapest ? 'true' : 'false'),
+      header: 'Rẻ nhất',
+      cell: ({ row }) => (
+        <Badge variant={row.original.isCheapest ? 'default' : 'secondary'}>
+          {row.original.isCheapest ? 'Có' : 'Không'}
+        </Badge>
+      ),
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Rẻ nhất',
+        variant: 'multiSelect' as const,
+        options: [
+          { value: 'true', label: 'Có' },
+          { value: 'false', label: 'Không' }
+        ]
+      }
     },
-    enableSorting: false,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Chức năng gọi / SMS',
-      variant: 'multiSelect' as const,
-      options: [
-        { value: 'true', label: 'Có' },
-        { value: 'false', label: 'Không' }
-      ]
-    }
-  },
-  {
-    id: 'sms',
-    accessorKey: 'sms',
-    header: 'SMS',
-    cell: ({ row }) => <span>{row.original.sms != null ? row.original.sms : '—'}</span>,
-    enableSorting: false
-  },
-  {
-    id: 'call',
-    accessorKey: 'call',
-    header: 'Gọi điện',
-    cell: ({ row }) => <span>{row.original.call != null ? `${row.original.call} phút` : '—'}</span>,
-    enableSorting: false
-  },
-  {
-    id: 'price',
-    accessorKey: 'price',
-    header: ({ column }: { column: Column<Plan, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Giá' />
-    ),
-    cell: ({ row }) => (
-      <div className='flex flex-col'>
-        <span className='font-medium'>
-          ${row.original.price} {row.original.currency} -{' '}
-          {Number(row.original.vndPrice).toLocaleString('vi-VN')}đ
-        </span>
-        <span className='text-muted-foreground text-xs'>
-          Giá gốc: ${row.original.costPrice} · Giá bán: ${row.original.retailPrice}
-        </span>
-      </div>
-    )
-  },
-  {
-    id: 'discount',
-    accessorKey: 'discount',
-    header: 'Discount',
-    cell: ({ row }) => {
-      const discount = row.original.discount;
-      return discount != null ? `${discount}%` : '—';
+    {
+      id: 'type',
+      accessorKey: 'type',
+      header: 'Loại gói',
+      cell: ({ row }) => (
+        <Badge variant='outline' className='capitalize'>
+          {row.original.type || '—'}
+        </Badge>
+      ),
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Loại gói',
+        variant: 'multiSelect' as const,
+        options: [
+          { value: 'fixed', label: 'Cố định' },
+          { value: 'unlimited', label: 'Không giới hạn' },
+          { value: 'unlimited-reduce', label: 'Không giới hạn tốc độ thấp' },
+          { value: 'daily', label: 'Theo ngày' }
+        ]
+      }
     },
-    enableSorting: false
-  },
-  {
-    id: 'tags',
-    accessorKey: 'tags',
-    header: 'Tags',
-    cell: ({ row }) => {
-      const tags = row.original.tags;
-      if (!tags || tags.length === 0) return <span className='text-muted-foreground'>—</span>;
-      return (
-        <div className='flex flex-wrap gap-1'>
-          {tags.map((tag) => (
-            <Badge key={tag} variant='secondary' className='capitalize'>
-              {PLAN_TAG_LABEL_MAP.get(tag) ?? tag}
-            </Badge>
-          ))}
-        </div>
-      );
+    {
+      id: 'isActive',
+      accessorFn: (row) => (row.isActive ? 'true' : 'false'),
+      header: 'Hoạt động',
+      cell: ({ row }) => (
+        <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
+          {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
+        </Badge>
+      ),
+      enableSorting: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Hoạt động',
+        variant: 'multiSelect' as const,
+        options: [
+          { value: 'true', label: 'Hoạt động' },
+          { value: 'false', label: 'Không hoạt động' }
+        ]
+      }
     },
-    enableSorting: false,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Tags',
-      variant: 'multiSelect' as const,
-      options: PLAN_TAG_OPTIONS
+    {
+      id: 'actions',
+      cell: ({ row }) => <CellAction data={row.original} />
     }
-  },
-  {
-    id: 'topUp',
-    accessorKey: 'topUp',
-    header: 'Top-Up',
-    cell: ({ row }) => (
-      <Badge variant={row.original.topUp ? 'default' : 'secondary'}>
-        {row.original.topUp ? 'Có' : 'Không'}
-      </Badge>
-    ),
-    enableSorting: false
-  },
-  {
-    id: 'isCheapest',
-    accessorFn: (row) => (row.isCheapest ? 'true' : 'false'),
-    header: 'Rẻ nhất',
-    cell: ({ row }) => (
-      <Badge variant={row.original.isCheapest ? 'default' : 'secondary'}>
-        {row.original.isCheapest ? 'Có' : 'Không'}
-      </Badge>
-    ),
-    enableSorting: false,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Rẻ nhất',
-      variant: 'multiSelect' as const,
-      options: [
-        { value: 'true', label: 'Có' },
-        { value: 'false', label: 'Không' }
-      ]
-    }
-  },
-  {
-    id: 'type',
-    accessorKey: 'type',
-    header: 'Loại gói',
-    cell: ({ row }) => (
-      <Badge variant='outline' className='capitalize'>
-        {row.original.type || '—'}
-      </Badge>
-    ),
-    enableSorting: false,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Loại gói',
-      variant: 'multiSelect' as const,
-      options: [
-        { value: 'fixed', label: 'Cố định' },
-        { value: 'unlimited', label: 'Không giới hạn' },
-        { value: 'unlimited-reduce', label: 'Không giới hạn tốc độ thấp' },
-        { value: 'daily', label: 'Theo ngày' }
-      ]
-    }
-  },
-  {
-    id: 'isActive',
-    accessorFn: (row) => (row.isActive ? 'true' : 'false'),
-    header: 'Hoạt động',
-    cell: ({ row }) => (
-      <Badge variant={row.original.isActive ? 'default' : 'secondary'}>
-        {row.original.isActive ? 'Hoạt động' : 'Không hoạt động'}
-      </Badge>
-    ),
-    enableSorting: false,
-    enableColumnFilter: true,
-    meta: {
-      label: 'Hoạt động',
-      variant: 'multiSelect' as const,
-      options: [
-        { value: 'true', label: 'Hoạt động' },
-        { value: 'false', label: 'Không hoạt động' }
-      ]
-    }
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <CellAction data={row.original} />
-  }
-];
+  ];
+}
+
+/**
+ * Columns without runtime options. Kept so the sort parser can derive column ids
+ * without waiting on the APN / destination lists.
+ */
+export const columns: ColumnDef<Plan>[] = buildColumns();

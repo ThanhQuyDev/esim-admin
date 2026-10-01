@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { getOpenTicketCount, getTicketById, getTickets } from './service';
+import { getOpenTicketCount, getTicketById, getTicketMessages, getTickets } from './service';
 import type { Ticket, TicketFilters } from './types';
 
 export type { Ticket };
@@ -8,8 +8,16 @@ export const ticketKeys = {
   all: ['tickets'] as const,
   list: (filters: TicketFilters) => [...ticketKeys.all, 'list', filters] as const,
   detail: (id: number) => [...ticketKeys.all, 'detail', id] as const,
+  messages: (id: number) => [...ticketKeys.all, 'messages', id] as const,
   openCount: () => [...ticketKeys.all, 'open-count'] as const
 };
+
+/** The conversation on a ticket (#059). */
+export const ticketMessagesQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: ticketKeys.messages(id),
+    queryFn: () => getTicketMessages(id)
+  });
 
 export const ticketsQueryOptions = (filters: TicketFilters) =>
   queryOptions({

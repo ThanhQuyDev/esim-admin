@@ -62,6 +62,9 @@ export const SHARED_PREFIXES = [
   '/api/auth',
   '/register/partner',
   '/api/partner-portal/apply',
+  // Sign-in page branding (#006): read before anyone has a token, and the
+  // partner deployment renders its own sign-in page, so both hosts need it.
+  '/api/auth-page-settings',
   // User-scoped support tickets: the admin console lists everyone's tickets
   // through `/api/tickets`, which stays admin-only, while `/api/tickets/mine`
   // only ever returns the caller's own and is needed by both deployments.

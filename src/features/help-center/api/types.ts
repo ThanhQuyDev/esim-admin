@@ -43,6 +43,12 @@ export type HelpCenterFilters = {
   category?: string;
   parent?: string;
   language?: string;
+  /** Xuất bản Có/không; omitted shows both (#053). */
+  isPublished?: boolean;
+  /** Nổi bật Có/không; omitted shows both (#053). */
+  isPopular?: boolean;
+  /** `[{orderBy, order}]` JSON (#053). */
+  sort?: string;
 };
 
 export type HelpCenterResponse = {

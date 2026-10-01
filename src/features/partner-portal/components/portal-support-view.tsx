@@ -322,7 +322,7 @@ export function PortalSupportView() {
                 <Table>
                   <TableHeader className='bg-muted'>
                     <TableRow>
-                      <TableHead>Mã</TableHead>
+                      <TableHead>Mã phiếu</TableHead>
                       <TableHead>Chủ đề</TableHead>
                       <TableHead>Tham chiếu</TableHead>
                       <TableHead>Trạng thái</TableHead>
@@ -354,7 +354,11 @@ export function PortalSupportView() {
                           className='hover:bg-accent/50 cursor-pointer'
                           onClick={() => setOpenTicket(t)}
                         >
-                          <TableCell className='font-mono text-xs'>#{t.id}</TableCell>
+                          {/* The mã phiếu, matching the support emails, so a
+                              partner can reconcile the two (#060). */}
+                          <TableCell className='font-mono text-xs whitespace-nowrap'>
+                            {t.ticketNumber ?? `#${t.id}`}
+                          </TableCell>
                           <TableCell>
                             <p className='text-sm font-medium'>{t.subject}</p>
                             <p className='text-muted-foreground line-clamp-1 text-xs'>

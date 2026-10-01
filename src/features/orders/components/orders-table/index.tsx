@@ -22,9 +22,17 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
-import { INVOICE_FILTER_OPTIONS, invoiceFilterToApi } from '../../utils/invoice-filter';
+import { INVOICE_FILTER_OPTIONS } from '../../utils/invoice-filter';
+import { DEFAULT_ORDER_STATUS, buildOrderApiFilters } from '../../utils/order-filters';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
+
+const ORDER_KIND_OPTIONS = [
+  { value: 'all', label: 'Loại đơn: Tất cả' },
+  { value: 'esim', label: 'Đơn eSIM thường' },
+  { value: 'affiliate', label: 'Đơn Affiliate' },
+  { value: 'topup', label: 'Đơn Topup' }
+] as const;
 
 export function OrdersTable() {
   const [, startTransition] = useTransition();
@@ -36,8 +44,14 @@ export function OrdersTable() {
     userEmail: parseAsString,
     iccid: parseAsString,
     planName: parseAsString,
-    status: parseAsString,
+    // Paid by default (#017): an admin opening this page is looking at real
+    // sales, not at abandoned checkouts. `all` is an explicit choice, which is
+    // why the default is a real value rather than null.
+    status: parseAsString.withDefault(DEFAULT_ORDER_STATUS),
     invoice: parseAsString,
+    kind: parseAsString,
+    createdFrom: parseAsString,
+    createdTo: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
@@ -72,14 +86,9 @@ export function OrdersTable() {
     });
   }, 500);
 
-  const apiFilters: Record<string, unknown> = {};
-  if (params.orderNumber) apiFilters.orderNumber = params.orderNumber;
-  if (params.userEmail) apiFilters.userEmail = params.userEmail;
-  if (params.iccid) apiFilters.iccid = params.iccid;
-  if (params.planName) apiFilters.planName = params.planName;
-  if (params.status) apiFilters.status = params.status;
-  // VAT invoice request / status (#051); also applied to the Excel export.
-  Object.assign(apiFilters, invoiceFilterToApi(params.invoice));
+  // Same mapping the server used to prefetch, so the query keys match.
+  // Also applied to the Excel export, so the sheet matches the screen.
+  const apiFilters = buildOrderApiFilters(params);
 
   const apiSort = params.sort.map((s) => ({
     orderBy: s.id,
@@ -185,10 +194,10 @@ export function OrdersTable() {
           />
         </div>
         <Select
-          value={params.status ?? 'all'}
+          value={params.status}
           onValueChange={(value) =>
             startTransition(() => {
-              setParams({ status: value === 'all' ? null : value, page: 1 });
+              setParams({ status: value, page: 1 });
             })
           }
         >
@@ -203,6 +212,59 @@ export function OrdersTable() {
             <SelectItem value='refunded'>Refunded</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={params.kind ?? 'all'}
+          onValueChange={(value) =>
+            startTransition(() => {
+              setParams({ kind: value === 'all' ? null : value, page: 1 });
+            })
+          }
+        >
+          <SelectTrigger className='w-48' aria-label='Lọc theo loại đơn'>
+            <SelectValue placeholder='Loại đơn' />
+          </SelectTrigger>
+          <SelectContent>
+            {ORDER_KIND_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {/* Created-date range (#017). Native date inputs: an admin types or picks,
+            and the value goes straight into the URL as yyyy-mm-dd. */}
+        <div className='flex items-center gap-2'>
+          <label htmlFor='order-created-from' className='text-muted-foreground text-sm'>
+            Từ
+          </label>
+          <Input
+            id='order-created-from'
+            type='date'
+            className='w-40'
+            value={params.createdFrom ?? ''}
+            max={params.createdTo ?? undefined}
+            onChange={(e) =>
+              startTransition(() => {
+                setParams({ createdFrom: e.target.value || null, page: 1 });
+              })
+            }
+          />
+          <label htmlFor='order-created-to' className='text-muted-foreground text-sm'>
+            đến
+          </label>
+          <Input
+            id='order-created-to'
+            type='date'
+            className='w-40'
+            value={params.createdTo ?? ''}
+            min={params.createdFrom ?? undefined}
+            onChange={(e) =>
+              startTransition(() => {
+                setParams({ createdTo: e.target.value || null, page: 1 });
+              })
+            }
+          />
+        </div>
         <Select
           value={params.invoice ?? 'all'}
           onValueChange={(value) =>

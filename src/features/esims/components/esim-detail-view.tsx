@@ -6,13 +6,15 @@ import { AdminTopupDialog } from './admin-topup-dialog';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { esimStatusLabel, esimStatusVariant } from '../lib/esim-status';
-import { formatDateTimeVn } from '@/lib/format';
+import { formatDateTimeVn, formatVnd } from '@/lib/format';
+import Link from 'next/link';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { esimQueryOptions } from '../api/queries';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { callSmsSummary, planDisplayName } from '@/features/plans/utils/plan-label';
 
 interface EsimDetailViewProps {
   esimId: number;
@@ -167,9 +169,17 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
           </CardHeader>
           <CardContent className='space-y-3'>
             <InfoRow label='ID' value={esim.user.id} />
-            <InfoRow label='Họ tên' value={`${esim.user.firstName} ${esim.user.lastName}`} />
+            {/* Template-stringing the two names printed "null null" for an
+                account with no name on it (#024). */}
+            <InfoRow
+              label='Họ tên'
+              value={[esim.user.firstName, esim.user.lastName].filter(Boolean).join(' ')}
+            />
             <InfoRow label='Email' value={esim.user.email} />
-            <InfoRow label='Provider' value={esim.user.provider} />
+            {/* Was "Provider", which showed the sign-in method (email / google)
+                and read as if it were the eSIM's supplier. The useful field here
+                is the eSIM's own phone number (#024). */}
+            <InfoRow label='Số điện thoại' value={esim.phoneNumber} />
             <InfoRow
               label='Vai trò'
               value={<Badge variant='outline'>{esim.user.role?.name}</Badge>}
@@ -186,6 +196,52 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
         </Card>
       )}
 
+      {/* Topups applied to this eSIM (#026). Read from the snapshot each topup
+          order stored, so a package that has since been withdrawn or repriced
+          still reports what was actually bought. */}
+      {esim.topups && esim.topups.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <Icons.refresh className='h-4 w-4' />
+              Gói đã Topup ({esim.topups.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            {esim.topups.map((topup) => (
+              <div key={topup.orderId} className='space-y-2 rounded-lg border p-3'>
+                <div className='flex flex-wrap items-center justify-between gap-2'>
+                  <span className='text-sm font-semibold'>
+                    Gói Topup: {topup.packageName || topup.packageId || '—'}
+                  </span>
+                  <span className='text-sm font-semibold'>{formatVnd(topup.vndPrice)}</span>
+                </div>
+                <div className='text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs'>
+                  <span>
+                    Dung lượng: {topup.isUnlimited ? 'Không giới hạn' : topup.dataText || '—'}
+                  </span>
+                  <span>Thời hạn: {topup.durationDays ? `${topup.durationDays} ngày` : '—'}</span>
+                  <span>Giá vốn: {formatVnd(topup.vndCostPrice)}</span>
+                  {topup.provider && <span>NCC: {topup.provider}</span>}
+                </div>
+                <div className='text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs'>
+                  <span>
+                    Đơn:{' '}
+                    <Link
+                      href={`/dashboard/orders/${topup.orderId}`}
+                      className='text-primary underline underline-offset-4'
+                    >
+                      {topup.orderNumber}
+                    </Link>
+                  </span>
+                  <span>Ngày: {formatDate(topup.createdAt)}</span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Plan Info */}
       {esim.plan && (
         <Card>
@@ -193,7 +249,11 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
             <CardTitle>Gói eSIM</CardTitle>
           </CardHeader>
           <CardContent className='space-y-3'>
-            <InfoRow label='Tên gói' value={esim.plan.name} />
+            <InfoRow label='Tên gói' value={planDisplayName(esim.plan)} />
+            <InfoRow
+              label='Phút gọi / SMS'
+              value={callSmsSummary(esim.plan) ?? 'Không (chỉ data)'}
+            />
             <InfoRow label='Nhà cung cấp' value={esim.plan.provider} />
             <InfoRow label='Provider Plan ID' value={esim.plan.providerPlanId} />
             {esim.plan.destination && (

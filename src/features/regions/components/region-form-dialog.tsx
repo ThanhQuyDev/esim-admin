@@ -196,9 +196,11 @@ function CreateDialog({
             }}
           />
 
-          <FormTextField name='slug' label='Slug (EN)' placeholder='europe' />
-
-          <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='chau-au' />
+          {/* The two slugs are what an editor compares against each other (#035). */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <FormTextField name='slug' label='Slug (EN)' placeholder='europe' />
+            <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='chau-au' />
+          </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <ImageUploadField label='Ảnh đại diện' onFileSelect={setAvatarFile} file={avatarFile} />
@@ -400,9 +402,11 @@ function EditDialogForm({
             }}
           />
 
-          <FormTextField name='slug' label='Slug (EN)' placeholder='europe' />
-
-          <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='chau-au' />
+          {/* The two slugs are what an editor compares against each other (#035). */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <FormTextField name='slug' label='Slug (EN)' placeholder='europe' />
+            <FormTextField name='slugVi' label='Slug (VI) — SEO' placeholder='chau-au' />
+          </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <ImageUploadField

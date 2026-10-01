@@ -102,6 +102,19 @@ export const columns: ColumnDef<Blog>[] = [
     enableSorting: false
   },
   {
+    // Next to Xuất bản: both are editorial status flags, so an editor reads them
+    // together (#045).
+    id: 'isPopular',
+    accessorKey: 'isPopular',
+    header: 'Nổi bật',
+    cell: ({ row }) => (
+      <Badge variant={row.original.isPopular ? 'default' : 'secondary'}>
+        {row.original.isPopular ? 'Có' : 'Không'}
+      </Badge>
+    ),
+    enableSorting: false
+  },
+  {
     id: 'publishedAt',
     accessorKey: 'publishedAt',
     header: ({ column }: { column: Column<Blog, unknown> }) => (

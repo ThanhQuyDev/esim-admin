@@ -29,20 +29,41 @@ interface PieGraphProps {
   filters?: import('../api/types').OverviewFilters;
 }
 
+/** Was 10; the card is now tall enough to read more of the list (#007). */
+const DESTINATION_LIMIT = 15;
+
+/** Vertical room one bar needs for its label to stay legible. */
+const ROW_HEIGHT = 34;
+
+const MAX_LABEL_CHARS = 18;
+
 export function PieGraph({ filters }: PieGraphProps) {
   const { data, isLoading, error } = useQuery(
-    topDestinationsQueryOptions({ ...filters, limit: 10 })
+    topDestinationsQueryOptions({ ...filters, limit: DESTINATION_LIMIT })
   );
 
   const chartData = useMemo(() => {
-    return (data?.data ?? []).map((item) => ({
-      ...item,
-      destinationLabel:
-        item.destinationName.length > 14
-          ? `${item.destinationName.slice(0, 14)}…`
-          : item.destinationName
-    }));
+    return (data?.data ?? []).map((item, index) => {
+      // A row whose name came back empty used to render a bar with nothing
+      // beside it (#007).
+      const name = item.destinationName?.trim() || 'Không rõ';
+      return {
+        ...item,
+        destinationName: name,
+        // The category axis keys on this, and recharts collapses duplicate
+        // category values — two destinations with the same name, or two long
+        // names that truncated to the same string, silently lost their tick.
+        // The index makes every key unique; `tickFormatter` turns it back into
+        // a label.
+        destinationKey: `${index}|${name}`,
+        destinationLabel:
+          name.length > MAX_LABEL_CHARS ? `${name.slice(0, MAX_LABEL_CHARS)}…` : name
+      };
+    });
   }, [data]);
+
+  // Grow with the number of bars so no label has to be dropped for space.
+  const chartMinHeight = Math.max(320, chartData.length * ROW_HEIGHT);
 
   if (error) {
     return (
@@ -61,10 +82,19 @@ export function PieGraph({ filters }: PieGraphProps) {
     <Card className='flex h-full flex-col'>
       <CardHeader>
         <CardTitle>Destination mua plan nhiều</CardTitle>
-        <CardDescription>Top destination theo số lượng plan đã mua</CardDescription>
+        <CardDescription>
+          Top {DESTINATION_LIMIT} destination theo số lượng plan đã mua
+        </CardDescription>
       </CardHeader>
       <CardContent className='flex flex-1 flex-col justify-center'>
-        <ChartContainer config={destinationChartConfig} className='h-[280px] w-full'>
+        {/* flex-1 + a row-count minimum: the card is stretched to the height of
+            "Lợi nhuận theo provider" beside it, and the chart fills it instead
+            of staying pinned at 280px (#007). */}
+        <ChartContainer
+          config={destinationChartConfig}
+          className='w-full flex-1'
+          style={{ minHeight: chartMinHeight }}
+        >
           <BarChart
             accessibilityLayer
             data={chartData}
@@ -74,12 +104,19 @@ export function PieGraph({ filters }: PieGraphProps) {
             <CartesianGrid horizontal={false} strokeDasharray='3 3' />
             <XAxis type='number' hide />
             <YAxis
-              dataKey='destinationLabel'
+              dataKey='destinationKey'
               type='category'
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              width={92}
+              width={118}
+              // Recharts drops ticks it thinks will not fit, which is the other
+              // half of the missing-name bug: with 10+ bars in a short chart it
+              // rendered bars with no name next to them. 0 = draw every tick.
+              interval={0}
+              tickFormatter={(value: string) =>
+                chartData.find((row) => row.destinationKey === value)?.destinationLabel ?? ''
+              }
             />
             <ChartTooltip
               cursor={false}
