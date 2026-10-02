@@ -141,10 +141,21 @@ export type CreateEsimPayload = {
 
 export type UpdateEsimPayload = Partial<CreateEsimPayload>;
 
+/**
+ * Hai loại eSIM của nhà mạng trong nước, nhập bằng hai nút riêng (#esim-noi-dia):
+ *
+ * - `domestic` — eSIM nội địa, SIM data dùng trong nước, có tab riêng ở trang
+ *   chủ cạnh Quốc gia / Khu vực.
+ * - `travel`   — eSIM du lịch do nhà mạng Việt Nam bán (Viettel), nằm trong
+ *   Quốc gia → Việt Nam cùng các gói du lịch khác.
+ */
+export type EsimKind = 'domestic' | 'travel';
+
 export type ImportEsimsExcelPayload = {
   file: File;
   /** Local carrier for every row, e.g. "Viettel". Overrides the file's Carrier column. */
   provider: string;
+  esimKind: EsimKind;
 };
 
 export type ImportEsimsExcelError =

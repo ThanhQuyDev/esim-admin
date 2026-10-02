@@ -58,6 +58,9 @@ export async function importEsimsExcel(
   const formData = new FormData();
   formData.append('file', payload.file);
   formData.append('provider', payload.provider);
+  // Quyết định gói mới là eSIM nội địa hay eSIM du lịch của nhà mạng trong
+  // nước. Gửi tường minh thay vì để máy chủ đoán theo tên nhà mạng.
+  formData.append('esimKind', payload.esimKind);
 
   const res = await fetch('/api/esims/import-excel', {
     method: 'POST',

@@ -19,12 +19,54 @@ import { importEsimsExcelMutation } from '../api/mutations';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ImportEsimResultDialog } from './import-esim-result-dialog';
-import type { ImportEsimsExcelResponse } from '../api/types';
+import type { EsimKind, ImportEsimsExcelResponse } from '../api/types';
 
-/** Carriers already sold as local eSIM; the field still accepts any other name. */
-const KNOWN_LOCAL_CARRIERS = ['Viettel', 'Wintel', 'iTEL', 'VNSKY'];
+/**
+ * Hai loại eSIM của nhà mạng trong nước phải nhập riêng (#esim-noi-dia).
+ *
+ * Loại nằm ở nút người dùng bấm, không suy ra từ tên nhà mạng: Viettel hôm nay
+ * chỉ bán gói du lịch, nhưng cùng một nhà mạng có thể bán cả hai loại. Gợi ý
+ * nhà mạng cũng khác nhau theo loại, nhưng ô nhập vẫn nhận tên tự do để nhà
+ * mạng mới không cần sửa code.
+ */
+const KIND_COPY: Record<
+  EsimKind,
+  {
+    button: string;
+    title: string;
+    description: string;
+    carriers: string[];
+    placeholder: string;
+  }
+> = {
+  domestic: {
+    button: 'Import eSIM nội địa',
+    title: 'Import eSIM nội địa từ Excel',
+    description:
+      'SIM data dùng trong nước. Gói nhập ở đây hiện trong tab "eSIM nội địa" ở trang chủ và có trang riêng cho từng nhà mạng.',
+    carriers: ['Wintel', 'iTEL', 'VNSKY'],
+    placeholder: 'VD: Wintel, iTEL, VNSKY'
+  },
+  travel: {
+    button: 'Import eSIM du lịch (nhà mạng VN)',
+    title: 'Import eSIM du lịch của nhà mạng trong nước',
+    description:
+      'eSIM cho khách đi nước ngoài do nhà mạng Việt Nam bán. Gói nhập ở đây hiện trong tab Quốc gia → Việt Nam cùng các gói du lịch khác, KHÔNG vào tab eSIM nội địa.',
+    carriers: ['Viettel'],
+    placeholder: 'VD: Viettel'
+  }
+};
 
-export function ImportEsimExcelDialog() {
+export function ImportEsimExcelDialog({ kind }: { kind: EsimKind }) {
+  const copy = KIND_COPY[kind];
+  // Hai dialog cùng nằm trên thanh công cụ của trang eSIM, nên id phải khác
+  // nhau: trùng id thì label bấm vào sẽ nhảy sang ô của dialog kia và datalist
+  // gợi ý sai nhà mạng.
+  const ids = {
+    carrier: `esim-carrier-${kind}`,
+    carrierOptions: `esim-carrier-options-${kind}`,
+    file: `esim-file-${kind}`
+  };
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [carrier, setCarrier] = useState('');
@@ -85,8 +127,8 @@ export function ImportEsimExcelDialog() {
       return;
     }
 
-    mutate({ file, provider });
-  }, [carrier, file, mutate]);
+    mutate({ file, provider, esimKind: kind });
+  }, [carrier, file, kind, mutate]);
 
   return (
     <>
@@ -100,35 +142,35 @@ export function ImportEsimExcelDialog() {
         <DialogTrigger asChild>
           <Button variant='outline' size='sm'>
             <Icons.upload className='mr-2 h-4 w-4' />
-            Import eSIM local
+            {copy.button}
           </Button>
         </DialogTrigger>
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
-            <DialogTitle>Import eSIM local từ Excel</DialogTitle>
+            <DialogTitle>{copy.title}</DialogTitle>
             <DialogDescription>
-              Dùng chung file mẫu với eSIM Viettel. Nhà mạng nhập ở đây áp dụng cho mọi dòng và ghi
-              đè cột Carrier trong file.
+              {copy.description} Nhà mạng nhập ở đây áp dụng cho mọi dòng và ghi đè cột Carrier
+              trong file.
             </DialogDescription>
           </DialogHeader>
 
           <div className='grid gap-4 py-4'>
             {/* Carrier */}
             <div className='grid gap-2'>
-              <Label htmlFor='esim-carrier'>
+              <Label htmlFor={ids.carrier}>
                 Nhà mạng <span className='text-destructive'>*</span>
               </Label>
               <Input
-                id='esim-carrier'
-                list='esim-carrier-options'
-                placeholder='VD: Viettel, Wintel, iTEL, VNSKY'
+                id={ids.carrier}
+                list={ids.carrierOptions}
+                placeholder={copy.placeholder}
                 value={carrier}
                 onChange={(e) => setCarrier(e.target.value)}
                 disabled={isPending}
                 autoComplete='off'
               />
-              <datalist id='esim-carrier-options'>
-                {KNOWN_LOCAL_CARRIERS.map((name) => (
+              <datalist id={ids.carrierOptions}>
+                {copy.carriers.map((name) => (
                   <option key={name} value={name} />
                 ))}
               </datalist>
@@ -139,7 +181,7 @@ export function ImportEsimExcelDialog() {
 
             {/* File */}
             <div className='grid gap-2'>
-              <Label htmlFor='esim-file'>
+              <Label htmlFor={ids.file}>
                 File Excel <span className='text-destructive'>*</span>
               </Label>
               <div
@@ -184,7 +226,7 @@ export function ImportEsimExcelDialog() {
               </div>
               <input
                 ref={fileInputRef}
-                id='esim-file'
+                id={ids.file}
                 type='file'
                 accept='.xlsx,.xls'
                 className='hidden'

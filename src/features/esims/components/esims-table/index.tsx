@@ -172,7 +172,10 @@ export function EsimsTable() {
             Export Excel
           </Button>
           <EsimFormDialog />
-          <ImportEsimExcelDialog />
+          {/* Hai nút riêng cho hai loại eSIM của nhà mạng trong nước: eSIM nội
+              địa (tab riêng ở trang chủ) và eSIM du lịch (Quốc gia → Việt Nam). */}
+          <ImportEsimExcelDialog kind='domestic' />
+          <ImportEsimExcelDialog kind='travel' />
         </DataTableToolbar>
       </DataTable>
     </>
