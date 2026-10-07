@@ -7,6 +7,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { BreadcrumbProvider } from '@/hooks/use-breadcrumb-context';
 import { ChatNotificationListener } from '@/features/chat/components/chat-notification-listener';
 import { IS_PARTNER_PORTAL } from '@/config/app-mode';
+import { RoleRouteGuard } from '@/components/layout/role-route-guard';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
@@ -37,7 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <SidebarInset className='overflow-x-hidden overflow-y-auto lg:overflow-hidden'>
               <Header />
               {/* page main content */}
-              {children}
+              <RoleRouteGuard>{children}</RoleRouteGuard>
               {/* page main content ends */}
               <ScrollToTop />
             </SidebarInset>

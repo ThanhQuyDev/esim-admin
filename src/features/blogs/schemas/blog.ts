@@ -6,6 +6,8 @@ export const blogSchema = z.object({
   title: z.string().min(2, 'Title is required'),
   content: z.string().optional(),
   author: z.string().optional(),
+  /** The credited author, chosen by an admin (#011). Empty keeps the current one. */
+  authorProfileId: z.string().optional(),
   language: z.enum(LANG_OPTIONS),
   slug: z.string().optional(),
   category: z.string().optional(),

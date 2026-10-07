@@ -18,6 +18,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { miniTagsQueryOptions } from '@/features/mini-tags/api/queries';
 import { faqsQueryOptions } from '@/features/faqs/api/queries';
 import { seoConfigByUrlQueryOptions } from '@/features/seo-configs/api/queries';
+import { authMeQueryOptions } from '@/features/auth/api/queries';
+import { ROLE_ADMIN } from '@/config/role-access';
+import { blogAuthorProfilesQueryOptions } from '../api/queries';
 import type { Faq } from '@/features/faqs/api/types';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -262,6 +265,20 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
   const { data: faqsData } = useQuery(faqsQueryOptions({ page: 1, limit: 100 }));
   const faqs: Faq[] = faqsData?.data ?? [];
 
+  // An admin credits the post to any author; an author is always credited
+  // themselves, so they only see the name (#011).
+  const { data: me } = useQuery(authMeQueryOptions);
+  const isAdmin = me?.role?.id === ROLE_ADMIN;
+  const { data: authorProfiles = [] } = useQuery({
+    ...blogAuthorProfilesQueryOptions(),
+    enabled: isAdmin
+  });
+  const authorOptions = authorProfiles.map((profile) => ({
+    value: String(profile.id),
+    label: profile.name
+  }));
+  const initialAuthorProfileId = blog?.authorProfile?.id ?? blog?.authorProfileId ?? null;
+
   // Fetch existing SEO config by URL when editing.
   // SEO config URLs follow the landing-page locale convention: Vietnamese
   // (default locale) has no prefix, English is prefixed with `/en`.
@@ -310,7 +327,8 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
       seoDescription: blog?.seoDescription ?? '',
       seoKeywords: blog?.seoKeywords ?? '',
       faqEnabled: initialFaqEnabled,
-      faqIds: initialFaqIds
+      faqIds: initialFaqIds,
+      authorProfileId: initialAuthorProfileId ? String(initialAuthorProfileId) : ''
     } as BlogFormValues,
     validators: { onSubmit: blogSchema },
     onSubmitInvalid: ({ formApi }) => {
@@ -327,10 +345,28 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
       }
     },
     onSubmit: async ({ value }) => {
+      if (isAdmin && !isEdit && !value.authorProfileId) {
+        toast.error('Vui lòng chọn tác giả cho bài viết');
+        return;
+      }
+      // Only an admin's pick is sent; an empty pick on edit keeps the credit.
+      const authorProfileId =
+        isAdmin && value.authorProfileId ? Number(value.authorProfileId) : undefined;
+
       setUploading(true);
       try {
+        // Upload failures are reported here; a failed save is already toasted
+        // with the backend's reason by the mutation's onError. This used to
+        // catch both and say "Tải ảnh lên thất bại" for every failure (#020).
         let coverImage: string | undefined;
-        if (coverFile) coverImage = await uploadToCloudinary(coverFile);
+        if (coverFile) {
+          try {
+            coverImage = await uploadToCloudinary(coverFile);
+          } catch {
+            toast.error('Tải ảnh lên thất bại');
+            return;
+          }
+        }
 
         const planCodes = value.planCodesText
           ? value.planCodesText
@@ -344,6 +380,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             title: value.title,
             content: contentRef.current || value.content || '',
             language: value.language,
+            ...(authorProfileId && { authorProfileId }),
             slug: value.slug || undefined,
             category: value.category || undefined,
             parent: value.parent || undefined,
@@ -388,6 +425,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             title: value.title,
             content: contentRef.current || value.content || '',
             language: value.language,
+            ...(authorProfileId && { authorProfileId }),
             ...(value.slug && { slug: value.slug }),
             ...(value.category && { category: value.category }),
             ...(value.parent && { parent: value.parent }),
@@ -424,7 +462,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
           }
         }
       } catch {
-        toast.error('Tải ảnh lên thất bại');
+        // Already toasted by the mutation's onError.
       } finally {
         setUploading(false);
       }
@@ -463,9 +501,20 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
                 validators={{ onBlur: z.string().min(2) }}
               />
               <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                <div className='rounded-md border bg-muted/40 px-3 py-2 text-sm'>
-                  Tác giả: {blog?.authorProfile?.name ?? blog?.author ?? 'Tài khoản đang đăng nhập'}
-                </div>
+                {isAdmin ? (
+                  <FormSelectField
+                    name='authorProfileId'
+                    label='Tác giả'
+                    required={!isEdit}
+                    placeholder={isEdit && !initialAuthorProfileId ? blog?.author : 'Chọn tác giả'}
+                    options={authorOptions}
+                  />
+                ) : (
+                  <div className='bg-muted/40 rounded-md border px-3 py-2 text-sm'>
+                    Tác giả:{' '}
+                    {blog?.authorProfile?.name ?? blog?.author ?? 'Tài khoản đang đăng nhập'}
+                  </div>
+                )}
                 <FormSelectField name='language' label='Ngôn ngữ' required options={LANG_OPTIONS} />
               </div>
               <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>

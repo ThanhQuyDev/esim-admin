@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api-client';
 import type {
   Blog,
   BlogAuthorOption,
+  BlogAuthorProfile,
   BlogFilters,
   BlogsResponse,
   CreateBlogPayload,
@@ -47,6 +48,11 @@ export async function getBlogCategoryTree(): Promise<Record<string, string[]>> {
  */
 export async function getBlogAuthorOptions(): Promise<BlogAuthorOption[]> {
   return apiClient<BlogAuthorOption[]>('/blogs/authors').catch(() => [] as BlogAuthorOption[]);
+}
+
+/** Every author profile, for the admin's "Tác giả" select box (#011). */
+export async function getBlogAuthorProfiles(): Promise<BlogAuthorProfile[]> {
+  return apiClient<BlogAuthorProfile[]>('/blogs/author-profiles');
 }
 
 export async function getBlog(id: string): Promise<Blog> {

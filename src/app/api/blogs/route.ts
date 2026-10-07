@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
     const val = searchParams.get(key);
     if (val) params.set(key, val);
   }
-  const res = await fetch(`${API_URL}/api/v1/blogs?${params}`, { headers });
+  // The CMS list: an author gets only their own posts, scoped by the backend (#011).
+  const res = await fetch(`${API_URL}/api/v1/blogs/manage?${params}`, { headers });
   const data = await res.json();
   if (!res.ok)
     return NextResponse.json(

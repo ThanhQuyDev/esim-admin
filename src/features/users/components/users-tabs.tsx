@@ -17,6 +17,7 @@ export function UsersTabs() {
     <Tabs value={tab} onValueChange={(value) => setTab(value as UserTab)}>
       <TabsList>
         <TabsTrigger value='user'>Người dùng</TabsTrigger>
+        <TabsTrigger value='author'>Tác giả</TabsTrigger>
         <TabsTrigger value='admin'>Quản trị viên</TabsTrigger>
       </TabsList>
     </Tabs>

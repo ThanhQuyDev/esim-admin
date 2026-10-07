@@ -23,6 +23,9 @@ export type BlogAuthor = {
   description?: string | null;
 };
 
+/** An author the admin can credit a post to (#011). */
+export type BlogAuthorProfile = BlogAuthor;
+
 export type Blog = {
   id: string;
   language: string;
@@ -33,6 +36,7 @@ export type Blog = {
   authorSlug?: string | null;
   authorBio?: string | null;
   authorProfile?: BlogAuthor | null;
+  authorProfileId?: number | null;
   category: string;
   parent?: string | null;
   coverImage: string | null;
@@ -79,6 +83,8 @@ export type BlogsResponse = {
 export type CreateBlogPayload = {
   language: string;
   author?: string;
+  /** Only an admin's choice is honoured; an author is always credited themselves (#011). */
+  authorProfileId?: number;
   publishedAt?: string | null;
   isPublished?: boolean;
   category?: string;
