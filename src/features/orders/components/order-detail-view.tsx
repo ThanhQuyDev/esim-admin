@@ -364,12 +364,20 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
 
   const refundMutation = useMutation({
     ...refundOrderMutation,
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success(`Đã hoàn tiền cho đơn hàng ${order.orderNumber}`);
+      // The customer is refunded either way; a supplier that refused to cancel
+      // means our own money is still with them (v3 #002).
+      if (result.supplierWarnings?.length) {
+        toast.warning('Nhà cung cấp chưa hủy, cần liên hệ để lấy lại tiền', {
+          description: result.supplierWarnings.join(' · '),
+          duration: 20000
+        });
+      }
       setRefundOpen(false);
     },
-    onError: () => {
-      toast.error('Hoàn tiền thất bại');
+    onError: (e) => {
+      toast.error(e.message || 'Hoàn tiền thất bại');
     }
   });
 

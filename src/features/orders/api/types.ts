@@ -230,6 +230,8 @@ export type RefundOrderRequest = {
 };
 
 export type OrderRefundResponse = {
+  /** Suppliers that refused to cancel the refunded eSIMs (v3 #002). */
+  supplierWarnings?: string[];
   id: number;
   orderId: number;
   userId: number;
