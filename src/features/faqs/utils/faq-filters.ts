@@ -7,8 +7,10 @@
  * away on every load (#050).
  */
 export type FaqFilterParams = {
-  /** The question / url search box. */
+  /** The question / answer search box. */
   name?: string | null;
+  /** The page box: matches the FAQ's URL only (v3 #004). */
+  pageUrl?: string | null;
   /** `['true']` / `['false']` from the select box. */
   isActive?: string[] | null;
 };
@@ -17,6 +19,7 @@ export function buildFaqApiFilters(params: FaqFilterParams): Record<string, unkn
   const filters: Record<string, unknown> = {};
 
   if (params.name) filters.search = params.name;
+  if (params.pageUrl) filters.pageUrl = params.pageUrl;
 
   // A Hoạt động/Không select only means something when one side is picked; both
   // selected is the same as no filter.

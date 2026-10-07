@@ -16,8 +16,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const headers = await getAuthHeaders();
   const params = new URLSearchParams();
-  for (const key of ['page', 'limit', 'search', 'filters', 'sort']) {
-    const val = searchParams.get(key);
+  // Every param, not a fixed list: `type` and `isActive` were dropped here, so
+  // the "Trang" and status filters never reached the API (v3 #004).
+  for (const [key, val] of searchParams) {
     if (val) params.set(key, val);
   }
   const res = await fetch(`${API_URL}/api/v1/faqs?${params}`, { headers });

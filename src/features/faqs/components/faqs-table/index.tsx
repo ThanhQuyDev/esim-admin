@@ -22,6 +22,7 @@ export function FaqsTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    pageUrl: parseAsString,
     // Status filter (#050), keyed by column id.
     isActive: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])

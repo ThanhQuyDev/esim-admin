@@ -16,8 +16,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const headers = await getAuthHeaders();
   const params = new URLSearchParams();
-  for (const key of ['page', 'limit', 'search', 'category', 'parent']) {
-    const val = searchParams.get(key);
+  // Every param, not a fixed list, which silently dropped filters the CMS
+  // sends (help-center: isPopular/isPublished/language/sort; devices: manufacturer).
+  for (const [key, val] of searchParams) {
     if (val) params.set(key, val);
   }
 

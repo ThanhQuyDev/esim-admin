@@ -13,6 +13,7 @@ export default function FaqListingPage() {
   // prefetched query is not the one the table reads.
   const apiFilters = buildFaqApiFilters({
     name: searchParamsCache.get('name'),
+    pageUrl: searchParamsCache.get('pageUrl'),
     isActive: searchParamsCache.get('isActive')
   });
   const filters = {

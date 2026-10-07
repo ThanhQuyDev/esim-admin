@@ -43,7 +43,7 @@ export const columns: ColumnDef<Faq>[] = [
     ),
     meta: {
       label: 'Câu hỏi',
-      placeholder: 'Tìm câu hỏi hoặc trang (vd: /home)...',
+      placeholder: 'Tìm câu hỏi / câu trả lời...',
       variant: 'text' as const,
       icon: Icons.text
     },
@@ -73,7 +73,9 @@ export const columns: ColumnDef<Faq>[] = [
     enableSorting: false
   },
   {
-    id: 'url',
+    // Keyed `pageUrl` (the URL param) so the page filter box is its own (v3 #004):
+    // the question box matched answers too, so "destination" also found /en/home.
+    id: 'pageUrl',
     accessorKey: 'url',
     header: 'URL',
     cell: ({ row }) =>
@@ -82,6 +84,13 @@ export const columns: ColumnDef<Faq>[] = [
       ) : (
         <span className='text-muted-foreground/50 text-sm'>—</span>
       ),
+    meta: {
+      label: 'Trang',
+      placeholder: 'Lọc theo trang (vd: /home, destination)...',
+      variant: 'text' as const,
+      icon: Icons.link
+    },
+    enableColumnFilter: true,
     enableSorting: false
   },
   {
