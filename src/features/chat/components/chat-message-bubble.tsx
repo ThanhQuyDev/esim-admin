@@ -1,6 +1,7 @@
 'use client';
 
 import { Icons } from '@/components/icons';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { motion, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '../api/types';
@@ -106,21 +107,37 @@ export function ChatMessageBubble({
           />
         )}
         {message.fileUrl && message.fileType?.startsWith('image/') && (
-          <a
-            href={message.fileUrl}
-            target='_blank'
-            rel='noopener noreferrer'
-            className='mt-2 block overflow-hidden rounded-lg'
-            aria-label={`Mở hình ảnh ${message.fileName ?? ''}`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={message.fileUrl}
-              alt={message.fileName ?? 'Hình ảnh đính kèm'}
-              className='max-h-64 w-auto max-w-full object-cover'
-              loading='lazy'
-            />
-          </a>
+          // Opens in place (v3 #006): a link to the Cloudinary file left the
+          // admin, and on a phone the only way back was closing that tab.
+          <Dialog>
+            <DialogTrigger asChild>
+              <button
+                type='button'
+                className='mt-2 block cursor-zoom-in overflow-hidden rounded-lg'
+                aria-label={`Xem hình ảnh ${message.fileName ?? ''}`}
+                data-testid={`chat-image-${message.id}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={message.fileUrl}
+                  alt={message.fileName ?? 'Hình ảnh đính kèm'}
+                  className='max-h-64 w-auto max-w-full object-cover'
+                  loading='lazy'
+                />
+              </button>
+            </DialogTrigger>
+            <DialogContent className='max-w-[95vw] border-none bg-black/90 p-2 sm:max-w-3xl'>
+              <DialogTitle className='sr-only'>
+                {message.fileName ?? 'Hình ảnh đính kèm'}
+              </DialogTitle>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={message.fileUrl}
+                alt={message.fileName ?? 'Hình ảnh đính kèm'}
+                className='mx-auto max-h-[85dvh] w-auto max-w-full object-contain'
+              />
+            </DialogContent>
+          </Dialog>
         )}
         {message.fileUrl && message.fileType?.startsWith('video/') && (
           <video

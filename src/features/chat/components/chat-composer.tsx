@@ -25,6 +25,8 @@ interface ChatComposerProps {
   replyTo?: ChatMessage | null;
   replyToAuthorName?: string;
   onCancelReply?: () => void;
+  /** Extra buttons beside attach, e.g. the mobile chat tools (v3 #006). */
+  extraActions?: React.ReactNode;
 }
 
 function formatBytes(bytes: number): string {
@@ -39,7 +41,8 @@ export function ChatComposer({
   onSubmit,
   replyTo,
   replyToAuthorName,
-  onCancelReply
+  onCancelReply,
+  extraActions
 }: ChatComposerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -267,6 +270,7 @@ export function ChatComposer({
           />
         </div>
         <div className='flex shrink-0 flex-col items-end gap-1.5 sm:w-24 sm:gap-2'>
+          {extraActions}
           <input
             ref={fileInputRef}
             type='file'
