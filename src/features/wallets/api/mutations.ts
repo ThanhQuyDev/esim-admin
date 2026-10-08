@@ -36,11 +36,16 @@ const refreshWalletDetail = (userId: number) => {
   void queryClient.invalidateQueries({ queryKey: walletKeys.transactions(userId) });
 };
 
+// The cache work runs in onSettled, not onSuccess: the wallet sheet passes its
+// own onSuccess (toast, close modal), and a component's onSuccess REPLACES the
+// one spread in from here — so after "Cộng tiền" the list and the open wallet
+// never refreshed and showed the old balance until reopened (v3 #023).
+
 export const adjustWalletBalanceMutation = mutationOptions({
   mutationFn: ({ userId, data }: { userId: number; data: ManualWalletAdjustRequest }) =>
     adjustWalletBalance(userId, data),
-  onSuccess: (result, { userId }) => {
-    updateWalletLists(userId, { balanceVnd: result.balanceAfterVnd });
+  onSettled: (result, _error, { userId }) => {
+    if (result) updateWalletLists(userId, { balanceVnd: result.balanceAfterVnd });
     refreshWalletDetail(userId);
   }
 });
@@ -48,8 +53,8 @@ export const adjustWalletBalanceMutation = mutationOptions({
 export const cancelWalletBalanceMutation = mutationOptions({
   mutationFn: ({ userId, data }: { userId: number; data: CancelWalletRequest }) =>
     cancelWalletBalance(userId, data),
-  onSuccess: (result, { userId }) => {
-    updateWalletLists(userId, { balanceVnd: result?.balanceAfterVnd ?? 0 });
+  onSettled: (result, error, { userId }) => {
+    if (!error) updateWalletLists(userId, { balanceVnd: result?.balanceAfterVnd ?? 0 });
     refreshWalletDetail(userId);
   }
 });
@@ -57,9 +62,11 @@ export const cancelWalletBalanceMutation = mutationOptions({
 export const updateWalletStatusMutation = mutationOptions({
   mutationFn: ({ userId, data }: { userId: number; data: UpdateWalletStatusRequest }) =>
     updateWalletStatus(userId, data),
-  onSuccess: (result: WalletMeResponse, { userId }) => {
-    updateWalletLists(userId, { status: result.status });
-    getQueryClient().setQueryData(walletKeys.detail(userId), result);
+  onSettled: (result: WalletMeResponse | undefined, _error, { userId }) => {
+    if (result) {
+      updateWalletLists(userId, { status: result.status });
+      getQueryClient().setQueryData(walletKeys.detail(userId), result);
+    }
     refreshWalletDetail(userId);
   }
 });
