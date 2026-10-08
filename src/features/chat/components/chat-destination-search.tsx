@@ -112,9 +112,26 @@ export function ChatDestinationSearch() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder='Tìm quốc gia / khu vực...'
-            className='h-8 pl-8 text-xs'
+            className='h-8 pr-8 pl-8 text-xs'
             aria-label='Tìm quốc gia hoặc khu vực'
+            data-testid='chat-destination-input'
           />
+          {/* Clear while typing (v3 #019). */}
+          {query && (
+            <button
+              type='button'
+              onClick={() => {
+                setQuery('');
+                setSentKey(null);
+              }}
+              className='text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-0.5 transition-colors'
+              aria-label='Xóa nội dung tìm kiếm'
+              title='Xóa'
+              data-testid='chat-destination-clear'
+            >
+              <Icons.close className='h-3.5 w-3.5' />
+            </button>
+          )}
         </div>
 
         <div
