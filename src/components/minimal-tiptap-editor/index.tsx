@@ -183,7 +183,12 @@ export function MinimalTiptapEditor({
         codeBlock: false,
         horizontalRule: false,
         strike: false,
-        code: false
+        code: false,
+        // StarterKit v3 ships its own Link (autolink on, http by default) and
+        // Underline. Left on, that Link — not the one configured below — turned
+        // every typed "esim.vn" into an anchor (v3 #024).
+        link: false,
+        underline: false
       }),
       Underline,
       Link.configure({
