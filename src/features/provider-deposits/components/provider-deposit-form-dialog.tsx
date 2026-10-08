@@ -2,11 +2,17 @@
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { format, parse } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { FormDialog } from '@/components/ui/form-dialog';
 import { Icons } from '@/components/icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { PROVIDER_LABELS, OVERVIEW_PROVIDERS } from '@/features/overview/api/constants';
 import { createProviderDepositEntryMutation } from '../api/mutations';
@@ -18,16 +24,87 @@ import {
   type ProviderDepositEntryFormValues
 } from '../schemas/provider-deposit';
 
+/** The picked day is kept as `yyyy-MM-dd`; the box shows it as DD-MM-YYYY. */
+const VALUE_FORMAT = 'yyyy-MM-dd';
+
+function toDate(value: string): Date | undefined {
+  if (!value) return undefined;
+  const parsed = parse(value, VALUE_FORMAT, new Date());
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
 /**
- * Parse the hand-typed date. Anything unparseable is dropped rather than sent,
- * so a typo silently falls back to "now" on the server instead of storing a
- * bogus timestamp.
+ * The picked day at local noon, so no time zone can roll it onto the day
+ * before or after. Empty means "now" on the server.
  */
 function parseOccurredAt(value: string): string | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  const parsed = new Date(trimmed);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+  const day = toDate(value);
+  if (!day) return undefined;
+  day.setHours(12, 0, 0, 0);
+  return day.toISOString();
+}
+
+/**
+ * Calendar instead of a typed `YYYY-MM-DD` box (v3 #005): easier to pick and
+ * the format cannot come out wrong.
+ */
+function OccurredAtPicker({
+  value,
+  onChange
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = toDate(value);
+
+  return (
+    <div className='space-y-2'>
+      <Label>Thời điểm</Label>
+      <div className='flex gap-2'>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type='button'
+              variant='outline'
+              data-testid='deposit-occurred-at'
+              className={cn(
+                'w-full justify-start text-left font-normal',
+                !selected && 'text-muted-foreground'
+              )}
+            >
+              <Icons.calendar className='mr-2 h-4 w-4' />
+              {selected ? format(selected, 'dd-MM-yyyy') : 'Bỏ trống = hôm nay (DD-MM-YYYY)'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className='w-auto p-0' align='start'>
+            <Calendar
+              mode='single'
+              selected={selected}
+              defaultMonth={selected}
+              onSelect={(day) => {
+                onChange(day ? format(day, VALUE_FORMAT) : '');
+                setOpen(false);
+              }}
+              locale={vi}
+              disabled={{ after: new Date() }}
+            />
+          </PopoverContent>
+        </Popover>
+        {selected && (
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon'
+            aria-label='Xóa ngày'
+            onClick={() => onChange('')}
+          >
+            <Icons.close className='h-4 w-4' />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 interface ProviderDepositFormDialogProps {
@@ -148,11 +225,14 @@ export function ProviderDepositFormDialog({
             {ENTRY_TYPE_OPTIONS.map((o) => `${o.label}: ${o.hint}`).join(' · ')}
           </p>
 
-          <FormTextField
-            name='occurredAt'
-            label='Thời điểm (YYYY-MM-DD)'
-            placeholder='Bỏ trống = thời điểm hiện tại'
-          />
+          <form.AppField name='occurredAt'>
+            {(field) => (
+              <OccurredAtPicker
+                value={field.state.value}
+                onChange={(next) => field.handleChange(next)}
+              />
+            )}
+          </form.AppField>
           <FormTextareaField
             name='note'
             label='Ghi chú'

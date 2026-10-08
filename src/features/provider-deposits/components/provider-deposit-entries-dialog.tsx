@@ -20,7 +20,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
-import { formatDate, formatVnd } from '@/lib/format';
+import { formatDateDmy, formatVnd } from '@/lib/format';
 import { PROVIDER_LABELS } from '@/features/overview/api/constants';
 import { providerDepositEntriesQueryOptions } from '../api/queries';
 import { deleteProviderDepositEntryMutation } from '../api/mutations';
@@ -92,7 +92,7 @@ export function ProviderDepositEntriesDialog({
                 entries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className='whitespace-nowrap'>
-                      {formatDate(entry.occurredAt)}
+                      {formatDateDmy(entry.occurredAt)}
                     </TableCell>
                     <TableCell>
                       <Badge variant='secondary'>{TYPE_LABELS[entry.type] ?? entry.type}</Badge>

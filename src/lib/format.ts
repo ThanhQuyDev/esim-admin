@@ -27,6 +27,23 @@ export function formatDate(
 }
 
 /** Date only, Vietnam time — "09/09/2026". */
+/** `08-10-2026` in Vietnam time — the DD-MM-YYYY the CMS asks for (v3 #005). */
+export function formatDateDmy(date: Date | string | number | null | undefined): string {
+  if (!date) return '';
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: VN_TIME_ZONE
+    }).formatToParts(new Date(date));
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+    return `${get('day')}-${get('month')}-${get('year')}`;
+  } catch {
+    return '';
+  }
+}
+
 export function formatDateVn(
   date: Date | string | number | null | undefined,
   opts: Intl.DateTimeFormatOptions = {}
