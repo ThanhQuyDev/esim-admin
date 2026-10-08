@@ -33,7 +33,9 @@ function SurchargeRow({ row }: { row: ProviderSurcharge }) {
   const mutation = useMutation({
     ...saveProviderSurchargeMutation,
     onSuccess: (res) =>
-      toast.success(`Đã lưu thuế phí ${label}: ${res.data.percentage}%. Đã tính lại gói rẻ nhất.`),
+      toast.success(
+        `Đã lưu thuế phí ${label}: ${res.data.percentage}%. Đã tính lại giá vốn, giá bán và gói rẻ nhất.`
+      ),
     onError: (error) => toast.error(error.message || 'Lưu thuế phí thất bại')
   });
 
@@ -71,7 +73,7 @@ function SurchargeRow({ row }: { row: ProviderSurcharge }) {
           <p className='text-destructive mt-1 text-xs'>Nhập số từ 0 đến 100, tối đa 2 số lẻ.</p>
         ) : percentage ? (
           <p className='text-muted-foreground mt-1 text-xs'>
-            VD: giá vốn 10 USD được so như {surchargedAmount(10, percentage).toFixed(2)} USD
+            VD: giá gốc 10 USD thành giá vốn {surchargedAmount(10, percentage).toFixed(2)} USD
           </p>
         ) : null}
       </TableCell>
@@ -114,9 +116,10 @@ export function ProviderSurchargesTable() {
       <CardHeader>
         <CardTitle>Thuế phí theo nhà cung cấp</CardTitle>
         <CardDescription>
-          Phần trăm này được cộng vào giá vốn của nhà cung cấp <strong>khi so sánh giá</strong> để
-          chọn gói rẻ nhất cho cùng quốc gia/khu vực, dung lượng và số ngày. Giá bán cho khách vẫn
-          tính theo Profit Margin, không đổi. Bấm Lưu là hệ thống tính lại gói rẻ nhất ngay.
+          Phần trăm này được <strong>cộng thẳng vào giá vốn</strong> của mọi gói thuộc nhà cung cấp
+          đó (giá gốc API × (1 + %)): giá vốn hiển thị, giá vốn tính lợi nhuận, giá bán theo Profit
+          Margin và việc so sánh chọn gói rẻ nhất đều dùng giá đã cộng thuế phí. Bấm Lưu là hệ thống
+          tính lại ngay.
         </CardDescription>
       </CardHeader>
       <CardContent>

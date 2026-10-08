@@ -297,6 +297,13 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
           <span className='text-muted-foreground text-xs'>
             Giá gốc: ${row.original.costPrice} · Giá bán: ${row.original.retailPrice}
           </span>
+          {/* Includes the supplier's surcharge (v3 #018); "Giá gốc" is the raw
+              figure their API quotes. */}
+          {row.original.vndCostPrice ? (
+            <span className='text-muted-foreground text-xs'>
+              Giá vốn (gồm thuế phí): {Number(row.original.vndCostPrice).toLocaleString('vi-VN')}đ
+            </span>
+          ) : null}
         </div>
       )
     },
