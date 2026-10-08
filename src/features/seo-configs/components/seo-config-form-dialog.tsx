@@ -80,30 +80,52 @@ type SeoPageEntity = {
  * to store `/destinations/…` / `/regions/…`, which no page ever requests, so a
  * config created this way never applied (#015).
  */
-function seoPagePath(entity: Pick<SeoPageEntity, 'slug' | 'slugVi'>): string {
-  return `/${entity.slugVi || entity.slug}`;
+function seoPagePath(
+  entity: Pick<SeoPageEntity, 'slug' | 'slugVi'>,
+  lang: SeoPageLang = 'vi'
+): string {
+  // English pages live under /en on their English slug (v3 #008).
+  return lang === 'en' ? `/en/${entity.slug}` : `/${entity.slugVi || entity.slug}`;
 }
 
-/** What an admin recognises: the Vietnamese title, not the supplier's raw name. */
-function seoEntityLabel(entity: SeoPageEntity): string {
-  return entity.titleVi || entity.title || entity.name;
+type SeoPageLang = 'vi' | 'en';
+
+/** What an admin recognises: the page's title in its own language. */
+function seoEntityLabel(entity: SeoPageEntity, lang: SeoPageLang = 'vi'): string {
+  return lang === 'en'
+    ? entity.title || entity.name
+    : entity.titleVi || entity.title || entity.name;
+}
+
+/** `"12:en"` — one option per page, so each entity offers its VI and its EN page. */
+function encodePageOption(id: number, lang: SeoPageLang): string {
+  return `${id}:${lang}`;
+}
+
+function decodePageOption(value: string): { id: number; lang: SeoPageLang } {
+  const [id, lang] = value.split(':');
+  return { id: Number(id), lang: lang === 'en' ? 'en' : 'vi' };
 }
 
 function SearchableSelect<T extends SeoPageEntity>({
   label,
   items,
   value,
+  lang,
   onSelect,
   placeholder
 }: {
   label: string;
   items: T[];
   value?: number | null;
-  onSelect: (id: string) => void;
+  /** Which language page of `value` is picked. */
+  lang?: SeoPageLang;
+  onSelect: (option: string) => void;
   placeholder: string;
 }) {
   const [open, setOpen] = useState(false);
   const selected = items.find((item) => item.id === value);
+  const selectedLang = lang ?? 'vi';
 
   return (
     <div className='space-y-2'>
@@ -117,52 +139,67 @@ function SearchableSelect<T extends SeoPageEntity>({
             className='w-full justify-between'
           >
             <span className='truncate'>
-              {selected ? `${seoEntityLabel(selected)} (${seoPagePath(selected)})` : placeholder}
+              {selected
+                ? `${seoEntityLabel(selected, selectedLang)} (${seoPagePath(selected, selectedLang)})`
+                : placeholder}
             </span>
             <Icons.chevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className='w-full p-0' align='start'>
+        {/* As wide as the box, not as wide as the longest slug: Billion's
+            region slugs pushed the list off screen (v3 #008). */}
+        <PopoverContent
+          className='w-[var(--radix-popover-trigger-width)] max-w-[90vw] p-0'
+          align='start'
+        >
           <Command>
             <CommandInput placeholder='Tìm kiếm...' />
             <CommandList>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               <CommandGroup>
-                {items.map((item) => {
-                  const itemLabel = seoEntityLabel(item);
-                  return (
-                    <CommandItem
-                      key={item.id}
-                      // The id keeps same-named regions ("South", "Asia") apart;
-                      // the keywords let a Vietnamese title or a slug find it.
-                      value={String(item.id)}
-                      keywords={[
-                        item.name,
-                        item.title,
-                        item.titleVi,
-                        item.slug,
-                        item.slugVi
-                      ].filter((k): k is string => !!k)}
-                      onSelect={() => {
-                        onSelect(String(item.id));
-                        setOpen(false);
-                      }}
-                    >
-                      <Icons.check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          value === item.id ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      <span className='flex min-w-0 flex-col'>
-                        <span className='truncate'>{itemLabel}</span>
-                        <span className='text-muted-foreground truncate text-xs'>
-                          {seoPagePath(item)}
-                          {itemLabel !== item.name ? ` · ${item.name}` : ''}
+                {items.flatMap((item) => {
+                  // Both languages' words on both options: typing "china" or
+                  // "trung quoc" lists /esim-trung-quoc AND /en/esim-china, so
+                  // the English page can be picked at all (v3 #008).
+                  const keywords = [
+                    item.name,
+                    item.title,
+                    item.titleVi,
+                    item.slug,
+                    item.slugVi
+                  ].filter((k): k is string => !!k);
+                  return (['vi', 'en'] as const).map((itemLang) => {
+                    const itemLabel = seoEntityLabel(item, itemLang);
+                    const option = encodePageOption(item.id, itemLang);
+                    const isSelected = value === item.id && selectedLang === itemLang;
+                    return (
+                      <CommandItem
+                        key={option}
+                        // The id keeps same-named regions ("South", "Asia") apart.
+                        value={option}
+                        keywords={[...keywords, itemLang === 'en' ? 'english' : 'tieng viet']}
+                        onSelect={() => {
+                          onSelect(option);
+                          setOpen(false);
+                        }}
+                      >
+                        <Icons.check
+                          className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')}
+                        />
+                        <span className='flex min-w-0 flex-1 flex-col'>
+                          <span className='truncate'>
+                            {itemLabel}
+                            <span className='text-muted-foreground ml-1 text-xs uppercase'>
+                              {itemLang}
+                            </span>
+                          </span>
+                          <span className='text-muted-foreground truncate text-xs'>
+                            {seoPagePath(item, itemLang)}
+                          </span>
                         </span>
-                      </span>
-                    </CommandItem>
-                  );
+                      </CommandItem>
+                    );
+                  });
                 })}
               </CommandGroup>
             </CommandList>
@@ -181,6 +218,8 @@ function CreateSeoConfigDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [urlSource, setUrlSource] = useState<'manual' | 'destination' | 'region'>('manual');
+  /** Which language page was picked, for the select's label (v3 #008). */
+  const [pickedLang, setPickedLang] = useState<SeoPageLang>('vi');
 
   const { data: destinationsData } = useQuery({
     queryKey: ['destinations', 'all-pages-for-seo'],
@@ -242,23 +281,25 @@ function CreateSeoConfigDialog({
     }
   });
 
-  const handleDestinationSelect = (destId: string) => {
-    const id = Number(destId);
+  const handleDestinationSelect = (option: string) => {
+    const { id, lang } = decodePageOption(option);
     const dest = destinations.find((d: Destination) => d.id === id);
     if (dest) {
+      setPickedLang(lang);
       form.setFieldValue('destinationId', id);
       form.setFieldValue('regionId', null);
-      form.setFieldValue('url', seoPagePath(dest));
+      form.setFieldValue('url', seoPagePath(dest, lang));
     }
   };
 
-  const handleRegionSelect = (regionId: string) => {
-    const id = Number(regionId);
+  const handleRegionSelect = (option: string) => {
+    const { id, lang } = decodePageOption(option);
     const region = regions.find((r: Region) => r.id === id);
     if (region) {
+      setPickedLang(lang);
       form.setFieldValue('regionId', id);
       form.setFieldValue('destinationId', null);
-      form.setFieldValue('url', seoPagePath(region));
+      form.setFieldValue('url', seoPagePath(region, lang));
     }
   };
 
@@ -312,6 +353,7 @@ function CreateSeoConfigDialog({
               label='Điểm đến'
               items={destinations}
               value={form.getFieldValue('destinationId')}
+              lang={pickedLang}
               onSelect={handleDestinationSelect}
               placeholder='Chọn điểm đến...'
             />
@@ -323,6 +365,7 @@ function CreateSeoConfigDialog({
               label='Khu vực'
               items={regions}
               value={form.getFieldValue('regionId')}
+              lang={pickedLang}
               onSelect={handleRegionSelect}
               placeholder='Chọn khu vực...'
             />
@@ -445,6 +488,10 @@ function EditSeoConfigDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [urlSource, setUrlSource] = useState<'manual' | 'destination' | 'region'>('manual');
+  /** Which language page is linked; an existing /en/ URL is the English one. */
+  const [pickedLang, setPickedLang] = useState<SeoPageLang>(
+    seoConfig.url.startsWith('/en/') ? 'en' : 'vi'
+  );
 
   const { data: destinationsData } = useQuery({
     queryKey: ['destinations', 'all-pages-for-seo'],
@@ -506,23 +553,25 @@ function EditSeoConfigDialog({
     }
   });
 
-  const handleDestinationSelect = (destId: string) => {
-    const id = Number(destId);
+  const handleDestinationSelect = (option: string) => {
+    const { id, lang } = decodePageOption(option);
     const dest = destinations.find((d: Destination) => d.id === id);
     if (dest) {
+      setPickedLang(lang);
       form.setFieldValue('destinationId', id);
       form.setFieldValue('regionId', null);
-      form.setFieldValue('url', seoPagePath(dest));
+      form.setFieldValue('url', seoPagePath(dest, lang));
     }
   };
 
-  const handleRegionSelect = (regionId: string) => {
-    const id = Number(regionId);
+  const handleRegionSelect = (option: string) => {
+    const { id, lang } = decodePageOption(option);
     const region = regions.find((r: Region) => r.id === id);
     if (region) {
+      setPickedLang(lang);
       form.setFieldValue('regionId', id);
       form.setFieldValue('destinationId', null);
-      form.setFieldValue('url', seoPagePath(region));
+      form.setFieldValue('url', seoPagePath(region, lang));
     }
   };
 
@@ -576,6 +625,7 @@ function EditSeoConfigDialog({
               label='Điểm đến'
               items={destinations}
               value={form.getFieldValue('destinationId')}
+              lang={pickedLang}
               onSelect={handleDestinationSelect}
               placeholder='Chọn điểm đến...'
             />
@@ -587,6 +637,7 @@ function EditSeoConfigDialog({
               label='Khu vực'
               items={regions}
               value={form.getFieldValue('regionId')}
+              lang={pickedLang}
               onSelect={handleRegionSelect}
               placeholder='Chọn khu vực...'
             />
