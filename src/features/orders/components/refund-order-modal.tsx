@@ -20,7 +20,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { formatVnd } from '@/lib/format';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { OrderItem, RefundOrderRequest, RefundMode } from '../api/types';
 
@@ -54,11 +54,25 @@ export function RefundOrderModal({
   const totalOrderValue = Number(payableVndPrice ?? 0) + Number(walletSpentVndAmount ?? 0);
   const alreadyRefunded = Number(refundedAmountVnd ?? 0);
   const maxRefundable = Math.max(0, totalOrderValue - alreadyRefunded);
-  const [amount, setAmount] = useState(String(maxRefundable));
+  // Starts at 0 and follows the eSIMs ticked below (v3 #007). It used to start
+  // at the order total, and because this modal stays mounted that total was
+  // kept even after a partial refund — so the next refund asked for more than
+  // was left and failed.
+  const [amount, setAmount] = useState('0');
   const [reason, setReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
   // Empty = refund the whole order, as before.
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+
+  // Every opening starts clean, from the order as it is now.
+  useEffect(() => {
+    if (!open) return;
+    setMode('wallet');
+    setAmount('0');
+    setReason('');
+    setAdminNote('');
+    setSelectedItemIds([]);
+  }, [open]);
 
   // Only lines still live can be refunded; an already-refunded one has nothing
   // left to give back.
@@ -73,7 +87,8 @@ export function RefundOrderModal({
   const cap = isPartial ? Math.min(selectedValue, maxRefundable) : maxRefundable;
 
   const amountVnd = parseInt(amount, 10);
-  const isValidAmount = !isNaN(amountVnd) && amountVnd >= 0 && amountVnd <= cap;
+  // Nothing to refund is not a refund.
+  const isValidAmount = !isNaN(amountVnd) && amountVnd > 0 && amountVnd <= cap;
 
   function toggleItem(id: number, value: boolean) {
     const next = value
@@ -86,7 +101,7 @@ export function RefundOrderModal({
     const nextValue = refundableItems
       .filter((item) => next.includes(item.id))
       .reduce((sum, item) => sum + Number(item.vndPrice ?? 0), 0);
-    setAmount(String(next.length > 0 ? Math.min(nextValue, maxRefundable) : maxRefundable));
+    setAmount(String(next.length > 0 ? Math.min(nextValue, maxRefundable) : 0));
   }
 
   function handleSubmit() {
@@ -101,13 +116,6 @@ export function RefundOrderModal({
   }
 
   function handleOpenChange(newOpen: boolean) {
-    if (!newOpen) {
-      setMode('wallet');
-      setAmount(String(maxRefundable));
-      setReason('');
-      setAdminNote('');
-      setSelectedItemIds([]);
-    }
     onOpenChange(newOpen);
   }
 
@@ -222,10 +230,16 @@ export function RefundOrderModal({
               onChange={(e) => setAmount(e.target.value)}
               max={cap}
             />
-            {!isValidAmount && amount && (
-              <p className='text-destructive text-xs'>
-                Số tiền không hợp lệ. Tối đa: {formatVnd(cap)}
+            {!amountVnd ? (
+              <p className='text-muted-foreground text-xs'>
+                Chọn eSIM cần hoàn ở trên, hoặc nhập số tiền. Tối đa: {formatVnd(cap)}
               </p>
+            ) : (
+              !isValidAmount && (
+                <p className='text-destructive text-xs'>
+                  Số tiền không hợp lệ. Tối đa: {formatVnd(cap)}
+                </p>
+              )
             )}
           </div>
 
