@@ -6,6 +6,31 @@ import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 import Image from 'next/image';
 
+/**
+ * English on top, Vietnamese below — the same two-line layout as the Footers
+ * list, so every content column shows both languages at a glance (v3 #022).
+ */
+function Bilingual({
+  en,
+  vi,
+  className,
+  mono
+}: {
+  en?: string | null;
+  vi?: string | null;
+  className?: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className={`flex flex-col text-xs ${mono ? 'font-mono' : ''} ${className ?? ''}`}>
+      <span className='truncate'>
+        {en || <span className='text-muted-foreground'>Chưa có tiếng Anh</span>}
+      </span>
+      <span className='text-muted-foreground truncate'>{vi || '—'}</span>
+    </div>
+  );
+}
+
 export const columns: ColumnDef<MiniTag>[] = [
   {
     id: 'image',
@@ -31,14 +56,12 @@ export const columns: ColumnDef<MiniTag>[] = [
     header: ({ column }: { column: Column<MiniTag, unknown> }) => (
       <DataTableColumnHeader column={column} title='Tiêu đề' />
     ),
-    // Vietnamese on top, English below — shows which tags still lack English (#059).
     cell: ({ row }) => (
-      <div className='flex max-w-[240px] flex-col'>
-        <span className='truncate font-medium'>{row.original.title}</span>
-        <span className='text-muted-foreground truncate text-xs'>
-          {row.original.titleEn || 'Chưa có tiếng Anh'}
-        </span>
-      </div>
+      <Bilingual
+        en={row.original.titleEn}
+        vi={row.original.title}
+        className='max-w-[240px] text-sm [&>span:first-child]:font-medium'
+      />
     ),
     meta: {
       label: 'Tiêu đề',
@@ -53,9 +76,11 @@ export const columns: ColumnDef<MiniTag>[] = [
     accessorKey: 'description',
     header: 'Mô tả',
     cell: ({ row }) => (
-      <span className='text-muted-foreground max-w-[250px] truncate text-xs'>
-        {row.original.description || '—'}
-      </span>
+      <Bilingual
+        en={row.original.descriptionEn}
+        vi={row.original.description}
+        className='max-w-[250px]'
+      />
     ),
     enableSorting: false
   },
@@ -63,7 +88,9 @@ export const columns: ColumnDef<MiniTag>[] = [
     id: 'contentButton',
     accessorKey: 'contentButton',
     header: 'Nút bấm',
-    cell: ({ row }) => <span className='text-xs'>{row.original.contentButton || '—'}</span>,
+    cell: ({ row }) => (
+      <Bilingual en={row.original.contentButtonEn} vi={row.original.contentButton} />
+    ),
     enableSorting: false
   },
   {
@@ -71,9 +98,12 @@ export const columns: ColumnDef<MiniTag>[] = [
     accessorKey: 'linkUrl',
     header: 'Link URL',
     cell: ({ row }) => (
-      <span className='max-w-[200px] truncate font-mono text-xs'>
-        {row.original.linkUrl || '—'}
-      </span>
+      <Bilingual
+        en={row.original.linkUrlEn}
+        vi={row.original.linkUrl}
+        className='max-w-[200px]'
+        mono
+      />
     ),
     enableSorting: false
   },
