@@ -384,7 +384,10 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
 
   // Money after refunds, from the API (#009); the original sits struck through.
   const after = order.afterRefund;
-  const paidVnd = Number(order.vndPrice ?? 0) + Number(order.walletSpentVndAmount ?? 0);
+  // Cash + eXU. `payableVndPrice` is the cash on every kind of order; a
+  // topup keeps its full price in `vndPrice`, which double-counted eXU.
+  const paidVnd =
+    Number(order.payableVndPrice ?? order.vndPrice ?? 0) + Number(order.walletSpentVndAmount ?? 0);
   const canRefund = order.status === 'paid';
   const canResendEmail = order.status === 'paid';
   const hasWalletPayment =
@@ -395,7 +398,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
       <RefundOrderModal
         orderId={order.id}
         orderNumber={order.orderNumber}
-        payableVndPrice={order.vndPrice}
+        payableVndPrice={Number(order.payableVndPrice ?? order.vndPrice ?? 0)}
         walletSpentVndAmount={order.walletSpentVndAmount}
         refundedAmountVnd={order.refundedAmountVnd}
         items={order.items}

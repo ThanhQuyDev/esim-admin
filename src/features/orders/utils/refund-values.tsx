@@ -8,10 +8,13 @@ import { cn } from '@/lib/utils';
 export function orderValuesAfterRefund(order: {
   totalAmount: number | string;
   vndPrice: number | string;
+  payableVndPrice?: number | string | null;
   walletSpentVndAmount?: number | string | null;
   refundedAmountVnd?: number | string | null;
 }) {
-  const originalVnd = Number(order.vndPrice ?? 0) + Number(order.walletSpentVndAmount ?? 0);
+  // Cash (`payableVndPrice`, the same on every kind of order) + eXU.
+  const originalVnd =
+    Number(order.payableVndPrice ?? order.vndPrice ?? 0) + Number(order.walletSpentVndAmount ?? 0);
   const refunded = Number(order.refundedAmountVnd ?? 0);
   const vnd = Math.max(originalVnd - refunded, 0);
   const originalTotal = Number(order.totalAmount ?? 0);

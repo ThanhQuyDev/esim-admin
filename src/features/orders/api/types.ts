@@ -52,6 +52,8 @@ export type Order = {
   vndCostPrice: number;
   couponDiscountVndAmount: number;
   walletSpentVndAmount: number | null;
+  /** Cash paid — the same meaning on every kind of order. */
+  payableVndPrice?: number | null;
   refundedAmountVnd?: number | null;
   cashbackAmountVnd: number | null;
   hasInvoice?: boolean;
