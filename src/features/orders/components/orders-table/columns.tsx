@@ -11,6 +11,7 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
   pending: 'outline',
   confirmed: 'default',
   processing: 'secondary',
+  paid: 'default',
   completed: 'default',
   cancelled: 'destructive',
   refunded: 'destructive'
@@ -86,9 +87,12 @@ export const columns: ColumnDef<Order>[] = [
     id: 'status',
     accessorKey: 'status',
     header: 'Trạng thái',
-    cell: ({ row }) => (
-      <Badge variant={statusVariant[row.original.status] ?? 'outline'}>{row.original.status}</Badge>
-    ),
+    // A topup that went through is stored as "completed"; it reads "paid"
+    // like any eSIM order that went through (#022, test round 4).
+    cell: ({ row }) => {
+      const status = row.original.status === 'completed' ? 'paid' : row.original.status;
+      return <Badge variant={statusVariant[status] ?? 'default'}>{status}</Badge>;
+    },
     enableSorting: false
   },
   {
