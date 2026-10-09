@@ -42,6 +42,11 @@ function CopyIdButton({ value }: { value: string }) {
   );
 }
 
+/** "china-20gb-30days-fixed-ga" → "china-20gb-…" — enough to recognise it. */
+export function shortCode(code: string, keep = 12): string {
+  return code.length > keep ? `${code.slice(0, keep)}…` : code;
+}
+
 export type PlanColumnOptions = {
   /** APN values in use, fetched at runtime (#010). */
   apnOptions?: { value: string; label: string }[];
@@ -201,6 +206,20 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
             <span className='font-mono'>#{row.original.id}</span>
             <CopyIdButton value={String(row.original.id)} />
           </div>
+          {/* Supplier package code, to paste into a blog post's plan list
+            (#034, test round 4). Long codes are cut to their start; the copy
+            button and the tooltip carry the full code. */}
+          {row.original.providerPlanId && (
+            <div
+              className='text-muted-foreground flex items-center gap-1 text-xs'
+              data-testid='plan-provider-code'
+            >
+              <span title={row.original.providerPlanId}>
+                Mã NCC: <span className='font-mono'>{shortCode(row.original.providerPlanId)}</span>
+              </span>
+              <CopyIdButton value={row.original.providerPlanId} />
+            </div>
+          )}
         </div>
       ),
       meta: {
