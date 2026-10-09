@@ -10,7 +10,7 @@ import type { Plan } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
-import { formatDataSize } from '@/lib/format';
+import { formatPlanData } from '@/lib/format';
 import { PLAN_TAG_OPTIONS } from '../../schemas/plan';
 import { planDisplayName } from '../../utils/plan-label';
 
@@ -231,8 +231,7 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       accessorKey: 'dataMb',
       header: 'Dữ liệu',
       cell: ({ row }) => {
-        const mb = row.original.dataMb;
-        return <span>{formatDataSize(mb)}</span>;
+        return <span>{formatPlanData(row.original)}</span>;
       },
       enableSorting: false,
       enableColumnFilter: true,

@@ -25,6 +25,8 @@ export type Plan = {
   retailPrice: string;
   currency: string;
   type: string;
+  /** Speed after the high-speed quota, or the cap of a speed-only plan ("10Mbps"). */
+  fupSpeed?: string | null;
   topUp: boolean;
   apn: string | null;
   /**

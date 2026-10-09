@@ -90,6 +90,17 @@ export function formatDataSize(mb: number): string {
   return `${mb} MB`;
 }
 
+/**
+ * The "Dữ liệu" (data) column of a plan (#002, test round 4): the high-speed
+ * allowance when there is one ("1 GB" even on a 1GB/day-then-5Mbps unlimited
+ * plan); otherwise "Không giới hạn", with the speed when the plan is only
+ * unlimited at a capped speed ("Không giới hạn 10Mbps").
+ */
+export function formatPlanData(plan: { dataMb: number; fupSpeed?: string | null }): string {
+  if (plan.dataMb > 0) return formatDataSize(plan.dataMb);
+  return plan.fupSpeed ? `Không giới hạn ${plan.fupSpeed}` : 'Không giới hạn';
+}
+
 export function formatVnd(value: number | undefined): string {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
