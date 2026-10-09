@@ -33,6 +33,18 @@ import { formatVnd } from '@/lib/format';
 import { adminCreateLinkForPartnerMutation } from '../api/mutations';
 import { partnerPerformanceQueryOptions } from '../api/queries';
 
+/** The path part of what the admin pasted: a full esim.vn link or a path. */
+function landingPath(input: string): string | undefined {
+  const trimmed = input.trim();
+  if (!trimmed) return undefined;
+  try {
+    const url = new URL(trimmed, 'https://esim.vn');
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  }
+}
+
 /** A refund rate worth an admin's eye rather than a number to scroll past. */
 function RefundRate({ percent }: { percent: number }) {
   if (percent <= 0) return <span className='text-muted-foreground'>0%</span>;
@@ -45,6 +57,9 @@ export function PartnerPerformanceCard({ partnerId }: { partnerId: number }) {
   const { data, isLoading, refetch } = useQuery(partnerPerformanceQueryOptions(partnerId));
   const [code, setCode] = useState('');
   const [label, setLabel] = useState('');
+  // Product page the link opens (#014, test round 4) — it only ever went to
+  // the home page. A full esim.vn link or a path; only the path is stored.
+  const [landing, setLanding] = useState('');
 
   const createLink = useMutation({
     ...adminCreateLinkForPartnerMutation,
@@ -52,6 +67,7 @@ export function PartnerPerformanceCard({ partnerId }: { partnerId: number }) {
       toast.success('Đã tạo link tiếp thị cho đối tác.');
       setCode('');
       setLabel('');
+      setLanding('');
       refetch();
     },
     onError: (e: Error) => toast.error(e.message || 'Tạo link thất bại')
@@ -125,6 +141,13 @@ export function PartnerPerformanceCard({ partnerId }: { partnerId: number }) {
             value={label}
             onChange={(e) => setLabel(e.target.value)}
           />
+          <Input
+            className='min-w-[260px] flex-1'
+            placeholder='Đường dẫn sản phẩm (VD: https://esim.vn/esim-nhat-ban) — để trống: trang chủ'
+            value={landing}
+            onChange={(e) => setLanding(e.target.value)}
+            aria-label='Đường dẫn sản phẩm'
+          />
           <Button
             size='sm'
             isLoading={createLink.isPending}
@@ -133,7 +156,8 @@ export function PartnerPerformanceCard({ partnerId }: { partnerId: number }) {
                 id: partnerId,
                 data: {
                   ...(code.trim() && { code: code.trim() }),
-                  ...(label.trim() && { label: label.trim() })
+                  ...(label.trim() && { label: label.trim() }),
+                  ...(landingPath(landing) && { targetPath: landingPath(landing) })
                 }
               })
             }

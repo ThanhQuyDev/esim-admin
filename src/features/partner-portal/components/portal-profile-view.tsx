@@ -61,6 +61,48 @@ const EMPTY_CHANNELS: Channels = {
   other: ''
 };
 
+const CHANNEL_KEYS = ['youtube', 'tiktok', 'website', 'facebook', 'other'] as const;
+
+/** Labels of the registration form's "Kênh bán chính" choices without a slot here. */
+const OTHER_CHANNEL_LABELS: Record<string, string> = {
+  instagram: 'Instagram',
+  store: 'Cửa hàng hoặc điểm bán',
+  travel: 'Công ty du lịch / đại lý vé',
+  other: 'Kênh khác'
+};
+
+/**
+ * The link boxes, filled from `channelInfo` (#014, test round 4). The
+ * registration form saves its answer as `{ model, channel, url, followers }`,
+ * not under these boxes' keys — so a newly approved partner saw every box
+ * empty, while the whole blob was spread into the state and its `model` /
+ * `channel` values made the profile read "100% complete". The registered
+ * link now goes into the box of its channel (or "other"), and only the five
+ * boxes count towards completeness.
+ */
+function channelsFromInfo(info: Record<string, unknown> | null | undefined): Channels {
+  const channels: Channels = { ...EMPTY_CHANNELS };
+  const data = info ?? {};
+  for (const key of CHANNEL_KEYS) {
+    if (typeof data[key] === 'string') channels[key] = data[key] as string;
+  }
+  const registered = typeof data.channel === 'string' ? data.channel : '';
+  const url = typeof data.url === 'string' ? data.url.trim() : '';
+  if (registered) {
+    const slot =
+      (CHANNEL_KEYS as readonly string[]).includes(registered) && registered !== 'other'
+        ? (registered as keyof Channels)
+        : 'other';
+    if (!channels[slot]) {
+      channels[slot] =
+        slot === 'other'
+          ? [OTHER_CHANNEL_LABELS[registered] ?? registered, url].filter(Boolean).join(': ')
+          : url;
+    }
+  }
+  return channels;
+}
+
 function initialsOf(name: string | undefined): string {
   const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return 'ĐT';
@@ -107,7 +149,7 @@ export function PortalProfileView() {
       taxCode: me.taxCode ?? '',
       businessAddress: me.businessAddress ?? ''
     });
-    setChannels({ ...EMPTY_CHANNELS, ...((me.channelInfo ?? {}) as Partial<Channels>) });
+    setChannels(channelsFromInfo(me.channelInfo));
     setBank({
       bankName: me.bankName ?? '',
       bankAccountNumber: me.bankAccountNumber ?? '',
@@ -181,7 +223,7 @@ export function PortalProfileView() {
     updatePassword.mutate({ oldPassword: passwords.current, password: passwords.next });
   };
 
-  const filledChannels = Object.values(channels).filter(Boolean).length;
+  const filledChannels = CHANNEL_KEYS.filter((key) => channels[key].trim()).length;
   const hasBank = Boolean(bank.bankAccountNumber);
   const steps = [
     { label: 'Thông tin liên hệ', done: Boolean(basic.contactName && basic.contactPhone) },
@@ -310,7 +352,11 @@ export function PortalProfileView() {
               <CardFooter>
                 <Button
                   isLoading={save.isPending}
-                  onClick={() => submit({ channelInfo: channels })}
+                  // Merged into what is stored, so the registration answers
+                  // (model, channel, followers) are not wiped by a save (#014).
+                  onClick={() =>
+                    submit({ channelInfo: { ...(me?.channelInfo ?? {}), ...channels } })
+                  }
                 >
                   Lưu thay đổi
                 </Button>

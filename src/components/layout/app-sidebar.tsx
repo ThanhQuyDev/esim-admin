@@ -67,12 +67,16 @@ export default function AppSidebar() {
     enabled: IS_PARTNER_PORTAL
   });
   const portalGroups = React.useMemo(() => {
-    if (!IS_PARTNER_PORTAL || !partner) return portalNavGroups;
+    if (!IS_PARTNER_PORTAL) return portalNavGroups;
 
     // A marketing partner never buys stock (#013); a distribution partner only
-    // gets the affiliate screens once esim.vn grants them (#048).
-    const hidden =
-      partner.partnerType === 'kol'
+    // gets the affiliate screens once esim.vn grants them (#048). Until we know
+    // which kind is signed in (the first moments after F5), only the screens
+    // both kinds have are shown — showing everything flashed the distribution
+    // menu at marketing partners (#014, test round 4).
+    const hidden = !partner
+      ? [...DISTRIBUTION_ONLY_PORTAL_URLS, ...AFFILIATE_ONLY_PORTAL_URLS]
+      : partner.partnerType === 'kol'
         ? DISTRIBUTION_ONLY_PORTAL_URLS
         : partner.canAffiliate
           ? []
