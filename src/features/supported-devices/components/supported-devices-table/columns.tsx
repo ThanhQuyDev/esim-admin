@@ -53,8 +53,8 @@ export function buildColumns(
       enableColumnFilter: true,
       meta: {
         label: 'Nhà sản xuất',
-        // Single-select: the API matches one exact brand name (#052).
-        variant: 'select' as const,
+        // Pick one or several brands (#037, test round 4).
+        variant: 'multiSelect' as const,
         options: manufacturerOptions
       }
     },

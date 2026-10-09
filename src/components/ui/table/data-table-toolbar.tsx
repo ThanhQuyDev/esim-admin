@@ -24,9 +24,14 @@ export function DataTableToolbar<TData>({
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
+  // Keyed on the column definitions too: the table instance never changes, so
+  // with `[table]` alone options that load later (brands, APNs…) never reached
+  // the filter box — it stayed empty (#037, test round 4).
+  const columnDefs = table.options.columns;
   const columns = React.useMemo(
     () => table.getAllColumns().filter((column) => column.getCanFilter()),
-    [table]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [table, columnDefs]
   );
 
   const onReset = React.useCallback(() => {

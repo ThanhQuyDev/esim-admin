@@ -40,8 +40,8 @@ export function SupportedDevicesTable() {
     limit: params.perPage,
     ...(params.name && { search: params.name }),
     ...(params.type && params.type.length > 0 && { type: params.type.join(',') }),
-    // The API matches one exact brand, so only the first selection is sent.
-    ...(params.manufacturer?.[0] && { manufacturer: params.manufacturer[0] }),
+    // One or several brands, comma-separated (#037, test round 4).
+    ...(params.manufacturer?.length && { manufacturer: params.manufacturer.join(',') }),
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
 
