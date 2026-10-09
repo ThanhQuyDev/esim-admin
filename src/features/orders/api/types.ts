@@ -317,7 +317,9 @@ export type SubmitManualOrderPayload = {
   email: string;
   /** Used only when the email has no account yet — the backend creates one (#041). */
   customerName?: string;
-  packageCode: string;
-  slug: string;
-  quantity: number;
+  packageCode?: string;
+  slug?: string;
+  quantity?: number;
+  /** Several plans at once, each with its quantity (#031). */
+  items?: { packageCode: string; slug: string; quantity: number }[];
 };

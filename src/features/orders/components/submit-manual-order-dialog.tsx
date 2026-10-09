@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { submitManualOrderMutation } from '../api/mutations';
 import { submitManualOrderSchema, type SubmitManualOrderFormValues } from '../schemas/admin';
 import type { SubmitManualOrderPayload } from '../api/types';
-import { PlanPicker, type PickedPlan } from './plan-picker';
+import { ManualOrderLines, emptyManualOrderLine, type ManualOrderLine } from './manual-order-lines';
 
 interface SubmitManualOrderDialogProps {
   open: boolean;
@@ -20,7 +20,8 @@ interface SubmitManualOrderDialogProps {
 
 export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrderDialogProps) {
   const router = useRouter();
-  const [plan, setPlan] = useState<PickedPlan | null>(null);
+  const [lines, setLines] = useState<ManualOrderLine[]>(() => [emptyManualOrderLine()]);
+  const [triedSubmit, setTriedSubmit] = useState(false);
 
   const mutation = useMutation({
     ...submitManualOrderMutation,
@@ -49,15 +50,20 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
     } as SubmitManualOrderFormValues,
     validators: { onSubmit: submitManualOrderSchema },
     onSubmit: async ({ value }) => {
+      setTriedSubmit(true);
+      const ready = lines.every((line) => line.plan && Number(line.quantity) >= 1);
+      if (!ready) return;
       const customerName = value.customerName.trim();
       const payload: SubmitManualOrderPayload = {
         email: value.email.trim(),
         // Omitted when blank, so the backend leaves a new account nameless
         // rather than storing an empty string (#041).
         ...(customerName && { customerName }),
-        packageCode: value.packageCode.trim(),
-        slug: value.slug.trim(),
-        quantity: Number(value.quantity)
+        items: lines.map((line) => ({
+          packageCode: line.plan!.packageCode,
+          slug: line.plan!.slug,
+          quantity: Number(line.quantity)
+        }))
       };
       await mutation.mutateAsync(payload);
     }
@@ -66,20 +72,10 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
   useEffect(() => {
     if (!open) {
       form.reset();
-      setPlan(null);
+      setLines([emptyManualOrderLine()]);
+      setTriedSubmit(false);
     }
   }, [open, form]);
-
-  /**
-   * The picker owns both identifiers, so they are written together (#040). The
-   * backend rejects an order whose slug and packageCode disagree, and typing
-   * them into two boxes was the only way to make that happen.
-   */
-  const handlePlanChange = (picked: PickedPlan | null) => {
-    setPlan(picked);
-    form.setFieldValue('slug', picked?.slug ?? '');
-    form.setFieldValue('packageCode', picked?.packageCode ?? '');
-  };
 
   const { FormTextField } = useFormFields<SubmitManualOrderFormValues>();
 
@@ -137,25 +133,8 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
               description='Chỉ dùng khi email chưa có tài khoản'
             />
           </div>
-          <PlanPicker value={plan} onChange={handlePlanChange} required />
-          {/* `slug` and `packageCode` are no longer inputs, so their validation
-              errors have nowhere to appear — surface them on the picker, or a
-              failed submit looks like nothing happened. */}
-          <form.Subscribe selector={(state) => state.submissionAttempts}>
-            {(attempts) =>
-              !plan && attempts > 0 ? (
-                <p className='text-destructive text-xs' data-testid='plan-picker-error'>
-                  Hãy chọn một gói eSIM.
-                </p>
-              ) : (
-                <p className='text-muted-foreground text-xs'>
-                  Tìm theo tên gói, điểm đến hoặc khu vực. Chọn một gói để hệ thống tự điền slug và
-                  package code khớp nhau — không cần nhập tay nữa.
-                </p>
-              )
-            }
-          </form.Subscribe>
-          <FormTextField name='quantity' label='Số lượng' required type='number' placeholder='1' />
+          {/* One row per kind of eSIM, each with its filters and quantity (#031). */}
+          <ManualOrderLines lines={lines} onChange={setLines} showErrors={triedSubmit} />
         </form.Form>
       </form.AppForm>
     </FormDialog>

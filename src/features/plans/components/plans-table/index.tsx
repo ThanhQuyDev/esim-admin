@@ -16,34 +16,12 @@ import { exportPlansExcel } from '../../api/service';
 import { buildPlanApiFilters } from '../../utils/plan-filters';
 import { buildColumns, columns } from './columns';
 import { BatchDiscountDialog } from '../batch-discount-dialog';
+import { locationKeywords, locationLabel } from '../../utils/location-options';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
 /** Enough to cover the whole catalogue; both lists are small and cached. */
 const OPTIONS_LIMIT = 500;
-
-type NamedLocation = { name: string; title?: string | null; titleVi?: string | null };
-
-/** "Trung Quốc (China)" — the Vietnamese name, with the stored name beside it. */
-function locationLabel(location: NamedLocation): string {
-  const vi = location.titleVi?.trim();
-  return vi && vi !== location.name ? `${vi} (${location.name})` : location.name;
-}
-
-/** Vietnamese without its marks too, so "trung quoc" finds "Trung Quốc". */
-function locationKeywords(location: NamedLocation): string[] {
-  const words = [location.titleVi, location.title, location.name].filter(
-    (word): word is string => !!word && !!word.trim()
-  );
-  const plain = words.map((word) =>
-    word
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/Đ/g, 'D')
-  );
-  return [...new Set([...words, ...plain])];
-}
 
 export function PlansTable() {
   const [params] = useQueryStates({

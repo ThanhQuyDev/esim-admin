@@ -45,12 +45,17 @@ export function PlanPicker({
   value,
   onChange,
   label = 'Gói eSIM',
-  required
+  required,
+  filters: extraFilters,
+  testId = 'plan-picker'
 }: {
   value: PickedPlan | null;
   onChange: (plan: PickedPlan | null) => void;
   label?: string;
   required?: boolean;
+  /** Narrow the results — country, days, data, type, topup, code (#031). */
+  filters?: Record<string, unknown>;
+  testId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState('');
@@ -62,10 +67,15 @@ export function PlanPicker({
       limit: RESULT_LIMIT,
       // Only plans that can actually be sold: ordering a disabled plan on a
       // customer's behalf would fail at provisioning, after the order exists.
-      filters: JSON.stringify(search ? { search, isActive: true } : { isActive: true })
+      filters: JSON.stringify({
+        ...(extraFilters ?? {}),
+        ...(search ? { search } : {}),
+        isActive: true
+      })
     }),
     // The list is only needed while the popover is open.
-    enabled: open
+    // Re-runs as the filters change, so the list is ready when it opens.
+    enabled: open || !!extraFilters
   });
 
   const plans = data?.data ?? [];
@@ -85,7 +95,7 @@ export function PlanPicker({
             role='combobox'
             aria-expanded={open}
             aria-controls='plan-picker-list'
-            data-testid='plan-picker-trigger'
+            data-testid={`${testId}-trigger`}
             className='h-auto w-full justify-between py-2 text-left font-normal'
           >
             <span className={cn('truncate', !value && 'text-muted-foreground')}>

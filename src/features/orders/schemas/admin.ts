@@ -25,14 +25,11 @@ export const submitManualOrderSchema = z.object({
   // Only used when the email has no account yet (#041). Not `.optional()`: the
   // form always supplies a string, and an empty one is a valid "no name".
   customerName: z.string().max(255, 'Tên tối đa 255 ký tự'),
-  packageCode: z.string().min(1, 'Package code là bắt buộc'),
-  slug: z.string().min(1, 'Slug là bắt buộc'),
-  quantity: numericString.pipe(
-    z
-      .number({ message: 'Số lượng là bắt buộc' })
-      .int('Số lượng phải là số nguyên')
-      .min(1, 'Số lượng phải >= 1')
-  )
+  // The plans and quantities live in their own rows now (#031), checked by
+  // the dialog itself.
+  packageCode: z.string(),
+  slug: z.string(),
+  quantity: z.union([z.string(), z.number()])
 });
 
 // Form input type — defaultValues / FormTextField produce string|number for numeric fields.
