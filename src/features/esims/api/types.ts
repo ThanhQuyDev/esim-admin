@@ -13,6 +13,11 @@ export type Esim = {
   apnValue: string;
   isRoaming: boolean;
   status: string;
+  /**
+   * What the list shows and filters by — sold / active / expired… worked out by
+   * the API from activation and expiry (#024, test round 4).
+   */
+  lifecycleStatus?: string;
   dataUsed: string;
   dataTotal: string;
   expiresAt: string | null;
@@ -69,6 +74,9 @@ export type EsimPlan = {
   /** Call minutes / SMS included; both null on a data-only plan (#008). */
   call: number | null;
   sms: number | null;
+  /** Domestic eSIM: never expires ("Vô thời hạn", #024). */
+  isDomesticEsim?: boolean;
+  isLocalInventory?: boolean;
   costPrice: number;
   price: number;
   retailPrice: number;

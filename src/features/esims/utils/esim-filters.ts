@@ -32,8 +32,11 @@ export function buildEsimApiFilters(params: EsimFilterParams): Record<string, un
   if (params.planName) filters.planName = params.planName;
   if (params.packageType?.length) filters.planType = params.packageType;
 
-  // The backend takes ONE status; picking several is the same as picking none.
-  if (params.status?.length === 1) filters.status = params.status[0];
+  // Every status picked, matched against the lifecycle status the list shows
+  // (#024, test round 4) — several used to be dropped altogether.
+  if (params.status?.length) {
+    filters.status = params.status.length === 1 ? params.status[0] : params.status;
+  }
   // Without an explicit status the list hides refunded eSIMs, which is wrong for
   // an admin screen — #019 made refunded a state they have to be able to see.
   filters.includeAll = true;

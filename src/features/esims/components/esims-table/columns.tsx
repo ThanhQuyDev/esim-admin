@@ -124,11 +124,12 @@ export const columns: ColumnDef<Esim>[] = [
     id: 'esimStatus',
     accessorKey: 'status',
     header: 'Trạng thái',
-    cell: ({ row }) => (
-      <Badge variant={esimStatusVariant(row.original.status)}>
-        {esimStatusLabel(row.original.status)}
-      </Badge>
-    ),
+    // The lifecycle status (#024): "Đang dùng" / "Hết hạn" follow from the
+    // activation and expiry dates, which the stored status never recorded.
+    cell: ({ row }) => {
+      const status = row.original.lifecycleStatus ?? row.original.status;
+      return <Badge variant={esimStatusVariant(status)}>{esimStatusLabel(status)}</Badge>;
+    },
     enableSorting: false,
     enableColumnFilter: true,
     meta: {
@@ -257,6 +258,8 @@ export const columns: ColumnDef<Esim>[] = [
     ),
     cell: ({ row }) => {
       const date = row.original.expiresAt;
+      // A domestic eSIM has no end date (#024, test round 4).
+      if (row.original.plan?.isDomesticEsim) return 'Vô thời hạn';
       if (!date) return '—';
       // Unsold stock that has already expired is dead: delivery now refuses it
       // (#021), so it has to be visible instead of sitting in the list looking

@@ -45,7 +45,9 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
         <CardHeader>
           <CardTitle className='flex items-center gap-3'>
             Thông tin eSIM
-            <Badge variant={esimStatusVariant(esim.status)}>{esimStatusLabel(esim.status)}</Badge>
+            <Badge variant={esimStatusVariant(esim.lifecycleStatus ?? esim.status)}>
+              {esimStatusLabel(esim.lifecycleStatus ?? esim.status)}
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className='grid gap-4 md:grid-cols-2'>
