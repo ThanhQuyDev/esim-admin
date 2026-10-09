@@ -171,7 +171,9 @@ export function ChatMessageBubble({
         {message.message && (
           <p
             className={cn(
-              'mt-1 text-[0.875rem] sm:text-[0.95rem]',
+              // Keep the line breaks typed with Shift+Enter (#005, test round 4):
+              // they were stored, but HTML collapsed them into one line.
+              'mt-1 text-[0.875rem] break-words whitespace-pre-wrap sm:text-[0.95rem]',
               isBot
                 ? 'text-amber-900 dark:text-amber-100'
                 : isOwn

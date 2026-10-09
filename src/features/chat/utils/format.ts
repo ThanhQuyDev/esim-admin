@@ -24,13 +24,14 @@ export function formatDistanceToNow(isoDate: string): string {
 }
 
 /**
- * Format an ISO 8601 date string to a time string.
- * e.g. "10:02 AM"
+ * A message's time WITH its date, "14:05 10/10/2026" — the hour alone made it
+ * impossible to tell an old message from today's (#005, test round 4).
  */
 export function formatMessageTime(isoDate: string): string {
   const date = new Date(isoDate);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${pad(date.getHours())}:${pad(date.getMinutes())} ` +
+    `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`
+  );
 }
