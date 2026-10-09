@@ -687,7 +687,9 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                           href={`/dashboard/orders/${order.topup.targetEsim.originalOrderId}`}
                           className='text-primary underline underline-offset-4'
                         >
-                          #{order.topup.targetEsim.originalOrderId}
+                          {/* The order number staff know it by, not the id (#021). */}
+                          {order.topup.targetEsim.originalOrderNumber ??
+                            `#${order.topup.targetEsim.originalOrderId}`}
                         </Link>
                       }
                     />

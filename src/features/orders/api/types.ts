@@ -170,6 +170,8 @@ export type TopupTargetEsim = {
   expiresAt: string | null;
   activatedAt: string | null;
   originalOrderId: number | null;
+  /** Shown and linked instead of the id (#021). */
+  originalOrderNumber?: string | null;
 };
 
 /** A topup order in full; null on an ordinary order (#015). */
