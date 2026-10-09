@@ -68,15 +68,18 @@ export default function SignInViewPage() {
 
   return (
     <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden md:grid lg:max-w-none lg:grid-cols-2 lg:px-0'>
-      <Link
-        href='/auth/sign-up'
-        className={cn(
-          buttonVariants({ variant: 'ghost' }),
-          'absolute top-4 right-4 md:top-8 md:right-8'
-        )}
-      >
-        Đăng ký
-      </Link>
+      {/* Partner portal only — admin accounts are never self-made (#016). */}
+      {content.signUpUrl && (
+        <Link
+          href={content.signUpUrl}
+          className={cn(
+            buttonVariants({ variant: 'ghost' }),
+            'absolute top-4 right-4 md:top-8 md:right-8'
+          )}
+        >
+          Đăng ký
+        </Link>
+      )}
       <AuthBrandPanel />
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-sm flex-col justify-center space-y-6'>
@@ -135,15 +138,28 @@ export default function SignInViewPage() {
                   </field.FieldSet>
                 )}
               />
+              <div className='flex justify-end'>
+                <Link
+                  href='/auth/forgot-password'
+                  className='text-muted-foreground hover:text-primary text-sm underline-offset-4 hover:underline'
+                >
+                  Quên mật khẩu?
+                </Link>
+              </div>
               <form.SubmitButton className='w-full'>Đăng nhập</form.SubmitButton>
             </form.Form>
           </form.AppForm>
-          <p className='text-muted-foreground text-center text-sm'>
-            Chưa có tài khoản?{' '}
-            <Link href='/auth/sign-up' className='hover:text-primary underline underline-offset-4'>
-              Đăng ký
-            </Link>
-          </p>
+          {content.signUpUrl && (
+            <p className='text-muted-foreground text-center text-sm'>
+              Chưa có tài khoản?{' '}
+              <Link
+                href={content.signUpUrl}
+                className='hover:text-primary underline underline-offset-4'
+              >
+                Đăng ký
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

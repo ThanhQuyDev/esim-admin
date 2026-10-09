@@ -111,6 +111,7 @@ export function AuthPageSettingsForm({ setting }: { setting: AuthPageSetting }) 
   const [quoteAuthor, setQuoteAuthor] = useState(setting.quoteAuthor ?? '');
   const [heading, setHeading] = useState(setting.heading ?? '');
   const [subheading, setSubheading] = useState(setting.subheading ?? '');
+  const [signUpUrl, setSignUpUrl] = useState(setting.signUpUrl ?? '');
 
   const mutation = useMutation({
     ...updateAuthPageSettingMutation,
@@ -128,7 +129,8 @@ export function AuthPageSettingsForm({ setting }: { setting: AuthPageSetting }) 
         quote: quote.trim() || null,
         quoteAuthor: quoteAuthor.trim() || null,
         heading: heading.trim() || null,
-        subheading: subheading.trim() || null
+        subheading: subheading.trim() || null,
+        ...(setting.mode === 'partner' && { signUpUrl: signUpUrl.trim() || null })
       }
     });
 
@@ -161,15 +163,30 @@ export function AuthPageSettingsForm({ setting }: { setting: AuthPageSetting }) 
           />
         </div>
 
-        <div className='space-y-2'>
-          <Label htmlFor={`logoText-${setting.mode}`}>Chữ cạnh logo</Label>
-          <Input
-            id={`logoText-${setting.mode}`}
-            value={logoText}
-            onChange={(event) => setLogoText(event.target.value)}
-            placeholder='VD: esim.vn — Cổng đối tác'
-            maxLength={120}
-          />
+        <div className={isPartner ? 'grid gap-4 lg:grid-cols-2' : ''}>
+          <div className='space-y-2'>
+            <Label htmlFor={`logoText-${setting.mode}`}>Chữ cạnh logo</Label>
+            <Input
+              id={`logoText-${setting.mode}`}
+              value={logoText}
+              onChange={(event) => setLogoText(event.target.value)}
+              placeholder='Để trống: không hiện chữ cạnh logo'
+              maxLength={120}
+            />
+          </div>
+          {/* Partner portal only (#016): the admin console has no sign-up. */}
+          {isPartner && (
+            <div className='space-y-2'>
+              <Label htmlFor='signUpUrl-partner'>Link đăng ký tài khoản</Label>
+              <Input
+                id='signUpUrl-partner'
+                value={signUpUrl}
+                onChange={(event) => setSignUpUrl(event.target.value)}
+                placeholder='Để trống: trang đăng ký đối tác /register/partner'
+                maxLength={500}
+              />
+            </div>
+          )}
         </div>
 
         <div className='grid gap-4 lg:grid-cols-2'>

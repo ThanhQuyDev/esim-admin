@@ -9,7 +9,7 @@ import {
 } from '@/config/app-mode';
 
 const protectedRoutes = ['/dashboard'];
-const authRoutes = ['/auth/sign-in', '/auth/sign-up'];
+const authRoutes = ['/auth/sign-in', '/auth/sign-up', '/auth/forgot-password'];
 
 /**
  * The other deployment's routes are 404'd rather than redirected: on this

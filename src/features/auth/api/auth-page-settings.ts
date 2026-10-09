@@ -17,6 +17,11 @@ export type AuthPageContent = {
   quoteAuthor: string;
   heading: string;
   subheading: string;
+  /**
+   * Where "Đăng ký" leads (#016, test round 4): the partner application form
+   * on the partner portal; null on the admin console, which has no sign-up.
+   */
+  signUpUrl: string | null;
 };
 
 const DEFAULTS: Record<AppMode, AuthPageContent> = {
@@ -27,7 +32,8 @@ const DEFAULTS: Record<AppMode, AuthPageContent> = {
     quote: 'Quản lý gói cước, đơn hàng và eSIM của toàn hệ thống tại một nơi.',
     quoteAuthor: 'esim.vn',
     heading: 'Đăng nhập quản trị',
-    subheading: 'Nhập email và mật khẩu quản trị để vào hệ thống.'
+    subheading: 'Nhập email và mật khẩu quản trị để vào hệ thống.',
+    signUpUrl: null
   },
   partner: {
     logoUrl: null,
@@ -36,7 +42,10 @@ const DEFAULTS: Record<AppMode, AuthPageContent> = {
     quote: 'Bán eSIM cho khách của bạn, theo dõi hoa hồng và đối soát minh bạch theo từng đơn.',
     quoteAuthor: 'esim.vn',
     heading: 'Đăng nhập đối tác',
-    subheading: 'Nhập email và mật khẩu bạn đã đăng ký để vào cổng đối tác.'
+    subheading: 'Nhập email và mật khẩu bạn đã đăng ký để vào cổng đối tác.',
+    // The application form, which creates a partner for an admin to approve —
+    // /auth/sign-up only made a plain customer account (#016).
+    signUpUrl: '/register/partner'
   }
 };
 
@@ -53,12 +62,18 @@ export function mergeAuthPageContent(
   if (!setting) return base;
   return {
     logoUrl: setting.logoUrl?.trim() || base.logoUrl,
-    logoText: setting.logoText?.trim() || base.logoText,
+    // Left empty in the CMS = no text beside the logo (#016, test round 4);
+    // falling back to the default printed "esim.vn" next to the esim.vn logo.
+    // With no logo image either, the default text stays so the corner is not
+    // left with a bare symbol.
+    logoText: setting.logoText?.trim() || (setting.logoUrl?.trim() ? '' : base.logoText),
     coverImageUrl: setting.coverImageUrl?.trim() || base.coverImageUrl,
     quote: setting.quote?.trim() || base.quote,
     quoteAuthor: setting.quoteAuthor?.trim() || base.quoteAuthor,
     heading: setting.heading?.trim() || base.heading,
-    subheading: setting.subheading?.trim() || base.subheading
+    subheading: setting.subheading?.trim() || base.subheading,
+    // The admin console never offers a sign-up, whatever is stored.
+    signUpUrl: mode === 'admin' ? null : setting.signUpUrl?.trim() || base.signUpUrl
   };
 }
 

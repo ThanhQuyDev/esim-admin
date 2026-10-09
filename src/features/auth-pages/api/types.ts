@@ -10,6 +10,8 @@ export type AuthPageSetting = {
   quoteAuthor: string | null;
   heading: string | null;
   subheading: string | null;
+  /** "Đăng ký" button link (#016). */
+  signUpUrl?: string | null;
   updatedAt: string | null;
 };
 
@@ -23,4 +25,5 @@ export type UpdateAuthPageSettingPayload = {
   quoteAuthor?: string | null;
   heading?: string | null;
   subheading?: string | null;
+  signUpUrl?: string | null;
 };
