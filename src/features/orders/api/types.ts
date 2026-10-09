@@ -149,6 +149,10 @@ export type OrderItem = {
   quantity: number;
   vndPrice: number;
   vndCostPrice: number;
+  /** This line's share of the order discount, by price (#009). */
+  discountShareVnd?: number;
+  /** Line price after its discount share — what refunding it pays back. */
+  netVndPrice?: number;
   esims: OrderItemEsim[];
   createdAt: string;
   updatedAt: string;
@@ -192,7 +196,25 @@ export type AdminOrderInvoice = {
   updatedAt: string;
 };
 
+/** An order's money before and after its refunds (#009, test round 4). */
+export type OrderAfterRefund = {
+  originalOrderValueVnd: number;
+  orderValueVnd: number;
+  originalVndCostPrice: number;
+  vndCostPrice: number;
+  originalTotalAmount: number;
+  totalAmount: number;
+  refundedVnd: number;
+  refundedToWalletVnd: number;
+  refundedDirectVnd: number;
+  originalCashbackVnd: number;
+  cashbackVnd: number;
+  originalCommissionVnd?: number | null;
+  commissionVnd?: number | null;
+};
+
 export type OrderDetail = Order & {
+  afterRefund?: OrderAfterRefund;
   coupon: OrderCoupon | null;
   items: OrderItem[];
   invoice: AdminOrderInvoice | null;

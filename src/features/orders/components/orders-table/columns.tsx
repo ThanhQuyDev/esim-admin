@@ -5,6 +5,7 @@ import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-h
 import type { Order } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { CellAction } from './cell-action';
+import { orderValuesAfterRefund, ValueAfterRefund } from '../../utils/refund-values';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   pending: 'outline',
@@ -115,13 +116,33 @@ export const columns: ColumnDef<Order>[] = [
     header: ({ column }: { column: Column<Order, unknown> }) => (
       <DataTableColumnHeader column={column} title='Tổng tiền' />
     ),
-    cell: ({ row }) => formatCurrency(row.original.totalAmount, row.original.currency)
+    // After refunds, with the original struck through beside it (#009).
+    cell: ({ row }) => {
+      const v = orderValuesAfterRefund(row.original);
+      return (
+        <ValueAfterRefund
+          value={v.total}
+          original={v.originalTotal}
+          format={(n) => formatCurrency(n, row.original.currency)}
+        />
+      );
+    }
   },
   {
     id: 'vndPrice',
     accessorKey: 'vndPrice',
     header: 'Giá VND',
-    cell: ({ row }) => formatCurrency(row.original.vndPrice, 'VND')
+    // What the customer paid (cash + eXU) less refunds (#009, round 4).
+    cell: ({ row }) => {
+      const v = orderValuesAfterRefund(row.original);
+      return (
+        <ValueAfterRefund
+          value={v.vnd}
+          original={v.originalVnd}
+          format={(n) => formatCurrency(n, 'VND')}
+        />
+      );
+    }
   },
   {
     id: 'paymentMethod',

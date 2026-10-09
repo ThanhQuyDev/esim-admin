@@ -22,6 +22,7 @@ import { CreateInvoiceDialog } from './create-invoice-dialog';
 import { InvoiceViewDialog } from './invoice-view-dialog';
 import { canIssueInvoice } from '../utils/invoice-filter';
 import { formatCountry, formatDateTimeVn } from '@/lib/format';
+import { ValueAfterRefund } from '../utils/refund-values';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -381,6 +382,9 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
     }
   });
 
+  // Money after refunds, from the API (#009); the original sits struck through.
+  const after = order.afterRefund;
+  const paidVnd = Number(order.vndPrice ?? 0) + Number(order.walletSpentVndAmount ?? 0);
   const canRefund = order.status === 'paid';
   const canResendEmail = order.status === 'paid';
   const hasWalletPayment =
@@ -513,15 +517,51 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               label='Mã đơn hàng'
               value={<span className='font-mono text-xs font-medium'>{order.orderNumber}</span>}
             />
-            <InfoRow label='Tổng tiền' value={formatCurrency(order.totalAmount, order.currency)} />
+            {/* After refunds, the original struck through beside it (#009). */}
+            <InfoRow
+              label='Tổng tiền'
+              value={
+                <ValueAfterRefund
+                  value={after?.totalAmount ?? Number(order.totalAmount)}
+                  original={after?.originalTotalAmount ?? Number(order.totalAmount)}
+                  format={(n) => formatCurrency(n, order.currency)}
+                />
+              }
+            />
             <InfoRow
               label='Giá bán VND'
-              value={formatCurrency(
-                Number(order.vndPrice ?? 0) + Number(order.walletSpentVndAmount ?? 0),
-                'VND'
-              )}
+              value={
+                <ValueAfterRefund
+                  value={after?.orderValueVnd ?? paidVnd}
+                  original={after?.originalOrderValueVnd ?? paidVnd}
+                  format={(n) => formatCurrency(n, 'VND')}
+                />
+              }
             />
-            <InfoRow label='Giá vốn VND' value={formatCurrency(order.vndCostPrice, 'VND')} />
+            <InfoRow
+              label='Giá vốn VND'
+              value={
+                <ValueAfterRefund
+                  value={after?.vndCostPrice ?? Number(order.vndCostPrice)}
+                  original={after?.originalVndCostPrice ?? Number(order.vndCostPrice)}
+                  format={(n) => formatCurrency(n, 'VND')}
+                />
+              }
+            />
+            {after && after.refundedVnd > 0 && (
+              <InfoRow
+                label='Đã hoàn tiền'
+                value={
+                  <span className='font-medium text-amber-600'>
+                    -{formatCurrency(after.refundedVnd, 'VND')}
+                    <span className='text-muted-foreground ml-1 text-xs font-normal'>
+                      (ví eXU {formatCurrency(after.refundedToWalletVnd, 'VND')} · chuyển khoản{' '}
+                      {formatCurrency(after.refundedDirectVnd, 'VND')})
+                    </span>
+                  </span>
+                }
+              />
+            )}
           </div>
           <div className='space-y-3'>
             <InfoRow label='Thanh toán' value={order.paymentMethod} />
@@ -717,9 +757,12 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   <InfoRow
                     label='Hoàn lại vào ví eXU'
                     value={
-                      <span className='font-semibold text-green-600'>
-                        +{formatCurrency(order.cashbackAmountVnd, 'VND')}
-                      </span>
+                      <ValueAfterRefund
+                        className='font-semibold text-green-600'
+                        value={after?.cashbackVnd ?? Number(order.cashbackAmountVnd)}
+                        original={after?.originalCashbackVnd ?? Number(order.cashbackAmountVnd)}
+                        format={(n) => `+${formatCurrency(n, 'VND')}`}
+                      />
                     }
                   />
                 )}
@@ -791,7 +834,13 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             <div className='space-y-3'>
               <InfoRow
                 label='Hoa hồng trả đối tác'
-                value={formatCurrency(order.partnerCommission.commissionVnd, 'VND')}
+                value={
+                  <ValueAfterRefund
+                    value={order.partnerCommission.commissionVnd}
+                    original={after?.originalCommissionVnd ?? order.partnerCommission.commissionVnd}
+                    format={(n) => formatCurrency(n, 'VND')}
+                  />
+                }
               />
               <InfoRow
                 label='Tỷ lệ trên giá trị đơn'

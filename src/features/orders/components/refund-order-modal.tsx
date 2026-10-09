@@ -82,9 +82,14 @@ export function RefundOrderModal({
   const esimsOf = (item: OrderItem) => item.esims ?? [];
   const liveEsimsOf = (item: OrderItem) =>
     isRefunded(item.status) ? [] : esimsOf(item).filter((e) => !isRefunded(e.status));
-  /** One eSIM's worth: the line total over its quantity. */
+  /**
+   * A line's worth AFTER its share of the order discount (#009, round 4) — at
+   * list price, refunding every line one by one gave the coupon back too.
+   */
+  const lineVnd = (item: OrderItem) => Number(item.netVndPrice ?? item.vndPrice ?? 0);
+  /** One eSIM's worth: the net line over its quantity. */
   const unitVnd = (item: OrderItem) =>
-    Math.round(Number(item.vndPrice ?? 0) / Math.max(Number(item.quantity ?? 1), 1));
+    Math.round(lineVnd(item) / Math.max(Number(item.quantity ?? 1), 1));
 
   /**
    * What goes to the API: a line whose every eSIM is picked (and none was
@@ -101,7 +106,7 @@ export function RefundOrderModal({
       if (all.length === 0) {
         if (itemIds.includes(item.id)) {
           orderItemIds.push(item.id);
-          value += Number(item.vndPrice ?? 0);
+          value += lineVnd(item);
         }
         continue;
       }
@@ -110,7 +115,7 @@ export function RefundOrderModal({
       if (picked.length === 0) continue;
       if (picked.length === live.length && live.length === all.length) {
         orderItemIds.push(item.id);
-        value += Number(item.vndPrice ?? 0);
+        value += lineVnd(item);
       } else {
         singleEsimIds.push(...picked.map((e) => e.id));
         value += picked.length * unitVnd(item);
@@ -247,6 +252,9 @@ export function RefundOrderModal({
           {showItemPicker && (
             <div className='space-y-2'>
               <Label>Hoàn theo từng sản phẩm / ICCID</Label>
+              <p className='text-muted-foreground text-xs'>
+                Giá đã trừ phần mã giảm giá của đơn, chia theo tỷ lệ giá từng sản phẩm.
+              </p>
               <div className='space-y-2 rounded-lg border p-3' data-testid='refund-item-picker'>
                 {items.map((item) => {
                   const lineDone =
@@ -285,7 +293,15 @@ export function RefundOrderModal({
                           ) : null}
                         </span>
                         <span className={cn('font-mono text-sm', lineDone && 'line-through')}>
-                          {formatVnd(item.vndPrice)}
+                          {formatVnd(lineVnd(item))}
+                          {lineVnd(item) !== Number(item.vndPrice ?? 0) && (
+                            <span
+                              className='text-muted-foreground ml-1 text-xs line-through'
+                              title='Giá niêm yết, trước khi chia mã giảm giá'
+                            >
+                              {formatVnd(item.vndPrice)}
+                            </span>
+                          )}
                         </span>
                       </label>
                       {expanded && (
