@@ -22,6 +22,29 @@ const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 /** Enough to cover the whole catalogue; both lists are small and cached. */
 const OPTIONS_LIMIT = 500;
 
+type NamedLocation = { name: string; title?: string | null; titleVi?: string | null };
+
+/** "Trung Quốc (China)" — the Vietnamese name, with the stored name beside it. */
+function locationLabel(location: NamedLocation): string {
+  const vi = location.titleVi?.trim();
+  return vi && vi !== location.name ? `${vi} (${location.name})` : location.name;
+}
+
+/** Vietnamese without its marks too, so "trung quoc" finds "Trung Quốc". */
+function locationKeywords(location: NamedLocation): string[] {
+  const words = [location.titleVi, location.title, location.name].filter(
+    (word): word is string => !!word && !!word.trim()
+  );
+  const plain = words.map((word) =>
+    word
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+  );
+  return [...new Set([...words, ...plain])];
+}
+
 export function PlansTable() {
   const [params] = useQueryStates({
     page: parseAsInteger.withDefault(1),
@@ -78,13 +101,16 @@ export function PlansTable() {
       buildColumns({
         apnOptions: apnValues.map((apn) => ({ value: apn, label: apn })),
         locationOptions: [
+          // Vietnamese name first, searchable in either language (#018).
           ...regionsData.data.map((region) => ({
             value: `r:${region.id}`,
-            label: `Khu vực: ${region.name}`
+            label: `Khu vực: ${locationLabel(region)}`,
+            keywords: locationKeywords(region)
           })),
           ...destinationsData.data.map((destination) => ({
             value: `d:${destination.id}`,
-            label: destination.name
+            label: locationLabel(destination),
+            keywords: locationKeywords(destination)
           }))
         ]
       }),

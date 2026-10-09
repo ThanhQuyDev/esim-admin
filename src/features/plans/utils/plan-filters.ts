@@ -66,7 +66,9 @@ export function buildPlanApiFilters(params: PlanFilterParams): Record<string, un
   const hasCallSms = boolOf(params.hasCallSms);
   if (hasCallSms !== undefined) filters.hasCallSms = hasCallSms;
 
-  if (params.apn?.length === 1) filters.apn = params.apn[0];
+  // Every APN picked, not only a single one: two or more used to drop the
+  // filter altogether (#018, test round 4).
+  if (params.apn?.length) filters.apn = params.apn.length === 1 ? params.apn[0] : params.apn;
 
   const isNonHkIp = boolOf(params.isNonHkIp);
   if (isNonHkIp !== undefined) filters.isNonHkIp = isNonHkIp;

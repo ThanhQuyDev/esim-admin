@@ -18,6 +18,8 @@ declare module '@tanstack/react-table' {
 export interface Option {
   label: string;
   value: string;
+  /** Extra words the search box matches on, e.g. the Vietnamese name (#018). */
+  keywords?: string[];
   count?: number;
   icon?: React.FC<React.SVGProps<SVGSVGElement>>;
 }

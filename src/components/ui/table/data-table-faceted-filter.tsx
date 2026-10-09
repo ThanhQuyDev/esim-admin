@@ -120,7 +120,14 @@ export function DataTableFacetedFilter<TData, TValue>({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className='w-[12.5rem] p-0' align='start'>
+      {/* Wider when the names are long — region names run to a line (#018). */}
+      <PopoverContent
+        className={cn(
+          'p-0',
+          options.some((option) => option.label.length > 24) ? 'w-[22rem]' : 'w-[12.5rem]'
+        )}
+        align='start'
+      >
         <Command>
           <CommandInput placeholder={title} />
           <CommandList className='max-h-full'>
@@ -130,7 +137,14 @@ export function DataTableFacetedFilter<TData, TValue>({
                 const isSelected = selectedValues.has(option.value);
 
                 return (
-                  <CommandItem key={option.value} onSelect={() => onItemSelect(option, isSelected)}>
+                  <CommandItem
+                    key={option.value}
+                    value={`${option.label} ${option.value}`}
+                    keywords={option.keywords}
+                    // The whole name on hover, however long (#018).
+                    title={option.label}
+                    onSelect={() => onItemSelect(option, isSelected)}
+                  >
                     <div
                       className={cn(
                         'border-primary flex size-4 items-center justify-center rounded-sm border',
