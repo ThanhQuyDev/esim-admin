@@ -20,6 +20,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { formatVnd } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { OrderItem, RefundOrderRequest, RefundMode } from '../api/types';
@@ -61,8 +62,10 @@ export function RefundOrderModal({
   const [amount, setAmount] = useState('0');
   const [reason, setReason] = useState('');
   const [adminNote, setAdminNote] = useState('');
-  // Empty = refund the whole order, as before.
-  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+  // Nothing picked = refund the whole order, as before. Lines with eSIMs are
+  // picked eSIM by eSIM (#008, round 4); lines without any by the line.
+  const [pickedEsimIds, setPickedEsimIds] = useState<number[]>([]);
+  const [pickedItemIds, setPickedItemIds] = useState<number[]>([]);
 
   // Every opening starts clean, from the order as it is now.
   useEffect(() => {
@@ -71,17 +74,54 @@ export function RefundOrderModal({
     setAmount('0');
     setReason('');
     setAdminNote('');
-    setSelectedItemIds([]);
+    setPickedEsimIds([]);
+    setPickedItemIds([]);
   }, [open]);
 
-  // Only lines still live can be refunded; an already-refunded one has nothing
-  // left to give back.
-  const refundableItems = items.filter((item) => item.status !== 'refunded');
-  const isPartial = selectedItemIds.length > 0;
+  const isRefunded = (status?: string | null) => status === 'refunded';
+  const esimsOf = (item: OrderItem) => item.esims ?? [];
+  const liveEsimsOf = (item: OrderItem) =>
+    isRefunded(item.status) ? [] : esimsOf(item).filter((e) => !isRefunded(e.status));
+  /** One eSIM's worth: the line total over its quantity. */
+  const unitVnd = (item: OrderItem) =>
+    Math.round(Number(item.vndPrice ?? 0) / Math.max(Number(item.quantity ?? 1), 1));
 
-  const selectedValue = refundableItems
-    .filter((item) => selectedItemIds.includes(item.id))
-    .reduce((sum, item) => sum + Number(item.vndPrice ?? 0), 0);
+  /**
+   * What goes to the API: a line whose every eSIM is picked (and none was
+   * refunded before) is refunded as a line; otherwise the picked eSIMs go
+   * one by one, so an eSIM refunded earlier is never paid out twice.
+   */
+  function buildSelection(esimIds: number[], itemIds: number[]) {
+    const orderItemIds: number[] = [];
+    const singleEsimIds: number[] = [];
+    let value = 0;
+    for (const item of items) {
+      if (isRefunded(item.status)) continue;
+      const all = esimsOf(item);
+      if (all.length === 0) {
+        if (itemIds.includes(item.id)) {
+          orderItemIds.push(item.id);
+          value += Number(item.vndPrice ?? 0);
+        }
+        continue;
+      }
+      const live = liveEsimsOf(item);
+      const picked = live.filter((e) => esimIds.includes(e.id));
+      if (picked.length === 0) continue;
+      if (picked.length === live.length && live.length === all.length) {
+        orderItemIds.push(item.id);
+        value += Number(item.vndPrice ?? 0);
+      } else {
+        singleEsimIds.push(...picked.map((e) => e.id));
+        value += picked.length * unitVnd(item);
+      }
+    }
+    return { orderItemIds, esimIds: singleEsimIds, value };
+  }
+
+  const selection = buildSelection(pickedEsimIds, pickedItemIds);
+  const isPartial = selection.orderItemIds.length > 0 || selection.esimIds.length > 0;
+  const selectedValue = selection.value;
 
   // A per-item refund can never exceed what those lines were worth.
   const cap = isPartial ? Math.min(selectedValue, maxRefundable) : maxRefundable;
@@ -90,19 +130,50 @@ export function RefundOrderModal({
   // Nothing to refund is not a refund.
   const isValidAmount = !isNaN(amountVnd) && amountVnd > 0 && amountVnd <= cap;
 
-  function toggleItem(id: number, value: boolean) {
-    const next = value
-      ? [...selectedItemIds, id]
-      : selectedItemIds.filter((itemId) => itemId !== id);
-    setSelectedItemIds(next);
-
-    // Keep the amount in step with the selection so the admin does not have to
-    // add the lines up by hand.
-    const nextValue = refundableItems
-      .filter((item) => next.includes(item.id))
-      .reduce((sum, item) => sum + Number(item.vndPrice ?? 0), 0);
-    setAmount(String(next.length > 0 ? Math.min(nextValue, maxRefundable) : 0));
+  // Keep the amount in step with the selection so the admin does not have to
+  // add the lines up by hand.
+  function applySelection(esimIds: number[], itemIds: number[]) {
+    setPickedEsimIds(esimIds);
+    setPickedItemIds(itemIds);
+    const next = buildSelection(esimIds, itemIds);
+    const any = next.orderItemIds.length > 0 || next.esimIds.length > 0;
+    setAmount(String(any ? Math.min(next.value, maxRefundable) : 0));
   }
+
+  function toggleItem(item: OrderItem, value: boolean) {
+    const live = liveEsimsOf(item).map((e) => e.id);
+    if (esimsOf(item).length === 0) {
+      applySelection(
+        pickedEsimIds,
+        value ? [...pickedItemIds, item.id] : pickedItemIds.filter((id) => id !== item.id)
+      );
+      return;
+    }
+    applySelection(
+      value
+        ? [...new Set([...pickedEsimIds, ...live])]
+        : pickedEsimIds.filter((id) => !live.includes(id)),
+      pickedItemIds
+    );
+  }
+
+  function toggleEsim(esimId: number, value: boolean) {
+    applySelection(
+      value ? [...pickedEsimIds, esimId] : pickedEsimIds.filter((id) => id !== esimId),
+      pickedItemIds
+    );
+  }
+
+  /** Checked, half-checked or empty, from the eSIMs of the line. */
+  function itemCheckState(item: OrderItem): boolean | 'indeterminate' {
+    if (esimsOf(item).length === 0) return pickedItemIds.includes(item.id);
+    const live = liveEsimsOf(item);
+    const picked = live.filter((e) => pickedEsimIds.includes(e.id)).length;
+    if (picked === 0) return false;
+    return picked === live.length ? true : 'indeterminate';
+  }
+
+  const showItemPicker = items.length > 1 || items.some((item) => esimsOf(item).length > 1);
 
   function handleSubmit() {
     if (!isValidAmount) return;
@@ -111,7 +182,8 @@ export function RefundOrderModal({
       amountVnd,
       reason: reason.trim() || undefined,
       adminNote: adminNote.trim() || undefined,
-      orderItemIds: isPartial ? selectedItemIds : undefined
+      orderItemIds: selection.orderItemIds.length ? selection.orderItemIds : undefined,
+      esimIds: selection.esimIds.length ? selection.esimIds : undefined
     });
   }
 
@@ -169,34 +241,90 @@ export function RefundOrderModal({
             </div>
           </div>
 
-          {/* Which lines to refund (#027) */}
-          {refundableItems.length > 1 && (
+          {/* Which lines — and which eSIMs of a line — to refund (#027, #008).
+              Lines and eSIMs refunded before stay listed, struck through and
+              locked, as the record of what was already given back. */}
+          {showItemPicker && (
             <div className='space-y-2'>
-              <Label>Hoàn theo từng sản phẩm</Label>
-              <div className='space-y-2 rounded-lg border p-3'>
-                {refundableItems.map((item) => (
-                  <label key={item.id} className='flex cursor-pointer items-center gap-3 text-sm'>
-                    <Checkbox
-                      checked={selectedItemIds.includes(item.id)}
-                      onCheckedChange={(v) => toggleItem(item.id, !!v)}
-                    />
-                    <span className='min-w-0 flex-1 truncate'>
-                      {planDisplayName(item.plan, `Sản phẩm #${item.id}`)}
-                      {item.plan?.provider ? (
-                        <span className='text-muted-foreground'> · {item.plan.provider}</span>
-                      ) : null}
-                      {item.quantity > 1 ? (
-                        <span className='text-muted-foreground'> · x{item.quantity}</span>
-                      ) : null}
-                    </span>
-                    <span className='font-mono text-sm'>{formatVnd(item.vndPrice)}</span>
-                  </label>
-                ))}
+              <Label>Hoàn theo từng sản phẩm / ICCID</Label>
+              <div className='space-y-2 rounded-lg border p-3' data-testid='refund-item-picker'>
+                {items.map((item) => {
+                  const lineDone =
+                    isRefunded(item.status) ||
+                    (esimsOf(item).length > 0 && liveEsimsOf(item).length === 0);
+                  const state = lineDone ? false : itemCheckState(item);
+                  const expanded =
+                    esimsOf(item).length > 1 &&
+                    (state !== false ||
+                      lineDone ||
+                      esimsOf(item).some((e) => isRefunded(e.status)));
+                  return (
+                    <div key={item.id} className='space-y-1.5'>
+                      <label
+                        className={cn(
+                          'flex items-center gap-3 text-sm',
+                          lineDone ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                        )}
+                        data-testid={`refund-item-${item.id}`}
+                      >
+                        <Checkbox
+                          checked={state}
+                          disabled={lineDone}
+                          onCheckedChange={(v) => toggleItem(item, v === true)}
+                        />
+                        <span className={cn('min-w-0 flex-1 truncate', lineDone && 'line-through')}>
+                          {planDisplayName(item.plan, `Sản phẩm #${item.id}`)}
+                          {item.plan?.provider ? (
+                            <span className='text-muted-foreground'> · {item.plan.provider}</span>
+                          ) : null}
+                          {item.quantity > 1 ? (
+                            <span className='text-muted-foreground'> · x{item.quantity}</span>
+                          ) : null}
+                          {lineDone ? (
+                            <span className='text-muted-foreground'> · đã hoàn</span>
+                          ) : null}
+                        </span>
+                        <span className={cn('font-mono text-sm', lineDone && 'line-through')}>
+                          {formatVnd(item.vndPrice)}
+                        </span>
+                      </label>
+                      {expanded && (
+                        <div className='ml-7 space-y-1 border-l pl-3'>
+                          {esimsOf(item).map((esim) => {
+                            const done = lineDone || isRefunded(esim.status);
+                            return (
+                              <label
+                                key={esim.id}
+                                className={cn(
+                                  'flex items-center gap-2 text-xs',
+                                  done ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                                )}
+                                data-testid={`refund-esim-${esim.id}`}
+                              >
+                                <Checkbox
+                                  checked={!done && pickedEsimIds.includes(esim.id)}
+                                  disabled={done}
+                                  onCheckedChange={(v) => toggleEsim(esim.id, v === true)}
+                                />
+                                <span className={cn('flex-1 font-mono', done && 'line-through')}>
+                                  {esim.iccid || `eSIM #${esim.id}`}
+                                </span>
+                                <span className={cn('font-mono', done && 'line-through')}>
+                                  {done ? 'đã hoàn' : formatVnd(unitVnd(item))}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               <p className='text-muted-foreground text-xs'>
                 {isPartial
-                  ? 'Chỉ những sản phẩm được chọn bị huỷ với nhà cung cấp và đánh dấu đã hoàn tiền. Các sản phẩm còn lại giữ nguyên.'
-                  : 'Không chọn sản phẩm nào = hoàn tiền cho toàn bộ đơn hàng (huỷ với tất cả nhà cung cấp).'}
+                  ? 'Chỉ những sản phẩm / ICCID được chọn bị huỷ với nhà cung cấp và đánh dấu đã hoàn tiền. Phần còn lại giữ nguyên.'
+                  : 'Không chọn gì = hoàn tiền cho toàn bộ đơn hàng (huỷ với tất cả nhà cung cấp). Tích một sản phẩm để chọn từng ICCID của nó.'}
               </p>
             </div>
           )}
@@ -284,7 +412,7 @@ export function RefundOrderModal({
               )}
               <li className='text-muted-foreground'>
                 {isPartial
-                  ? `• ${selectedItemIds.length} sản phẩm được chọn → refunded; đơn chỉ chuyển sang refunded khi đã hoàn hết giá trị`
+                  ? `• ${selection.orderItemIds.length} sản phẩm, ${selection.esimIds.length} ICCID được chọn → refunded; đơn chỉ chuyển sang refunded khi đã hoàn hết giá trị`
                   : '• Trạng thái đơn hàng → refunded'}
               </li>
             </ul>

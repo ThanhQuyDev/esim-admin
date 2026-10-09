@@ -227,6 +227,11 @@ export type RefundOrderRequest = {
    * Only the selected items are cancelled with their supplier.
    */
   orderItemIds?: number[];
+  /**
+   * Refund single eSIMs (ICCIDs) of a line bought in several copies (#008,
+   * test round 4). Each counts at its line's unit price.
+   */
+  esimIds?: number[];
 };
 
 export type OrderRefundResponse = {
