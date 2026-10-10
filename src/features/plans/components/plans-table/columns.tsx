@@ -297,6 +297,15 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       }
     },
     {
+      // Speed after the quota (#046, test round 4) — what decides between two
+      // plans with the same data, days and price (384kbps beats 128kbps).
+      id: 'throttling',
+      accessorKey: 'fupSpeed',
+      header: 'Throttling',
+      cell: ({ row }) => <span className='whitespace-nowrap'>{row.original.fupSpeed || '—'}</span>,
+      enableSorting: false
+    },
+    {
       id: 'hasCallSms',
       accessorFn: (row) =>
         Number(row.sms ?? 0) > 0 || Number(row.call ?? 0) > 0 ? 'true' : 'false',
@@ -432,14 +441,14 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       // "Tiktok & ChatGPT" filter asked for in #010.
       id: 'isNonHkIp',
       accessorFn: (row) => (row.isNonHkIp ? 'true' : 'false'),
-      header: 'Tiktok & ChatGPT',
+      header: 'Tiktok & AI',
       // The verdict the storefront uses — exit IP, else the APN table (#045,
       // test round 4) — so a plan whose APN works reads "Có" here too.
       cell: ({ row }) => <AppSupportCell plan={row.original} />,
       enableSorting: false,
       enableColumnFilter: true,
       meta: {
-        label: 'Tiktok & ChatGPT',
+        label: 'Tiktok & AI',
         variant: 'multiSelect' as const,
         options: YES_NO_OPTIONS
       }
