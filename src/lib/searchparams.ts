@@ -40,6 +40,10 @@ export const searchParams = {
   country: parseAsArrayOf(parseAsString, ','),
   hasCallSms: parseAsArrayOf(parseAsString, ','),
   apn: parseAsArrayOf(parseAsString, ','),
+  // APN table filters (#044, test round 4): supported platforms, and whether a
+  // row is still waiting for its answers.
+  supports: parseAsArrayOf(parseAsString, ','),
+  review: parseAsArrayOf(parseAsString, ','),
   isNonHkIp: parseAsArrayOf(parseAsString, ','),
   topUp: parseAsArrayOf(parseAsString, ','),
   sort: parseAsString,

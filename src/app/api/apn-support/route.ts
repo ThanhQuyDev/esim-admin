@@ -1,35 +1,12 @@
-import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { proxyApnSupport } from './_proxy';
 
-const API_URL = process.env.API_URL || 'http://localhost:3001';
-
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  };
+/** The APN table, with its select-box filters (#044). */
+export async function GET(request: NextRequest) {
+  return proxyApnSupport(request, '');
 }
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const headers = await getAuthHeaders();
-  const params = new URLSearchParams();
-  for (const key of ['page', 'limit', 'search', 'filters', 'sort']) {
-    const val = searchParams.get(key);
-    if (val) params.set(key, val);
-  }
-  const query = params.toString();
-  const res = await fetch(`${API_URL}/api/v1/apn-support${query ? `?${query}` : ''}`, {
-    headers
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    return NextResponse.json(
-      { message: data.message || 'Failed to fetch', errors: data.errors },
-      { status: res.status }
-    );
-  }
-  return NextResponse.json(data);
+/** Add one APN by hand (#044). */
+export async function POST(request: NextRequest) {
+  return proxyApnSupport(request, '', { method: 'POST', body: await request.text() });
 }

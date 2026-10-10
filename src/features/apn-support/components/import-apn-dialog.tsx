@@ -13,7 +13,9 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { importApnExcelMutation } from '../api/mutations';
+import { importApnExcelMutation, syncApnFromPlansMutation } from '../api/mutations';
+import { downloadApnExcel } from '../api/service';
+import { ApnFormDialog } from './apn-form-dialog';
 
 /**
  * Upload the APN sheet (#065).
@@ -38,7 +40,10 @@ export function ImportApnDialog({
       const extra = result.duplicates.length
         ? ` Bỏ qua ${result.duplicates.length} APN trùng: ${result.duplicates.slice(0, 5).join(', ')}${result.duplicates.length > 5 ? '…' : ''}`
         : '';
-      toast.success(`Đã nạp ${result.total} APN.${extra}`);
+      const fromPlans = result.addedFromPlans
+        ? ` Thêm lại ${result.addedFromPlans} APN đang dùng trên gói cước (chưa có thông tin).`
+        : '';
+      toast.success(`Đã nạp ${result.total} APN.${fromPlans}${extra}`);
       onOpenChange(false);
       setFile(null);
     },
@@ -52,8 +57,9 @@ export function ImportApnDialog({
           <DialogTitle>Nạp file APN</DialogTitle>
           <DialogDescription>
             File cần có các cột tiêu đề: <b>APN</b>, <b>TikTok iPhone</b>, <b>TikTok Android</b>,{' '}
-            <b>ChatGPT</b> (thêm cột ghi chú nếu muốn). Cột được tìm theo tên tiêu đề nên thứ tự cột
-            không quan trọng.
+            <b>ChatGPT</b>, <b>Gemini</b>, <b>Claude</b>, <b>Ghi chú</b> — giống file tải về bằng
+            nút &ldquo;Xuất Excel&rdquo;. Ô ghi &ldquo;Hỗ trợ&rdquo; là có, còn lại là không. Cột
+            được tìm theo tên tiêu đề nên thứ tự cột không quan trọng.
           </DialogDescription>
         </DialogHeader>
 
@@ -102,12 +108,51 @@ export function ImportApnDialog({
 
 export function ImportApnDialogTrigger() {
   const [open, setOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // Pull every APN the suppliers' plans use into the table (#044, test round 4).
+  const sync = useMutation({
+    ...syncApnFromPlansMutation,
+    onSuccess: (result) =>
+      toast.success(
+        result.added
+          ? `Đã thêm ${result.added} APN mới từ gói cước — điền thông tin cho các dòng "Chưa có thông tin".`
+          : 'Không có APN mới: bảng đã có đủ APN của các gói cước.'
+      ),
+    onError: (e) => toast.error(e.message || 'Không lấy được APN từ gói cước')
+  });
+
   return (
-    <>
+    <div className='flex flex-wrap gap-2'>
+      <Button size='sm' variant='outline' onClick={() => setAddOpen(true)}>
+        <Icons.add className='mr-2 h-4 w-4' /> Thêm APN
+      </Button>
+      <Button size='sm' variant='outline' onClick={() => sync.mutate()} isLoading={sync.isPending}>
+        <Icons.refresh className='mr-2 h-4 w-4' /> Lấy APN từ gói cước
+      </Button>
+      <Button
+        size='sm'
+        variant='outline'
+        isLoading={exporting}
+        onClick={async () => {
+          setExporting(true);
+          try {
+            await downloadApnExcel();
+          } catch (e) {
+            toast.error((e as Error).message);
+          } finally {
+            setExporting(false);
+          }
+        }}
+      >
+        <Icons.download className='mr-2 h-4 w-4' /> Xuất Excel
+      </Button>
       <Button onClick={() => setOpen(true)} size='sm'>
         <Icons.upload className='mr-2 h-4 w-4' /> Nạp file APN
       </Button>
       <ImportApnDialog open={open} onOpenChange={setOpen} />
-    </>
+      <ApnFormDialog open={addOpen} onOpenChange={setAddOpen} />
+    </div>
   );
 }

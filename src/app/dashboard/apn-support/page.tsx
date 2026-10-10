@@ -15,7 +15,7 @@ export default async function ApnSupportPage(props: PageProps) {
     <PageContainer
       scrollable={false}
       pageTitle='APN TikTok & ChatGPT'
-      pageDescription='Bảng tra APN quyết định gói eSIM nào được hiện là dùng được TikTok / ChatGPT. Nạp từ file Excel; mỗi lần nạp sẽ thay toàn bộ bảng.'
+      pageDescription='Bảng tra APN quyết định gói eSIM nào dùng được TikTok, ChatGPT, Gemini, Claude. Sửa từng dòng, lấy APN mới từ gói cước, hoặc xuất Excel → điền → nạp lại (nạp file thay toàn bộ bảng).'
       pageHeaderAction={<ImportApnDialogTrigger />}
     >
       <ApnSupportListingPage />

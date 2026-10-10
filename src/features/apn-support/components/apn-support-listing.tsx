@@ -6,11 +6,14 @@ import { buildApnSupportFilters } from '../utils/apn-support-filters';
 import { ApnSupportTable } from './apn-support-table';
 
 export default function ApnSupportListingPage() {
+  // Built exactly as the table builds it, or the prefetched query is not the one
+  // the table reads.
   const filters = buildApnSupportFilters({
     page: searchParamsCache.get('page'),
     perPage: searchParamsCache.get('perPage'),
-    name: searchParamsCache.get('name'),
-    sort: parseSort(searchParamsCache.get('sort'))
+    apn: searchParamsCache.get('apn'),
+    supports: searchParamsCache.get('supports'),
+    review: searchParamsCache.get('review')
   });
 
   const queryClient = getQueryClient();
@@ -21,19 +24,4 @@ export default function ApnSupportListingPage() {
       <ApnSupportTable />
     </HydrationBoundary>
   );
-}
-
-/**
- * The server cache keeps `sort` as the raw string; the client parses it with
- * `getSortingStateParser`. Both have to end up with the same shape or the
- * prefetched key will not match the one the table asks for.
- */
-function parseSort(raw: string | null): { id: string; desc: boolean }[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
