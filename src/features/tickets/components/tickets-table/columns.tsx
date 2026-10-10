@@ -102,7 +102,7 @@ export const columns: ColumnDef<Ticket>[] = [
     accessorKey: 'lastReplyAt',
     header: 'Phản hồi cuối',
     cell: ({ row }) => {
-      const { lastReplyAt, lastReplyRole, lastReplyName } = row.original;
+      const { lastReplyAt, lastReplyRole, lastReplyName, fromPartner } = row.original;
       if (!lastReplyAt) return <span className='text-muted-foreground'>—</span>;
       const fromCustomer = lastReplyRole !== 'admin';
       return (
@@ -115,7 +115,11 @@ export const columns: ColumnDef<Ticket>[] = [
                 : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
             )}
           >
-            {fromCustomer ? 'Khách / đối tác' : `Admin${lastReplyName ? `: ${lastReplyName}` : ''}`}
+            {fromCustomer
+              ? fromPartner
+                ? 'Đối tác'
+                : 'Khách hàng'
+              : `Admin${lastReplyName ? `: ${lastReplyName}` : ''}`}
           </span>
           <span className='text-muted-foreground text-xs tabular-nums whitespace-nowrap'>
             {formatDateTime(lastReplyAt)}

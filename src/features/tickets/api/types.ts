@@ -34,6 +34,8 @@ export type Ticket = {
    * the ticket is waiting on support.
    */
   lastReplyAt?: string | null;
+  /** Opened by a partner (#042, test round 4). */
+  fromPartner?: boolean;
   lastReplyRole?: 'customer' | 'admin' | null;
   lastReplyName?: string | null;
   createdAt: string;

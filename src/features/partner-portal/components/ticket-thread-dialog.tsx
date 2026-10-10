@@ -139,56 +139,68 @@ export function TicketThreadDialog({ ticket, onOpenChange }: TicketThreadDialogP
             </p>
           )}
 
-          <div className='space-y-2'>
-            <Textarea
-              rows={3}
-              placeholder='Bổ sung thông tin hoặc trả lời đội hỗ trợ…'
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-            />
-            <div className='flex flex-wrap items-center justify-between gap-2'>
-              <div className='flex flex-wrap items-center gap-2'>
-                <input
-                  id='ticketAttachment'
-                  type='file'
-                  className='hidden'
-                  accept='image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt'
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (!file) return;
-                    setUploading(true);
-                    try {
-                      const url = await uploadAttachment(file);
-                      setAttachments((current) => [...current, url]);
-                    } catch (error) {
-                      toast.error((error as Error).message);
-                    } finally {
-                      setUploading(false);
-                    }
-                  }}
-                />
-                <Button size='sm' variant='outline' asChild disabled={uploading}>
-                  <label htmlFor='ticketAttachment' className='cursor-pointer'>
-                    {uploading ? 'Đang tải tệp…' : 'Đính kèm tài liệu'}
-                  </label>
-                </Button>
-                {attachments.length > 0 && (
-                  <span className='text-muted-foreground text-xs'>
-                    {attachments.length} tệp đã đính kèm
-                  </span>
-                )}
-              </div>
-              <Button
-                size='sm'
-                isLoading={reply.isPending}
-                disabled={!body.trim()}
-                onClick={() => reply.mutate()}
-              >
-                Gửi phản hồi
-              </Button>
+          {ticket?.status === 'closed' ? (
+            /* A closed ticket takes no more replies (#042, test round 4) — a new
+               request is opened from this page instead. */
+            <div
+              className='rounded-md border border-dashed bg-muted/40 p-3 text-sm text-muted-foreground'
+              data-testid='ticket-closed-note'
+            >
+              Mã hỗ trợ này đã được đóng. Nếu bạn vẫn cần hỗ trợ, vui lòng tạo yêu cầu mới bằng nút
+              &ldquo;Gửi yêu cầu hỗ trợ&rdquo; trên trang Hỗ trợ.
             </div>
-          </div>
+          ) : (
+            <div className='space-y-2'>
+              <Textarea
+                rows={3}
+                placeholder='Bổ sung thông tin hoặc trả lời đội hỗ trợ…'
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+              />
+              <div className='flex flex-wrap items-center justify-between gap-2'>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <input
+                    id='ticketAttachment'
+                    type='file'
+                    className='hidden'
+                    accept='image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt'
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!file) return;
+                      setUploading(true);
+                      try {
+                        const url = await uploadAttachment(file);
+                        setAttachments((current) => [...current, url]);
+                      } catch (error) {
+                        toast.error((error as Error).message);
+                      } finally {
+                        setUploading(false);
+                      }
+                    }}
+                  />
+                  <Button size='sm' variant='outline' asChild disabled={uploading}>
+                    <label htmlFor='ticketAttachment' className='cursor-pointer'>
+                      {uploading ? 'Đang tải tệp…' : 'Đính kèm tài liệu'}
+                    </label>
+                  </Button>
+                  {attachments.length > 0 && (
+                    <span className='text-muted-foreground text-xs'>
+                      {attachments.length} tệp đã đính kèm
+                    </span>
+                  )}
+                </div>
+                <Button
+                  size='sm'
+                  isLoading={reply.isPending}
+                  disabled={!body.trim()}
+                  onClick={() => reply.mutate()}
+                >
+                  Gửi phản hồi
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

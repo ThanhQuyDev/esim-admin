@@ -25,11 +25,14 @@ import { ticketMessagesQueryOptions } from '../api/queries';
 export function TicketConversation({
   ticketId,
   ticketNumber,
-  customerEmail
+  customerEmail,
+  fromPartner = false
 }: {
   ticketId: number;
   ticketNumber: string | null;
   customerEmail: string;
+  /** Opened by a partner: their messages read "Đối tác" (#042, test round 4). */
+  fromPartner?: boolean;
 }) {
   const [body, setBody] = useState('');
 
@@ -83,7 +86,11 @@ export function TicketConversation({
               >
                 <div className='mb-1 flex flex-wrap items-center gap-2'>
                   <Badge variant={message.authorRole === 'admin' ? 'default' : 'secondary'}>
-                    {message.authorRole === 'admin' ? 'Hỗ trợ' : 'Khách hàng'}
+                    {message.authorRole === 'admin'
+                      ? 'Hỗ trợ'
+                      : fromPartner
+                        ? 'Đối tác'
+                        : 'Khách hàng'}
                   </Badge>
                   {message.authorName && (
                     <span className='text-sm font-medium'>{message.authorName}</span>

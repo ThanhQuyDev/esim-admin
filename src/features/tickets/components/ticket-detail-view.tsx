@@ -181,6 +181,7 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
         ticketId={ticket.id}
         ticketNumber={ticket.ticketNumber}
         customerEmail={ticket.customerEmail}
+        fromPartner={ticket.fromPartner}
       />
 
       <Separator />
