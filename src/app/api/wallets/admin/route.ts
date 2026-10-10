@@ -16,18 +16,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const headers = await getAuthHeaders();
 
+  // Every param, not a fixed list: the list dropped customerCode, customerName
+  // and membershipTiers, so the CMS filters added for #040 never reached the
+  // API (test round 4).
   const params = new URLSearchParams();
-  const page = searchParams.get('page');
-  const limit = searchParams.get('limit');
-  const email = searchParams.get('email');
-  const filters = searchParams.get('filters');
-  const sort = searchParams.get('sort');
-
-  if (page) params.set('page', page);
-  if (limit) params.set('limit', limit);
-  if (email) params.set('email', email);
-  if (filters) params.set('filters', filters);
-  if (sort) params.set('sort', sort);
+  for (const [key, val] of searchParams) {
+    if (val) params.set(key, val);
+  }
 
   const res = await fetch(`${API_URL}/api/v1/wallets/admin?${params}`, { headers });
   const data = await res.json();
