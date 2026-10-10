@@ -45,7 +45,7 @@ export const COMMISSION_STATUS_OPTIONS = Object.entries(COMMISSION_STATUS).map(
 /**
  * The products in one order (#023).
  *
- * Two names fit in the column; the rest hide behind a "+N" the partner can
+ * One name fits in the column; the rest hide behind a "+N" the partner can
  * open, with each line's price beside it. A refunded product is greyed and
  * labelled rather than removed — the partner needs to see why the commission
  * on this order is smaller than the order looks.
@@ -91,7 +91,9 @@ function ProductLine({ item }: { item: MyOrderItem }) {
 }
 
 function OrderProducts({ items, createdAt }: { items: MyOrderItem[]; createdAt: string }) {
-  const shown = items.slice(0, 2);
+  // One product per row keeps the list compact; the "+" opens the whole order
+  // (#058, test round 4 — two names per row made the rows too tall).
+  const shown = items.slice(0, 1);
   const hidden = items.length - shown.length;
 
   return (
