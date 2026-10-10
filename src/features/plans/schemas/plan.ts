@@ -47,6 +47,7 @@ export const createPlanSchema = z.object({
   tags: z.array(z.enum(PLAN_TAG_VALUES)).optional(),
   apn: z.string().optional(),
   isNonHkIp: z.boolean().optional(),
+  ipExport: z.string().optional(),
   dailyResetPolicy: z.union([z.enum(DAILY_RESET_VALUES), z.literal('')]).optional(),
   dailyResetUtcOffset: z
     .string()

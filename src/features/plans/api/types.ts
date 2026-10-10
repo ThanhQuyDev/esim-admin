@@ -34,6 +34,8 @@ export type Plan = {
    * work on this plan (#041). Filtered as "Tiktok & ChatGPT" in the CMS (#010).
    */
   isNonHkIp: boolean;
+  /** Exit IP location from the supplier — "SG", "FR/NL/UK", "HK" (#043). */
+  ipExport?: string | null;
   /**
    * "Giờ làm mới mỗi ngày" (#063) — when the daily allowance starts over. Null
    * where the supplier has not stated it, which the storefront omits rather than
@@ -86,6 +88,7 @@ export type CreatePlanPayload = {
   tags?: string[] | null;
   apn?: string | null;
   isNonHkIp?: boolean;
+  ipExport?: string | null;
   dailyResetPolicy?: DailyResetPolicy | null;
   dailyResetUtcOffset?: number | null;
 };

@@ -398,9 +398,15 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       accessorFn: (row) => (row.isNonHkIp ? 'true' : 'false'),
       header: 'Tiktok & ChatGPT',
       cell: ({ row }) => (
-        <Badge variant={row.original.isNonHkIp ? 'default' : 'secondary'}>
-          {row.original.isNonHkIp ? 'Có' : 'Không'}
-        </Badge>
+        <div className='flex flex-col items-start gap-0.5'>
+          <Badge variant={row.original.isNonHkIp ? 'default' : 'secondary'}>
+            {row.original.isNonHkIp ? 'Có' : 'Không'}
+          </Badge>
+          {/* The exit IP it was judged from (#043, test round 4). */}
+          {row.original.ipExport && (
+            <span className='text-muted-foreground text-xs'>IP: {row.original.ipExport}</span>
+          )}
+        </div>
       ),
       enableSorting: false,
       enableColumnFilter: true,

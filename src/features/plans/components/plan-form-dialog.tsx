@@ -115,6 +115,18 @@ function ConnectivityFields() {
       </div>
 
       <div className='grid grid-cols-2 gap-4'>
+        {/* Where traffic exits (#043, test round 4). esimaccess reports it; any
+            exit but HK means TikTok & ChatGPT work, and the sync sets the switch
+            above from it. */}
+        <FormTextField
+          name='ipExport'
+          label='IP ra (Exit IP)'
+          placeholder='SG, FR/NL/UK, HK…'
+          description='Nhà cung cấp trả về qua API. Khác HK ⇒ dùng được TikTok & ChatGPT.'
+        />
+      </div>
+
+      <div className='grid grid-cols-2 gap-4'>
         <FormSelectField
           name='dailyResetPolicy'
           label='Giờ làm mới mỗi ngày'
@@ -198,6 +210,7 @@ function CreateDialog({
       tags: [] as PlanTag[],
       apn: '',
       isNonHkIp: false,
+      ipExport: '',
       dailyResetPolicy: '',
       dailyResetUtcOffset: ''
     } as CreatePlanFormValues,
@@ -233,6 +246,7 @@ function CreateDialog({
           dailyResetUtcOffset: dailyResetOffsetValue(value)
         }),
         isNonHkIp: value.isNonHkIp ?? false,
+        ...(value.ipExport?.trim() && { ipExport: value.ipExport.trim() }),
         topUp: value.topUp ?? false,
         isActive: value.isActive ?? true
       };
@@ -377,6 +391,7 @@ function EditDialog({
       tags: (plan.tags ?? []) as PlanTag[],
       apn: plan.apn ?? '',
       isNonHkIp: plan.isNonHkIp,
+      ipExport: plan.ipExport ?? '',
       dailyResetPolicy: plan.dailyResetPolicy ?? '',
       dailyResetUtcOffset: plan.dailyResetUtcOffset != null ? String(plan.dailyResetUtcOffset) : ''
     } as UpdatePlanFormValues,
@@ -408,6 +423,7 @@ function EditDialog({
         // means "we do not know", and undefined would silently keep the old value.
         apn: value.apn || null,
         isNonHkIp: value.isNonHkIp ?? false,
+        ipExport: value.ipExport?.trim() || null,
         dailyResetPolicy: (value.dailyResetPolicy || null) as DailyResetPolicy | null,
         dailyResetUtcOffset: dailyResetOffsetValue(value)
       };
