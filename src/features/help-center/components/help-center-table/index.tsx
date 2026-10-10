@@ -144,8 +144,9 @@ export function HelpCenterTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value='all'>Xuất bản: Tất cả</SelectItem>
-            <SelectItem value='true'>Đã xuất bản</SelectItem>
-            <SelectItem value='false'>Bản nháp</SelectItem>
+            {/* Worded like the "Nổi bật: Có/Không" box beside it (#038, round 4). */}
+            <SelectItem value='true'>Xuất bản: Có</SelectItem>
+            <SelectItem value='false'>Xuất bản: Không (nháp)</SelectItem>
           </SelectContent>
         </Select>
         <Select
