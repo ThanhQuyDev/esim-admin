@@ -1,5 +1,7 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { supportedDeviceManufacturersQueryOptions } from '@/features/supported-devices/api/queries';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -33,18 +35,27 @@ export function ManufacturerNoteFormDialog({ item, open, onOpenChange }: Props) 
 const DIALOG_NOTE = 'Ghi chú hiện dưới danh sách máy của hãng đó, ở trang "Thiết bị được hỗ trợ".';
 
 /** Identical for create and edit, so the fields live in one place. */
-function NoteFields() {
-  const { FormTextField, FormTextareaField, FormSelectField, FormSwitchField } =
+function NoteFields({ current }: { current?: string }) {
+  const { FormTextareaField, FormSelectField, FormSwitchField } =
     useFormFields<ManufacturerNoteFormValues>();
+
+  // The brands on the device list, so a note always matches its rows and nobody
+  // has to type the name (#052, test round 4). An older note's brand stays
+  // selectable even if no device carries it any more.
+  const { data: brands } = useQuery(supportedDeviceManufacturersQueryOptions());
+  const brandOptions = [...new Set([...(brands ?? []), ...(current ? [current] : [])])].map(
+    (name) => ({ value: name, label: name })
+  );
 
   return (
     <>
       <div className='grid grid-cols-2 gap-4'>
-        <FormTextField
+        <FormSelectField
           name='manufacturer'
           label='Hãng'
-          placeholder='iPhone'
-          description='Viết giống y tên hãng trong danh sách thiết bị (không phân biệt chữ hoa/thường).'
+          options={brandOptions}
+          placeholder='Chọn hãng'
+          description='Lấy từ danh sách "Thiết bị được hỗ trợ". Mỗi hãng một ghi chú cho mỗi ngôn ngữ.'
         />
         <FormSelectField
           name='language'
@@ -184,7 +195,7 @@ function EditDialog({
     >
       <form.AppForm>
         <form.Form id='manufacturer-note-form-dialog' className='space-y-5'>
-          <NoteFields />
+          <NoteFields current={item.manufacturer} />
         </form.Form>
       </form.AppForm>
     </FormDialog>
