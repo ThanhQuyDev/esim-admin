@@ -15,6 +15,7 @@ export async function getTickets(filters: TicketFilters): Promise<TicketListResp
   if (filters.limit) params.set('limit', String(filters.limit));
   if (filters.status) params.set('status', filters.status);
   if (filters.search) params.set('search', filters.search);
+  if (filters.awaitingSupport) params.set('awaitingSupport', 'true');
   const query = params.toString();
   return apiClient<TicketListResponse>(`${BASE}${query ? `?${query}` : ''}`);
 }
@@ -54,11 +55,12 @@ export async function replyToTicket(id: number, body: string): Promise<TicketMes
 }
 
 /**
- * Lightweight count of tickets with status="open".
- * Uses the list endpoint with limit=1 and reads totalCount/hasNextPage as fallback.
+ * How many tickets are waiting on support, for the sidebar badge: new ones, and
+ * any (short of closed) whose last message is the customer's — a reply on a
+ * resolved ticket counts again, like a new request (#041, test round 4).
  */
 export async function getOpenTicketCount(): Promise<number> {
-  const res = await getTickets({ status: 'open', limit: 1, page: 1 });
+  const res = await getTickets({ awaitingSupport: true, limit: 1, page: 1 });
   if (typeof res.totalCount === 'number') return res.totalCount;
   // Fallback: only know if there is at least one
   return res.data.length > 0 || res.hasNextPage ? res.data.length : 0;

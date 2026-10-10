@@ -18,6 +18,14 @@ export const TICKET_STATUS_OPTIONS: {
       'border-orange-200 bg-orange-100 text-orange-800 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-300'
   },
   {
+    // Set by hand while waiting on the customer; their answer moves it back to
+    // "Đang xử lý" (#041, test round 4).
+    value: 'need_info',
+    label: 'Cần bổ sung thông tin',
+    className:
+      'border-purple-200 bg-purple-100 text-purple-800 dark:border-purple-900 dark:bg-purple-950 dark:text-purple-300'
+  },
+  {
     value: 'resolved',
     label: 'Đã giải quyết',
     className:

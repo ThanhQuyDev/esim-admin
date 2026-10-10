@@ -1,6 +1,12 @@
-export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+export type TicketStatus = 'open' | 'in_progress' | 'need_info' | 'resolved' | 'closed';
 
-export const TICKET_STATUSES: TicketStatus[] = ['open', 'in_progress', 'resolved', 'closed'];
+export const TICKET_STATUSES: TicketStatus[] = [
+  'open',
+  'in_progress',
+  'need_info',
+  'resolved',
+  'closed'
+];
 
 export type Ticket = {
   id: number;
@@ -23,6 +29,13 @@ export type Ticket = {
    * (#061). Null unless the ticket is (or was) resolved.
    */
   resolvedAt: string | null;
+  /**
+   * The latest message and who wrote it (#041, test round 4). `customer` means
+   * the ticket is waiting on support.
+   */
+  lastReplyAt?: string | null;
+  lastReplyRole?: 'customer' | 'admin' | null;
+  lastReplyName?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -44,6 +57,8 @@ export type TicketFilters = {
   limit?: number;
   status?: TicketStatus;
   search?: string;
+  /** Only tickets waiting on support — new, or the customer wrote last (#041). */
+  awaitingSupport?: boolean;
 };
 
 export type TicketListResponse = {

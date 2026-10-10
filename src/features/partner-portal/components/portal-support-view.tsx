@@ -125,6 +125,11 @@ const TICKET_STATUS: Record<string, { label: string; className: string }> = {
     className:
       'border-orange-200 bg-orange-100 text-orange-800 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-300'
   },
+  need_info: {
+    label: 'Cần bổ sung thông tin',
+    className:
+      'border-purple-200 bg-purple-100 text-purple-800 dark:border-purple-900 dark:bg-purple-950 dark:text-purple-300'
+  },
   resolved: {
     label: 'Đã xử lý',
     className:

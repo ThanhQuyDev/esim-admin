@@ -96,6 +96,36 @@ export const columns: ColumnDef<Ticket>[] = [
     enableSorting: false
   },
   {
+    // Who wrote last and when (#041, test round 4): a ticket whose last word is
+    // the customer's still needs an answer, whatever its status says.
+    id: 'lastReply',
+    accessorKey: 'lastReplyAt',
+    header: 'Phản hồi cuối',
+    cell: ({ row }) => {
+      const { lastReplyAt, lastReplyRole, lastReplyName } = row.original;
+      if (!lastReplyAt) return <span className='text-muted-foreground'>—</span>;
+      const fromCustomer = lastReplyRole !== 'admin';
+      return (
+        <div className='flex flex-col gap-0.5' data-testid='ticket-last-reply'>
+          <span
+            className={cn(
+              'inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs font-medium',
+              fromCustomer
+                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+            )}
+          >
+            {fromCustomer ? 'Khách / đối tác' : `Admin${lastReplyName ? `: ${lastReplyName}` : ''}`}
+          </span>
+          <span className='text-muted-foreground text-xs tabular-nums whitespace-nowrap'>
+            {formatDateTime(lastReplyAt)}
+          </span>
+        </div>
+      );
+    },
+    enableSorting: false
+  },
+  {
     id: 'orderId',
     accessorKey: 'orderId',
     header: 'Đơn hàng',
