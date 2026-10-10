@@ -229,6 +229,8 @@ export type PartnerLinkRow = {
   conversionCount: number;
   totalCommissionVnd: number | string;
   createdAt: string;
+  /** Set when the partner deleted the link (#054). */
+  deletedAt?: string | null;
 };
 
 /** A discount code owned by the partner, with how much it has been used. */

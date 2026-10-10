@@ -109,6 +109,21 @@ function channelOf(targetPath: string | null): string {
   return CHANNELS.find((c) => c.value === source)?.label ?? source ?? '—';
 }
 
+/** Hoạt động / Đã tắt / Đã xóa — a deleted link outranks its stored status (#054). */
+type LinkState = 'active' | 'inactive' | 'deleted';
+function linkState(link: { status: string; deletedAt?: string | null }): LinkState {
+  if (link.deletedAt) return 'deleted';
+  return link.status === 'active' ? 'active' : 'inactive';
+}
+const LINK_STATE: Record<
+  LinkState,
+  { label: string; variant: 'default' | 'secondary' | 'outline' }
+> = {
+  active: { label: 'Hoạt động', variant: 'default' },
+  inactive: { label: 'Đã tắt', variant: 'secondary' },
+  deleted: { label: 'Đã xóa', variant: 'outline' }
+};
+
 export function PortalLinksView() {
   const queryClient = useQueryClient();
   const { data: links, isLoading } = useQuery(myLinksQueryOptions());
@@ -440,7 +455,7 @@ export function PortalLinksView() {
           </CardDescription>
           <CardAction className='flex items-center gap-2'>
             <Badge variant='secondary'>
-              {rows.filter((r) => r.status === 'active').length} đang chạy
+              {rows.filter((r) => linkState(r) === 'active').length} đang chạy
             </Badge>
             <Button
               size='sm'
@@ -494,6 +509,7 @@ export function PortalLinksView() {
                   <TableHead className='text-right'>Nhấp</TableHead>
                   <TableHead className='text-right'>Đơn</TableHead>
                   <TableHead className='text-right'>Hoa hồng</TableHead>
+                  <TableHead>Trạng thái</TableHead>
                   <TableHead className='text-right'>Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -534,11 +550,13 @@ export function PortalLinksView() {
                   </TableRow>
                 )}
                 {rows.map((r) => (
-                  <TableRow key={r.id} className={r.status === 'active' ? undefined : 'opacity-60'}>
+                  <TableRow
+                    key={r.id}
+                    className={linkState(r) === 'active' ? undefined : 'opacity-60'}
+                  >
                     <TableCell>
                       <div className='flex items-center gap-2'>
                         <span className='font-medium'>{r.label}</span>
-                        {r.status !== 'active' && <Badge variant='secondary'>Đã tắt</Badge>}
                       </div>
                     </TableCell>
                     <TableCell className='text-muted-foreground max-w-[220px] truncate text-xs'>
@@ -556,6 +574,15 @@ export function PortalLinksView() {
                       {formatVnd(r.totalCommissionVnd)}
                     </TableCell>
                     <TableCell>
+                      {/* Hoạt động / Đã tắt / Đã xóa (#054, test round 4). */}
+                      <Badge
+                        variant={LINK_STATE[linkState(r)].variant}
+                        data-testid={`link-status-${r.id}`}
+                      >
+                        {LINK_STATE[linkState(r)].label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <div className='flex justify-end gap-1'>
                         <Button
                           size='sm'
@@ -567,27 +594,33 @@ export function PortalLinksView() {
                           <Icons.copy />
                           Sao chép
                         </Button>
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          onClick={() =>
-                            toggleLink.mutate({
-                              id: r.id,
-                              data: { isActive: r.status !== 'active' }
-                            })
-                          }
-                        >
-                          {r.status === 'active' ? 'Tắt' : 'Mở'}
-                        </Button>
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          className='text-destructive hover:text-destructive'
-                          onClick={() => setPendingDelete(r)}
-                        >
-                          <Icons.trash />
-                          Xóa
-                        </Button>
+                        {/* A deleted link can no longer be switched or deleted. */}
+                        {linkState(r) !== 'deleted' && (
+                          <>
+                            <Button
+                              size='sm'
+                              variant='ghost'
+                              disabled={toggleLink.isPending}
+                              onClick={() =>
+                                toggleLink.mutate({
+                                  id: r.id,
+                                  data: { isActive: r.status !== 'active' }
+                                })
+                              }
+                            >
+                              {r.status === 'active' ? 'Tắt' : 'Mở'}
+                            </Button>
+                            <Button
+                              size='sm'
+                              variant='ghost'
+                              className='text-destructive hover:text-destructive'
+                              onClick={() => setPendingDelete(r)}
+                            >
+                              <Icons.trash />
+                              Xóa
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

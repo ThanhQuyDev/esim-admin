@@ -380,7 +380,7 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
                       <p className='text-sm font-medium'>{link.label}</p>
                       <p className='text-muted-foreground font-mono text-xs'>
                         {PUBLIC_ORIGIN}/go/{link.code}
-                        {link.status !== 'active' && ' · đã tắt'}
+                        {link.deletedAt ? ' · đã xóa' : link.status !== 'active' && ' · đã tắt'}
                       </p>
                     </div>
                     <div className='text-muted-foreground flex gap-3 text-xs tabular-nums'>

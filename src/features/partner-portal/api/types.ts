@@ -134,6 +134,8 @@ export type MyLink = {
   conversionCount: number;
   totalCommissionVnd: number;
   createdAt: string;
+  /** Set when the link was deleted — it then shows as "Đã xóa" (#054). */
+  deletedAt?: string | null;
 };
 
 export type CreateLinkPayload = { label: string; targetPath?: string };
