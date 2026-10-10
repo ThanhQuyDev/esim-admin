@@ -191,6 +191,10 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             <h2 className='text-xl font-semibold'>{partner.companyName || partner.contactName}</h2>
             <Badge variant={STATUS_VARIANTS[partner.status]}>{STATUS_LABELS[partner.status]}</Badge>
             <Badge variant='outline'>{PARTNER_TYPE_LABELS[partner.partnerType]}</Badge>
+            {/* Applied for API integration (#053, test round 4). */}
+            {partner.requestedType === 'api' && (
+              <Badge variant='secondary'>Đăng ký: tích hợp API</Badge>
+            )}
           </div>
           <p className='text-muted-foreground text-sm'>
             {partner.contactEmail} · {partner.contactPhone}

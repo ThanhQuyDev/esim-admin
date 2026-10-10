@@ -44,8 +44,8 @@ import { RejectPartnerModal } from './reject-partner-modal';
 
 const PARTNER_TYPE_LABEL: Record<string, string> = {
   distribution: 'Đối tác phân phối',
-  kol: 'KOL',
-  api: 'Đối tác API'
+  kol: 'Đối tác tiếp thị (KOL)',
+  api: 'Đối tác tích hợp API'
 };
 
 /** Only the three states this screen is about (#055). */
@@ -265,7 +265,10 @@ export function PartnerApprovalsView() {
                         <TableCell className='text-xs'>{partner.contactPhone}</TableCell>
                         <TableCell>
                           <Badge variant='outline'>
-                            {PARTNER_TYPE_LABEL[partner.partnerType] ?? partner.partnerType}
+                            {/* What they applied as — "tích hợp API" runs as
+                                distribution until its terms are set (#053). */}
+                            {PARTNER_TYPE_LABEL[partner.requestedType ?? partner.partnerType] ??
+                              partner.partnerType}
                           </Badge>
                         </TableCell>
                         <TableCell className='max-w-[220px] truncate text-xs'>

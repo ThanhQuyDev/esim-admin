@@ -182,7 +182,7 @@ export function AuthPageSettingsForm({ setting }: { setting: AuthPageSetting }) 
                 id='signUpUrl-partner'
                 value={signUpUrl}
                 onChange={(event) => setSignUpUrl(event.target.value)}
-                placeholder='Để trống: trang đăng ký đối tác /register/partner'
+                placeholder='Để trống: biểu mẫu đăng ký đối tác trên web (/affiliate/dang-ky)'
                 maxLength={500}
               />
             </div>

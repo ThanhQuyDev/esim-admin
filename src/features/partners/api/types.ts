@@ -14,6 +14,11 @@ export type Partner = {
   userId: number;
   user?: PartnerUser;
   partnerType: PartnerType;
+  /**
+   * What the applicant picked on the sign-up form: kol, distribution or api
+   * (#053, test round 4). An API applicant runs as distribution.
+   */
+  requestedType?: string | null;
   legalType: PartnerLegalType;
   companyName: string | null;
   taxCode: string | null;

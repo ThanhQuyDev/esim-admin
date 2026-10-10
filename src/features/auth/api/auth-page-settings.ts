@@ -1,5 +1,9 @@
+import { STOREFRONT_ORIGIN } from '@/features/blogs/utils/preview-url';
 import { APP_MODE, type AppMode } from '@/config/app-mode';
 import type { AuthPageSetting } from '@/features/auth-pages/api/types';
+
+/** The public partner application form, on the storefront (#053). */
+export const PARTNER_SIGN_UP_URL = `${STOREFRONT_ORIGIN}/affiliate/dang-ky`;
 
 /**
  * Sign-in page copy (#006).
@@ -43,9 +47,9 @@ const DEFAULTS: Record<AppMode, AuthPageContent> = {
     quoteAuthor: 'esim.vn',
     heading: 'Đăng nhập đối tác',
     subheading: 'Nhập email và mật khẩu bạn đã đăng ký để vào cổng đối tác.',
-    // The application form, which creates a partner for an admin to approve —
-    // /auth/sign-up only made a plain customer account (#016).
-    signUpUrl: '/register/partner'
+    // The storefront's application form (#053, test round 4): partners sign up
+    // there, so the portal's own address need not be public.
+    signUpUrl: PARTNER_SIGN_UP_URL
   }
 };
 
