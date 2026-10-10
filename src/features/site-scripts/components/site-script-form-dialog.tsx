@@ -45,6 +45,9 @@ function ScriptFields() {
         label='Đoạn mã'
         placeholder='<!-- Google tag (gtag.js) -->&#10;<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXX"></script>&#10;<script>…</script>'
         description='Dán nguyên đoạn mã nhà cung cấp đưa, không sửa gì. Chèn được nhiều thẻ script trong cùng một ô — thứ tự giữ đúng như đã dán.'
+        // A long tag scrolls inside the box instead of growing the dialog (#049).
+        className='max-h-72 overflow-y-auto font-mono text-xs'
+        rows={8}
       />
 
       <div className='grid grid-cols-2 gap-4'>

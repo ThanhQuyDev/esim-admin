@@ -53,7 +53,14 @@ export function SelectField({
             if (!open) field.handleBlur();
           }}
         >
-          <SelectTrigger id={field.name} aria-invalid={isTouched && !isValid}>
+          {/* Fill the column: the trigger is `w-fit` by default, so a long option
+              ("Cuối <body> (không chặn hiển thị)") ran over the next field
+              (#049, test round 4). */}
+          <SelectTrigger
+            id={field.name}
+            aria-invalid={isTouched && !isValid}
+            className='w-full min-w-0'
+          >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent>
