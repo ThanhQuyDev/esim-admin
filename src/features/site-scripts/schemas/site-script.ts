@@ -14,11 +14,13 @@ export const siteScriptSchema = z.object({
   content: z.string().min(1, 'Dán đoạn mã script vào đây'),
   placement: z.string().min(1, 'Chọn vị trí chèn'),
   isActive: z.boolean().optional(),
+  // A number input hands back a number once typed in — accept both (#048,
+  // test round 4: "expected string, received number").
   sortOrder: z
-    .string()
+    .union([z.string(), z.number()])
     .optional()
     .refine(
-      (v) => !v || (Number.isInteger(Number(v)) && Number(v) >= 0),
+      (v) => v === undefined || v === '' || (Number.isInteger(Number(v)) && Number(v) >= 0),
       'Thứ tự phải là số nguyên không âm'
     )
 });

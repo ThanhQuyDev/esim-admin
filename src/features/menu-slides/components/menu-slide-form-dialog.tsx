@@ -154,7 +154,11 @@ async function buildPayload(
   value: MenuSlideFormValues,
   imageFile: File | null
 ): Promise<CreateMenuSlidePayload> {
-  const image = imageFile ? await uploadToCloudinary(imageFile) : value.image;
+  // An uploaded file or a pasted URL — one of them is enough (#048).
+  if (!imageFile && !value.image?.trim()) {
+    throw new Error('Cần có hình ảnh — upload file hoặc dán URL');
+  }
+  const image = imageFile ? await uploadToCloudinary(imageFile) : value.image!.trim();
 
   return {
     menuKey: value.menuKey,

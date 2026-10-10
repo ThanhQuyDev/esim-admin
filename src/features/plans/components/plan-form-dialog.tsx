@@ -79,8 +79,10 @@ function TagsPicker({
  */
 function dailyResetOffsetValue(value: CreatePlanFormValues): number | null {
   if (value.dailyResetPolicy !== 'calendar_day') return null;
-  if (!value.dailyResetUtcOffset) return null;
-  return Number(value.dailyResetUtcOffset);
+  // 0 (UTC+0) is a real offset — only an empty field means "not stated".
+  const offset = value.dailyResetUtcOffset;
+  if (offset === undefined || offset === null || offset === '') return null;
+  return Number(offset);
 }
 
 /**

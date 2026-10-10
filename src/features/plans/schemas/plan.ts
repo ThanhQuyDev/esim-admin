@@ -49,11 +49,16 @@ export const createPlanSchema = z.object({
   isNonHkIp: z.boolean().optional(),
   ipExport: z.string().optional(),
   dailyResetPolicy: z.union([z.enum(DAILY_RESET_VALUES), z.literal('')]).optional(),
+  // A number input hands back a number once typed in — accept both (#048,
+  // test round 4: "expected string, received number").
   dailyResetUtcOffset: z
-    .string()
+    .union([z.string(), z.number()])
     .optional()
     .refine(
-      (v) => !v || (Number.isInteger(Number(v)) && Number(v) >= -12 && Number(v) <= 14),
+      (v) =>
+        v === undefined ||
+        v === '' ||
+        (Number.isInteger(Number(v)) && Number(v) >= -12 && Number(v) <= 14),
       'Múi giờ phải là số nguyên từ -12 đến 14'
     )
 });
