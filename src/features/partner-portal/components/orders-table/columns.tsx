@@ -51,6 +51,10 @@ export const COMMISSION_STATUS_OPTIONS = Object.entries(COMMISSION_STATUS).map(
  * on this order is smaller than the order looks.
  */
 function ProductLine({ item }: { item: MyOrderItem }) {
+  // A line partly refunded eSIM by eSIM keeps its row, but says how many came
+  // back and shows what is left (#056, test round 4).
+  const refundedQty = item.refunded ? item.quantity : (item.refundedQuantity ?? 0);
+  const keptQty = Math.max(0, item.quantity - refundedQty);
   return (
     <div
       className={cn(
@@ -60,13 +64,25 @@ function ProductLine({ item }: { item: MyOrderItem }) {
     >
       <span className={cn('truncate', item.refunded && 'line-through')}>
         {item.planName}
-        {item.quantity > 1 && ` ×${item.quantity}`}
+        {!item.refunded && refundedQty > 0
+          ? ` ×${keptQty}`
+          : item.quantity > 1 && ` ×${item.quantity}`}
       </span>
       <span className='flex shrink-0 items-center gap-2'>
-        {item.refunded && (
+        {item.refunded ? (
           <Badge variant='secondary' className='px-1.5 py-0 text-[10px]'>
             Hoàn
           </Badge>
+        ) : (
+          refundedQty > 0 && (
+            <Badge
+              variant='secondary'
+              className='px-1.5 py-0 text-[10px]'
+              data-testid='item-refunded-qty'
+            >
+              Khách đã hoàn {refundedQty} eSIM
+            </Badge>
+          )
         )}
         <span className='tabular-nums'>{item.vndPrice ? formatVnd(item.vndPrice) : '—'}</span>
       </span>

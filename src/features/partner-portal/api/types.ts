@@ -251,6 +251,8 @@ export type MyOrderItem = {
   /** Line price and whether this product was refunded (#023). */
   vndPrice?: number;
   refunded?: boolean;
+  /** eSIMs of this line refunded one by one (#056). */
+  refundedQuantity?: number;
 };
 
 export type MyOrder = {
