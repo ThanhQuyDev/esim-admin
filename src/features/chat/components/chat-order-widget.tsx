@@ -137,7 +137,7 @@ export function ChatOrderWidget() {
               >
                 <div className='flex items-center justify-between gap-2'>
                   <span className='flex items-center gap-1 font-medium'>
-                    #{order.orderNumber}
+                    {order.orderNumber}
                     <Icons.externalLink className='h-3 w-3 opacity-60' />
                   </span>
                   <Badge variant={getStatusBadgeVariant(order.status)} className='text-[10px]'>

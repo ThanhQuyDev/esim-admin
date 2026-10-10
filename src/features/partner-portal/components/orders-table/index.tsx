@@ -45,7 +45,11 @@ export function PortalOrdersTable() {
   const filtered = useMemo(() => {
     // Order code and product are separate criteria (#022): one box doing both
     // meant a partner could not narrow "đơn Nhật Bản" down to one order.
-    const code = params.orderNumber.trim().toLowerCase();
+    // A pasted "#ORD-…" still matches: the code itself has no # (#057, test round 4).
+    const code = params.orderNumber
+      .trim()
+      .replace(/^#+\s*/, '')
+      .toLowerCase();
     const product = params.product.trim().toLowerCase();
 
     return (orders ?? []).filter((order) => {

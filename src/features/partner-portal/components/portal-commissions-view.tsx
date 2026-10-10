@@ -309,7 +309,7 @@ export function PortalCommissionsView() {
                       <TableCell className='whitespace-nowrap'>
                         {formatDateVn(o.createdAt)}
                       </TableCell>
-                      <TableCell className='font-mono text-xs'>#{o.orderNumber}</TableCell>
+                      <TableCell className='font-mono text-xs'>{o.orderNumber}</TableCell>
                       <TableCell>{o.items.map((i) => i.planName).join(' + ') || '—'}</TableCell>
                       <TableCell className='text-right tabular-nums'>
                         {formatVnd(o.vndPrice)}

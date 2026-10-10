@@ -134,7 +134,7 @@ export const columns: ColumnDef<MyOrder>[] = [
       <DataTableColumnHeader column={column} title='Mã đơn' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-xs font-semibold'>#{row.original.orderNumber}</span>
+      <span className='font-mono text-xs font-semibold'>{row.original.orderNumber}</span>
     ),
     meta: {
       label: 'Mã đơn',
