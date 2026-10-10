@@ -37,6 +37,17 @@ export type Plan = {
   /** Exit IP location from the supplier — "SG", "FR/NL/UK", "HK" (#043). */
   ipExport?: string | null;
   /**
+   * TikTok / ChatGPT support as the storefront judges it — the exit IP, else the
+   * APN table (#045, test round 4). `known` false = the APN is not in the table.
+   */
+  appSupport?: {
+    tiktokIos: boolean;
+    tiktokAndroid: boolean;
+    tiktokAllDevices: boolean;
+    chatGpt: boolean;
+    known: boolean;
+  };
+  /**
    * "Giờ làm mới mỗi ngày" (#063) — when the daily allowance starts over. Null
    * where the supplier has not stated it, which the storefront omits rather than
    * guessing at (#071).

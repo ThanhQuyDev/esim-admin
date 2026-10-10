@@ -47,6 +47,42 @@ export function shortCode(code: string, keep = 12): string {
   return code.length > keep ? `${code.slice(0, keep)}…` : code;
 }
 
+/** TikTok / ChatGPT as the storefront judges it (#045, test round 4). */
+function AppSupportCell({ plan }: { plan: Plan }) {
+  const support = plan.appSupport;
+  const source = plan.isNonHkIp ? 'IP' : plan.apn ? `APN ${plan.apn}` : null;
+  let label = 'Không';
+  let variant: 'default' | 'secondary' | 'outline' = 'secondary';
+  if (support?.tiktokAllDevices && support.chatGpt) {
+    label = 'Có';
+    variant = 'default';
+  } else if (support?.known && (support.chatGpt || support.tiktokIos || support.tiktokAndroid)) {
+    const parts = [
+      support.tiktokIos && !support.tiktokAndroid ? 'TikTok iPhone' : null,
+      !support.tiktokIos && support.tiktokAndroid ? 'TikTok Android' : null,
+      support.chatGpt ? 'ChatGPT' : null
+    ].filter(Boolean);
+    label = `Chỉ ${parts.join(', ')}`;
+    variant = 'outline';
+  } else if (!support?.known && !plan.isNonHkIp) {
+    label = 'Chưa rõ';
+    variant = 'outline';
+  }
+  return (
+    <div className='flex flex-col items-start gap-0.5' data-testid='plan-app-support'>
+      <Badge variant={variant}>{label}</Badge>
+      {(plan.ipExport || source) && (
+        <span
+          className='text-muted-foreground max-w-[160px] truncate text-xs'
+          title={plan.apn ?? ''}
+        >
+          {plan.ipExport ? `IP: ${plan.ipExport}` : source}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export type PlanColumnOptions = {
   /** APN values in use, fetched at runtime (#010). */
   apnOptions?: { value: string; label: string }[];
@@ -397,17 +433,9 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       id: 'isNonHkIp',
       accessorFn: (row) => (row.isNonHkIp ? 'true' : 'false'),
       header: 'Tiktok & ChatGPT',
-      cell: ({ row }) => (
-        <div className='flex flex-col items-start gap-0.5'>
-          <Badge variant={row.original.isNonHkIp ? 'default' : 'secondary'}>
-            {row.original.isNonHkIp ? 'Có' : 'Không'}
-          </Badge>
-          {/* The exit IP it was judged from (#043, test round 4). */}
-          {row.original.ipExport && (
-            <span className='text-muted-foreground text-xs'>IP: {row.original.ipExport}</span>
-          )}
-        </div>
-      ),
+      // The verdict the storefront uses — exit IP, else the APN table (#045,
+      // test round 4) — so a plan whose APN works reads "Có" here too.
+      cell: ({ row }) => <AppSupportCell plan={row.original} />,
       enableSorting: false,
       enableColumnFilter: true,
       meta: {
