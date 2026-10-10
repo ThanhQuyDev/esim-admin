@@ -11,7 +11,10 @@ export const OVERVIEW_PROVIDERS = [
   'gadgetkorea',
   'microesim',
   'billion',
-  'viettel'
+  'viettel',
+  // Domestic stock; an order for it (e.g. placed on a customer's behalf) was
+  // missing from the overview (#063, test round 4).
+  'itel'
 ] as const satisfies readonly OverviewProvider[];
 
 /**
@@ -25,7 +28,8 @@ export const PROVIDER_LABELS: Record<string, string> = {
   gadgetkorea: 'Gadget Korea',
   microesim: 'MicroEsim',
   billion: 'Billion Connect',
-  viettel: 'Viettel'
+  viettel: 'Viettel',
+  itel: 'iTel'
 };
 
 /**
@@ -44,7 +48,8 @@ export const PROVIDER_CODE_LABELS: Record<string, string> = {
   gadgetkorea: 'GK',
   microesim: 'MI',
   billion: 'BL',
-  viettel: 'VT'
+  viettel: 'VT',
+  itel: 'IT'
 };
 
 /**

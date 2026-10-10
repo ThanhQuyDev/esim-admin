@@ -4,7 +4,8 @@ export type OverviewProvider =
   | 'gadgetkorea'
   | 'microesim'
   | 'billion'
-  | 'viettel';
+  | 'viettel'
+  | 'itel';
 
 export type OverviewPreset = 'today' | 'yesterday' | 'last7days' | 'last30days';
 export type OverviewGroupBy = 'day' | 'week' | 'month' | 'year';
