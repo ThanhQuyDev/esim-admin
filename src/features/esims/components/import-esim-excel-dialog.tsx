@@ -78,7 +78,7 @@ export function ImportEsimExcelDialog({ kind }: { kind: EsimKind }) {
     ...importEsimsExcelMutation,
     onSuccess: (data, variables) => {
       toast.success(
-        `Import eSIM ${variables.provider} hoàn tất: ${data.created} tạo mới, ${data.skipped} bỏ qua, ${data.planCreated} plan tạo mới`
+        `Import eSIM ${variables.provider || 'nội địa'} hoàn tất: ${data.created} tạo mới, ${data.skipped} bỏ qua, ${data.planCreated} plan tạo mới`
       );
       handleReset();
       setOpen(false);
@@ -118,7 +118,9 @@ export function ImportEsimExcelDialog({ kind }: { kind: EsimKind }) {
 
   const handleSubmit = useCallback(() => {
     const provider = carrier.trim();
-    if (!provider) {
+    // The domestic template names the carrier on every row (one file lists
+    // iTel, Wintel and VNSKY together — #066), so the field is optional there.
+    if (!provider && kind !== 'domestic') {
       toast.error('Vui lòng nhập tên nhà mạng');
       return;
     }
@@ -149,8 +151,10 @@ export function ImportEsimExcelDialog({ kind }: { kind: EsimKind }) {
           <DialogHeader>
             <DialogTitle>{copy.title}</DialogTitle>
             <DialogDescription>
-              {copy.description} Nhà mạng nhập ở đây áp dụng cho mọi dòng và ghi đè cột Carrier
-              trong file.
+              {copy.description}{' '}
+              {kind === 'domestic'
+                ? 'Dùng file mẫu eSIM nội địa (dòng tiêu đề tiếng Anh; có thể giữ dòng tiếng Việt ở trên). Mỗi dòng lấy nhà mạng theo cột Carrier trong file.'
+                : 'Nhà mạng nhập ở đây áp dụng cho mọi dòng và ghi đè cột Carrier trong file.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -158,7 +162,12 @@ export function ImportEsimExcelDialog({ kind }: { kind: EsimKind }) {
             {/* Carrier */}
             <div className='grid gap-2'>
               <Label htmlFor={ids.carrier}>
-                Nhà mạng <span className='text-destructive'>*</span>
+                Nhà mạng{' '}
+                {kind === 'domestic' ? (
+                  <span className='text-muted-foreground font-normal'>(không bắt buộc)</span>
+                ) : (
+                  <span className='text-destructive'>*</span>
+                )}
               </Label>
               <Input
                 id={ids.carrier}
@@ -175,7 +184,9 @@ export function ImportEsimExcelDialog({ kind }: { kind: EsimKind }) {
                 ))}
               </datalist>
               <p className='text-muted-foreground text-xs'>
-                Chọn nhà mạng có sẵn hoặc gõ tên nhà mạng mới.
+                {kind === 'domestic'
+                  ? 'Chỉ dùng cho dòng để trống cột Carrier.'
+                  : 'Chọn nhà mạng có sẵn hoặc gõ tên nhà mạng mới.'}
               </p>
             </div>
 
