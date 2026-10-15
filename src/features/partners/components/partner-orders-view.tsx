@@ -11,6 +11,7 @@
  */
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icons } from '@/components/icons';
+import { commissionRejectionText } from '@/lib/commission-rejection';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { partnerOptionsQueryOptions, partnerOrdersQueryOptions } from '../api/queries';
@@ -195,7 +197,15 @@ function MarketingTable({ rows }: { rows: AdminMarketingOrderRow[] }) {
       <TableBody>
         {rows.map((row) => (
           <TableRow key={row.orderNumber}>
-            <TableCell className='font-mono text-xs'>{row.orderNumber}</TableCell>
+            <TableCell className='font-mono text-xs'>
+              {/* Opens the full order, where the reason is spelled out (#027). */}
+              <Link
+                href={`/dashboard/orders/${encodeURIComponent(row.orderNumber)}`}
+                className='underline-offset-2 hover:underline'
+              >
+                {row.orderNumber}
+              </Link>
+            </TableCell>
             <TableCell>
               <div className='text-sm font-medium'>
                 {row.partnerName ?? `Đối tác #${row.partnerId}`}
@@ -237,6 +247,14 @@ function MarketingTable({ rows }: { rows: AdminMarketingOrderRow[] }) {
               {row.commissionStatus && (
                 <div className='text-muted-foreground mt-1 text-xs'>
                   {COMMISSION_STATUS_LABEL[row.commissionStatus] ?? row.commissionStatus}
+                </div>
+              )}
+              {commissionRejectionText(row.rejectionReason) && (
+                <div
+                  className='text-destructive mt-1 max-w-[220px] text-xs'
+                  data-testid='row-rejection'
+                >
+                  {commissionRejectionText(row.rejectionReason)}
                 </div>
               )}
             </TableCell>

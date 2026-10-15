@@ -351,7 +351,9 @@ export type MyOrder = {
   refundedVnd?: number;
   createdAt: string;
   commissionVnd: number | null;
-  commissionStatus: 'pending' | 'credited' | 'reversed' | null;
+  commissionStatus: 'pending' | 'credited' | 'reversed' | 'rejected' | null;
+  /** Why a refused order earned nothing (doitac-1410 #027). */
+  rejectionReason?: string | null;
   linkCode: string | null;
   /** Rate this order paid, read back from the money (#026). */
   commissionPercent?: number | null;
@@ -447,7 +449,9 @@ export type MyOrderDetail = {
   refundedVnd: number;
   commissionVnd: number | null;
   commissionPercent: number | null;
-  commissionStatus: 'pending' | 'credited' | 'reversed' | null;
+  commissionStatus: 'pending' | 'credited' | 'reversed' | 'rejected' | null;
+  /** Why a refused order earned nothing (doitac-1410 #027). */
+  rejectionReason?: string | null;
   source: { type: 'link' | 'coupon'; code: string | null };
   /** Each refund of the order, oldest first (doitac-1410 #020). */
   refunds?: { at: string; amountVnd: number; esimCount: number | null }[];

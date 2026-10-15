@@ -19,6 +19,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { commissionRejectionText } from '@/lib/commission-rejection';
 import { formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -44,7 +45,12 @@ interface OrderDetailDialogProps {
 export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDialogProps) {
   const { data, isLoading } = useQuery(myOrderDetailQueryOptions(orderNumber));
 
-  const status = data?.commissionStatus ? COMMISSION_STATUS[data.commissionStatus] : null;
+  // A refused order shows no status badge, but says why (doitac-1410 #027).
+  const refused = data?.commissionStatus === 'rejected';
+  const status =
+    data?.commissionStatus && !refused ? COMMISSION_STATUS[data.commissionStatus] : null;
+  const noCommission = Boolean(data) && (refused || !data?.commissionStatus);
+  const rejection = commissionRejectionText(data?.rejectionReason);
 
   // How many eSIMs came back, for the header (doitac-1410 #020).
   const totalEsims = data?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
@@ -65,11 +71,16 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
       at: data?.timeline.activatedAt ?? null,
       hint: data?.timeline.activatedAt ? undefined : 'Khách chưa kích hoạt'
     },
-    {
-      label: 'Hoa hồng được duyệt',
-      at: data?.timeline.creditedAt ?? null,
-      hint: data?.timeline.creditedAt ? undefined : 'Duyệt sau 24h kể từ khi đặt hàng'
-    },
+    // No commission, nothing to approve: the step is left out (#027).
+    ...(noCommission
+      ? []
+      : [
+          {
+            label: 'Hoa hồng được duyệt',
+            at: data?.timeline.creditedAt ?? null,
+            hint: data?.timeline.creditedAt ? undefined : 'Duyệt sau 24h kể từ khi đặt hàng'
+          }
+        ]),
     // Every refund, with how many eSIMs and when (doitac-1410 #020).
     ...(data?.refunds ?? []).map((refund, index) => ({
       label:
@@ -137,7 +148,7 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
                   )}
                 </dd>
               </div>
-              <div>
+              <div className={noCommission ? 'col-span-2' : undefined}>
                 <dt className='text-muted-foreground'>Trạng thái đơn</dt>
                 <dd>
                   {status ? (
@@ -146,6 +157,13 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
                     </Badge>
                   ) : (
                     <span className='text-muted-foreground'>Không phát sinh hoa hồng</span>
+                  )}
+                  {noCommission && (
+                    <p className='text-destructive mt-1 text-xs' data-testid='no-commission-reason'>
+                      Lý do:{' '}
+                      {rejection ??
+                        'Đơn không đủ điều kiện tính hoa hồng (hạng 0% hoặc đơn chưa thanh toán).'}
+                    </p>
                   )}
                 </dd>
               </div>

@@ -531,6 +531,8 @@ export type PartnerOrderItem = {
 /** A marketing partner's attributed order, as the admin sees it (#071). */
 export type AdminMarketingOrderRow = {
   orderNumber: string;
+  /** Why a refused order earned nothing (doitac-1410 #027). */
+  rejectionReason?: string | null;
   partnerId: number;
   partnerName: string | null;
   status: string;

@@ -23,6 +23,7 @@ import { InvoiceViewDialog } from './invoice-view-dialog';
 import { canIssueInvoice } from '../utils/invoice-filter';
 import { formatCountry, formatDateTimeVn } from '@/lib/format';
 import { ValueAfterRefund } from '../utils/refund-values';
+import { commissionRejectionText } from '@/lib/commission-rejection';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -337,18 +338,8 @@ function commissionStatusVariant(
  * The partner will write in to ask, so whoever answers needs the detail that
  * matched rather than "đơn này không phát sinh hoa hồng".
  */
-const rejectionReasonLabels: Record<string, string> = {
-  self_account: 'Đơn do chính tài khoản của đối tác đặt.',
-  self_email: 'Email khách trùng email đăng ký của đối tác.',
-  self_phone: 'Số điện thoại khách trùng số đăng ký của đối tác.',
-  self_tax_code: 'Mã số thuế trên hoá đơn trùng mã số thuế của đối tác.',
-  self_bank_account: 'Tài khoản ngân hàng trùng tài khoản nhận hoa hồng của đối tác.'
-};
-
-function rejectionReasonLabel(reason?: string | null): string | null {
-  if (!reason) return null;
-  return rejectionReasonLabels[reason] ?? `Hệ thống loại hoa hồng đơn này: ${reason}.`;
-}
+// The words are shared with the partner portal (doitac-1410 #027).
+const rejectionReasonLabel = commissionRejectionText;
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
   const [refundOpen, setRefundOpen] = useState(false);
@@ -808,8 +799,8 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               ))}
             </CardTitle>
             {rejectionReasonLabel(order.partnerCommission.rejectionReason) && (
-              <CardDescription className='text-destructive'>
-                Đơn này bị loại hoa hồng (tự giới thiệu).{' '}
+              <CardDescription className='text-destructive' data-testid='commission-rejection'>
+                Không ghi nhận hoa hồng cho đơn này. Lý do:{' '}
                 {rejectionReasonLabel(order.partnerCommission.rejectionReason)}
               </CardDescription>
             )}

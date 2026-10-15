@@ -35,6 +35,12 @@ export const COMMISSION_STATUS: Record<string, { label: string; className: strin
     label: 'Đơn hoàn tiền',
     className:
       'border-red-200 bg-red-100 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
+  },
+  // Refused outright — the order's own details say why (doitac-1410 #027).
+  rejected: {
+    label: 'Không tính hoa hồng',
+    className:
+      'border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300'
   }
 };
 

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
+import { commissionRejectionText } from '@/lib/commission-rejection';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Chờ đơn thanh toán',
@@ -32,13 +33,6 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = 
  * details were the partner's own. Spelled out here because this list is where
  * a complaint about a missing commission gets answered.
  */
-const REJECTION_REASON: Record<string, string> = {
-  self_account: 'Đơn do chính tài khoản của đối tác đặt',
-  self_email: 'Email khách trùng email đăng ký của đối tác',
-  self_phone: 'Số điện thoại khách trùng số đăng ký của đối tác',
-  self_tax_code: 'Mã số thuế trên hoá đơn trùng mã số thuế của đối tác',
-  self_bank_account: 'Trùng tài khoản ngân hàng nhận hoa hồng của đối tác'
-};
 
 /** The last twelve reconciliation periods, newest first (#064). */
 function recentPeriods(): { value: string; label: string }[] {
@@ -133,7 +127,7 @@ export function CommissionsView() {
                 <p className='text-muted-foreground text-xs'>{formatDateTimeVn(c.createdAt)}</p>
                 {c.rejectionReason && (
                   <p className='text-destructive text-xs'>
-                    Tự giới thiệu — {REJECTION_REASON[c.rejectionReason] ?? c.rejectionReason}
+                    {commissionRejectionText(c.rejectionReason)}
                   </p>
                 )}
               </div>
