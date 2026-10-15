@@ -149,6 +149,50 @@ export type MyLink = {
   createdAt: string;
   /** Set when the link was deleted — it then shows as "Đã xóa" (#054). */
   deletedAt?: string | null;
+  // doitac-1410 #018:
+  /** Clicks, orders and commission over the window the list asked for. */
+  periodClicks?: number;
+  periodOrders?: number;
+  periodCommissionVnd?: number;
+  /** Renames and destination changes. */
+  editCount?: number;
+  lastChangedAt?: string | null;
+  lastClickedAt?: string | null;
+  /** Until when the partner can bring a deleted link back. */
+  restorableUntil?: string | null;
+  /** Suspended by esim.vn, this link alone — appealable. */
+  suspendedByAdmin?: boolean;
+  suspendedReason?: string | null;
+  appealedAt?: string | null;
+};
+
+/** The link list's filters and order (doitac-1410 #018). */
+export type MyLinksQuery = {
+  status?: string;
+  channel?: string;
+  from?: string;
+  to?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  sort?: string;
+};
+
+/** One thing that happened to a link (doitac-1410 #018). */
+export type MyLinkEvent = {
+  id: number;
+  action: string;
+  actorRole: 'partner' | 'admin' | 'system';
+  detail: Record<string, unknown> | null;
+  createdAt: string;
+};
+
+/** A link for its detail popup (doitac-1410 #018). */
+export type MyLinkDetail = MyLink & {
+  statusSince: string;
+  createdBy: string;
+  lastChangedBy: string;
+  retargetCount: number;
+  events: MyLinkEvent[];
 };
 
 export type CreateLinkPayload = { label: string; targetPath?: string };

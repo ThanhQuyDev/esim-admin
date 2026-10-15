@@ -1,10 +1,12 @@
 import { queryOptions } from '@tanstack/react-query';
+import type { MyLinksQuery } from './types';
 import {
   getMyPartner,
   getMyWallet,
   getMyWalletTransactions,
   getMyDepositRequests,
   getMyLinks,
+  getMyLinkDetail,
   getMyCommissions,
   getMyPayouts,
   getMySummary,
@@ -59,8 +61,22 @@ export const myWalletTransactionsQueryOptions = () =>
 export const myDepositRequestsQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.depositRequests(), queryFn: getMyDepositRequests });
 
+/** The filtered list (doitac-1410 #018), keyed under the plain one so edits refresh both. */
+export const myFilteredLinksQueryOptions = (query: MyLinksQuery) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.links(), query],
+    queryFn: () => getMyLinks(query)
+  });
+
+/** One link for its detail popup (doitac-1410 #018). */
+export const myLinkDetailQueryOptions = (id: number, range: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.links(), 'detail', id, range.from ?? '', range.to ?? ''],
+    queryFn: () => getMyLinkDetail(id, range)
+  });
+
 export const myLinksQueryOptions = () =>
-  queryOptions({ queryKey: partnerPortalKeys.links(), queryFn: getMyLinks });
+  queryOptions({ queryKey: partnerPortalKeys.links(), queryFn: () => getMyLinks() });
 
 export const myCommissionsQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.commissions(), queryFn: () => getMyCommissions() });

@@ -7,6 +7,8 @@ import type {
   MyDepositRequest,
   CreateDepositRequestPayload,
   MyLink,
+  MyLinkDetail,
+  MyLinksQuery,
   CreateLinkPayload,
   UpdateLinkPayload,
   MyCommission,
@@ -113,8 +115,38 @@ export async function createMyDepositRequest(
   });
 }
 
-export async function getMyLinks(): Promise<MyLink[]> {
-  return apiClient<MyLink[]>('/partner-portal/links');
+export async function getMyLinks(query: MyLinksQuery = {}): Promise<MyLink[]> {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value) params.set(key, value);
+  }
+  const qs = params.toString();
+  return apiClient<MyLink[]>(`/partner-portal/links${qs ? `?${qs}` : ''}`);
+}
+
+/** One link, its timeline and history (doitac-1410 #018). */
+export async function getMyLinkDetail(
+  id: number,
+  range: { from?: string; to?: string } = {}
+): Promise<MyLinkDetail> {
+  const params = new URLSearchParams();
+  if (range.from) params.set('from', range.from);
+  if (range.to) params.set('to', range.to);
+  const qs = params.toString();
+  return apiClient<MyLinkDetail>(`/partner-portal/links/${id}/detail${qs ? `?${qs}` : ''}`);
+}
+
+/** Bring back a link deleted within 30 days (doitac-1410 #018). */
+export async function restoreMyLink(id: number): Promise<MyLink> {
+  return apiClient<MyLink>(`/partner-portal/links/${id}/restore`, { method: 'POST' });
+}
+
+/** Record the appeal of a suspended link, with its ticket (doitac-1410 #018). */
+export async function appealMyLink(id: number, ticketId?: number): Promise<MyLink> {
+  return apiClient<MyLink>(`/partner-portal/links/${id}/appeal`, {
+    method: 'POST',
+    body: JSON.stringify(ticketId ? { ticketId } : {})
+  });
 }
 
 export async function createMyLink(data: CreateLinkPayload): Promise<MyLink> {

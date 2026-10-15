@@ -38,33 +38,37 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from '@/components/ui/alert-dialog';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { createLinkMutation, deleteLinkMutation, updateLinkMutation } from '../api/mutations';
-import { exportMyLinks } from '../api/service';
-import { myLinksQueryOptions, myProfileQueryOptions, partnerPortalKeys } from '../api/queries';
+import { createLinkMutation, updateLinkMutation } from '../api/mutations';
+import { exportMyLinks, restoreMyLink } from '../api/service';
+import {
+  myFilteredLinksQueryOptions,
+  myProfileQueryOptions,
+  partnerPortalKeys
+} from '../api/queries';
 import type { MyLink } from '../api/types';
-
-const CHANNELS = [
-  { value: 'youtube', label: 'YouTube' },
-  { value: 'tiktok', label: 'TikTok' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'website', label: 'Trang web' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'threads', label: 'Threads' },
-  { value: 'other', label: 'Kênh khác' }
-];
+import {
+  AppealLinkDialog,
+  DeleteLinkDialog,
+  EditLinkDialog,
+  LinkDetailDialog,
+  PauseLinkDialog
+} from './portal-link-dialogs';
+import {
+  CHANNELS,
+  LINK_PERIODS,
+  LINK_STATE,
+  type LinkPeriod,
+  buildTargetPath,
+  channelOf,
+  landingOf,
+  linkState,
+  periodRange,
+  shortLinkOf
+} from './portal-link-utils';
 
 const EMPTY_FORM = { landing: '', label: '', channel: 'youtube', subid: '', code: '' };
 
@@ -73,66 +77,48 @@ const CODE_MIN = 8;
 const CODE_MAX = 50;
 const CODE_PATTERN = /^[A-Za-z0-9]+$/;
 
-function shortLinkOf(code: string): string {
-  // /go/<code> is the route the site actually serves — /r/ 404s (#024).
-  return `esim.vn/go/${code}`;
-}
+/** The list's order (doitac-1410 #018). */
+const SORTS = [
+  { value: 'updated', label: 'Cập nhật gần nhất' },
+  { value: 'created', label: 'Mới tạo' },
+  { value: 'orders', label: 'Nhiều đơn nhất' },
+  { value: 'commission', label: 'Hoa hồng cao nhất' },
+  { value: 'lastClick', label: 'Lần nhấp gần nhất' }
+];
 
-/**
- * Fold the channel and sub-id into the destination: the links API stores a
- * label and a target path and nothing else, so this is where they survive.
- */
-function buildTargetPath(landing: string, channel: string, subid: string): string | undefined {
-  const trimmed = landing.trim();
-  if (!trimmed) return undefined;
-  try {
-    const url = new URL(trimmed, 'https://esim.vn');
-    if (channel) url.searchParams.set('utm_source', channel);
-    if (subid.trim()) url.searchParams.set('subid', subid.trim());
-    return `${url.pathname}${url.search}`;
-  } catch {
-    return trimmed;
-  }
-}
+const STATUSES = [
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'active', label: 'Hoạt động' },
+  { value: 'inactive', label: 'Tạm tắt' },
+  { value: 'suspended', label: 'Bị đình chỉ' },
+  { value: 'deleted', label: 'Đã xóa' }
+];
 
-/** Read the channel back out of a stored target path. */
-/** The landing page a link points at, without the utm parameters we add. */
-function landingOf(targetPath: string | null): string {
-  if (!targetPath) return 'Trang chủ';
-  const path = targetPath.split('?')[0];
-  return path || 'Trang chủ';
-}
-
-function channelOf(targetPath: string | null): string {
-  if (!targetPath) return '—';
-  const source = new URLSearchParams(targetPath.split('?')[1] ?? '').get('utm_source');
-  return CHANNELS.find((c) => c.value === source)?.label ?? source ?? '—';
-}
-
-/**
- * Hoạt động / Đã tắt / Bị đình chỉ / Đã xóa — a deleted link outranks its
- * stored status (#054). "Bị đình chỉ" is set by the admin locking the account
- * and only lifted by unlocking it (doitac-1410 #004).
- */
-type LinkState = 'active' | 'inactive' | 'suspended' | 'deleted';
-function linkState(link: { status: string; deletedAt?: string | null }): LinkState {
-  if (link.deletedAt) return 'deleted';
-  if (link.status === 'suspended') return 'suspended';
-  return link.status === 'active' ? 'active' : 'inactive';
-}
-const LINK_STATE: Record<
-  LinkState,
-  { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }
-> = {
-  active: { label: 'Hoạt động', variant: 'default' },
-  inactive: { label: 'Đã tắt', variant: 'secondary' },
-  suspended: { label: 'Bị đình chỉ', variant: 'destructive' },
-  deleted: { label: 'Đã xóa', variant: 'outline' }
-};
+type Popup = { kind: 'detail' | 'edit' | 'pause' | 'delete' | 'appeal'; link: MyLink } | null;
 
 export function PortalLinksView() {
   const queryClient = useQueryClient();
-  const { data: links, isLoading } = useQuery(myLinksQueryOptions());
+  // Filters, quick period and order go to the server (doitac-1410 #018); the
+  // text search stays in the browser.
+  const [status, setStatus] = useState('all');
+  const [channelFilter, setChannelFilter] = useState('all');
+  const [period, setPeriod] = useState<LinkPeriod>('all');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
+  const [sort, setSort] = useState('created');
+  const query = useMemo(
+    () => ({
+      ...(status !== 'all' ? { status } : {}),
+      ...(channelFilter !== 'all' ? { channel: channelFilter } : {}),
+      ...periodRange(period),
+      ...(createdFrom ? { createdFrom } : {}),
+      ...(createdTo ? { createdTo } : {}),
+      sort
+    }),
+    [status, channelFilter, period, createdFrom, createdTo, sort]
+  );
+  const { data: links, isLoading } = useQuery(myFilteredLinksQueryOptions(query));
+  const [popup, setPopup] = useState<Popup>(null);
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [labelError, setLabelError] = useState<string | null>(null);
@@ -147,20 +133,15 @@ export function PortalLinksView() {
   // Filter by campaign name and landing page (#015). A partner running a
   // dozen campaigns at once was left scrolling to find the one link they
   // needed to copy.
-  const [filters, setFilters] = useState({ label: '', landing: '' });
+  const [filters, setFilters] = useState({ label: '' });
   const rows = useMemo(() => {
-    const label = filters.label.trim().toLowerCase();
-    const landing = filters.landing.trim().toLowerCase();
-    if (!label && !landing) return allRows;
-
-    return allRows.filter((r) => {
-      const matchesLabel = !label || (r.label ?? '').toLowerCase().includes(label);
-      // The landing page is the path before the utm parameters the portal adds.
-      const path = (r.targetPath ?? '').split('?')[0].toLowerCase();
-      const matchesLanding =
-        !landing || path.includes(landing) || (r.code ?? '').toLowerCase().includes(landing);
-      return matchesLabel && matchesLanding;
-    });
+    const text = filters.label.trim().toLowerCase();
+    if (!text) return allRows;
+    return allRows.filter((r) =>
+      [r.label ?? '', (r.targetPath ?? '').split('?')[0], r.code ?? ''].some((v) =>
+        v.toLowerCase().includes(text)
+      )
+    );
   }, [allRows, filters]);
   const qrValue = qrLink || (allRows[0] ? `https://${shortLinkOf(allRows[0].code)}` : '');
 
@@ -187,15 +168,13 @@ export function PortalLinksView() {
   });
 
   const [exporting, setExporting] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<MyLink | null>(null);
-  const removeLink = useMutation({
-    ...deleteLinkMutation,
+  const restore = useMutation({
+    mutationFn: (id: number) => restoreMyLink(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: partnerPortalKeys.links() });
-      setPendingDelete(null);
-      toast.success('Đã xóa liên kết.');
+      toast.success('Đã khôi phục liên kết.');
     },
-    onError: (e: Error) => toast.error(e.message || 'Không xóa được liên kết.')
+    onError: (e: Error) => toast.error(e.message || 'Không khôi phục được liên kết.')
   });
 
   const submit = () => {
@@ -238,11 +217,13 @@ export function PortalLinksView() {
     a.click();
   };
 
+  // Numbers, not the text a decimal column arrives as: summed as text the
+  // commission read a million times too large (doitac-1410 #018).
   const totals = rows.reduce(
     (acc, r) => ({
-      clicks: acc.clicks + r.clickCount,
-      conversions: acc.conversions + r.conversionCount,
-      commission: acc.commission + r.totalCommissionVnd
+      clicks: acc.clicks + Number(r.periodClicks ?? r.clickCount ?? 0),
+      conversions: acc.conversions + Number(r.periodOrders ?? r.conversionCount ?? 0),
+      commission: acc.commission + Number(r.periodCommissionVnd ?? r.totalCommissionVnd ?? 0)
     }),
     { clicks: 0, conversions: 0, commission: 0 }
   );
@@ -420,29 +401,35 @@ export function PortalLinksView() {
         </Card>
       </div>
 
-      <AlertDialog
-        open={Boolean(pendingDelete)}
-        onOpenChange={(open) => !open && setPendingDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xóa liên kết “{pendingDelete?.label}”?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Liên kết sẽ ngừng hoạt động và biến mất khỏi danh sách. Hoa hồng của các đơn đã phát
-              sinh qua liên kết này vẫn được giữ nguyên.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => pendingDelete && removeLink.mutate(pendingDelete.id)}
-              disabled={removeLink.isPending}
-            >
-              Xóa liên kết
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {popup?.kind === 'detail' && (
+        <LinkDetailDialog
+          link={popup.link}
+          onClose={() => setPopup(null)}
+          onEdit={() => setPopup({ kind: 'edit', link: popup.link })}
+          onPause={() => setPopup({ kind: 'pause', link: popup.link })}
+          onResume={() => {
+            toggleLink.mutate({ id: popup.link.id, data: { isActive: true } });
+            setPopup(null);
+          }}
+          onDelete={() => setPopup({ kind: 'delete', link: popup.link })}
+        />
+      )}
+      {popup?.kind === 'edit' && (
+        <EditLinkDialog link={popup.link} onClose={() => setPopup(null)} />
+      )}
+      {popup?.kind === 'pause' && (
+        <PauseLinkDialog link={popup.link} onClose={() => setPopup(null)} />
+      )}
+      {popup?.kind === 'delete' && (
+        <DeleteLinkDialog
+          link={popup.link}
+          onClose={() => setPopup(null)}
+          onPauseInstead={() => setPopup({ kind: 'pause', link: popup.link })}
+        />
+      )}
+      {popup?.kind === 'appeal' && (
+        <AppealLinkDialog link={popup.link} onClose={() => setPopup(null)} />
+      )}
 
       <Card>
         <CardHeader>
@@ -454,10 +441,10 @@ export function PortalLinksView() {
                 : `${rows.length}/${allRows.length} liên kết`}
             </Badge>
           </CardTitle>
-          <CardDescription>
+          <CardDescription data-testid='links-totals'>
             {totals.clicks.toLocaleString('vi-VN')} lượt nhấp ·{' '}
             {totals.conversions.toLocaleString('vi-VN')} đơn · {formatVnd(totals.commission)} hoa
-            hồng
+            hồng · {LINK_PERIODS.find((p) => p.value === period)?.label.toLowerCase()}
           </CardDescription>
           <CardAction className='flex items-center gap-2'>
             <Badge variant='secondary'>
@@ -484,9 +471,23 @@ export function PortalLinksView() {
           </CardAction>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <div className='grid gap-3 sm:grid-cols-2 lg:max-w-2xl'>
+          {/* Thống kê nhanh: the window the clicks, orders and commission cover. */}
+          <Tabs value={period} onValueChange={(v) => setPeriod(v as LinkPeriod)}>
+            <TabsList className='h-auto flex-wrap'>
+              {LINK_PERIODS.map((p) => (
+                <TabsTrigger key={p.value} value={p.value}>
+                  {p.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <div
+            className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'
+            data-testid='links-filters'
+          >
             <div className='space-y-1.5'>
-              <Label htmlFor='filterLabel'>Tên chiến dịch</Label>
+              <Label htmlFor='filterLabel'>Tên liên kết, trang đích</Label>
               <Input
                 id='filterLabel'
                 placeholder='Ví dụ: Video Nhật Bản'
@@ -495,23 +496,82 @@ export function PortalLinksView() {
               />
             </div>
             <div className='space-y-1.5'>
-              <Label htmlFor='filterLanding'>Trang đích hoặc tên link</Label>
-              <Input
-                id='filterLanding'
-                placeholder='/esim-nhat-ban'
-                value={filters.landing}
-                onChange={(e) => setFilters({ ...filters, landing: e.target.value })}
-              />
+              <Label htmlFor='filterStatus'>Trạng thái</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger id='filterStatus' className='w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className='space-y-1.5'>
+              <Label htmlFor='filterChannel'>Kênh tiếp thị</Label>
+              <Select value={channelFilter} onValueChange={setChannelFilter}>
+                <SelectTrigger id='filterChannel' className='w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Tất cả kênh</SelectItem>
+                  {CHANNELS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className='space-y-1.5'>
+              <Label htmlFor='filterSort'>Sắp xếp</Label>
+              <Select value={sort} onValueChange={setSort}>
+                <SelectTrigger id='filterSort' className='w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORTS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className='space-y-1.5 sm:col-span-2'>
+              <Label>Thời gian tạo</Label>
+              <div className='flex items-center gap-2'>
+                <Input
+                  type='date'
+                  className='min-w-0 flex-1'
+                  aria-label='Tạo từ ngày'
+                  value={createdFrom}
+                  onChange={(e) => setCreatedFrom(e.target.value)}
+                />
+                <span className='text-muted-foreground text-sm'>–</span>
+                <Input
+                  type='date'
+                  className='min-w-0 flex-1'
+                  aria-label='Tạo đến ngày'
+                  value={createdTo}
+                  onChange={(e) => setCreatedTo(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
-          <div className='rounded-lg border'>
+          <div className='overflow-x-auto rounded-lg border'>
             <Table>
               <TableHeader className='bg-muted'>
                 <TableRow>
-                  <TableHead>Tên chiến dịch</TableHead>
+                  <TableHead>Tên liên kết</TableHead>
                   <TableHead>Trang đích</TableHead>
                   <TableHead>Link tiếp thị</TableHead>
+                  <TableHead>Kênh quảng bá</TableHead>
+                  <TableHead>Thời gian</TableHead>
                   <TableHead className='text-right'>Nhấp</TableHead>
                   <TableHead className='text-right'>Đơn</TableHead>
                   <TableHead className='text-right'>Hoa hồng</TableHead>
@@ -522,120 +582,156 @@ export function PortalLinksView() {
               <TableBody>
                 {isLoading && (
                   <TableRow>
-                    <TableCell colSpan={7} className='text-muted-foreground h-24 text-center'>
+                    <TableCell colSpan={10} className='text-muted-foreground h-24 text-center'>
                       Đang tải liên kết…
                     </TableCell>
                   </TableRow>
                 )}
                 {!isLoading && rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className='h-24 text-center'>
-                      {allRows.length === 0 ? (
-                        <>
-                          <p className='text-muted-foreground text-sm'>Chưa có liên kết nào.</p>
-                          <p className='text-muted-foreground mt-1 text-xs'>
-                            Tạo liên kết đầu tiên ở khung phía trên để bắt đầu theo dõi hiệu suất.
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className='text-muted-foreground text-sm'>
-                            Không có liên kết nào khớp bộ lọc.
-                          </p>
-                          <Button
-                            size='sm'
-                            variant='outline'
-                            className='mt-2'
-                            onClick={() => setFilters({ label: '', landing: '' })}
-                          >
-                            Xóa bộ lọc
-                          </Button>
-                        </>
-                      )}
+                    <TableCell colSpan={10} className='h-24 text-center'>
+                      <p className='text-muted-foreground text-sm'>
+                        Không có liên kết nào khớp bộ lọc.
+                      </p>
                     </TableCell>
                   </TableRow>
                 )}
-                {rows.map((r) => (
-                  <TableRow
-                    key={r.id}
-                    className={linkState(r) === 'active' ? undefined : 'opacity-60'}
-                  >
-                    <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <span className='font-medium'>{r.label}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className='text-muted-foreground max-w-[220px] truncate text-xs'>
-                      {landingOf(r.targetPath)}
-                      <span className='block'>{channelOf(r.targetPath)}</span>
-                    </TableCell>
-                    <TableCell className='font-mono text-xs'>{shortLinkOf(r.code)}</TableCell>
-                    <TableCell className='text-right tabular-nums'>
-                      {r.clickCount.toLocaleString('vi-VN')}
-                    </TableCell>
-                    <TableCell className='text-right tabular-nums'>
-                      {r.conversionCount.toLocaleString('vi-VN')}
-                    </TableCell>
-                    <TableCell className='text-right font-medium tabular-nums'>
-                      {formatVnd(r.totalCommissionVnd)}
-                    </TableCell>
-                    <TableCell>
-                      {/* Hoạt động / Đã tắt / Đã xóa (#054, test round 4). */}
-                      <Badge
-                        variant={LINK_STATE[linkState(r)].variant}
-                        data-testid={`link-status-${r.id}`}
-                      >
-                        {LINK_STATE[linkState(r)].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex justify-end gap-1'>
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          onClick={() =>
-                            copy(`https://${shortLinkOf(r.code)}`, 'Đã sao chép liên kết.')
-                          }
+                {rows.map((r) => {
+                  const state = linkState(r);
+                  const restorable =
+                    state === 'deleted' &&
+                    r.restorableUntil &&
+                    new Date(r.restorableUntil).getTime() > Date.now();
+                  return (
+                    <TableRow
+                      key={r.id}
+                      className={state === 'active' ? undefined : 'opacity-70'}
+                      data-testid={`link-row-${r.id}`}
+                    >
+                      <TableCell className='font-medium'>{r.label}</TableCell>
+                      <TableCell className='text-muted-foreground max-w-[200px] truncate text-xs'>
+                        {landingOf(r.targetPath)}
+                      </TableCell>
+                      <TableCell className='font-mono text-xs whitespace-nowrap'>
+                        {shortLinkOf(r.code)}
+                      </TableCell>
+                      <TableCell className='text-xs'>{channelOf(r.targetPath)}</TableCell>
+                      <TableCell className='text-xs whitespace-nowrap'>
+                        <span className='block'>{formatDateTimeVn(r.createdAt)}</span>
+                        <span className='text-muted-foreground block'>
+                          {r.lastChangedAt ? formatDateTimeVn(r.lastChangedAt) : '—'}
+                        </span>
+                      </TableCell>
+                      <TableCell className='text-right tabular-nums'>
+                        {Number(r.periodClicks ?? r.clickCount ?? 0).toLocaleString('vi-VN')}
+                      </TableCell>
+                      <TableCell className='text-right tabular-nums'>
+                        {Number(r.periodOrders ?? r.conversionCount ?? 0).toLocaleString('vi-VN')}
+                      </TableCell>
+                      <TableCell className='text-right font-medium tabular-nums'>
+                        {formatVnd(Number(r.periodCommissionVnd ?? r.totalCommissionVnd ?? 0))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={LINK_STATE[state].variant}
+                          data-testid={`link-status-${r.id}`}
                         >
-                          <Icons.copy />
-                          Sao chép
-                        </Button>
-                        {/* A deleted link can no longer be switched or deleted. */}
-                        {linkState(r) !== 'deleted' && (
-                          <>
+                          {LINK_STATE[state].label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className='flex justify-end gap-1'>
+                          {/* No copying a link that earns nothing (doitac-1410 #018). */}
+                          {state !== 'suspended' && state !== 'deleted' && (
                             <Button
                               size='sm'
                               variant='ghost'
-                              disabled={toggleLink.isPending || linkState(r) === 'suspended'}
-                              title={
-                                linkState(r) === 'suspended'
-                                  ? 'Liên kết bị đình chỉ vì tài khoản đang bị khóa'
-                                  : undefined
-                              }
                               onClick={() =>
-                                toggleLink.mutate({
-                                  id: r.id,
-                                  data: { isActive: r.status !== 'active' }
-                                })
+                                copy(`https://${shortLinkOf(r.code)}`, 'Đã sao chép liên kết.')
                               }
                             >
-                              {r.status === 'active' ? 'Tắt' : 'Mở'}
+                              <Icons.copy />
+                              Sao chép
                             </Button>
+                          )}
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={() => setPopup({ kind: 'detail', link: r })}
+                          >
+                            Xem chi tiết
+                          </Button>
+                          {(state === 'active' || state === 'inactive') && (
+                            <>
+                              <Button
+                                size='sm'
+                                variant='ghost'
+                                onClick={() => setPopup({ kind: 'edit', link: r })}
+                              >
+                                Sửa
+                              </Button>
+                              {state === 'active' ? (
+                                <Button
+                                  size='sm'
+                                  variant='ghost'
+                                  onClick={() => setPopup({ kind: 'pause', link: r })}
+                                >
+                                  Tạm tắt
+                                </Button>
+                              ) : (
+                                <Button
+                                  size='sm'
+                                  variant='ghost'
+                                  disabled={toggleLink.isPending}
+                                  onClick={() =>
+                                    toggleLink.mutate({ id: r.id, data: { isActive: true } })
+                                  }
+                                >
+                                  Bật lại
+                                </Button>
+                              )}
+                              <Button
+                                size='sm'
+                                variant='ghost'
+                                className='text-destructive hover:text-destructive'
+                                onClick={() => setPopup({ kind: 'delete', link: r })}
+                              >
+                                <Icons.trash />
+                                Xóa
+                              </Button>
+                            </>
+                          )}
+                          {state === 'suspended' &&
+                            r.suspendedByAdmin &&
+                            (r.appealedAt ? (
+                              <Button size='sm' variant='ghost' disabled>
+                                Đang kháng nghị
+                              </Button>
+                            ) : (
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                onClick={() => setPopup({ kind: 'appeal', link: r })}
+                              >
+                                Gửi kháng nghị
+                              </Button>
+                            ))}
+                          {restorable && (
                             <Button
                               size='sm'
-                              variant='ghost'
-                              className='text-destructive hover:text-destructive'
-                              onClick={() => setPendingDelete(r)}
+                              variant='outline'
+                              disabled={restore.isPending}
+                              title={`Có thể khôi phục đến ${formatDateVn(r.restorableUntil)}`}
+                              onClick={() => restore.mutate(r.id)}
                             >
-                              <Icons.trash />
-                              Xóa
+                              Khôi phục
                             </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
