@@ -34,7 +34,7 @@ import {
 import { myProfileQueryOptions } from '@/features/partner-portal/api/queries';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
 import { logout } from '@/features/auth/api/service';
 import Link from 'next/link';
@@ -60,6 +60,7 @@ export default function AppSidebar() {
   const { isOpen } = useMediaQuery();
   const { data: user } = useQuery(authMeQueryOptions);
   const router = useRouter();
+  const queryClient = useQueryClient();
   // In the portal the menu also depends on what kind of partner is signed in
   // (#013): a marketing partner has no deposit wallet and no brand page.
   const { data: partner } = useQuery({
@@ -103,8 +104,10 @@ export default function AppSidebar() {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/auth/sign-in');
-    router.refresh();
+    // Nothing of this session may outlive it, and a full load is what makes
+    // the next sign-in start clean (doitac-1410 #007).
+    queryClient.clear();
+    window.location.assign('/auth/sign-in');
   };
 
   React.useEffect(() => {

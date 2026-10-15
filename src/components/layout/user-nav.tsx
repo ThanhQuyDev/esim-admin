@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
 import { logout } from '@/features/auth/api/service';
 import { useRouter } from 'next/navigation';
@@ -18,11 +18,14 @@ import { useRouter } from 'next/navigation';
 export function UserNav() {
   const { data: user } = useQuery(authMeQueryOptions);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     await logout();
-    router.push('/auth/sign-in');
-    router.refresh();
+    // Nothing of this session may outlive it, and a full load is what makes
+    // the next sign-in start clean (doitac-1410 #007).
+    queryClient.clear();
+    window.location.assign('/auth/sign-in');
   };
 
   if (user) {

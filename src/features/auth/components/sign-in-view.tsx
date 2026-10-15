@@ -1,13 +1,12 @@
 'use client';
 
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAppForm } from '@/components/ui/tanstack-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -39,7 +38,10 @@ const loginSchema = z.object({
 });
 
 export default function SignInViewPage() {
-  const router = useRouter();
+  const queryClient = useQueryClient();
+  // Set once the session exists and the browser is on its way in, so the
+  // button keeps saying so until the next page replaces this one.
+  const [redirecting, setRedirecting] = useState(false);
   // A partner application still waiting on approval is told so right here,
   // instead of being let into a portal with nothing behind its menus (#001),
   // and so is a locked partner (doitac-1410 #004).
@@ -63,7 +65,15 @@ export default function SignInViewPage() {
     mutationFn: login,
     onSuccess: () => {
       setNotice(null);
-      router.push(HOME_PATH);
+      setRedirecting(true);
+      // A full page load, not router.push (doitac-1410 #007). The soft
+      // navigation could hang with no sign of life while the dashboard
+      // rendered on a cold server, and anything cached while signed out (the
+      // "who am I" answer above all) survived into the new session — both
+      // left the partner on this page until they refreshed. Dropping the cache
+      // and loading the page afresh is exactly what that refresh did.
+      queryClient.clear();
+      window.location.assign(HOME_PATH);
     },
     onError: (error: Error) => {
       if (error instanceof LoginError && error.code === 'partnerPending') {
@@ -172,7 +182,20 @@ export default function SignInViewPage() {
                   Quên mật khẩu?
                 </Link>
               </div>
-              <form.SubmitButton className='w-full'>Đăng nhập</form.SubmitButton>
+              {/*
+                Busy for as long as the request and the page change take
+                (doitac-1410 #007): the form's own submit button only spins
+                while the form validates, so a slow sign-in looked like a dead
+                button and was clicked again and again.
+              */}
+              <Button
+                type='submit'
+                className='w-full'
+                isLoading={mutation.isPending || redirecting}
+                disabled={mutation.isPending || redirecting}
+              >
+                {redirecting ? 'Đang vào trang…' : 'Đăng nhập'}
+              </Button>
             </form.Form>
           </form.AppForm>
           {content.signUpUrl && (
