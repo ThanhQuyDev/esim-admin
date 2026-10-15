@@ -13,6 +13,8 @@ import type {
   UpdatePartnerStatusPayload,
   AssignTierPayload,
   AdjustWalletPayload,
+  DepositPromotion,
+  DepositPromotionPayload,
   PartnerAdminStats,
   PartnerWalletSummary,
   ProcessPayoutPayload,
@@ -427,4 +429,23 @@ export async function setPartnerWalletLocked(
     method: 'PATCH',
     body: JSON.stringify({ locked })
   });
+}
+
+/** Deposit promotions (doitac-1410 #015). */
+export async function getDepositPromotions(): Promise<DepositPromotion[]> {
+  return apiClient<DepositPromotion[]>('/partners/deposit-promotions');
+}
+
+export async function saveDepositPromotion(
+  id: number | null,
+  data: DepositPromotionPayload
+): Promise<DepositPromotion> {
+  return apiClient<DepositPromotion>(
+    id ? `/partners/deposit-promotions/${id}` : '/partners/deposit-promotions',
+    { method: id ? 'PATCH' : 'POST', body: JSON.stringify(data) }
+  );
+}
+
+export async function deleteDepositPromotion(id: number): Promise<void> {
+  await apiClient(`/partners/deposit-promotions/${id}`, { method: 'DELETE' });
 }

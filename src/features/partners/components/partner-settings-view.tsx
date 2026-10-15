@@ -9,6 +9,7 @@ import { formatVnd } from '@/lib/format';
 
 import { partnerOverviewQueryOptions, tiersQueryOptions } from '../api/queries';
 import { ProgramSettingsForm } from './program-settings-form';
+import { DepositPromotionsCard } from './deposit-promotions-card';
 import type { PartnerTier } from '../api/types';
 
 const num = (v: string | number | undefined) => Number(v ?? 0);
@@ -85,6 +86,9 @@ export function PartnerSettingsView() {
   return (
     <div className='space-y-6'>
       <ProgramSettingsForm />
+
+      {/* Bonus balance on deposits, set up ahead of time (doitac-1410 #015). */}
+      <DepositPromotionsCard />
 
       <div>
         <div className='mb-3 flex items-center justify-between'>

@@ -4,6 +4,7 @@ import {
   getPartner,
   getPartnerMarketing,
   getPartnerStats,
+  getDepositPromotions,
   getPartnerWallet,
   getPartnerWalletHistory,
   getDepositRequests,
@@ -232,4 +233,11 @@ export const partnerWalletHistoryQueryOptions = (id: number) =>
   queryOptions({
     queryKey: [...partnerKeys.detail(id), 'wallet', 'history'],
     queryFn: () => getPartnerWalletHistory(id)
+  });
+
+/** Deposit promotions (doitac-1410 #015). */
+export const depositPromotionsQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'deposit-promotions'],
+    queryFn: () => getDepositPromotions()
   });

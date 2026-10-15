@@ -633,3 +633,25 @@ export type PartnerDocument = {
   sizeBytes: number;
   uploadedAt: string;
 };
+
+/** A deposit promotion (doitac-1410 #015). */
+export type DepositPromotion = {
+  id: number;
+  name: string;
+  bonusPercent: string | number;
+  minDepositVnd: string | number;
+  maxBonusVnd: string | number | null;
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+};
+
+export type DepositPromotionPayload = {
+  name: string;
+  bonusPercent: number;
+  minDepositVnd: number;
+  maxBonusVnd: number | null;
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+};

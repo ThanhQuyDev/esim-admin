@@ -43,6 +43,7 @@ import { AdjustPartnerWalletModal } from './adjust-partner-wallet-modal';
 
 const TX_TYPE_LABELS: Record<string, string> = {
   deposit: 'Nạp ký quỹ',
+  deposit_bonus: 'Khuyến mãi nạp ký quỹ',
   manual_credit: 'Admin cộng tiền',
   manual_debit: 'Admin trừ tiền'
 };

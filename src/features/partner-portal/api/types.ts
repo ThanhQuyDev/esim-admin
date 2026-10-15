@@ -67,6 +67,14 @@ export type MyWalletSummary = {
   pendingCommissionVnd?: number;
   /** Smallest withdrawal, from "Cấu hình chung" (doitac-1410 #010). */
   payoutMinVnd?: number;
+  /** Deposit promotions running now (doitac-1410 #015). */
+  depositPromotions?: {
+    name: string;
+    bonusPercent: number;
+    minDepositVnd: number;
+    maxBonusVnd: number | null;
+    endsAt: string;
+  }[];
   /** Commission clawed back after payout, netted off the next period (#007). */
   carriedDebtVnd?: number;
   /** Lifetime paid out and how many payments that was (#029). */

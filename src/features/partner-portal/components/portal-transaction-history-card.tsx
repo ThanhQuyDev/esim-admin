@@ -33,7 +33,8 @@ const TYPE_LABEL: Record<string, string> = {
   payout_rejected: 'Hoàn lại yêu cầu rút bị từ chối',
   manual_credit: 'esim.vn cộng tiền',
   manual_debit: 'esim.vn trừ tiền',
-  deposit: 'Nạp ký quỹ'
+  deposit: 'Nạp ký quỹ',
+  deposit_bonus: 'Khuyến mãi nạp ký quỹ'
 };
 
 export function PortalTransactionHistoryCard() {

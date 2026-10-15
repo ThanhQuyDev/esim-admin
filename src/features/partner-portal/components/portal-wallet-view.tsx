@@ -49,6 +49,16 @@ import {
 
 /** Fallbacks only: the server sends the real policy in the wallet summary. */
 const MIN_DEPOSIT_VND = 100_000;
+
+/** What a wallet line is, when it carries no reason of its own. */
+const TX_TYPE_LABEL: Record<string, string> = {
+  deposit: 'Nạp ký quỹ',
+  deposit_bonus: 'Khuyến mãi nạp ký quỹ',
+  manual_credit: 'esim.vn cộng tiền',
+  manual_debit: 'esim.vn trừ tiền',
+  order_purchase: 'Mua eSIM',
+  order_purchase_reversal: 'Hoàn tiền đơn mua'
+};
 const MAX_DEPOSIT_VND = 10_000_000;
 const CARD_FEE_PERCENT = 6;
 
@@ -117,6 +127,15 @@ export function PortalWalletView() {
     },
     onError: (e: Error) => toast.error(e.message || 'Tạo giao dịch nạp thất bại.')
   });
+
+  // Running deposit promotions, and what this amount would earn under the
+  // best of them (doitac-1410 #015) — the server applies the same rule.
+  const promotions = wallet?.depositPromotions ?? [];
+  const expectedBonus = promotions.reduce((best, p) => {
+    if (!(value >= p.minDepositVnd)) return best;
+    const raw = Math.floor((value * p.bonusPercent) / 100);
+    return Math.max(best, p.maxBonusVnd != null ? Math.min(raw, p.maxBonusVnd) : raw);
+  }, 0);
 
   const validate = (): string | null => {
     if (!amount.trim()) return 'Nhập số tiền muốn nạp.';
@@ -212,6 +231,28 @@ export function PortalWalletView() {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
+          {promotions.length > 0 && (
+            <div
+              className='rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
+              data-testid='deposit-promotions'
+            >
+              <p className='font-medium'>Đang có khuyến mãi nạp ký quỹ</p>
+              <ul className='mt-1 space-y-0.5 text-xs'>
+                {promotions.map((p) => (
+                  <li key={`${p.name}-${p.minDepositVnd}`}>
+                    {p.name}: nạp từ {formatVnd(p.minDepositVnd)} tặng thêm {p.bonusPercent}%
+                    {p.maxBonusVnd != null ? ` (tối đa ${formatVnd(p.maxBonusVnd)})` : ''}, đến{' '}
+                    {formatDateTimeVn(p.endsAt)}.
+                  </li>
+                ))}
+              </ul>
+              {expectedBonus > 0 && (
+                <p className='mt-2 text-xs font-medium' data-testid='expected-bonus'>
+                  Lần nạp này được tặng thêm {formatVnd(expectedBonus)} vào ví.
+                </p>
+              )}
+            </div>
+          )}
           <div className='grid gap-4 md:grid-cols-2'>
             <div className='space-y-2'>
               <Label htmlFor='topupAmount'>
@@ -472,7 +513,7 @@ export function PortalWalletView() {
                       <TableCell className='whitespace-nowrap'>
                         {formatDateTimeVn(tx.createdAt)}
                       </TableCell>
-                      <TableCell>{tx.reason || tx.type}</TableCell>
+                      <TableCell>{tx.reason || TX_TYPE_LABEL[tx.type] || tx.type}</TableCell>
                       <TableCell className='text-right'>
                         <span
                           className={
