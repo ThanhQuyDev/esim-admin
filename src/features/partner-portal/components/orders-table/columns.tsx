@@ -42,6 +42,23 @@ export const COMMISSION_STATUS_OPTIONS = Object.entries(COMMISSION_STATUS).map(
   ([value, { label }]) => ({ value, label })
 );
 
+/** "Giảm 7% · -10.000 ₫" beside a discount code (doitac-1410 #021). */
+export function couponDiscountText(order: MyOrder): string {
+  if (!order.couponCode) return '';
+  const parts: string[] = [];
+  const value = Number(order.couponDiscountValue ?? 0);
+  if (value > 0) {
+    parts.push(
+      order.couponDiscountType === 'fixed'
+        ? `Giảm ${formatVnd(value)}`
+        : `Giảm ${Number(value.toFixed(2))}%`
+    );
+  }
+  const taken = Number(order.couponDiscountVnd ?? 0);
+  if (taken > 0) parts.push(`-${formatVnd(taken)}`);
+  return parts.join(' · ');
+}
+
 /** eSIMs of a line given back, whether the line went whole or one by one. */
 export function refundedQtyOf(item: MyOrderItem): number {
   if (item.refunded) return item.quantity;
@@ -235,11 +252,22 @@ export const columns: ColumnDef<MyOrder>[] = [
           </span>
         </div>
       ) : (
-        <div className='flex min-w-0 items-center gap-2'>
-          <Badge variant='outline'>Mã</Badge>
-          <span className='text-muted-foreground truncate font-mono text-xs'>
-            {row.original.couponCode ?? '—'}
-          </span>
+        <div className='min-w-0'>
+          <div className='flex min-w-0 items-center gap-2'>
+            <Badge variant='outline'>Mã</Badge>
+            <span className='text-muted-foreground truncate font-mono text-xs'>
+              {row.original.couponCode ?? '—'}
+            </span>
+          </div>
+          {/* What the code gave the customer (doitac-1410 #021). */}
+          {couponDiscountText(row.original) && (
+            <p
+              className='text-muted-foreground mt-0.5 text-xs whitespace-nowrap'
+              data-testid='coupon-discount'
+            >
+              {couponDiscountText(row.original)}
+            </p>
+          )}
         </div>
       ),
     meta: {

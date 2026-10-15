@@ -353,6 +353,12 @@ export type MyOrder = {
   commissionPercent?: number | null;
   /** Discount code the order came in on, when it was not a link (#024). */
   couponCode?: string | null;
+  /** What the code gave the customer (doitac-1410 #021). */
+  couponDiscountType?: 'percent' | 'fixed' | string | null;
+  /** Percent, or VND for a fixed code. */
+  couponDiscountValue?: number | null;
+  /** What the code took off this order, in VND. */
+  couponDiscountVnd?: number | null;
   /** Whether esim.vn had seen this buyer before this order (#021). */
   customerType?: 'new' | 'returning';
   esimCount: number;
