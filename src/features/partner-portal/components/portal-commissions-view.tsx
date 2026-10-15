@@ -129,7 +129,7 @@ export function PortalCommissionsView() {
       footer:
         carriedDebt > 0
           ? 'Hoa hồng của đơn bị hoàn tiền/hủy, cấn trừ vào kỳ thanh toán tiếp theo'
-          : 'Tạo yêu cầu rút ở màn Rút tiền'
+          : 'Tạo yêu cầu rút ở màn Thanh toán'
     },
     {
       // Money actually received, not commission recorded — the two differ by

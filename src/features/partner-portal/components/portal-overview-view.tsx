@@ -286,7 +286,7 @@ export function PortalOverviewView() {
           </CardContent>
           <CardFooter className='gap-2'>
             <Button asChild variant='secondary' size='sm'>
-              <Link href='/dashboard/portal/payouts'>Rút tiền</Link>
+              <Link href='/dashboard/portal/payouts'>Thanh toán</Link>
             </Button>
             <Button
               asChild

@@ -11,12 +11,22 @@ import { useRouter } from 'next/navigation';
 import { useAppForm } from '@/components/ui/tanstack-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LoginError, login } from '../api/service';
 import { HOME_PATH } from '@/config/app-mode';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Icons } from '@/components/icons';
 import { AuthBrandPanel, useAuthPageContent } from './auth-brand-panel';
+import { PARTNER_LOCKED_MESSAGE } from '@/config/partner-session';
+
+/** A notice shown above the form instead of a passing toast. */
+type SignInNotice = { kind: 'pending' | 'locked' | 'ended'; message: string };
+
+const NOTICE_TITLE: Record<SignInNotice['kind'], string> = {
+  pending: 'Hồ sơ đối tác đang chờ xét duyệt',
+  locked: 'Tài khoản đang bị khóa',
+  ended: 'Phiên đăng nhập đã kết thúc'
+};
 
 export const metadata: Metadata = {
   title: 'Đăng nhập',
@@ -31,8 +41,20 @@ const loginSchema = z.object({
 export default function SignInViewPage() {
   const router = useRouter();
   // A partner application still waiting on approval is told so right here,
-  // instead of being let into a portal with nothing behind its menus (#001).
-  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
+  // instead of being let into a portal with nothing behind its menus (#001),
+  // and so is a locked partner (doitac-1410 #004).
+  const [notice, setNotice] = useState<SignInNotice | null>(null);
+
+  // A partner cut off mid-session arrives here as `?reason=locked|ended`.
+  // Read off `window` rather than useSearchParams, which would need a Suspense
+  // boundary around the whole sign-in page.
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get('reason');
+    if (reason === 'locked') setNotice({ kind: 'locked', message: PARTNER_LOCKED_MESSAGE });
+    if (reason === 'ended') {
+      setNotice({ kind: 'ended', message: 'Vui lòng đăng nhập lại để tiếp tục.' });
+    }
+  }, []);
 
   // Logo, cover image and copy come from the CMS (#006).
   const content = useAuthPageContent();
@@ -40,15 +62,19 @@ export default function SignInViewPage() {
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: () => {
-      setPendingNotice(null);
+      setNotice(null);
       router.push(HOME_PATH);
     },
     onError: (error: Error) => {
       if (error instanceof LoginError && error.code === 'partnerPending') {
-        setPendingNotice(error.message);
+        setNotice({ kind: 'pending', message: error.message });
         return;
       }
-      setPendingNotice(null);
+      if (error instanceof LoginError && error.code === 'partnerLocked') {
+        setNotice({ kind: 'locked', message: error.message || PARTNER_LOCKED_MESSAGE });
+        return;
+      }
+      setNotice(null);
       toast.error(error.message || 'Đăng nhập thất bại');
     }
   });
@@ -87,11 +113,11 @@ export default function SignInViewPage() {
             <h1 className='text-2xl font-semibold tracking-tight'>{content.heading}</h1>
             <p className='text-muted-foreground text-sm'>{content.subheading}</p>
           </div>
-          {pendingNotice && (
-            <Alert>
-              <Icons.clock />
-              <AlertTitle>Hồ sơ đối tác đang chờ xét duyệt</AlertTitle>
-              <AlertDescription>{pendingNotice}</AlertDescription>
+          {notice && (
+            <Alert variant={notice.kind === 'locked' ? 'destructive' : 'default'}>
+              {notice.kind === 'pending' ? <Icons.clock /> : <Icons.lock />}
+              <AlertTitle>{NOTICE_TITLE[notice.kind]}</AlertTitle>
+              <AlertDescription>{notice.message}</AlertDescription>
             </Alert>
           )}
           <form.AppForm>

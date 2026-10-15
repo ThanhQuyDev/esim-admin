@@ -109,18 +109,24 @@ function channelOf(targetPath: string | null): string {
   return CHANNELS.find((c) => c.value === source)?.label ?? source ?? '—';
 }
 
-/** Hoạt động / Đã tắt / Đã xóa — a deleted link outranks its stored status (#054). */
-type LinkState = 'active' | 'inactive' | 'deleted';
+/**
+ * Hoạt động / Đã tắt / Bị đình chỉ / Đã xóa — a deleted link outranks its
+ * stored status (#054). "Bị đình chỉ" is set by the admin locking the account
+ * and only lifted by unlocking it (doitac-1410 #004).
+ */
+type LinkState = 'active' | 'inactive' | 'suspended' | 'deleted';
 function linkState(link: { status: string; deletedAt?: string | null }): LinkState {
   if (link.deletedAt) return 'deleted';
+  if (link.status === 'suspended') return 'suspended';
   return link.status === 'active' ? 'active' : 'inactive';
 }
 const LINK_STATE: Record<
   LinkState,
-  { label: string; variant: 'default' | 'secondary' | 'outline' }
+  { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }
 > = {
   active: { label: 'Hoạt động', variant: 'default' },
   inactive: { label: 'Đã tắt', variant: 'secondary' },
+  suspended: { label: 'Bị đình chỉ', variant: 'destructive' },
   deleted: { label: 'Đã xóa', variant: 'outline' }
 };
 
@@ -600,7 +606,12 @@ export function PortalLinksView() {
                             <Button
                               size='sm'
                               variant='ghost'
-                              disabled={toggleLink.isPending}
+                              disabled={toggleLink.isPending || linkState(r) === 'suspended'}
+                              title={
+                                linkState(r) === 'suspended'
+                                  ? 'Liên kết bị đình chỉ vì tài khoản đang bị khóa'
+                                  : undefined
+                              }
                               onClick={() =>
                                 toggleLink.mutate({
                                   id: r.id,

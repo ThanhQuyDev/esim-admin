@@ -46,6 +46,7 @@ import {
 import { formatDateVn, formatVnd } from '@/lib/format';
 
 import { createPayoutRequestMutation } from '../api/mutations';
+import { PortalTransactionHistoryCard } from './portal-transaction-history-card';
 import {
   myPayoutsQueryOptions,
   myProfileQueryOptions,
@@ -322,6 +323,9 @@ export function PortalPayoutsView() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Below the payout history, as the brief places it (doitac-1410 #004). */}
+      <PortalTransactionHistoryCard />
 
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent>

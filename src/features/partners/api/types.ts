@@ -1,3 +1,9 @@
+import type {
+  MyDistributionSummary,
+  MySummary,
+  MyWalletSummary
+} from '@/features/partner-portal/api/types';
+
 export type PartnerType = 'distribution' | 'kol';
 export type PartnerLegalType = 'individual' | 'company';
 export type PartnerStatus = 'pending' | 'active' | 'hold' | 'disabled' | 'rejected';
@@ -601,3 +607,16 @@ export type CreateNotificationPayload = {
   audience?: string;
   sendEmail?: boolean;
 };
+
+/**
+ * The partner page's figures over the chosen period (doitac-1410 #004): the
+ * partner's own dashboard read models, so admin and partner see one number.
+ */
+export type PartnerAdminStats = {
+  partnerType: PartnerType;
+  wallet: MyWalletSummary;
+  marketing: (MySummary & { refundedOrders: number; refundRatePercent: number }) | null;
+  distribution: MyDistributionSummary | null;
+};
+
+export type PartnerWalletSummary = MyWalletSummary;

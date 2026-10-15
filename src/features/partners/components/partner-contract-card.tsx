@@ -14,7 +14,7 @@
  * to work out which of two buttons writes which.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useImperativeHandle, useState, type Ref } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -40,12 +40,22 @@ function parsed(value: string): number | null {
 
 const EMPTY_LINE: Line = { label: '', value: '' };
 
+/**
+ * What the page's top "Lưu lại" drives (doitac-1410 #004): the brief keeps the
+ * one save button at the head of the page, so this card has none of its own.
+ */
+export type PartnerContractCardHandle = { save: () => Promise<void> };
+
 export function PartnerContractCard({
   partner,
-  onSaved
+  onSaved,
+  onDirtyChange,
+  ref
 }: {
   partner: Partner;
   onSaved?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
+  ref?: Ref<PartnerContractCardHandle>;
 }) {
   const [lines, setLines] = useState<Line[]>([]);
   const [minVnd, setMinVnd] = useState('');
@@ -72,17 +82,31 @@ export function PartnerContractCard({
   // has no balance to put money into (#013).
   const showDepositLimits = partner.partnerType !== 'kol';
 
-  const save = () => {
-    saveMutation.mutate({
-      id: partner.id,
-      data: {
-        contractInfo: lines.filter((line) => line.label.trim()),
-        ...(showDepositLimits
-          ? { depositMinVnd: parsed(minVnd), depositMaxVnd: parsed(maxVnd) }
-          : {})
-      }
-    });
+  const payload = {
+    contractInfo: lines.filter((line) => line.label.trim()),
+    ...(showDepositLimits ? { depositMinVnd: parsed(minVnd), depositMaxVnd: parsed(maxVnd) } : {})
   };
+  const saved = {
+    contractInfo: (partner.contractInfo ?? []).filter((line) => line.label.trim()),
+    ...(showDepositLimits
+      ? {
+          depositMinVnd: partner.depositMinVnd ?? null,
+          depositMaxVnd: partner.depositMaxVnd ?? null
+        }
+      : {})
+  };
+  const dirty = JSON.stringify(payload) !== JSON.stringify(saved);
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  useImperativeHandle(ref, () => ({
+    save: async () => {
+      if (!dirty) return;
+      await saveMutation.mutateAsync({ id: partner.id, data: payload });
+    }
+  }));
 
   const setLine = (index: number, patch: Partial<Line>) =>
     setLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
@@ -90,7 +114,11 @@ export function PartnerContractCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Thông tin hợp đồng</CardTitle>
+        <CardTitle>
+          {showDepositLimits
+            ? '5. Thông tin hợp đồng và hạn mức nạp ký quỹ riêng'
+            : '5. Thông tin hợp đồng'}
+        </CardTitle>
         <CardDescription>
           Những dòng này được in trong file đối soát gửi hàng tháng cho đối tác. Bấm dấu cộng để
           thêm dòng nếu hợp đồng có nhiều thông tin.
@@ -177,9 +205,11 @@ export function PartnerContractCard({
           </div>
         )}
 
-        <Button isLoading={saveMutation.isPending} onClick={save}>
-          Lưu lại
-        </Button>
+        {dirty && (
+          <p className='text-muted-foreground text-xs'>
+            Có thay đổi chưa lưu — bấm &quot;Lưu lại&quot; ở đầu trang.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

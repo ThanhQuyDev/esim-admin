@@ -15,7 +15,7 @@ export default function PortalWalletPage() {
       <PortalFeatureGate
         allow={['distribution']}
         title='Trang này dành cho đối tác phân phối'
-        description='Bạn không mua eSIM để bán lại nên không cần ký quỹ. Thu nhập của bạn là hoa hồng từ đơn hàng trên esim.vn, xem ở mục Hoa hồng và rút về tài khoản ngân hàng ở mục Rút tiền.'
+        description='Bạn không mua eSIM để bán lại nên không cần ký quỹ. Thu nhập của bạn là hoa hồng từ đơn hàng trên esim.vn, xem ở mục Hoa hồng và rút về tài khoản ngân hàng ở mục Thanh toán.'
       >
         <PortalWalletView />
       </PortalFeatureGate>

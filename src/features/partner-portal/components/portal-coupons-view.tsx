@@ -69,6 +69,9 @@ function couponState(coupon: MyCoupon): {
   label: string;
   variant: 'default' | 'secondary' | 'destructive' | 'outline';
 } {
+  // Set by the admin locking the account, and lifted only by unlocking it
+  // (doitac-1410 #004).
+  if (coupon.suspended) return { label: 'Bị đình chỉ', variant: 'destructive' };
   if (!coupon.isActive) return { label: 'Ngừng hoạt động', variant: 'secondary' };
   if (coupon.maxUsage != null && coupon.usageCount >= coupon.maxUsage) {
     return { label: 'Hết lượt', variant: 'destructive' };
@@ -258,8 +261,8 @@ export function PortalCouponsView() {
                       Sao chép mã
                     </Button>
                     <Switch
-                      checked={coupon.isActive}
-                      disabled={toggleCoupon.isPending}
+                      checked={coupon.isActive && !coupon.suspended}
+                      disabled={toggleCoupon.isPending || coupon.suspended}
                       onCheckedChange={(checked) =>
                         toggleCoupon.mutate({ id: coupon.id, isActive: checked })
                       }

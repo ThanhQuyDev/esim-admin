@@ -12,8 +12,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,10 +24,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Icons } from '@/components/icons';
 
-import { adjustPartnerWalletMutation } from '../../api/mutations';
 import type { Partner, PartnerStatus } from '../../api/types';
-import { AdjustPartnerWalletModal } from '../adjust-partner-wallet-modal';
 import { BulkStatusModal } from '../bulk-status-modal';
+import { PartnerWalletSheet } from '../partner-wallet-sheet';
 
 interface CellActionProps {
   data: Partner;
@@ -47,15 +44,6 @@ export function PartnerCellAction({ data }: CellActionProps) {
   };
   const [walletOpen, setWalletOpen] = useState(false);
 
-  const adjustMutation = useMutation({
-    ...adjustPartnerWalletMutation,
-    onSuccess: () => {
-      toast.success('Đã điều chỉnh ví đối tác.');
-      setWalletOpen(false);
-    },
-    onError: (e: Error) => toast.error(e.message || 'Điều chỉnh ví thất bại')
-  });
-
   const isLocked = data.status === 'hold' || data.status === 'disabled';
 
   return (
@@ -66,12 +54,13 @@ export function PartnerCellAction({ data }: CellActionProps) {
         partnerIds={[data.id]}
         initialStatus={statusTarget}
       />
-      <AdjustPartnerWalletModal
+      {/* Info + history tabs, like the eXu wallet (doitac-1410 #004). */}
+      <PartnerWalletSheet
         partnerId={data.id}
+        partnerType={data.partnerType}
+        partnerStatus={data.status}
         open={walletOpen}
         onOpenChange={setWalletOpen}
-        onSubmit={(payload) => adjustMutation.mutate({ id: data.id, data: payload })}
-        isSubmitting={adjustMutation.isPending}
       />
 
       <DropdownMenu modal={false}>

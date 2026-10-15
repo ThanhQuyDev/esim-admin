@@ -13,6 +13,8 @@ import type {
   UpdatePartnerStatusPayload,
   AssignTierPayload,
   AdjustWalletPayload,
+  PartnerAdminStats,
+  PartnerWalletSummary,
   ProcessPayoutPayload,
   CreateTierPayload,
   UpdateTierPayload,
@@ -396,4 +398,33 @@ export async function getPartnerRevenueByType(range?: {
  */
 export async function getPartnerMarketing(id: number): Promise<PartnerMarketing> {
   return apiClient<PartnerMarketing>(`/partners/${id}/marketing`);
+}
+
+/** The partner page's figures over the chosen period (doitac-1410 #004). */
+export async function getPartnerStats(
+  id: number,
+  range: { from?: string; to?: string }
+): Promise<PartnerAdminStats> {
+  return apiClient<PartnerAdminStats>(`/partners/${id}/stats${toQuery(range)}`);
+}
+
+/** The wallet popup's "Thông tin" tab (doitac-1410 #004). */
+export async function getPartnerWallet(id: number): Promise<PartnerWalletSummary> {
+  return apiClient<PartnerWalletSummary>(`/partners/${id}/wallet`);
+}
+
+/** Deposits and admin adjustments only — the popup's history tab (doitac-1410 #004). */
+export async function getPartnerWalletHistory(id: number): Promise<PartnerWalletTransaction[]> {
+  return apiClient<PartnerWalletTransaction[]>(`/partners/${id}/wallet/transactions`);
+}
+
+/** Freeze or release the wallet on its own (doitac-1410 #004). */
+export async function setPartnerWalletLocked(
+  id: number,
+  locked: boolean
+): Promise<PartnerWalletSummary> {
+  return apiClient<PartnerWalletSummary>(`/partners/${id}/wallet/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ locked })
+  });
 }

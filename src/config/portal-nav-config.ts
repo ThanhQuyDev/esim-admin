@@ -78,7 +78,9 @@ export const portalNavGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Rút tiền',
+        // Renamed from "Rút tiền": the page also carries the transaction
+        // history now (doitac-1410 #004).
+        title: 'Thanh toán',
         url: '/dashboard/portal/payouts',
         icon: 'creditCard',
         isActive: false,

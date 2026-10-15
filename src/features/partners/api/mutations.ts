@@ -17,6 +17,7 @@ import {
   setPartnerAffiliateGrant,
   setPartnerLinkCodePermission,
   adjustPartnerWallet,
+  setPartnerWalletLocked,
   confirmDepositRequest,
   approvePayout,
   rejectPayout,
@@ -165,5 +166,12 @@ export const createTierMutation = mutationOptions({
 
 export const updateTierMutation = mutationOptions({
   mutationFn: ({ id, data }: { id: number; data: UpdateTierPayload }) => updateTier(id, data),
+  onSettled: invalidateAll
+});
+
+/** Freeze or release the wallet on its own (doitac-1410 #004). */
+export const setPartnerWalletLockedMutation = mutationOptions({
+  mutationFn: ({ id, locked }: { id: number; locked: boolean }) =>
+    setPartnerWalletLocked(id, locked),
   onSettled: invalidateAll
 });

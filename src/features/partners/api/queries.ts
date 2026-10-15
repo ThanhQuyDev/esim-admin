@@ -3,6 +3,9 @@ import {
   getPartners,
   getPartner,
   getPartnerMarketing,
+  getPartnerStats,
+  getPartnerWallet,
+  getPartnerWalletHistory,
   getDepositRequests,
   getCommissions,
   getPayouts,
@@ -209,4 +212,24 @@ export const partnerMarketingQueryOptions = (id: number) =>
   queryOptions({
     queryKey: [...partnerKeys.detail(id), 'marketing'],
     queryFn: () => getPartnerMarketing(id)
+  });
+
+/** The partner page's figures over the chosen period (doitac-1410 #004). */
+export const partnerStatsQueryOptions = (id: number, range: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [...partnerKeys.detail(id), 'stats', range.from ?? '', range.to ?? ''],
+    queryFn: () => getPartnerStats(id, range)
+  });
+
+/** The wallet popup's two tabs (doitac-1410 #004). */
+export const partnerWalletQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: [...partnerKeys.detail(id), 'wallet'],
+    queryFn: () => getPartnerWallet(id)
+  });
+
+export const partnerWalletHistoryQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: [...partnerKeys.detail(id), 'wallet', 'history'],
+    queryFn: () => getPartnerWalletHistory(id)
   });

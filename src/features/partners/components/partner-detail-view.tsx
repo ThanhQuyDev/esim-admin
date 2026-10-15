@@ -1,34 +1,27 @@
 'use client';
-import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
+import { formatDateVn } from '@/lib/format';
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import {
-  partnerMarketingQueryOptions,
-  partnerQueryOptions,
-  tiersQueryOptions
-} from '../api/queries';
-
-/** Where a partner's links point, matching the partner portal's own display. */
-const PUBLIC_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL || 'https://esim.vn';
+import { partnerQueryOptions, tiersQueryOptions } from '../api/queries';
 import {
   approvePartnerMutation,
   rejectPartnerMutation,
   assignPartnerTierMutation,
-  adjustPartnerWalletMutation,
   setPartnerAdminNoteMutation,
   setPartnerAffiliateGrantMutation,
   setPartnerLinkCodePermissionMutation
 } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
-import { AdjustPartnerWalletModal } from './adjust-partner-wallet-modal';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BulkStatusModal } from './bulk-status-modal';
-import { PartnerContractCard } from './partner-contract-card';
-import { PartnerPerformanceCard } from './partner-performance-card';
+import { PartnerContractCard, type PartnerContractCardHandle } from './partner-contract-card';
+import { PartnerStatsSection } from './partner-stats-section';
+import { PartnerWalletSheet } from './partner-wallet-sheet';
 import { RejectPartnerModal } from './reject-partner-modal';
 import {
   Select,
@@ -39,9 +32,18 @@ import {
 } from '@/components/ui/select';
 import type { PartnerStatus } from '../api/types';
 
+/**
+ * One partner, laid out in the order the brief gives (doitac-1410 #004):
+ * 1 the partner, 2 their sales channel, 3 tier and affiliate rights, 4 their
+ * figures over a chosen period, 5 the contract and deposit limits, 6 the
+ * admin's note — with every action, "Lưu lại" included, at the head of the
+ * page. The link and discount-code lists and "create a link for the partner"
+ * moved to the "Tiếp thị liên kết" menu, so they are not repeated here.
+ */
+
 const PARTNER_TYPE_LABELS = {
   distribution: 'Đối tác phân phối',
-  kol: 'KOL'
+  kol: 'Đối tác tiếp thị (KOL)'
 } as const;
 const LEGAL_TYPE_LABELS = {
   individual: 'Cá nhân',
@@ -63,37 +65,54 @@ const STATUS_VARIANTS: Record<PartnerStatus, 'default' | 'secondary' | 'destruct
     rejected: 'destructive'
   };
 
-/** Vietnamese labels for the free-form `channelInfo` keys the apply form sends. */
-const CHANNEL_INFO_LABELS: Record<string, string> = {
-  url: 'Đường dẫn kênh',
-  followers: 'Số người theo dõi'
+/** The registration form's "Kênh bán chính" choices. */
+const CHANNEL_LABELS: Record<string, string> = {
+  youtube: 'YouTube',
+  tiktok: 'TikTok',
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  website: 'Website',
+  store: 'Cửa hàng hoặc điểm bán',
+  travel: 'Công ty du lịch / đại lý vé',
+  other: 'Kênh khác'
 };
 
-/** `followers` is a count; everything else is shown as-is. */
-function formatChannelValue(key: string, value: unknown): string {
-  if (key === 'followers' && typeof value === 'number') {
-    return formatDateTimeVn(value);
-  }
-  return typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '');
+/** One labelled value in a section. */
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className='min-w-0'>
+      <p className='text-muted-foreground text-xs font-medium'>{label}</p>
+      <div className='text-sm font-medium break-words'>{children || '—'}</div>
+    </div>
+  );
 }
 
 export function PartnerDetailView({ partnerId }: { partnerId: number }) {
   const [rejectOpen, setRejectOpen] = useState(false);
-  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [walletOpen, setWalletOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<PartnerStatus>('hold');
+  const openStatus = (target: PartnerStatus) => {
+    setStatusTarget(target);
+    setStatusOpen(true);
+  };
   const { data: partner, refetch } = useSuspenseQuery(partnerQueryOptions(partnerId));
   const { data: tiers = [] } = useQuery(tiersQueryOptions());
-  // Not suspense: the partner's own details should render even if this extra
-  // call is slow or fails.
-  const { data: marketing } = useQuery(partnerMarketingQueryOptions(partnerId));
 
-  // Seeded from the partner and kept local while the admin types; the Save
-  // button is the only thing that writes it back (#056).
+  // Seeded from the partner and kept local while the admin types; "Lưu lại"
+  // is the only thing that writes it back (#056).
   const [adminNote, setAdminNote] = useState('');
   const loadedNote = partner.adminNote ?? '';
   useEffect(() => {
     setAdminNote(loadedNote);
   }, [loadedNote]);
+  const noteDirty = adminNote !== loadedNote;
+
+  // Section 5 saves through the same button (doitac-1410 #004).
+  const contractRef = useRef<PartnerContractCardHandle>(null);
+  const [contractDirty, setContractDirty] = useState(false);
+  const onContractDirty = useCallback((dirty: boolean) => setContractDirty(dirty), []);
+  const [saving, setSaving] = useState(false);
 
   const approveMutation = useMutation({
     ...approvePartnerMutation,
@@ -138,10 +157,7 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
 
   const adminNoteMutation = useMutation({
     ...setPartnerAdminNoteMutation,
-    onSuccess: () => {
-      toast.success('Đã lưu ghi chú.');
-      refetch();
-    },
+    onSuccess: () => toast.success('Đã lưu ghi chú.'),
     onError: (e: Error) => toast.error(e.message || 'Lưu ghi chú thất bại')
   });
 
@@ -150,61 +166,101 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
     onSuccess: (updated) => {
       toast.success(
         updated.canAffiliate
-          ? 'Đã bật chương trình tiếp thị cho đối tác này.'
-          : 'Đã tắt chương trình tiếp thị của đối tác này.'
+          ? 'Đã bật phân quyền affiliate cho đối tác này.'
+          : 'Đã tắt phân quyền affiliate của đối tác này.'
       );
       refetch();
     },
     onError: (e: Error) => toast.error(e.message || 'Cập nhật quyền thất bại')
   });
 
-  const adjustMutation = useMutation({
-    ...adjustPartnerWalletMutation,
-    onSuccess: () => {
-      toast.success('Đã điều chỉnh ví.');
-      setAdjustOpen(false);
-    },
-    onError: (e: Error) => toast.error(e.message || 'Điều chỉnh thất bại')
-  });
+  const saveAll = async () => {
+    setSaving(true);
+    try {
+      await Promise.all([
+        contractRef.current?.save(),
+        noteDirty ? adminNoteMutation.mutateAsync({ id: partnerId, adminNote }) : undefined
+      ]);
+      await refetch();
+    } catch {
+      // Each save has already said what went wrong.
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const relevantTiers = tiers.filter((t) => t.partnerType === partner.partnerType);
+  const isKol = partner.partnerType === 'kol';
+  const isCompany = partner.legalType === 'company';
+  const decided = partner.status !== 'pending' && partner.status !== 'rejected';
+  const isLocked = partner.status === 'hold' || partner.status === 'disabled';
+  // A marketing partner always runs the programme; a distribution partner
+  // only once it has been granted (#048).
+  const runsProgramme = isKol || Boolean(partner.canAffiliate);
+
+  const channel = partner.channelInfo ?? {};
+  const channelName =
+    typeof channel.channel === 'string' ? (CHANNEL_LABELS[channel.channel] ?? channel.channel) : '';
+  const followers =
+    channel.followers != null && channel.followers !== ''
+      ? Number(channel.followers).toLocaleString('vi-VN')
+      : '';
+  const otherChannels = Object.entries(channel).filter(
+    ([key, value]) =>
+      !['model', 'channel', 'url', 'followers'].includes(key) &&
+      typeof value === 'string' &&
+      value.trim()
+  );
 
   return (
     <div className='space-y-6'>
-      <AdjustPartnerWalletModal
-        partnerId={partnerId}
-        open={adjustOpen}
-        onOpenChange={setAdjustOpen}
-        onSubmit={(data) => adjustMutation.mutate({ id: partnerId, data })}
-        isSubmitting={adjustMutation.isPending}
-      />
       <RejectPartnerModal
         open={rejectOpen}
         onOpenChange={setRejectOpen}
         onSubmit={(data) => rejectMutation.mutate({ id: partnerId, data })}
         isSubmitting={rejectMutation.isPending}
       />
+      <BulkStatusModal
+        open={statusOpen}
+        onOpenChange={setStatusOpen}
+        partnerIds={[partnerId]}
+        initialStatus={statusTarget}
+        onDone={refetch}
+      />
+      <PartnerWalletSheet
+        partnerId={partnerId}
+        partnerType={partner.partnerType}
+        partnerStatus={partner.status}
+        open={walletOpen}
+        onOpenChange={setWalletOpen}
+      />
 
       <div className='flex flex-wrap items-start justify-between gap-4'>
         <div>
-          <div className='flex items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-3'>
             <h2 className='text-xl font-semibold'>{partner.companyName || partner.contactName}</h2>
+            <span className='text-muted-foreground font-mono text-sm'>#{partner.id}</span>
             <Badge variant={STATUS_VARIANTS[partner.status]}>{STATUS_LABELS[partner.status]}</Badge>
-            <Badge variant='outline'>{PARTNER_TYPE_LABELS[partner.partnerType]}</Badge>
             {/* Applied for API integration (#053, test round 4). */}
             {partner.requestedType === 'api' && (
               <Badge variant='secondary'>Đăng ký: tích hợp API</Badge>
             )}
           </div>
-          <p className='text-muted-foreground text-sm'>
-            {partner.contactEmail} · {partner.contactPhone}
-          </p>
         </div>
         <div className='flex flex-wrap gap-2'>
+          <Button
+            size='sm'
+            onClick={saveAll}
+            isLoading={saving}
+            disabled={!noteDirty && !contractDirty}
+          >
+            <Icons.check className='mr-2 h-4 w-4' /> Lưu lại
+          </Button>
           {partner.status === 'pending' && (
             <>
               <Button
                 size='sm'
+                variant='outline'
                 onClick={() => approveMutation.mutate(partnerId)}
                 isLoading={approveMutation.isPending}
               >
@@ -216,65 +272,104 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
             </>
           )}
           {/*
-            Every one of these opens the same dialog, which is where the reason
-            is collected (#061). The server refuses a hold or a lock without
-            one, so a button that fired straight off would only ever 400.
+            Each opens the status dialog on its own action, which is where the
+            reason is collected (#061) — the server refuses a hold or a lock
+            without one.
           */}
-          {partner.status === 'active' && (
-            <Button size='sm' variant='outline' onClick={() => setStatusOpen(true)}>
-              Tạm khoá
+          {isLocked && (
+            <Button size='sm' variant='outline' onClick={() => openStatus('active')}>
+              Mở khóa
             </Button>
           )}
-          {(partner.status === 'hold' || partner.status === 'disabled') && (
-            <Button size='sm' onClick={() => setStatusOpen(true)}>
-              Mở khoá
+          {decided && partner.status !== 'hold' && (
+            <Button size='sm' variant='outline' onClick={() => openStatus('hold')}>
+              Tạm khóa
             </Button>
           )}
-          {partner.status === 'active' && (
-            <Button size='sm' variant='destructive' onClick={() => setStatusOpen(true)}>
-              Khoá tài khoản
+          {decided && partner.status !== 'disabled' && (
+            <Button size='sm' variant='destructive' onClick={() => openStatus('disabled')}>
+              Khóa tài khoản
             </Button>
           )}
-          {/*
-            No wallet while the application is still being decided (#056): a
-            partner who has not been approved has no balance to adjust, and the
-            button only invites a change with nothing behind it.
-          */}
-          {partner.status !== 'pending' && partner.status !== 'rejected' && (
-            <Button size='sm' variant='outline' onClick={() => setAdjustOpen(true)}>
-              <Icons.wallet className='mr-2 h-4 w-4' /> Điều chỉnh ví
+          {/* No wallet while the application is still being decided (#056). */}
+          {decided && (
+            <Button size='sm' variant='outline' onClick={() => setWalletOpen(true)}>
+              <Icons.wallet className='mr-2 h-4 w-4' /> Điều chỉnh Ví & Hoa hồng
             </Button>
           )}
         </div>
       </div>
 
       {partner.status === 'rejected' && partner.rejectionReason && (
-        <div className='rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm'>
+        <div className='border-destructive/50 bg-destructive/10 rounded-lg border p-3 text-sm'>
           <span className='font-medium'>Lý do từ chối: </span>
           {partner.rejectionReason}
         </div>
       )}
 
-      <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-        <div className='rounded-lg border p-4'>
-          <p className='text-muted-foreground text-xs font-medium'>Loại pháp nhân</p>
-          <p className='text-sm font-medium'>{LEGAL_TYPE_LABELS[partner.legalType]}</p>
-        </div>
-        {partner.companyName && (
-          <div className='rounded-lg border p-4'>
-            <p className='text-muted-foreground text-xs font-medium'>Mã số thuế</p>
-            <p className='text-sm font-medium'>{partner.taxCode || '—'}</p>
-          </div>
-        )}
-        <div className='rounded-lg border p-4'>
-          <p className='text-muted-foreground text-xs font-medium'>Ngày đăng ký</p>
-          <p className='text-sm font-medium'>{formatDateVn(partner.createdAt)}</p>
-        </div>
-      </div>
+      {/* 1 — who the partner is. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>1. Thông tin đối tác</CardTitle>
+        </CardHeader>
+        <CardContent className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          <Field label='Tên đối tác'>{partner.companyName || partner.contactName}</Field>
+          {isCompany && <Field label='Người liên hệ'>{partner.contactName}</Field>}
+          <Field label='Loại đối tác'>{PARTNER_TYPE_LABELS[partner.partnerType]}</Field>
+          <Field label='Email'>{partner.contactEmail}</Field>
+          <Field label='Số điện thoại'>{partner.contactPhone}</Field>
+          <Field label='Loại pháp nhân'>{LEGAL_TYPE_LABELS[partner.legalType]}</Field>
+          {isCompany && <Field label='Mã số thuế'>{partner.taxCode}</Field>}
+          {isCompany && <Field label='Địa chỉ'>{partner.businessAddress}</Field>}
+          <Field label='Ngày đăng ký'>{formatDateVn(partner.createdAt)}</Field>
+        </CardContent>
+      </Card>
 
-      <div className='rounded-lg border p-4'>
-        <p className='mb-3 text-sm font-medium'>Hạng đối tác</p>
-        <div className='flex items-center gap-3'>
+      {/* 2 — what they sell through, as given on the registration form. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>2. Thông tin kênh bán</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+            <Field label='Kênh bán chính'>{channelName}</Field>
+            <Field label='Đường dẫn kênh'>
+              {typeof channel.url === 'string' && channel.url ? (
+                <a
+                  href={channel.url}
+                  target='_blank'
+                  rel='noreferrer'
+                  className='text-primary underline-offset-2 hover:underline'
+                >
+                  {channel.url}
+                </a>
+              ) : (
+                ''
+              )}
+            </Field>
+            <Field label={isKol ? 'Số người theo dõi' : 'Lượng truy cập mỗi tháng'}>
+              {followers}
+            </Field>
+            {otherChannels.map(([key, value]) => (
+              <Field key={key} label={CHANNEL_LABELS[key] ?? key}>
+                {String(value)}
+              </Field>
+            ))}
+          </div>
+          {partner.notes && (
+            <Field label='Ghi chú của đối tác khi đăng ký'>
+              <span className='font-normal'>{partner.notes}</span>
+            </Field>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 3 — tier, and what the partner is allowed to do. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>3. Hạng đối tác và phân quyền</CardTitle>
+        </CardHeader>
+        <CardContent>
           <Select
             value={partner.tierCode || ''}
             onValueChange={(tierCode) => tierMutation.mutate({ id: partnerId, data: { tierCode } })}
@@ -292,207 +387,95 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        {relevantTiers.find((t) => t.tierCode === partner.tierCode)?.isInternal && (
-          <p className='text-muted-foreground mt-2 text-xs'>
-            Đối tác đang ở hạng nội bộ — hệ thống sẽ không tự xét lại hạng cho đối tác này.
-          </p>
-        )}
-        <p className='text-muted-foreground mt-2 text-xs'>
-          {partner.tierEffectiveFrom
-            ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`
-            : 'Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ, hệ thống không tính hồi tố.'}
-        </p>
-
-        {partner.partnerType === 'distribution' && (
-          <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
-            <div>
-              <p className='text-sm font-medium'>Được phân quyền affiliate</p>
-              <p className='text-muted-foreground text-xs'>
-                Cho phép đối tác phân phối tham gia luôn chương trình tiếp thị. Khi bật, cổng đối
-                tác của họ mới hiện các mục Link tiếp thị, Mã giảm giá, Hoa hồng và Rút tiền (#048).
-                Tắt đi thì các mục đó ẩn lại, nhưng link và mã đã tạo vẫn còn hiệu lực và hoa hồng
-                đã ghi nhận vẫn là của họ.
-              </p>
-            </div>
-            <Switch
-              checked={Boolean(partner.canAffiliate)}
-              disabled={affiliateGrantMutation.isPending}
-              onCheckedChange={(checked) =>
-                affiliateGrantMutation.mutate({
-                  id: partnerId,
-                  canAffiliate: checked
-                })
-              }
-              aria-label='Cho phép tham gia chương trình tiếp thị'
-            />
-          </div>
-        )}
-
-        {partner.partnerType === 'kol' && (
-          <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
-            <div>
-              <p className='text-sm font-medium'>Được đặt tên link tiếp thị</p>
-              <p className='text-muted-foreground text-xs'>
-                Cho phép đối tác tự đặt tên link (esim.vn/go/TENCHIENDICH, 8–50 ký tự chữ và số).
-                Thường chỉ bật cho đối tác hạng cao cần tên dễ nhớ cho chiến dịch.
-              </p>
-            </div>
-            <Switch
-              checked={Boolean(partner.canCustomLinkCode)}
-              disabled={linkCodeMutation.isPending}
-              onCheckedChange={(checked) =>
-                linkCodeMutation.mutate({
-                  id: partnerId,
-                  canCustomLinkCode: checked
-                })
-              }
-              aria-label='Cho phép đặt tên link tiếp thị'
-            />
-          </div>
-        )}
-      </div>
-
-      {/*
-        "bấm xem chi tiết đối tác để xem các mã/liên kết đối tác đã tạo" (#095).
-        Without this an admin chasing a reconciliation query or a suspicious
-        order could not tell which codes belong to which partner without opening
-        the database.
-      */}
-      <div className='rounded-lg border p-4' data-testid='partner-marketing'>
-        <p className='mb-3 text-sm font-medium'>Liên kết & mã giới thiệu</p>
-        {marketing === undefined ? (
-          <p className='text-muted-foreground text-sm'>Đang tải...</p>
-        ) : marketing.links.length === 0 && marketing.coupons.length === 0 ? (
-          <p className='text-muted-foreground text-sm'>
-            Đối tác này chưa tạo liên kết hoặc mã giảm giá nào.
-          </p>
-        ) : (
-          <div className='space-y-4'>
-            {marketing.links.length > 0 && (
-              <div className='space-y-2'>
-                {marketing.links.map((link) => (
-                  <div
-                    key={link.id}
-                    className='flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2'
-                  >
-                    <div className='min-w-0'>
-                      <p className='text-sm font-medium'>{link.label}</p>
-                      <p className='text-muted-foreground font-mono text-xs'>
-                        {PUBLIC_ORIGIN}/go/{link.code}
-                        {link.deletedAt ? ' · đã xóa' : link.status !== 'active' && ' · đã tắt'}
-                      </p>
-                    </div>
-                    <div className='text-muted-foreground flex gap-3 text-xs tabular-nums'>
-                      <span>{link.clickCount} lượt bấm</span>
-                      <span>{link.conversionCount} đơn</span>
-                      <span>{formatVnd(Number(link.totalCommissionVnd) || 0)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {marketing.coupons.length > 0 && (
-              <div className='space-y-2'>
-                <p className='text-muted-foreground text-xs font-medium'>Mã giảm giá</p>
-                {marketing.coupons.map((coupon) => (
-                  <div
-                    key={coupon.id}
-                    className='flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2'
-                  >
-                    <div>
-                      <span className='font-mono text-sm font-medium'>{coupon.code}</span>
-                      {coupon.discountPercent ? (
-                        <span className='text-muted-foreground ml-2 text-xs'>
-                          -{coupon.discountPercent}%
-                        </span>
-                      ) : null}
-                      {!coupon.isActive && (
-                        <span className='text-muted-foreground ml-2 text-xs'>· đã tắt</span>
-                      )}
-                    </div>
-                    <div className='text-muted-foreground flex gap-3 text-xs tabular-nums'>
-                      <span>{coupon.myOrders} đơn của đối tác</span>
-                      <span>đã giảm {formatVnd(coupon.discountGivenVnd)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {partner.businessAddress && (
-        <div className='rounded-lg border p-4'>
-          <p className='text-muted-foreground text-xs font-medium'>Địa chỉ</p>
-          <p className='text-sm'>{partner.businessAddress}</p>
-        </div>
-      )}
-
-      {partner.channelInfo && Object.keys(partner.channelInfo).length > 0 && (
-        <div className='rounded-lg border p-4'>
-          <p className='text-muted-foreground mb-3 text-xs font-medium'>Thông tin kênh</p>
-          <dl className='grid gap-2 sm:grid-cols-2'>
-            {Object.entries(partner.channelInfo).map(([key, value]) => (
-              <div key={key} className='min-w-0'>
-                <dt className='text-muted-foreground text-xs'>{CHANNEL_INFO_LABELS[key] ?? key}</dt>
-                <dd className='truncate text-sm'>{formatChannelValue(key, value)}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      )}
-
-      <BulkStatusModal
-        open={statusOpen}
-        onOpenChange={setStatusOpen}
-        partnerIds={[partnerId]}
-        onDone={refetch}
-      />
-
-      {/* How the partner has been doing, and what the contract says (#061). */}
-      <PartnerPerformanceCard partnerId={partnerId} />
-      <PartnerContractCard partner={partner} onSaved={refetch} />
-
-      {partner.notes && (
-        <div className='rounded-lg border p-4'>
-          <p className='text-muted-foreground text-xs font-medium'>Ghi chú của đối tác</p>
-          <p className='text-sm'>{partner.notes}</p>
-        </div>
-      )}
-
-      {/*
-        The reviewer's own note (#056). Separate from the applicant's: this is
-        who was called, what was checked, and what to look at next time — and it
-        is what support reads back when the partner asks why.
-      */}
-      <div className='rounded-lg border p-4'>
-        <p className='text-muted-foreground text-xs font-medium'>Ghi chú của quản trị viên</p>
-        <Textarea
-          className='mt-2'
-          rows={3}
-          placeholder='Ví dụ: đã gọi xác minh kênh bán, giấy phép hợp lệ.'
-          value={adminNote}
-          onChange={(e) => setAdminNote(e.target.value)}
-        />
-        <div className='mt-2 flex items-center gap-2'>
-          <Button
-            size='sm'
-            isLoading={adminNoteMutation.isPending}
-            disabled={adminNote === (partner.adminNote ?? '')}
-            onClick={() => adminNoteMutation.mutate({ id: partnerId, adminNote })}
-          >
-            Lưu ghi chú
-          </Button>
-          {adminNote !== (partner.adminNote ?? '') && (
-            <Button size='sm' variant='ghost' onClick={() => setAdminNote(partner.adminNote ?? '')}>
-              Hoàn tác
-            </Button>
+          {relevantTiers.find((t) => t.tierCode === partner.tierCode)?.isInternal && (
+            <p className='text-muted-foreground mt-2 text-xs'>
+              Đối tác đang ở hạng nội bộ — hệ thống sẽ không tự xét lại hạng cho đối tác này.
+            </p>
           )}
-        </div>
-      </div>
+          <p className='text-muted-foreground mt-2 text-xs'>
+            {partner.tierEffectiveFrom
+              ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`
+              : 'Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ, hệ thống không tính hồi tố.'}
+          </p>
+
+          {!isKol && (
+            <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
+              <div>
+                <p className='text-sm font-medium'>Được phân quyền affiliate</p>
+                <p className='text-muted-foreground text-xs'>
+                  Cho phép đối tác phân phối tham gia luôn chương trình tiếp thị: cổng đối tác hiện
+                  thêm Link tiếp thị, Mã giảm giá, Hoa hồng và Thanh toán (#048). Tắt đi thì các mục
+                  đó ẩn lại, nhưng hoa hồng đã ghi nhận vẫn là của họ.
+                </p>
+              </div>
+              <Switch
+                checked={Boolean(partner.canAffiliate)}
+                disabled={affiliateGrantMutation.isPending}
+                onCheckedChange={(checked) =>
+                  affiliateGrantMutation.mutate({ id: partnerId, canAffiliate: checked })
+                }
+                aria-label='Được phân quyền affiliate'
+              />
+            </div>
+          )}
+
+          {/* Only shown once the partner runs the programme (doitac-1410 #004). */}
+          {runsProgramme && (
+            <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
+              <div>
+                <p className='text-sm font-medium'>Được đặt tên link tiếp thị</p>
+                <p className='text-muted-foreground text-xs'>
+                  Cho phép đối tác tự đặt tên link (esim.vn/go/TENCHIENDICH, 8–50 ký tự chữ và số).
+                  Thường chỉ bật cho đối tác hạng cao cần tên dễ nhớ cho chiến dịch.
+                </p>
+              </div>
+              <Switch
+                checked={Boolean(partner.canCustomLinkCode)}
+                disabled={linkCodeMutation.isPending}
+                onCheckedChange={(checked) =>
+                  linkCodeMutation.mutate({ id: partnerId, canCustomLinkCode: checked })
+                }
+                aria-label='Được đặt tên link tiếp thị'
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 4 — the partner's figures over a chosen period. */}
+      {decided && <PartnerStatsSection partner={partner} />}
+
+      {/* 5 — contract lines and this partner's own deposit limits. */}
+      <PartnerContractCard ref={contractRef} partner={partner} onDirtyChange={onContractDirty} />
+
+      {/*
+        6 — the reviewer's own note (#056). Separate from the applicant's: who
+        was called, what was checked, what to look at next time.
+      */}
+      <Card>
+        <CardHeader>
+          <CardTitle>6. Ghi chú của quản trị viên</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-2'>
+          <Textarea
+            rows={3}
+            placeholder='Ví dụ: đã gọi xác minh kênh bán, giấy phép hợp lệ.'
+            value={adminNote}
+            onChange={(e) => setAdminNote(e.target.value)}
+            aria-label='Ghi chú của quản trị viên'
+          />
+          {noteDirty && (
+            <div className='flex items-center gap-2'>
+              <p className='text-muted-foreground text-xs'>
+                Có thay đổi chưa lưu — bấm &quot;Lưu lại&quot; ở đầu trang.
+              </p>
+              <Button size='sm' variant='ghost' onClick={() => setAdminNote(loadedNote)}>
+                Hoàn tác
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

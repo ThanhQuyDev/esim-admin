@@ -64,6 +64,12 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
       body.errors && typeof body.errors === 'object'
         ? (body.errors as Record<string, string>)
         : undefined;
+    // The portal proxy has already dropped a token the backend refused, so the
+    // page behind it can only show errors now. Send the partner to sign in
+    // again, saying why (doitac-1410 #004).
+    if (res.status === 401 && errors?.session && typeof window !== 'undefined') {
+      window.location.replace(`/auth/sign-in?reason=${encodeURIComponent(errors.session)}`);
+    }
     throw new ApiError(
       body.message || `API error: ${res.status} ${res.statusText}`,
       res.status,

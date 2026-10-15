@@ -63,6 +63,8 @@ export type MyWalletSummary = {
   balanceVnd: number;
   availableBalanceVnd: number;
   pendingPayoutVnd: number;
+  /** Commission earned but still awaiting reconciliation. */
+  pendingCommissionVnd?: number;
   /** Commission clawed back after payout, netted off the next period (#007). */
   carriedDebtVnd?: number;
   /** Lifetime paid out and how many payments that was (#029). */
@@ -129,7 +131,8 @@ export type MyLink = {
   code: string;
   label: string;
   targetPath: string | null;
-  status: 'active' | 'inactive';
+  /** `suspended` = "Bị đình chỉ" while the account is held or locked (doitac-1410 #004). */
+  status: 'active' | 'inactive' | 'suspended';
   clickCount: number;
   conversionCount: number;
   totalCommissionVnd: number;
@@ -318,6 +321,8 @@ export type MyCoupon = {
   maxUsage: number | null;
   expiresAt: string | null;
   isActive: boolean;
+  /** "Bị đình chỉ": the account is held or locked (doitac-1410 #004). */
+  suspended?: boolean;
   /** Paid orders of THIS partner that used the code. */
   myOrders: number;
   discountGivenVnd: number;
