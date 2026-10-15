@@ -7,6 +7,7 @@ import {
   getMyDepositRequests,
   getMyLinks,
   getMyLinkDetail,
+  getMyChannelPerformance,
   getMyCommissions,
   getMyPayouts,
   getMySummary,
@@ -66,6 +67,13 @@ export const myFilteredLinksQueryOptions = (query: MyLinksQuery) =>
   queryOptions({
     queryKey: [...partnerPortalKeys.links(), query],
     queryFn: () => getMyLinks(query)
+  });
+
+/** "Hiệu suất theo kênh" (doitac-1410 #019). */
+export const myChannelPerformanceQueryOptions = (range: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.links(), 'channels', range.from ?? '', range.to ?? ''],
+    queryFn: () => getMyChannelPerformance(range)
   });
 
 /** One link for its detail popup (doitac-1410 #018). */

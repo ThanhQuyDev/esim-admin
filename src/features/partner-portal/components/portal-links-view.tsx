@@ -55,8 +55,10 @@ import {
   DeleteLinkDialog,
   EditLinkDialog,
   LinkDetailDialog,
-  PauseLinkDialog
+  PauseLinkDialog,
+  RestoreRequestDialog
 } from './portal-link-dialogs';
+import { ChannelPerformanceCard, DeletedLinksTable } from './portal-links-extra';
 import {
   CHANNELS,
   LINK_PERIODS,
@@ -90,11 +92,13 @@ const STATUSES = [
   { value: 'all', label: 'Tất cả trạng thái' },
   { value: 'active', label: 'Hoạt động' },
   { value: 'inactive', label: 'Tạm tắt' },
-  { value: 'suspended', label: 'Bị đình chỉ' },
-  { value: 'deleted', label: 'Đã xóa' }
+  { value: 'suspended', label: 'Bị đình chỉ' }
 ];
 
-type Popup = { kind: 'detail' | 'edit' | 'pause' | 'delete' | 'appeal'; link: MyLink } | null;
+type Popup = {
+  kind: 'detail' | 'edit' | 'pause' | 'delete' | 'appeal' | 'restoreRequest';
+  link: MyLink;
+} | null;
 
 export function PortalLinksView() {
   const queryClient = useQueryClient();
@@ -108,7 +112,8 @@ export function PortalLinksView() {
   const [sort, setSort] = useState('created');
   const query = useMemo(
     () => ({
-      ...(status !== 'all' ? { status } : {}),
+      // Deleted links have their own tab (doitac-1410 #019).
+      status: status !== 'all' ? status : 'live',
       ...(channelFilter !== 'all' ? { channel: channelFilter } : {}),
       ...periodRange(period),
       ...(createdFrom ? { createdFrom } : {}),
@@ -119,6 +124,10 @@ export function PortalLinksView() {
   );
   const { data: links, isLoading } = useQuery(myFilteredLinksQueryOptions(query));
   const [popup, setPopup] = useState<Popup>(null);
+  const [tab, setTab] = useState<'live' | 'deleted'>('live');
+  const { data: deletedLinks = [], isLoading: deletedLoading } = useQuery(
+    myFilteredLinksQueryOptions({ status: 'deleted', sort: 'updated' })
+  );
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [labelError, setLabelError] = useState<string | null>(null);
@@ -430,6 +439,9 @@ export function PortalLinksView() {
       {popup?.kind === 'appeal' && (
         <AppealLinkDialog link={popup.link} onClose={() => setPopup(null)} />
       )}
+      {popup?.kind === 'restoreRequest' && (
+        <RestoreRequestDialog link={popup.link} onClose={() => setPopup(null)} />
+      )}
 
       <Card>
         <CardHeader>
@@ -471,272 +483,300 @@ export function PortalLinksView() {
           </CardAction>
         </CardHeader>
         <CardContent className='space-y-4'>
-          {/* Thống kê nhanh: the window the clicks, orders and commission cover. */}
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as LinkPeriod)}>
-            <TabsList className='h-auto flex-wrap'>
-              {LINK_PERIODS.map((p) => (
-                <TabsTrigger key={p.value} value={p.value}>
-                  {p.label}
-                </TabsTrigger>
-              ))}
+          {/* Links in use, and the deleted ones apart (doitac-1410 #019). */}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as 'live' | 'deleted')}>
+            <TabsList>
+              <TabsTrigger value='live'>Đang dùng</TabsTrigger>
+              <TabsTrigger value='deleted' data-testid='tab-deleted'>
+                Đã xóa ({deletedLinks.length})
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <div
-            className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'
-            data-testid='links-filters'
-          >
-            <div className='space-y-1.5'>
-              <Label htmlFor='filterLabel'>Tên liên kết, trang đích</Label>
-              <Input
-                id='filterLabel'
-                placeholder='Ví dụ: Video Nhật Bản'
-                value={filters.label}
-                onChange={(e) => setFilters({ ...filters, label: e.target.value })}
-              />
-            </div>
-            <div className='space-y-1.5'>
-              <Label htmlFor='filterStatus'>Trạng thái</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id='filterStatus' className='w-full'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
+          {tab === 'deleted' ? (
+            <DeletedLinksTable
+              links={deletedLinks}
+              isLoading={deletedLoading}
+              onDetail={(l) => setPopup({ kind: 'detail', link: l })}
+              onRestore={(l) => restore.mutate(l.id)}
+              onRequestRestore={(l) => setPopup({ kind: 'restoreRequest', link: l })}
+              restoring={restore.isPending}
+            />
+          ) : (
+            <>
+              {/* Thống kê nhanh: the window the clicks, orders and commission cover. */}
+              <Tabs value={period} onValueChange={(v) => setPeriod(v as LinkPeriod)}>
+                <TabsList className='h-auto flex-wrap'>
+                  {LINK_PERIODS.map((p) => (
+                    <TabsTrigger key={p.value} value={p.value}>
+                      {p.label}
+                    </TabsTrigger>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='space-y-1.5'>
-              <Label htmlFor='filterChannel'>Kênh tiếp thị</Label>
-              <Select value={channelFilter} onValueChange={setChannelFilter}>
-                <SelectTrigger id='filterChannel' className='w-full'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>Tất cả kênh</SelectItem>
-                  {CHANNELS.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='space-y-1.5'>
-              <Label htmlFor='filterSort'>Sắp xếp</Label>
-              <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger id='filterSort' className='w-full'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORTS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='space-y-1.5 sm:col-span-2'>
-              <Label>Thời gian tạo</Label>
-              <div className='flex items-center gap-2'>
-                <Input
-                  type='date'
-                  className='min-w-0 flex-1'
-                  aria-label='Tạo từ ngày'
-                  value={createdFrom}
-                  onChange={(e) => setCreatedFrom(e.target.value)}
-                />
-                <span className='text-muted-foreground text-sm'>–</span>
-                <Input
-                  type='date'
-                  className='min-w-0 flex-1'
-                  aria-label='Tạo đến ngày'
-                  value={createdTo}
-                  onChange={(e) => setCreatedTo(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+                </TabsList>
+              </Tabs>
 
-          <div className='overflow-x-auto rounded-lg border'>
-            <Table>
-              <TableHeader className='bg-muted'>
-                <TableRow>
-                  <TableHead>Tên liên kết</TableHead>
-                  <TableHead>Trang đích</TableHead>
-                  <TableHead>Link tiếp thị</TableHead>
-                  <TableHead>Kênh quảng bá</TableHead>
-                  <TableHead>Thời gian</TableHead>
-                  <TableHead className='text-right'>Nhấp</TableHead>
-                  <TableHead className='text-right'>Đơn</TableHead>
-                  <TableHead className='text-right'>Hoa hồng</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className='text-right'>Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading && (
-                  <TableRow>
-                    <TableCell colSpan={10} className='text-muted-foreground h-24 text-center'>
-                      Đang tải liên kết…
-                    </TableCell>
-                  </TableRow>
-                )}
-                {!isLoading && rows.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={10} className='h-24 text-center'>
-                      <p className='text-muted-foreground text-sm'>
-                        Không có liên kết nào khớp bộ lọc.
-                      </p>
-                    </TableCell>
-                  </TableRow>
-                )}
-                {rows.map((r) => {
-                  const state = linkState(r);
-                  const restorable =
-                    state === 'deleted' &&
-                    r.restorableUntil &&
-                    new Date(r.restorableUntil).getTime() > Date.now();
-                  return (
-                    <TableRow
-                      key={r.id}
-                      className={state === 'active' ? undefined : 'opacity-70'}
-                      data-testid={`link-row-${r.id}`}
-                    >
-                      <TableCell className='font-medium'>{r.label}</TableCell>
-                      <TableCell className='text-muted-foreground max-w-[200px] truncate text-xs'>
-                        {landingOf(r.targetPath)}
-                      </TableCell>
-                      <TableCell className='font-mono text-xs whitespace-nowrap'>
-                        {shortLinkOf(r.code)}
-                      </TableCell>
-                      <TableCell className='text-xs'>{channelOf(r.targetPath)}</TableCell>
-                      <TableCell className='text-xs whitespace-nowrap'>
-                        <span className='block'>{formatDateTimeVn(r.createdAt)}</span>
-                        <span className='text-muted-foreground block'>
-                          {r.lastChangedAt ? formatDateTimeVn(r.lastChangedAt) : '—'}
-                        </span>
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        {Number(r.periodClicks ?? r.clickCount ?? 0).toLocaleString('vi-VN')}
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        {Number(r.periodOrders ?? r.conversionCount ?? 0).toLocaleString('vi-VN')}
-                      </TableCell>
-                      <TableCell className='text-right font-medium tabular-nums'>
-                        {formatVnd(Number(r.periodCommissionVnd ?? r.totalCommissionVnd ?? 0))}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={LINK_STATE[state].variant}
-                          data-testid={`link-status-${r.id}`}
+              <div
+                className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'
+                data-testid='links-filters'
+              >
+                <div className='space-y-1.5'>
+                  <Label htmlFor='filterLabel'>Tên liên kết, trang đích</Label>
+                  <Input
+                    id='filterLabel'
+                    placeholder='Ví dụ: Video Nhật Bản'
+                    value={filters.label}
+                    onChange={(e) => setFilters({ ...filters, label: e.target.value })}
+                  />
+                </div>
+                <div className='space-y-1.5'>
+                  <Label htmlFor='filterStatus'>Trạng thái</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger id='filterStatus' className='w-full'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='space-y-1.5'>
+                  <Label htmlFor='filterChannel'>Kênh tiếp thị</Label>
+                  <Select value={channelFilter} onValueChange={setChannelFilter}>
+                    <SelectTrigger id='filterChannel' className='w-full'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='all'>Tất cả kênh</SelectItem>
+                      {CHANNELS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='space-y-1.5'>
+                  <Label htmlFor='filterSort'>Sắp xếp</Label>
+                  <Select value={sort} onValueChange={setSort}>
+                    <SelectTrigger id='filterSort' className='w-full'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORTS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='space-y-1.5 sm:col-span-2'>
+                  <Label>Thời gian tạo</Label>
+                  <div className='flex items-center gap-2'>
+                    <Input
+                      type='date'
+                      className='min-w-0 flex-1'
+                      aria-label='Tạo từ ngày'
+                      value={createdFrom}
+                      onChange={(e) => setCreatedFrom(e.target.value)}
+                    />
+                    <span className='text-muted-foreground text-sm'>–</span>
+                    <Input
+                      type='date'
+                      className='min-w-0 flex-1'
+                      aria-label='Tạo đến ngày'
+                      value={createdTo}
+                      onChange={(e) => setCreatedTo(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className='overflow-x-auto rounded-lg border'>
+                <Table>
+                  <TableHeader className='bg-muted'>
+                    <TableRow>
+                      <TableHead>Tên liên kết</TableHead>
+                      <TableHead>Trang đích</TableHead>
+                      <TableHead>Link tiếp thị</TableHead>
+                      <TableHead>Kênh quảng bá</TableHead>
+                      <TableHead>Thời gian</TableHead>
+                      <TableHead className='text-right'>Nhấp</TableHead>
+                      <TableHead className='text-right'>Đơn</TableHead>
+                      <TableHead className='text-right'>Hoa hồng</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead className='text-right'>Thao tác</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading && (
+                      <TableRow>
+                        <TableCell colSpan={10} className='text-muted-foreground h-24 text-center'>
+                          Đang tải liên kết…
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {!isLoading && rows.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={10} className='h-24 text-center'>
+                          <p className='text-muted-foreground text-sm'>
+                            Không có liên kết nào khớp bộ lọc.
+                          </p>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {rows.map((r) => {
+                      const state = linkState(r);
+                      const restorable =
+                        state === 'deleted' &&
+                        r.restorableUntil &&
+                        new Date(r.restorableUntil).getTime() > Date.now();
+                      return (
+                        <TableRow
+                          key={r.id}
+                          className={state === 'active' ? undefined : 'opacity-70'}
+                          data-testid={`link-row-${r.id}`}
                         >
-                          {LINK_STATE[state].label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className='flex justify-end gap-1'>
-                          {/* No copying a link that earns nothing (doitac-1410 #018). */}
-                          {state !== 'suspended' && state !== 'deleted' && (
-                            <Button
-                              size='sm'
-                              variant='ghost'
-                              onClick={() =>
-                                copy(`https://${shortLinkOf(r.code)}`, 'Đã sao chép liên kết.')
-                              }
+                          <TableCell className='font-medium'>{r.label}</TableCell>
+                          <TableCell className='text-muted-foreground max-w-[200px] truncate text-xs'>
+                            {landingOf(r.targetPath)}
+                          </TableCell>
+                          <TableCell className='font-mono text-xs whitespace-nowrap'>
+                            {shortLinkOf(r.code)}
+                          </TableCell>
+                          <TableCell className='text-xs'>{channelOf(r.targetPath)}</TableCell>
+                          <TableCell className='text-xs whitespace-nowrap'>
+                            <span className='block'>{formatDateTimeVn(r.createdAt)}</span>
+                            <span className='text-muted-foreground block'>
+                              {r.lastChangedAt ? formatDateTimeVn(r.lastChangedAt) : '—'}
+                            </span>
+                          </TableCell>
+                          <TableCell className='text-right tabular-nums'>
+                            {Number(r.periodClicks ?? r.clickCount ?? 0).toLocaleString('vi-VN')}
+                          </TableCell>
+                          <TableCell className='text-right tabular-nums'>
+                            {Number(r.periodOrders ?? r.conversionCount ?? 0).toLocaleString(
+                              'vi-VN'
+                            )}
+                          </TableCell>
+                          <TableCell className='text-right font-medium tabular-nums'>
+                            {formatVnd(Number(r.periodCommissionVnd ?? r.totalCommissionVnd ?? 0))}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={LINK_STATE[state].variant}
+                              data-testid={`link-status-${r.id}`}
                             >
-                              <Icons.copy />
-                              Sao chép
-                            </Button>
-                          )}
-                          <Button
-                            size='sm'
-                            variant='ghost'
-                            onClick={() => setPopup({ kind: 'detail', link: r })}
-                          >
-                            Xem chi tiết
-                          </Button>
-                          {(state === 'active' || state === 'inactive') && (
-                            <>
-                              <Button
-                                size='sm'
-                                variant='ghost'
-                                onClick={() => setPopup({ kind: 'edit', link: r })}
-                              >
-                                Sửa
-                              </Button>
-                              {state === 'active' ? (
+                              {LINK_STATE[state].label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className='flex justify-end gap-1'>
+                              {/* No copying a link that earns nothing (doitac-1410 #018). */}
+                              {state !== 'suspended' && state !== 'deleted' && (
                                 <Button
                                   size='sm'
                                   variant='ghost'
-                                  onClick={() => setPopup({ kind: 'pause', link: r })}
-                                >
-                                  Tạm tắt
-                                </Button>
-                              ) : (
-                                <Button
-                                  size='sm'
-                                  variant='ghost'
-                                  disabled={toggleLink.isPending}
                                   onClick={() =>
-                                    toggleLink.mutate({ id: r.id, data: { isActive: true } })
+                                    copy(`https://${shortLinkOf(r.code)}`, 'Đã sao chép liên kết.')
                                   }
                                 >
-                                  Bật lại
+                                  <Icons.copy />
+                                  Sao chép
                                 </Button>
                               )}
                               <Button
                                 size='sm'
                                 variant='ghost'
-                                className='text-destructive hover:text-destructive'
-                                onClick={() => setPopup({ kind: 'delete', link: r })}
+                                onClick={() => setPopup({ kind: 'detail', link: r })}
                               >
-                                <Icons.trash />
-                                Xóa
+                                Xem chi tiết
                               </Button>
-                            </>
-                          )}
-                          {state === 'suspended' &&
-                            r.suspendedByAdmin &&
-                            (r.appealedAt ? (
-                              <Button size='sm' variant='ghost' disabled>
-                                Đang kháng nghị
-                              </Button>
-                            ) : (
-                              <Button
-                                size='sm'
-                                variant='outline'
-                                onClick={() => setPopup({ kind: 'appeal', link: r })}
-                              >
-                                Gửi kháng nghị
-                              </Button>
-                            ))}
-                          {restorable && (
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              disabled={restore.isPending}
-                              title={`Có thể khôi phục đến ${formatDateVn(r.restorableUntil)}`}
-                              onClick={() => restore.mutate(r.id)}
-                            >
-                              Khôi phục
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                              {(state === 'active' || state === 'inactive') && (
+                                <>
+                                  <Button
+                                    size='sm'
+                                    variant='ghost'
+                                    onClick={() => setPopup({ kind: 'edit', link: r })}
+                                  >
+                                    Sửa
+                                  </Button>
+                                  {state === 'active' ? (
+                                    <Button
+                                      size='sm'
+                                      variant='ghost'
+                                      onClick={() => setPopup({ kind: 'pause', link: r })}
+                                    >
+                                      Tạm tắt
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size='sm'
+                                      variant='ghost'
+                                      disabled={toggleLink.isPending}
+                                      onClick={() =>
+                                        toggleLink.mutate({ id: r.id, data: { isActive: true } })
+                                      }
+                                    >
+                                      Bật lại
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size='sm'
+                                    variant='ghost'
+                                    className='text-destructive hover:text-destructive'
+                                    onClick={() => setPopup({ kind: 'delete', link: r })}
+                                  >
+                                    <Icons.trash />
+                                    Xóa
+                                  </Button>
+                                </>
+                              )}
+                              {state === 'suspended' &&
+                                r.suspendedByAdmin &&
+                                (r.appealedAt ? (
+                                  <Button size='sm' variant='ghost' disabled>
+                                    Đang kháng nghị
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size='sm'
+                                    variant='outline'
+                                    onClick={() => setPopup({ kind: 'appeal', link: r })}
+                                  >
+                                    Gửi kháng nghị
+                                  </Button>
+                                ))}
+                              {restorable && (
+                                <Button
+                                  size='sm'
+                                  variant='outline'
+                                  disabled={restore.isPending}
+                                  title={`Có thể khôi phục đến ${formatDateVn(r.restorableUntil)}`}
+                                  onClick={() => restore.mutate(r.id)}
+                                >
+                                  Khôi phục
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
+
+      {/* Hiệu suất theo kênh — figure 4 (doitac-1410 #019). */}
+      <ChannelPerformanceCard />
     </div>
   );
 }

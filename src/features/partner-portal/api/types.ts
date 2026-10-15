@@ -164,6 +164,30 @@ export type MyLink = {
   suspendedByAdmin?: boolean;
   suspendedReason?: string | null;
   appealedAt?: string | null;
+  // Deleted links (doitac-1410 #019):
+  /** `partner` or `admin`. */
+  deletedBy?: string | null;
+  /** Restores in the last 30 days; from the second on an admin decides. */
+  restoreCount?: number;
+  canSelfRestore?: boolean;
+  restoreRequestedAt?: string | null;
+  restoreRequestReason?: string | null;
+};
+
+/** "Hiệu suất theo kênh" (doitac-1410 #019). */
+export type MyChannelPerformanceRow = {
+  channel: string;
+  links: number;
+  clicks: number;
+  orders: number;
+  revenueVnd: number;
+  commissionVnd: number;
+  conversionPercent: number;
+};
+
+export type MyChannelPerformance = {
+  channels: MyChannelPerformanceRow[];
+  total: Omit<MyChannelPerformanceRow, 'channel'>;
 };
 
 /** The link list's filters and order (doitac-1410 #018). */

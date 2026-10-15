@@ -8,6 +8,7 @@ import type {
   CreateDepositRequestPayload,
   MyLink,
   MyLinkDetail,
+  MyChannelPerformance,
   MyLinksQuery,
   CreateLinkPayload,
   UpdateLinkPayload,
@@ -139,6 +140,25 @@ export async function getMyLinkDetail(
 /** Bring back a link deleted within 30 days (doitac-1410 #018). */
 export async function restoreMyLink(id: number): Promise<MyLink> {
   return apiClient<MyLink>(`/partner-portal/links/${id}/restore`, { method: 'POST' });
+}
+
+/** Ask esim.vn to restore a deleted link (doitac-1410 #019). */
+export async function requestMyLinkRestore(id: number, reason: string): Promise<MyLink> {
+  return apiClient<MyLink>(`/partner-portal/links/${id}/restore-request`, {
+    method: 'POST',
+    body: JSON.stringify({ reason })
+  });
+}
+
+/** "Hiệu suất theo kênh" over a window (doitac-1410 #019). */
+export async function getMyChannelPerformance(
+  range: { from?: string; to?: string } = {}
+): Promise<MyChannelPerformance> {
+  const params = new URLSearchParams();
+  if (range.from) params.set('from', range.from);
+  if (range.to) params.set('to', range.to);
+  const qs = params.toString();
+  return apiClient<MyChannelPerformance>(`/partner-portal/links-channels${qs ? `?${qs}` : ''}`);
 }
 
 /** Record the appeal of a suspended link, with its ticket (doitac-1410 #018). */

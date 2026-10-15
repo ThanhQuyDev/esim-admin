@@ -36,7 +36,7 @@ import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 
 import { updateLinkMutation } from '../api/mutations';
 import { myLinkDetailQueryOptions, myProfileQueryOptions, partnerPortalKeys } from '../api/queries';
-import { appealMyLink, createMyTicket, deleteMyLink } from '../api/service';
+import { appealMyLink, createMyTicket, deleteMyLink, requestMyLinkRestore } from '../api/service';
 import type { MyLink, MyLinkEvent } from '../api/types';
 import {
   CHANNELS,
@@ -96,6 +96,16 @@ function describeEvent(e: MyLinkEvent): { title: string; lines: string[] } {
       };
     case 'appealed':
       return { title: `${actor} gửi kháng nghị`, lines: [] };
+    case 'restore_requested':
+      return {
+        title: `${actor} gửi yêu cầu khôi phục`,
+        lines: d.reason ? [`Lý do: ${d.reason}`] : []
+      };
+    case 'restore_rejected':
+      return {
+        title: 'esim.vn chưa duyệt yêu cầu khôi phục',
+        lines: d.reason ? [`Lý do: ${d.reason}`] : []
+      };
     default:
       return { title: e.action, lines: [] };
   }
@@ -682,6 +692,62 @@ export function AppealLinkDialog({ link, onClose }: { link: MyLink; onClose: () 
           </Button>
           <Button
             disabled={!message.trim()}
+            isLoading={send.isPending}
+            onClick={() => send.mutate()}
+          >
+            Gửi yêu cầu
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** "Gửi yêu cầu khôi phục" (doitac-1410 #019). */
+export function RestoreRequestDialog({ link, onClose }: { link: MyLink; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [reason, setReason] = useState('');
+  const send = useMutation({
+    mutationFn: () => requestMyLinkRestore(link.id, reason.trim()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: partnerPortalKeys.links() });
+      toast.success('Đã gửi yêu cầu khôi phục. esim.vn sẽ báo kết quả qua thông báo và email.');
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message || 'Không gửi được yêu cầu.')
+  });
+  const restoredBefore = (link.restoreCount ?? 0) > 0;
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className='sm:max-w-[520px]'>
+        <DialogHeader>
+          <DialogTitle>Gửi yêu cầu khôi phục «{link.label}»</DialogTitle>
+          <DialogDescription className='font-mono'>{shortLinkOf(link.code)}</DialogDescription>
+        </DialogHeader>
+        <p className='border-primary/40 bg-primary/5 rounded-lg border-l-4 p-3 text-sm'>
+          {restoredBefore
+            ? 'Link này đã khôi phục 1 lần trước đó. Từ lần khôi phục thứ hai, admin cần duyệt để tránh lạm dụng. Link vẫn ở trạng thái đã xóa cho đến khi được duyệt.'
+            : 'Đã quá 30 ngày kể từ khi xóa nên cần esim.vn khôi phục giúp. Link vẫn ở trạng thái đã xóa cho đến khi được duyệt.'}
+        </p>
+        <div className='space-y-1.5'>
+          <Label htmlFor='restore-reason'>
+            Lý do khôi phục <span className='text-destructive'>*</span>
+          </Label>
+          <Textarea
+            id='restore-reason'
+            rows={4}
+            placeholder='Ví dụ: link vẫn đang in trên tờ rơi phát ở sân bay'
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant='outline' onClick={onClose}>
+            Hủy
+          </Button>
+          <Button
+            disabled={!reason.trim()}
             isLoading={send.isPending}
             onClick={() => send.mutate()}
           >
