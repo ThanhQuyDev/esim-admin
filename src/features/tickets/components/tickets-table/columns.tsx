@@ -138,7 +138,7 @@ export const columns: ColumnDef<Ticket>[] = [
       if (!orderId) return <span className='text-muted-foreground'>—</span>;
       return (
         <Link
-          href={`/dashboard/orders/${orderId}`}
+          href={`/dashboard/orders/${encodeURIComponent(String(orderId).trim())}`}
           className={cn(
             'text-primary inline-flex items-center gap-1 font-mono text-xs hover:underline'
           )}

@@ -119,7 +119,7 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
           <InfoField label='Mã đơn hàng'>
             {ticket.orderId ? (
               <Link
-                href={`/dashboard/orders/${ticket.orderId}`}
+                href={`/dashboard/orders/${encodeURIComponent(ticket.orderId.trim())}`}
                 className='text-primary inline-flex items-center gap-1 font-mono hover:underline'
               >
                 {ticket.orderId}

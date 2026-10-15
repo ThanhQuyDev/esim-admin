@@ -386,6 +386,8 @@ export type CreateTicketPayload = {
   subject: string;
   description: string;
   orderId?: string;
+  /** Files sent with the request (doitac-1410 #023). */
+  attachments?: string[];
 };
 
 /** A discount a partner funds out of their own commission (#028). */

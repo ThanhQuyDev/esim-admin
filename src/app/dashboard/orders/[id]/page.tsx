@@ -7,6 +7,7 @@ import {
   OrderDetailView,
   OrderDetailSkeleton
 } from '@/features/orders/components/order-detail-view';
+import { OrderNumberRedirect } from '@/features/orders/components/order-number-redirect';
 
 export const metadata = {
   title: 'Dashboard: Chi tiết đơn hàng'
@@ -19,6 +20,16 @@ type PageProps = {
 export default async function OrderDetailPage(props: PageProps) {
   const { id } = await props.params;
   const orderId = Number(id);
+
+  // Opened by its code from a ticket (doitac-1410 #023): find the id first.
+  if (!Number.isInteger(orderId) || orderId <= 0) {
+    const code = decodeURIComponent(id);
+    return (
+      <PageContainer scrollable pageTitle='Chi tiết đơn hàng' pageDescription={`Đơn ${code}`}>
+        <OrderNumberRedirect orderNumber={code} />
+      </PageContainer>
+    );
+  }
 
   const queryClient = getQueryClient();
   void queryClient.prefetchQuery(orderQueryOptions(orderId));
