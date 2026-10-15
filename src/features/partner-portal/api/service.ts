@@ -378,8 +378,10 @@ export async function getMyTierEvaluations(): Promise<MyTierEvaluation[]> {
 }
 
 /** Announcements from esim.vn, for the bell (#079). */
-export async function getMyNotifications(): Promise<MyNotificationList> {
-  return apiClient<MyNotificationList>('/partner-portal/notifications');
+export async function getMyNotifications(limit?: number): Promise<MyNotificationList> {
+  return apiClient<MyNotificationList>(
+    `/partner-portal/notifications${limit ? `?limit=${limit}` : ''}`
+  );
 }
 
 export async function markMyNotificationRead(id: number): Promise<void> {

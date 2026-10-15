@@ -10,12 +10,12 @@
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn } from '@/lib/format';
 
@@ -23,8 +23,8 @@ import { markAllNotificationsReadMutation, markNotificationReadMutation } from '
 import { myNotificationsQueryOptions } from '../api/queries';
 import type { MyNotification } from '../api/types';
 
-/** The full announcement, opened from the bell or the banner. */
-function NotificationDialog({
+/** The full announcement, opened from the bell, the banner or the page. */
+export function NotificationDialog({
   notification,
   onClose
 }: {
@@ -49,8 +49,8 @@ function NotificationDialog({
   );
 }
 
-/** Shared open-and-mark-read behaviour for both the bell and the banner. */
-function useOpenNotification() {
+/** Shared open-and-mark-read behaviour for the bell, the banner and the page. */
+export function useOpenNotification() {
   const [open, setOpen] = useState<MyNotification | null>(null);
   const markRead = useMutation(markNotificationReadMutation);
 
@@ -106,7 +106,8 @@ export function PortalNotificationBell() {
               </Button>
             )}
           </div>
-          <ScrollArea className='max-h-[320px]'>
+          {/* A plain scrolling box: the ScrollArea's max-height did not clip, so a long list spilled over "Xem tất cả thông báo" (doitac-1410 #016). */}
+          <div className='max-h-[320px] overflow-y-auto'>
             {notifications.length === 0 ? (
               <p className='text-muted-foreground px-4 py-8 text-center text-sm'>
                 Chưa có thông báo nào.
@@ -135,7 +136,13 @@ export function PortalNotificationBell() {
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
+          {/* The whole list, with read and unread apart (doitac-1410 #016). */}
+          <div className='border-t p-2'>
+            <Button asChild variant='ghost' size='sm' className='w-full'>
+              <Link href='/dashboard/portal/notifications'>Xem tất cả thông báo</Link>
+            </Button>
+          </div>
         </PopoverContent>
       </Popover>
 

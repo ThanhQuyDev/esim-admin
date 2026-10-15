@@ -226,19 +226,38 @@ export default function AppSidebar() {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
+                  {/*
+                    In Vietnamese, and to the partner's own pages in the portal
+                    (doitac-1410 #016): they went to the admin profile and the
+                    template's demo notifications, which a partner cannot use.
+                  */}
+                  <DropdownMenuItem
+                    onClick={() =>
+                      router.push(
+                        IS_PARTNER_PORTAL ? '/dashboard/portal/profile' : '/dashboard/profile'
+                      )
+                    }
+                  >
                     <Icons.account className='mr-2 h-4 w-4' />
-                    Profile
+                    Hồ sơ
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/notifications')}>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      router.push(
+                        IS_PARTNER_PORTAL
+                          ? '/dashboard/portal/notifications'
+                          : '/dashboard/notifications'
+                      )
+                    }
+                  >
                     <Icons.notification className='mr-2 h-4 w-4' />
-                    Notifications
+                    Thông báo
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <Icons.logout className='mr-2 h-4 w-4' />
-                  Log out
+                  Đăng xuất
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

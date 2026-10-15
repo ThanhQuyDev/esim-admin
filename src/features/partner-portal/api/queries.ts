@@ -203,7 +203,17 @@ export const myTierEvaluationsQueryOptions = () =>
 export const myNotificationsQueryOptions = () =>
   queryOptions({
     queryKey: partnerPortalKeys.notifications(),
-    queryFn: getMyNotifications
+    queryFn: () => getMyNotifications()
+  });
+
+/**
+ * The notifications page (doitac-1410 #016): more than the bell's twenty.
+ * Keyed under the bell's key, so marking one read refreshes both.
+ */
+export const myAllNotificationsQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.notifications(), 'all'],
+    queryFn: () => getMyNotifications(100)
   });
 
 /** Các phiếu báo eSIM lỗi của chính đối tác này (#046, A4). */
