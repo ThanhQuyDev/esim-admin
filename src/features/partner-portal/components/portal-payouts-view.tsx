@@ -292,6 +292,13 @@ export function PortalPayoutsView() {
                     <TableRow key={p.id}>
                       <TableCell className='font-mono text-xs'>
                         WD-{String(p.id).padStart(6, '0')}
+                        {/* Raised by the system with the month's statement (doitac-1410 #012). */}
+                        {p.reconciliationPeriod && (
+                          <span className='text-muted-foreground block font-sans'>
+                            Tự tạo khi chốt đối soát tháng{' '}
+                            {p.reconciliationPeriod.split('-').reverse().join('/')}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className='whitespace-nowrap'>
                         {formatDateVn(p.createdAt)}

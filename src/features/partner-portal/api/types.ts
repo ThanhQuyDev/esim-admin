@@ -167,6 +167,8 @@ export type MyPayout = {
   status: 'pending' | 'approved' | 'rejected' | 'paid';
   /** On a refusal, the reason the admin gave — the partner reads it here (#069). */
   adminNote: string | null;
+  /** "2026-09": raised by the system with that month's statement (doitac-1410 #012). */
+  reconciliationPeriod?: string | null;
   createdAt: string;
 };
 

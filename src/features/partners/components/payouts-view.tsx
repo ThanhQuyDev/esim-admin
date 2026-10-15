@@ -273,7 +273,12 @@ export function PayoutsView() {
                       #{row.partnerId} · {row.contactEmail ?? '—'}
                     </div>
                   </TableCell>
-                  <TableCell>{periodLabel(row.period)}</TableCell>
+                  <TableCell>
+                    {periodLabel(row.period)}
+                    {row.autoRaised && (
+                      <div className='text-muted-foreground text-xs'>Tự tạo khi chốt đối soát</div>
+                    )}
+                  </TableCell>
                   <TableCell className='text-right font-medium tabular-nums'>
                     {formatVnd(row.amountVnd)}
                   </TableCell>

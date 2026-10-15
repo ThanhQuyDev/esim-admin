@@ -490,8 +490,10 @@ export type AdminPayoutRow = {
   adminNote: string | null;
   createdAt: string;
   processedAt: string | null;
-  /** The month the request was made, as `YYYY-MM`. */
+  /** The month the request was made, as `YYYY-MM` — or the statement's month when auto-raised. */
   period: string;
+  /** Raised by the system with the month's statement (doitac-1410 #012). */
+  autoRaised?: boolean;
   bankName: string | null;
   bankAccountNumber: string | null;
   bankAccountHolder: string | null;
