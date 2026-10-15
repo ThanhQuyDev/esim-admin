@@ -3,7 +3,8 @@ import { APP_MODE, type AppMode } from '@/config/app-mode';
 import type { AuthPageSetting } from '@/features/auth-pages/api/types';
 
 /** The public partner application form, on the storefront (#053). */
-export const PARTNER_SIGN_UP_URL = `${STOREFRONT_ORIGIN}/affiliate/dang-ky`;
+// Moved from /affiliate/dang-ky (doitac-1410 #013); the old path redirects.
+export const PARTNER_SIGN_UP_URL = `${STOREFRONT_ORIGIN}/dang-ky-doi-tac`;
 
 /**
  * Sign-in page copy (#006).

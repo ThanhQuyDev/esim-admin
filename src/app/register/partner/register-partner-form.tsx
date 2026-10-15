@@ -7,7 +7,7 @@
  * order ranges, audience size, content category, integration timeline, bank
  * account, referral source — before anyone could apply. None of it is needed to
  * decide an application, and the API has no column for most of it. This asks
- * for exactly what the public affiliate form asks for (/affiliate/dang-ky):
+ * for exactly what the public affiliate form asks for (/dang-ky-doi-tac):
  * who you are, how to reach you, and which channel you sell on.
  */
 

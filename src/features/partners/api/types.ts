@@ -33,6 +33,8 @@ export type Partner = {
   contactPhone: string;
   contactEmail: string;
   channelInfo: Record<string, unknown> | null;
+  /** Files attached to the application (doitac-1410 #013). */
+  documents?: PartnerDocument[];
   status: PartnerStatus;
   tierCode: string | null;
   /** When the current tier took effect — never applied backwards (#042). */
@@ -622,3 +624,12 @@ export type PartnerAdminStats = {
 };
 
 export type PartnerWalletSummary = MyWalletSummary;
+
+/** One file attached to a partner application (doitac-1410 #013). */
+export type PartnerDocument = {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+};

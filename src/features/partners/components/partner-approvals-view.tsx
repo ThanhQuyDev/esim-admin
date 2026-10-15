@@ -273,6 +273,12 @@ export function PartnerApprovalsView() {
                         </TableCell>
                         <TableCell className='max-w-[220px] truncate text-xs'>
                           {mainChannel(partner.channelInfo)}
+                          {/* Attachments to look at before deciding (doitac-1410 #013). */}
+                          {partner.documents?.length ? (
+                            <span className='text-primary block text-xs'>
+                              📎 {partner.documents.length} tài liệu đính kèm
+                            </span>
+                          ) : null}
                         </TableCell>
                         <TableCell className='text-xs'>{formatDateVn(partner.createdAt)}</TableCell>
                         <TableCell>

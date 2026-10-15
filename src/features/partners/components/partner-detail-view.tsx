@@ -322,6 +322,32 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
           {isCompany && <Field label='Mã số thuế'>{partner.taxCode}</Field>}
           {isCompany && <Field label='Địa chỉ'>{partner.businessAddress}</Field>}
           <Field label='Ngày đăng ký'>{formatDateVn(partner.createdAt)}</Field>
+          {/* What the applicant attached (doitac-1410 #013), opened through the admin-only route. */}
+          <div className='sm:col-span-2 lg:col-span-3' data-testid='partner-documents'>
+            <p className='text-muted-foreground text-xs font-medium'>Tài liệu đính kèm</p>
+            {partner.documents?.length ? (
+              <ul className='mt-1 flex flex-wrap gap-2'>
+                {partner.documents.map((doc) => (
+                  <li key={doc.id}>
+                    <a
+                      href={`/api/partners/${partner.id}/documents/${encodeURIComponent(doc.id)}`}
+                      target='_blank'
+                      rel='noreferrer'
+                      className='hover:bg-muted inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm'
+                    >
+                      <Icons.post className='size-4' />
+                      <span className='max-w-[220px] truncate'>{doc.name}</span>
+                      <span className='text-muted-foreground text-xs'>
+                        {(doc.sizeBytes / 1024 / 1024).toFixed(1)} MB
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className='text-sm'>—</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
