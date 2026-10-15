@@ -84,6 +84,7 @@ import {
   IconListNumbers,
   IconLoader2,
   IconLock,
+  IconLockPause,
   IconLogin,
   IconLogout,
   IconMail,
@@ -265,6 +266,7 @@ export const Icons = {
   sparkles: IconSparkles,
   badgeCheck: IconRosetteDiscountCheck,
   lock: IconLock,
+  pause: IconLockPause,
 
   // Data / Charts
   trendingDown: IconTrendingDown,

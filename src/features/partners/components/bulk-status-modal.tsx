@@ -9,7 +9,7 @@
  * đề/sự việc"), while giving it back explains itself.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -60,14 +60,22 @@ export function BulkStatusModal({
   open,
   onOpenChange,
   partnerIds,
-  onDone
+  onDone,
+  initialStatus = 'hold'
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   partnerIds: number[];
   onDone?: () => void;
+  /** The status the row's own button stands for (Tạm khoá / Khoá / Mở khoá). */
+  initialStatus?: PartnerStatus;
 }) {
-  const [status, setStatus] = useState<PartnerStatus>('hold');
+  const [status, setStatus] = useState<PartnerStatus>(initialStatus);
+  // Each opening starts on the button that was pressed, not on whatever the
+  // previous opening was left at.
+  useEffect(() => {
+    if (open) setStatus(initialStatus);
+  }, [open, initialStatus]);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 

@@ -34,8 +34,8 @@ const STATUS_VARIANT: Record<string, 'default' | 'destructive' | 'secondary' | '
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Chờ duyệt',
   active: 'Đang hoạt động',
-  hold: 'Tạm giữ',
-  disabled: 'Đã khóa',
+  hold: 'Tạm khóa tài khoản',
+  disabled: 'Khóa tài khoản',
   rejected: 'Bị từ chối'
 };
 

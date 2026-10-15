@@ -50,8 +50,8 @@ const LEGAL_TYPE_LABELS = {
 const STATUS_LABELS: Record<PartnerStatus, string> = {
   pending: 'Chờ duyệt',
   active: 'Đang hoạt động',
-  hold: 'Tạm giữ',
-  disabled: 'Đã khóa',
+  hold: 'Tạm khóa tài khoản',
+  disabled: 'Khóa tài khoản',
   rejected: 'Bị từ chối'
 };
 const STATUS_VARIANTS: Record<PartnerStatus, 'default' | 'secondary' | 'destructive' | 'outline'> =

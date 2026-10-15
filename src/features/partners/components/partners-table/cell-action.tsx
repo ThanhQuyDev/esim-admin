@@ -27,7 +27,7 @@ import {
 import { Icons } from '@/components/icons';
 
 import { adjustPartnerWalletMutation } from '../../api/mutations';
-import type { Partner } from '../../api/types';
+import type { Partner, PartnerStatus } from '../../api/types';
 import { AdjustPartnerWalletModal } from '../adjust-partner-wallet-modal';
 import { BulkStatusModal } from '../bulk-status-modal';
 
@@ -40,6 +40,11 @@ export function PartnerCellAction({ data }: CellActionProps) {
   // one screen to keep in step rather than two that must agree about when a
   // reason is required.
   const [statusOpen, setStatusOpen] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<PartnerStatus>('hold');
+  const openStatus = (target: PartnerStatus) => {
+    setStatusTarget(target);
+    setStatusOpen(true);
+  };
   const [walletOpen, setWalletOpen] = useState(false);
 
   const adjustMutation = useMutation({
@@ -55,7 +60,12 @@ export function PartnerCellAction({ data }: CellActionProps) {
 
   return (
     <>
-      <BulkStatusModal open={statusOpen} onOpenChange={setStatusOpen} partnerIds={[data.id]} />
+      <BulkStatusModal
+        open={statusOpen}
+        onOpenChange={setStatusOpen}
+        partnerIds={[data.id]}
+        initialStatus={statusTarget}
+      />
       <AdjustPartnerWalletModal
         partnerId={data.id}
         open={walletOpen}
@@ -79,10 +89,25 @@ export function PartnerCellAction({ data }: CellActionProps) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setStatusOpen(true)}>
-            <Icons.settings className='mr-2 h-4 w-4' />
-            {isLocked ? 'Mở khoá / đổi trạng thái' : 'Tạm khoá / Khoá tài khoản'}
-          </DropdownMenuItem>
+          {/*
+            One button per action, as the brief lists them (doitac-1410 #003):
+            "Mở khoá" only shows while the partner is held or locked.
+          */}
+          {isLocked && (
+            <DropdownMenuItem onClick={() => openStatus('active')}>
+              <Icons.check className='mr-2 h-4 w-4' /> Mở khoá
+            </DropdownMenuItem>
+          )}
+          {data.status !== 'hold' && (
+            <DropdownMenuItem onClick={() => openStatus('hold')}>
+              <Icons.pause className='mr-2 h-4 w-4' /> Tạm khoá
+            </DropdownMenuItem>
+          )}
+          {data.status !== 'disabled' && (
+            <DropdownMenuItem onClick={() => openStatus('disabled')} className='text-destructive'>
+              <Icons.lock className='mr-2 h-4 w-4' /> Khoá tài khoản
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={() => setWalletOpen(true)}>
             <Icons.wallet className='mr-2 h-4 w-4' /> Điều chỉnh Ví & Hoa hồng
           </DropdownMenuItem>

@@ -56,8 +56,8 @@ const STATUS_LABEL: Record<
   pending: { label: 'Đang chờ duyệt', variant: 'outline' },
   active: { label: 'Đã duyệt', variant: 'default' },
   rejected: { label: 'Bị từ chối', variant: 'destructive' },
-  hold: { label: 'Tạm giữ', variant: 'secondary' },
-  disabled: { label: 'Đã khoá', variant: 'secondary' }
+  hold: { label: 'Tạm khóa tài khoản', variant: 'secondary' },
+  disabled: { label: 'Khóa tài khoản', variant: 'secondary' }
 };
 
 const STATUS_FILTERS = [
