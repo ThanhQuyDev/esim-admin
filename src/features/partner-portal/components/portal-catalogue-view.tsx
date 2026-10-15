@@ -74,8 +74,12 @@ export function PortalCatalogueView() {
   const purchase = useMutation({
     ...createPurchaseMutation,
     onSuccess: (result) => {
+      // eSIMs from most providers arrive a little after the order, by webhook
+      // (doitac-1410 #006), so the order is placed but not all of them are in.
       toast.success(
-        `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Tải file Excel ở trang Đơn hàng.`
+        result.pendingEsims > 0
+          ? `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Nhà cung cấp đang cấp ${result.pendingEsims} eSIM, sẽ hiện ở Quản lý eSIM trong ít phút.`
+          : `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Tải file Excel ở trang Đơn hàng.`
       );
       setSelected(null);
       setQuantity('1');
@@ -92,39 +96,17 @@ export function PortalCatalogueView() {
 
   return (
     <div className='flex flex-1 flex-col space-y-4'>
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-        <Card>
-          <CardHeader>
-            <CardDescription>Số dư khả dụng</CardDescription>
-            <CardTitle className='text-2xl font-semibold tabular-nums'>
-              {wallet ? formatVnd(wallet.availableBalanceVnd) : '…'}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>% cộng vào giá vốn (hạng của bạn)</CardDescription>
-            <CardTitle className='text-2xl font-semibold tabular-nums'>
-              {catalogue ? `${catalogue.markupPercent}%` : '…'}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Số gói đang bán</CardDescription>
-            <CardTitle className='text-2xl font-semibold tabular-nums'>
-              {isLoading ? '…' : plans.length.toLocaleString('vi-VN')}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
+      {/*
+        No cards above the list (doitac-1410 #006): the balance moved to the top
+        bar, and the % added to cost price is a trade secret never shown to a
+        partner.
+      */}
       <Card>
         <CardHeader>
           <CardTitle>Bảng giá phân phối</CardTitle>
           <CardDescription>
-            Giá vốn của bạn là giá gốc cộng {catalogue?.markupPercent ?? 0}% theo hạng hiện tại. Mua
-            xong, toàn bộ mã eSIM của đơn được xuất ra một file Excel tải về ở trang Đơn hàng.
+            Giá đại lý theo hạng hiện tại của bạn. Mua xong, toàn bộ mã eSIM của đơn được xuất ra
+            một file Excel tải về ở trang Đơn hàng.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>

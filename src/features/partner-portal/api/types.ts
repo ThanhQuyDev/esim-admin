@@ -460,8 +460,6 @@ export type CataloguePlan = {
 };
 
 export type PartnerCatalogue = {
-  /** % cộng vào giá vốn theo hạng đang giữ. */
-  markupPercent: number;
   plans: CataloguePlan[];
 };
 
@@ -508,6 +506,8 @@ export type PurchaseResult = {
   listPriceVnd: number;
   marginVnd: number;
   esimCount: number;
+  /** eSIM nhà cung cấp còn đang cấp, về sau qua webhook (doitac-1410 #006). */
+  pendingEsims: number;
 };
 
 /** An announcement from esim.vn, as this partner sees it (#079). */

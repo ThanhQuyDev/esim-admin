@@ -8,6 +8,7 @@ import { ThemeModeToggle } from '../themes/theme-mode-toggle';
 import { IS_PARTNER_PORTAL } from '@/config/app-mode';
 import { AdminNotificationBell } from '@/features/partners/components/admin-notification-bell';
 import { PortalNotificationBell } from '@/features/partner-portal/components/portal-notification-bell';
+import { PortalBalanceChip } from '@/features/partner-portal/components/portal-balance-chip';
 
 export default function Header() {
   return (
@@ -19,6 +20,8 @@ export default function Header() {
       </div>
 
       <div className='flex items-center gap-2 px-4'>
+        {/* A distribution partner's balance, on every page (doitac-1410 #006). */}
+        {IS_PARTNER_PORTAL && <PortalBalanceChip />}
         <div className='hidden md:flex'>
           <SearchInput />
         </div>
