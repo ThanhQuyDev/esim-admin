@@ -38,6 +38,7 @@ import {
   myTiersQueryOptions,
   mySummaryQueryOptions
 } from '../api/queries';
+import { internalTierNote } from './internal-tier-note';
 
 export function PortalTierView() {
   // The same screen serves both programmes (#049). A marketing partner's tier
@@ -60,8 +61,8 @@ export function PortalTierView() {
   const progress = Math.max(0, Math.min(100, Math.round(summary?.tier.progressPercent ?? 0)));
 
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
-      <div className='grid gap-4 md:grid-cols-2'>
+    <div className='grid min-w-0 flex-1 grid-cols-1 gap-4'>
+      <div className='grid min-w-0 gap-4 *:min-w-0 md:grid-cols-2'>
         <Card className='@container/card'>
           <CardHeader>
             <CardDescription>Hạng hiện tại</CardDescription>
@@ -86,25 +87,36 @@ export function PortalTierView() {
             )}
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='space-y-2'>
-              <div className='flex items-center justify-between text-sm'>
-                <span className='text-muted-foreground'>
-                  {next ? `Tiến độ lên hạng ${next.tierName}` : 'Đã ở hạng cao nhất'}
-                </span>
-                <span className='font-medium tabular-nums'>{progress}%</span>
+            {/* An internal tier replaces the progress bar with what it is
+                (doitac-1410 #024). */}
+            {summary?.tier.isInternal && current ? (
+              <p
+                className='border-primary/40 bg-primary/5 rounded-lg border-l-4 p-3 text-sm'
+                data-testid='internal-tier-note'
+              >
+                {internalTierNote(current.tierName)}
+              </p>
+            ) : (
+              <div className='space-y-2'>
+                <div className='flex items-center justify-between text-sm'>
+                  <span className='text-muted-foreground'>
+                    {next ? `Tiến độ lên hạng ${next.tierName}` : 'Đã ở hạng cao nhất'}
+                  </span>
+                  <span className='font-medium tabular-nums'>{progress}%</span>
+                </div>
+                <div className='bg-muted h-2 overflow-hidden rounded-full'>
+                  <div
+                    className='bg-primary h-full rounded-full transition-[width] duration-500'
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                {next && (
+                  <p className='text-muted-foreground text-xs'>
+                    Còn {formatVnd(summary?.tier.toNextTierVnd)} doanh số hợp lệ.
+                  </p>
+                )}
               </div>
-              <div className='bg-muted h-2 overflow-hidden rounded-full'>
-                <div
-                  className='bg-primary h-full rounded-full transition-[width] duration-500'
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              {next && (
-                <p className='text-muted-foreground text-xs'>
-                  Còn {formatVnd(summary?.tier.toNextTierVnd)} doanh số hợp lệ.
-                </p>
-              )}
-            </div>
+            )}
             <div className='flex flex-wrap gap-2'>
               <Button asChild size='sm' variant='outline'>
                 <Link href='/dashboard/portal/tier-rules'>Xem quy định xét hạng</Link>
@@ -140,7 +152,14 @@ export function PortalTierView() {
                     string,
                     string
                   ][])),
-              ['Ngưỡng hạng hiện tại', current ? formatVnd(Number(current.minVolumeVnd)) : '—']
+              [
+                'Ngưỡng hạng hiện tại',
+                current?.isInternal
+                  ? 'Theo thỏa thuận hợp tác'
+                  : current
+                    ? formatVnd(Number(current.minVolumeVnd))
+                    : '—'
+              ]
             ].map(([label, value]) => (
               <div key={label} className='flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4'>
                 <span className='text-muted-foreground w-44 shrink-0 text-sm font-medium'>
@@ -177,9 +196,11 @@ export function PortalTierView() {
                     {isCurrent && <Badge>Hạng của bạn</Badge>}
                   </div>
                   <p className='text-muted-foreground mt-1 text-xs'>
-                    {Number(t.minVolumeVnd) > 0
-                      ? `Từ ${formatVnd(Number(t.minVolumeVnd))} doanh số`
-                      : 'Mặc định khi được duyệt'}
+                    {t.isInternal
+                      ? 'Theo thỏa thuận hợp tác'
+                      : Number(t.minVolumeVnd) > 0
+                        ? `Từ ${formatVnd(Number(t.minVolumeVnd))} doanh số`
+                        : 'Mặc định khi được duyệt'}
                   </p>
                   <div className='mt-3 space-y-1 text-xs'>
                     {isDistribution ? (
@@ -233,7 +254,7 @@ export function PortalTierView() {
           <CardDescription>Hạng được cập nhật dựa trên dữ liệu đã xác nhận.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='rounded-lg border'>
+          <div className='overflow-x-auto rounded-lg border'>
             <Table>
               <TableHeader className='bg-muted'>
                 <TableRow>

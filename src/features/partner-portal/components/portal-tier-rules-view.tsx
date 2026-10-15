@@ -70,7 +70,7 @@ export function PortalTierRulesView() {
   );
 
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
+    <div className='grid min-w-0 flex-1 grid-cols-1 gap-4'>
       <div className='grid gap-4 md:grid-cols-3'>
         {PRINCIPLES.map((item) => {
           const Icon = item.icon;
@@ -104,7 +104,7 @@ export function PortalTierRulesView() {
           </CardAction>
         </CardHeader>
         <CardContent>
-          <div className='rounded-lg border'>
+          <div className='overflow-x-auto rounded-lg border'>
             <Table>
               <TableHeader className='bg-muted'>
                 <TableRow>
@@ -127,9 +127,11 @@ export function PortalTierRulesView() {
                   <TableRow key={t.id}>
                     <TableCell className='font-medium'>{t.tierName}</TableCell>
                     <TableCell>
-                      {Number(t.minVolumeVnd) > 0
-                        ? `Từ ${formatVnd(Number(t.minVolumeVnd))}`
-                        : 'Mặc định khi được duyệt'}
+                      {t.isInternal
+                        ? 'Theo thỏa thuận hợp tác'
+                        : Number(t.minVolumeVnd) > 0
+                          ? `Từ ${formatVnd(Number(t.minVolumeVnd))}`
+                          : 'Mặc định khi được duyệt'}
                     </TableCell>
                     <TableCell className='text-right tabular-nums'>
                       {Number(t.commissionPercent)}%

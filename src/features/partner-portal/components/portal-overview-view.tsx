@@ -52,6 +52,7 @@ import {
   resolvePeriod,
   type PortalPeriod
 } from './portal-period-filter';
+import { internalTierNote } from './internal-tier-note';
 
 /** A day per bar; a longer window is capped so the chart stays readable. */
 const DAYS_MAX = 120;
@@ -299,29 +300,48 @@ export function PortalOverviewView() {
           </CardFooter>
         </Card>
 
-        <Card>
+        <Card data-testid='overview-tier'>
           <CardHeader>
-            <CardDescription>Tiến trình lên hạng</CardDescription>
+            <CardDescription>
+              {tier?.isInternal ? 'Hạng đối tác' : 'Tiến trình lên hạng'}
+            </CardDescription>
             <CardTitle className='text-2xl font-semibold'>
               {tier?.current ? `Hạng ${tier.current.tierName}` : 'Chưa gán hạng'}
             </CardTitle>
-            <CardAction>
-              <Badge variant='outline'>{progress}%</Badge>
-            </CardAction>
+            {!tier?.isInternal && (
+              <CardAction>
+                <Badge variant='outline'>{progress}%</Badge>
+              </CardAction>
+            )}
           </CardHeader>
           <CardContent className='space-y-3'>
-            <div className='bg-muted h-2 w-full overflow-hidden rounded-full'>
-              <div className='bg-primary h-full rounded-full' style={{ width: `${progress}%` }} />
-            </div>
-            <p className='text-muted-foreground text-sm'>
-              {tier?.next
-                ? `Còn ${formatVnd(tier.toNextTierVnd)} doanh số để lên hạng ${tier.next.tierName}.`
-                : 'Bạn đang ở hạng cao nhất của chương trình.'}
-            </p>
+            {/* An internal tier is outside the revenue ladder: no bar, no
+                "còn … để lên hạng" (doitac-1410 #024). */}
+            {tier?.isInternal && tier.current ? (
+              <p className='text-muted-foreground text-sm'>
+                {internalTierNote(tier.current.tierName)}
+              </p>
+            ) : (
+              <>
+                <div className='bg-muted h-2 w-full overflow-hidden rounded-full'>
+                  <div
+                    className='bg-primary h-full rounded-full'
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className='text-muted-foreground text-sm'>
+                  {tier?.next
+                    ? `Còn ${formatVnd(tier.toNextTierVnd)} doanh số để lên hạng ${tier.next.tierName}.`
+                    : 'Bạn đang ở hạng cao nhất của chương trình.'}
+                </p>
+              </>
+            )}
           </CardContent>
           <CardFooter>
             <Button asChild variant='outline' size='sm'>
-              <Link href='/dashboard/portal/tier'>Xem hạng đối tác</Link>
+              <Link href='/dashboard/portal/tier'>
+                {tier?.isInternal ? 'Xem quyền lợi của bạn' : 'Xem hạng đối tác'}
+              </Link>
             </Button>
           </CardFooter>
         </Card>

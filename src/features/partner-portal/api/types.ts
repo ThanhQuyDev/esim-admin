@@ -279,6 +279,8 @@ export type PartnerTier = {
   attributionDays?: string | number | null;
   sortOrder: number;
   isActive: boolean;
+  /** Negotiated, outside the revenue ladder (doitac-1410 #024). */
+  isInternal?: boolean;
 };
 
 /** Read model behind the portal overview screen. */
@@ -318,6 +320,8 @@ export type MySummary = {
     effectiveFrom?: string | null;
     toNextTierVnd: number;
     progressPercent: number;
+    /** A negotiated tier outside the revenue ladder (doitac-1410 #024). */
+    isInternal?: boolean;
   };
 };
 
