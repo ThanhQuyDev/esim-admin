@@ -27,9 +27,10 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { changePassword } from '@/features/auth/api/service';
-import { authKeys } from '@/features/auth/api/queries';
+import { authKeys, authMeQueryOptions } from '@/features/auth/api/queries';
 import {
   confirmBankAccountChangeMutation,
   requestBankAccountChangeMutation
@@ -114,6 +115,10 @@ export function PortalProfileView() {
   const queryClient = useQueryClient();
   const { data: me } = useQuery(myProfileQueryOptions());
   const { data: summary } = useQuery(mySummaryQueryOptions());
+  // The address the partner signs in with, read live from the account rather
+  // than from the partner record (doitac-1410 #022).
+  const { data: account } = useQuery(authMeQueryOptions);
+  const signInEmail = account?.email ?? me?.contactEmail;
 
   const [tab, setTab] = useQueryState(
     'tab',
@@ -238,10 +243,10 @@ export function PortalProfileView() {
   const completion = Math.round((steps.filter((s) => s.done).length / steps.length) * 100);
 
   return (
-    <div className='grid gap-4 lg:grid-cols-3'>
-      <div className='lg:col-span-2'>
+    <div className='grid min-w-0 gap-4 lg:grid-cols-3'>
+      <div className='min-w-0 lg:col-span-2'>
         <Tabs value={tab} onValueChange={(v) => setTab(v as ProfileTab)}>
-          <TabsList>
+          <TabsList className='max-w-full justify-start overflow-x-auto'>
             <TabsTrigger value='basic'>Thông tin cơ bản</TabsTrigger>
             <TabsTrigger value='channels'>Kênh tiếp thị</TabsTrigger>
             <TabsTrigger value='payment'>Thanh toán</TabsTrigger>
@@ -265,7 +270,7 @@ export function PortalProfileView() {
                 </div>
                 <div className='space-y-2'>
                   <Label htmlFor='contactEmail'>Email</Label>
-                  <Input id='contactEmail' value={me?.contactEmail ?? ''} disabled />
+                  <Input id='contactEmail' value={signInEmail ?? ''} disabled />
                 </div>
                 <div className='space-y-2'>
                   <Label htmlFor='contactPhone'>Số điện thoại</Label>
@@ -497,7 +502,7 @@ export function PortalProfileView() {
           <TabsContent value='security' className='mt-4 space-y-4'>
             {/* A partner is keyed by partner id, so the login address is theirs
                 to change like any customer's (#031). */}
-            <PortalEmailChangeCard currentEmail={me?.contactEmail} />
+            <PortalEmailChangeCard currentEmail={signInEmail} />
 
             <Card>
               <CardHeader>
@@ -509,9 +514,8 @@ export function PortalProfileView() {
               <CardContent className='grid gap-4 md:grid-cols-2'>
                 <div className='space-y-2 md:col-span-2'>
                   <Label htmlFor='currentPassword'>Mật khẩu hiện tại</Label>
-                  <Input
+                  <PasswordInput
                     id='currentPassword'
-                    type='password'
                     autoComplete='current-password'
                     value={passwords.current}
                     onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
@@ -519,9 +523,8 @@ export function PortalProfileView() {
                 </div>
                 <div className='space-y-2'>
                   <Label htmlFor='newPassword'>Mật khẩu mới</Label>
-                  <Input
+                  <PasswordInput
                     id='newPassword'
-                    type='password'
                     autoComplete='new-password'
                     value={passwords.next}
                     aria-invalid={Boolean(passwordError)}
@@ -534,9 +537,8 @@ export function PortalProfileView() {
                 </div>
                 <div className='space-y-2'>
                   <Label htmlFor='confirmPassword'>Xác nhận mật khẩu mới</Label>
-                  <Input
+                  <PasswordInput
                     id='confirmPassword'
-                    type='password'
                     autoComplete='new-password'
                     value={passwords.confirm}
                     onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}

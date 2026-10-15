@@ -31,6 +31,7 @@ import {
   requestEmailChange,
   verifyCurrentEmailCode
 } from '@/features/auth/api/service';
+import { authKeys } from '@/features/auth/api/queries';
 import { partnerPortalKeys } from '../api/queries';
 
 type Step = 'idle' | 'current' | 'new';
@@ -95,7 +96,9 @@ export function PortalEmailChangeCard({ currentEmail }: PortalEmailChangeCardPro
     onSuccess: () => {
       toast.success('Đã đổi email đăng nhập. Lần sau hãy đăng nhập bằng địa chỉ mới.');
       reset();
+      // Every tab, and the account menu, read the address again (#022).
       void queryClient.invalidateQueries({ queryKey: partnerPortalKeys.all });
+      void queryClient.invalidateQueries({ queryKey: authKeys.all });
     },
     onError: (e: Error) => setError(e.message)
   });
