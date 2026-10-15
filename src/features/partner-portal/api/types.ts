@@ -65,6 +65,8 @@ export type MyWalletSummary = {
   pendingPayoutVnd: number;
   /** Commission earned but still awaiting reconciliation. */
   pendingCommissionVnd?: number;
+  /** Smallest withdrawal, from "Cấu hình chung" (doitac-1410 #010). */
+  payoutMinVnd?: number;
   /** Commission clawed back after payout, netted off the next period (#007). */
   carriedDebtVnd?: number;
   /** Lifetime paid out and how many payments that was (#029). */

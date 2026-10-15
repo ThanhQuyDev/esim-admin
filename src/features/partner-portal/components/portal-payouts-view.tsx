@@ -53,7 +53,8 @@ import {
   mySummaryQueryOptions
 } from '../api/queries';
 
-const MIN_PAYOUT_VND = 100_000;
+/** Shown until the wallet loads; the real figure comes from "Cấu hình chung". */
+const FALLBACK_MIN_PAYOUT_VND = 50_000;
 
 const PAYOUT_STATUS: Record<string, { label: string; className: string }> = {
   pending: {
@@ -94,6 +95,8 @@ export function PortalPayoutsView() {
   const { data: payouts } = useQuery(myPayoutsQueryOptions());
 
   const available = summary?.wallet.availableBalanceVnd ?? 0;
+  // The admin's own minimum (doitac-1410 #010), not a number fixed in here.
+  const MIN_PAYOUT_VND = summary?.wallet.payoutMinVnd ?? FALLBACK_MIN_PAYOUT_VND;
   // Commission taken back after it was already paid out: the next periods pay
   // it off before anything is withdrawable again (#007).
   const carriedDebt = summary?.wallet.carriedDebtVnd ?? 0;
