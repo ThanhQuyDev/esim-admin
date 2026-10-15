@@ -42,36 +42,46 @@ export const COMMISSION_STATUS_OPTIONS = Object.entries(COMMISSION_STATUS).map(
   ([value, { label }]) => ({ value, label })
 );
 
+/** eSIMs of a line given back, whether the line went whole or one by one. */
+export function refundedQtyOf(item: MyOrderItem): number {
+  if (item.refunded) return item.quantity;
+  return Math.min(item.quantity, item.refundedQuantity ?? 0);
+}
+
 /**
  * The products in one order (#023).
  *
  * One name fits in the column; the rest hide behind a "+N" the partner can
- * open, with each line's price beside it. A refunded product is greyed and
+ * open, with each line's price beside it. A refunded product is faded and
  * labelled rather than removed — the partner needs to see why the commission
  * on this order is smaller than the order looks.
+ *
+ * doitac-1410 #020: a product given back whole (a single eSIM included) is
+ * faded with "Đã hoàn tiền" — no strike-through, no "×0"; one given back in
+ * part stays plain, with what is left and "Đã hoàn N eSIM".
  */
-function ProductLine({ item }: { item: MyOrderItem }) {
-  // A line partly refunded eSIM by eSIM keeps its row, but says how many came
-  // back and shows what is left (#056, test round 4).
-  const refundedQty = item.refunded ? item.quantity : (item.refundedQuantity ?? 0);
-  const keptQty = Math.max(0, item.quantity - refundedQty);
+export function ProductLine({ item, wrap = false }: { item: MyOrderItem; wrap?: boolean }) {
+  const refundedQty = refundedQtyOf(item);
+  const fullyRefunded = refundedQty > 0 && refundedQty >= item.quantity;
+  const keptQty = item.quantity - refundedQty;
   return (
     <div
       className={cn(
         'flex items-baseline justify-between gap-3 text-sm',
-        item.refunded && 'text-muted-foreground'
+        fullyRefunded && 'text-muted-foreground opacity-60'
       )}
+      data-testid={fullyRefunded ? 'item-refunded' : undefined}
     >
-      <span className={cn('truncate', item.refunded && 'line-through')}>
+      <span className={cn(!wrap && 'truncate')}>
         {item.planName}
-        {!item.refunded && refundedQty > 0
+        {refundedQty > 0 && !fullyRefunded
           ? ` ×${keptQty}`
           : item.quantity > 1 && ` ×${item.quantity}`}
       </span>
       <span className='flex shrink-0 items-center gap-2'>
-        {item.refunded ? (
+        {fullyRefunded ? (
           <Badge variant='secondary' className='px-1.5 py-0 text-[10px]'>
-            Hoàn
+            Đã hoàn tiền
           </Badge>
         ) : (
           refundedQty > 0 && (
@@ -80,7 +90,7 @@ function ProductLine({ item }: { item: MyOrderItem }) {
               className='px-1.5 py-0 text-[10px]'
               data-testid='item-refunded-qty'
             >
-              Khách đã hoàn {refundedQty} eSIM
+              Đã hoàn {refundedQty} eSIM
             </Badge>
           )
         )}

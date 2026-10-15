@@ -23,7 +23,7 @@ import { formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 import { myOrderDetailQueryOptions } from '../api/queries';
-import { COMMISSION_STATUS } from './orders-table/columns';
+import { COMMISSION_STATUS, ProductLine, refundedQtyOf } from './orders-table/columns';
 
 function formatMoment(value: string | null): string {
   if (!value) return '—';
@@ -46,6 +46,10 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
 
   const status = data?.commissionStatus ? COMMISSION_STATUS[data.commissionStatus] : null;
 
+  // How many eSIMs came back, for the header (doitac-1410 #020).
+  const totalEsims = data?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+  const refundedEsims = data?.items.reduce((sum, item) => sum + refundedQtyOf(item), 0) ?? 0;
+
   const steps = [
     {
       label:
@@ -66,6 +70,16 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
       at: data?.timeline.creditedAt ?? null,
       hint: data?.timeline.creditedAt ? undefined : 'Duyệt sau 24h kể từ khi đặt hàng'
     },
+    // Every refund, with how many eSIMs and when (doitac-1410 #020).
+    ...(data?.refunds ?? []).map((refund, index) => ({
+      label:
+        refund.esimCount != null && refund.esimCount > 0
+          ? `Khách hoàn ${refund.esimCount} eSIM`
+          : 'Khách được hoàn tiền',
+      at: refund.at,
+      hint: `-${formatVnd(refund.amountVnd)}`,
+      key: `refund-${index}`
+    })),
     ...(data?.timeline.reversedAt
       ? [{ label: 'Chuyển sang đơn hoàn tiền', at: data.timeline.reversedAt }]
       : [])
@@ -79,6 +93,13 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
           <DialogDescription>
             Sản phẩm, hoa hồng và lịch sử ghi nhận nguồn giới thiệu của đơn này.
           </DialogDescription>
+          {refundedEsims > 0 && (
+            <Badge variant='secondary' className='w-fit' data-testid='order-refunded-esims'>
+              {refundedEsims >= totalEsims
+                ? `Đã hoàn tiền toàn bộ ${totalEsims} eSIM`
+                : `Đã hoàn ${refundedEsims}/${totalEsims} eSIM`}
+            </Badge>
+          )}
         </DialogHeader>
 
         {isLoading && <p className='text-muted-foreground py-8 text-center text-sm'>Đang tải…</p>}
@@ -87,28 +108,7 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
           <div className='space-y-4'>
             <div className='space-y-1'>
               {data.items.map((item, index) => (
-                <div
-                  key={`${item.planName}-${index}`}
-                  className={cn(
-                    'flex items-baseline justify-between gap-3 text-sm',
-                    item.refunded && 'text-muted-foreground'
-                  )}
-                >
-                  <span className={cn(item.refunded && 'line-through')}>
-                    {item.planName}
-                    {item.quantity > 1 && ` ×${item.quantity}`}
-                  </span>
-                  <span className='flex items-center gap-2'>
-                    {item.refunded && (
-                      <Badge variant='secondary' className='px-1.5 py-0 text-[10px]'>
-                        Hoàn
-                      </Badge>
-                    )}
-                    <span className='tabular-nums'>
-                      {item.vndPrice ? formatVnd(item.vndPrice) : '—'}
-                    </span>
-                  </span>
-                </div>
+                <ProductLine key={`${item.planName}-${index}`} item={item} wrap />
               ))}
             </div>
 
@@ -118,6 +118,12 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
               <div>
                 <dt className='text-muted-foreground'>Tổng doanh thu đơn</dt>
                 <dd className='font-medium tabular-nums'>{formatVnd(data.revenueVnd)}</dd>
+                {data.refundedVnd > 0 && (
+                  <dd className='text-muted-foreground text-xs tabular-nums'>
+                    Đã hoàn {formatVnd(data.refundedVnd)} · còn{' '}
+                    {formatVnd(Math.max(0, data.revenueVnd - data.refundedVnd))}
+                  </dd>
+                )}
               </div>
               <div>
                 <dt className='text-muted-foreground'>Hoa hồng</dt>
@@ -159,7 +165,10 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
               <p className='mb-3 text-sm font-medium'>Lịch sử ghi nhận nguồn giới thiệu</p>
               <ol className='space-y-3'>
                 {steps.map((step) => (
-                  <li key={step.label} className='flex gap-3'>
+                  <li
+                    key={'key' in step && step.key ? step.key : step.label}
+                    className='flex gap-3'
+                  >
                     <span
                       className={cn(
                         'mt-1.5 size-2 shrink-0 rounded-full',

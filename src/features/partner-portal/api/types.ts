@@ -437,6 +437,8 @@ export type MyOrderDetail = {
   commissionPercent: number | null;
   commissionStatus: 'pending' | 'credited' | 'reversed' | null;
   source: { type: 'link' | 'coupon'; code: string | null };
+  /** Each refund of the order, oldest first (doitac-1410 #020). */
+  refunds?: { at: string; amountVnd: number; esimCount: number | null }[];
   timeline: {
     clickedAt: string | null;
     placedAt: string;
