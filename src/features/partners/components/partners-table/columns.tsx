@@ -281,16 +281,6 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
       )
     },
     {
-      accessorKey: 'lastActivityAt',
-      header: 'Hoạt động gần nhất',
-      cell: ({ row }) =>
-        row.original.lastActivityAt ? (
-          <span className='text-sm'>{formatDateVn(row.original.lastActivityAt)}</span>
-        ) : (
-          <span className='text-muted-foreground text-sm'>—</span>
-        )
-    },
-    {
       id: 'createdAt',
       accessorKey: 'createdAt',
       header: ({ column }: { column: Column<Partner, unknown> }) => (

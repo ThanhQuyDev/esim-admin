@@ -25,7 +25,13 @@ export default function PartnerListingPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className='space-y-4'>
+      {/*
+        A flex column, not `space-y-4`: from `lg` up the DataTable fills the
+        height left over (`flex-1` + an absolutely placed table), so a plain
+        block parent gave it none and the rows rendered 0px tall — the footer
+        said "13 hàng" over an empty box (#001 doitac-1410).
+      */}
+      <div className='flex flex-1 flex-col gap-4'>
         <PartnerListStats />
         <Suspense fallback={<PartnersTableSkeleton />}>
           <PartnersTable />
