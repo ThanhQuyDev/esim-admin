@@ -49,6 +49,15 @@ const attributionWarningLabels: Record<string, { badge: string; note: string }> 
     badge: 'Cùng thiết bị / IP',
     note: 'Đơn này phát sinh từ cùng thiết bị hoặc cùng IP với một đơn khác của đối tác.'
   },
+  // The partner's own computer or network (doitac-1410 #025).
+  partner_device: {
+    badge: 'Cùng thiết bị với đối tác',
+    note: 'Đơn này đặt từ đúng thiết bị (cùng IP và trình duyệt) mà đối tác dùng để vào trang đối tác trong 30 ngày qua.'
+  },
+  partner_ip: {
+    badge: 'Cùng IP với đối tác',
+    note: 'Đơn này đặt từ cùng mạng (IP) mà đối tác dùng để vào trang đối tác trong 30 ngày qua.'
+  },
   no_browsing: {
     badge: 'Không xem gói nào',
     note: 'Phiên mua này đi thẳng từ link tới trang thanh toán, không xem gói nào — dấu hiệu của đơn dựng bằng script (hoặc trình duyệt đã chặn đoạn mã theo dõi).'

@@ -58,6 +58,18 @@ export const columns: ColumnDef<Order>[] = [
             x{row.original.totalQuantity}
           </Badge>
         )}
+        {/* An affiliate order worth a look (#036, doitac-1410 #025) — the
+            detail page says why. */}
+        {row.original.attributionWarning && (
+          <Badge
+            variant='outline'
+            className='border-amber-300 px-1 py-0 text-[10px] text-amber-700'
+            title='Đơn tiếp thị có dấu hiệu bất thường — xem chi tiết đơn'
+            data-testid='order-warning'
+          >
+            Bất thường
+          </Badge>
+        )}
       </div>
     ),
     enableColumnFilter: false

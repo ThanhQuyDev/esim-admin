@@ -4,12 +4,23 @@ import { PARTNER_LOCKED_MESSAGE } from '@/config/partner-session';
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 
-async function authHeaders() {
+async function authHeaders(request: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
+  // This server calls the API, so the API would only ever see this server's
+  // address. The partner's own address and browser go along, so an affiliate
+  // order placed from the partner's own computer can be flagged
+  // (doitac-1410 #025).
+  const clientIp =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    '';
+  const userAgent = request.headers.get('user-agent') || '';
   return {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(clientIp ? { 'x-esim-client-ip': clientIp } : {}),
+    ...(userAgent ? { 'x-esim-client-ua': userAgent } : {})
   };
 }
 
@@ -41,7 +52,7 @@ function sessionEnded(message?: string) {
  * backend enforces `@Roles(partner, admin)` (or no auth for `apply`) itself.
  */
 export async function proxyPartnerPortal(request: NextRequest, path: string, init?: RequestInit) {
-  const headers = await authHeaders();
+  const headers = await authHeaders(request);
   const search = request.nextUrl.search;
   const res = await fetch(`${API_URL}/api/v1/partners${path}${search}`, {
     headers,
