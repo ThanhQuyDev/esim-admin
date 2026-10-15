@@ -8,6 +8,7 @@ import { BreadcrumbProvider } from '@/hooks/use-breadcrumb-context';
 import { ChatNotificationListener } from '@/features/chat/components/chat-notification-listener';
 import { IS_PARTNER_PORTAL } from '@/config/app-mode';
 import { RoleRouteGuard } from '@/components/layout/role-route-guard';
+import { MustChangePasswordRedirect } from '@/features/partner-portal/components/must-change-password-gate';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
@@ -37,6 +38,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <AppSidebar />
             <SidebarInset className='overflow-x-hidden overflow-y-auto lg:overflow-hidden'>
               <Header />
+              {/* A temporary password keeps a partner on the form (doitac-1410 #011). */}
+              {IS_PARTNER_PORTAL && <MustChangePasswordRedirect />}
               {/* page main content */}
               <RoleRouteGuard>{children}</RoleRouteGuard>
               {/* page main content ends */}

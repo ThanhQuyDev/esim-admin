@@ -8,33 +8,57 @@
  * this: "khi đăng nhập lần đầu bằng mật khẩu ngẫu nhiên thì hệ thống sẽ yêu cầu
  * thay đổi mật khẩu đăng nhập để tiếp tục sử dụng dịch vụ".
  *
- * A banner and a redirect rather than a hard block: the profile page is where
- * the change is made, so sending them there and saying why is the whole job.
- * The flag clears itself the moment the new password is saved, which is what
- * lets them back out to the rest of the portal.
+ * Two parts (doitac-1410 #011). The redirect sits in the portal's layout, so
+ * every menu but "Hỗ trợ" lands on the password form — it used to sit on the
+ * overview alone, and every other menu worked as normal. It opens the profile
+ * on its "Bảo mật" tab, where the form is, rather than on the first tab with a
+ * note to scroll. The banner stays on the profile page and says why.
  */
 
-import { useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
 import { authMeQueryOptions } from '@/features/auth/api/queries';
 
 const PROFILE_PATH = '/dashboard/portal/profile';
+export const CHANGE_PASSWORD_PATH = `${PROFILE_PATH}?tab=security`;
+/** Still open while the password is temporary: a partner stuck here may need help. */
+const ALWAYS_OPEN_PATHS = ['/dashboard/portal/support'];
 
-export function MustChangePasswordGate() {
+function useMustChangePassword(): boolean {
   const { data: me } = useQuery(authMeQueryOptions);
+  return Boolean(me?.mustChangePassword);
+}
+
+function Redirect() {
+  const mustChange = useMustChangePassword();
   const router = useRouter();
   const pathname = usePathname();
-
-  const mustChange = Boolean(me?.mustChangePassword);
+  const tab = useSearchParams().get('tab');
 
   useEffect(() => {
     if (!mustChange) return;
-    if (pathname === PROFILE_PATH) return;
-    router.replace(PROFILE_PATH);
-  }, [mustChange, pathname, router]);
+    if (ALWAYS_OPEN_PATHS.some((path) => pathname.startsWith(path))) return;
+    if (pathname === PROFILE_PATH && tab === 'security') return;
+    router.replace(CHANGE_PASSWORD_PATH);
+  }, [mustChange, pathname, tab, router]);
 
+  return null;
+}
+
+/** Mounted once in the portal's layout. */
+export function MustChangePasswordRedirect() {
+  return (
+    <Suspense fallback={null}>
+      <Redirect />
+    </Suspense>
+  );
+}
+
+/** The notice above the profile page. */
+export function MustChangePasswordGate() {
+  const mustChange = useMustChangePassword();
   if (!mustChange) return null;
 
   return (
@@ -42,7 +66,7 @@ export function MustChangePasswordGate() {
       <p className='font-medium'>Bạn cần đổi mật khẩu để tiếp tục</p>
       <p className='mt-1 text-xs'>
         Tài khoản của bạn đang dùng mật khẩu tạm thời do hệ thống gửi qua email. Hãy đặt mật khẩu
-        của riêng bạn ở mục &quot;Đổi mật khẩu&quot; bên dưới.
+        của riêng bạn ngay bên dưới; xong là dùng được mọi mục của cổng đối tác.
       </p>
     </div>
   );

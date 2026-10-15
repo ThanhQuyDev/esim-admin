@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { toast } from 'sonner';
 
@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { changePassword } from '@/features/auth/api/service';
+import { authKeys } from '@/features/auth/api/queries';
 import {
   confirmBankAccountChangeMutation,
   requestBankAccountChangeMutation
@@ -110,6 +111,7 @@ function initialsOf(name: string | undefined): string {
 }
 
 export function PortalProfileView() {
+  const queryClient = useQueryClient();
   const { data: me } = useQuery(myProfileQueryOptions());
   const { data: summary } = useQuery(mySummaryQueryOptions());
 
@@ -203,6 +205,9 @@ export function PortalProfileView() {
     onSuccess: () => {
       setPasswords({ current: '', next: '', confirm: '' });
       toast.success('Đã cập nhật mật khẩu.');
+      // The server has cleared "must change password"; read it again so the
+      // notice and the redirect stop now, not after a refresh (doitac-1410 #011).
+      queryClient.invalidateQueries({ queryKey: authKeys.me() });
     },
     onError: (e: Error) =>
       toast.error(e.message || 'Không đổi được mật khẩu, kiểm tra lại mật khẩu hiện tại.')

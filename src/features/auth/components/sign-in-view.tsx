@@ -12,7 +12,8 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { useEffect, useState } from 'react';
 import { LoginError, login } from '../api/service';
-import { HOME_PATH } from '@/config/app-mode';
+import { HOME_PATH, IS_PARTNER_PORTAL } from '@/config/app-mode';
+import { CHANGE_PASSWORD_PATH } from '@/features/partner-portal/components/must-change-password-gate';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Icons } from '@/components/icons';
 import { AuthBrandPanel, useAuthPageContent } from './auth-brand-panel';
@@ -63,7 +64,7 @@ export default function SignInViewPage() {
 
   const mutation = useMutation({
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: (result) => {
       setNotice(null);
       setRedirecting(true);
       // A full page load, not router.push (doitac-1410 #007). The soft
@@ -73,7 +74,11 @@ export default function SignInViewPage() {
       // left the partner on this page until they refreshed. Dropping the cache
       // and loading the page afresh is exactly what that refresh did.
       queryClient.clear();
-      window.location.assign(HOME_PATH);
+      // A partner on the password an admin emailed goes straight to the form
+      // that replaces it (doitac-1410 #011).
+      window.location.assign(
+        IS_PARTNER_PORTAL && result.user?.mustChangePassword ? CHANGE_PASSWORD_PATH : HOME_PATH
+      );
     },
     onError: (error: Error) => {
       if (error instanceof LoginError && error.code === 'partnerPending') {
