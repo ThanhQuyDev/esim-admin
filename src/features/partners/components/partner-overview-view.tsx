@@ -45,7 +45,10 @@ import {
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className='rounded-lg border p-4'>
+    <div
+      className='from-primary/5 to-card dark:bg-card rounded-lg border bg-gradient-to-t p-4 shadow-xs'
+      data-slot='stat-tile'
+    >
       <p className='text-muted-foreground text-xs'>{label}</p>
       <p className='mt-1 text-2xl font-semibold'>{value}</p>
       {hint && <p className='text-muted-foreground mt-1 text-xs'>{hint}</p>}
@@ -68,7 +71,7 @@ function QueueRow({
   return (
     <Link
       href={href}
-      className='hover:bg-accent flex items-center justify-between rounded-lg border p-3 transition-colors'
+      className='hover:bg-accent from-primary/5 to-card dark:bg-card flex items-center justify-between rounded-lg border bg-gradient-to-t p-3 shadow-xs transition-colors'
     >
       <div>
         <p className='text-sm font-medium'>{label}</p>
@@ -112,7 +115,10 @@ function StatByType({
   rows: { partnerType: string; count: number }[];
 }) {
   return (
-    <div className='rounded-lg border p-4'>
+    <div
+      className='from-primary/5 to-card dark:bg-card rounded-lg border bg-gradient-to-t p-4 shadow-xs'
+      data-slot='stat-tile'
+    >
       <p className='text-muted-foreground text-xs'>{label}</p>
       <p className='mt-1 text-2xl font-semibold tabular-nums'>{value}</p>
       {hint && <p className='text-muted-foreground mt-1 text-xs'>{hint}</p>}
@@ -342,7 +348,11 @@ export function PartnerOverviewView() {
           </div>
           <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
             {revenue.byType.map((row) => (
-              <div key={row.partnerType} className='rounded-lg border p-4'>
+              <div
+                key={row.partnerType}
+                className='from-primary/5 to-card dark:bg-card rounded-lg border bg-gradient-to-t p-4 shadow-xs'
+                data-slot='stat-tile'
+              >
                 <div className='flex items-center justify-between gap-2'>
                   <p className='text-sm font-medium'>
                     {PARTNER_TYPE_LABEL[row.partnerType] ?? row.partnerType}
