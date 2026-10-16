@@ -34,7 +34,8 @@ const EMPTY_FORM = {
   attributionDays: '30',
   sortOrder: '0',
   isActive: true,
-  isInternal: false
+  isInternal: false,
+  isDefault: false
 };
 
 export function PartnerTierFormDialog({
@@ -62,7 +63,8 @@ export function PartnerTierFormDialog({
         attributionDays: String(tier.attributionDays ?? 30),
         sortOrder: String(tier.sortOrder),
         isActive: tier.isActive,
-        isInternal: tier.isInternal ?? false
+        isInternal: tier.isInternal ?? false,
+        isDefault: tier.isDefault ?? false
       });
     } else {
       setForm(EMPTY_FORM);
@@ -70,7 +72,7 @@ export function PartnerTierFormDialog({
   }, [open, tier]);
 
   const isKol = partnerType === 'kol';
-  const isValid = form.tierName.trim() !== '' && (isEdit || form.tierCode.trim() !== '');
+  const isValid = form.tierName.trim() !== '' && form.tierCode.trim() !== '';
 
   function handleSubmit() {
     if (!isValid) return;
@@ -84,10 +86,13 @@ export function PartnerTierFormDialog({
       attributionDays: Number(form.attributionDays) || 30,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
-      isInternal: form.isInternal
+      isInternal: form.isInternal,
+      isDefault: form.isActive && form.isDefault
     };
     if (isEdit) {
-      onSubmit(shared);
+      // The code can be changed too (doitac-1410 #059); the partners on the
+      // tier follow it.
+      onSubmit({ ...shared, tierCode: form.tierCode.trim().toUpperCase() });
     } else {
       onSubmit({
         ...shared,
@@ -110,17 +115,20 @@ export function PartnerTierFormDialog({
         </DialogHeader>
 
         <div className='space-y-4'>
-          {!isEdit && (
-            <div className='space-y-2'>
-              <Label htmlFor='tierCode'>Mã hạng *</Label>
-              <Input
-                id='tierCode'
-                placeholder='VD: SILVER'
-                value={form.tierCode}
-                onChange={(e) => setForm((f) => ({ ...f, tierCode: e.target.value }))}
-              />
-            </div>
-          )}
+          <div className='space-y-2'>
+            <Label htmlFor='tierCode'>Mã hạng *</Label>
+            <Input
+              id='tierCode'
+              placeholder='VD: SILVER'
+              value={form.tierCode}
+              onChange={(e) => setForm((f) => ({ ...f, tierCode: e.target.value }))}
+            />
+            {isEdit && (
+              <p className='text-muted-foreground text-xs'>
+                Đổi mã thì các đối tác đang ở hạng này được chuyển theo mã mới.
+              </p>
+            )}
+          </div>
 
           <div className='space-y-2'>
             <Label htmlFor='tierName'>Tên hạng *</Label>
@@ -185,7 +193,7 @@ export function PartnerTierFormDialog({
               </div>
 
               <div className='space-y-2'>
-                <Label htmlFor='maxDiscountPercent'>Giảm giá tối đa (%)</Label>
+                <Label htmlFor='maxDiscountPercent'>Chiết khấu (%)</Label>
                 <Input
                   id='maxDiscountPercent'
                   type='number'
@@ -237,6 +245,22 @@ export function PartnerTierFormDialog({
               Hạng thương lượng riêng cho đối tác đặc biệt: không hiện trong bảng xếp hạng công khai
               và không bị hệ thống tự động xét lại. Chỉ admin gán thủ công trong trang chi tiết đối
               tác.
+            </p>
+          </div>
+
+          <div className='rounded-lg border p-3'>
+            <div className='flex items-center justify-between'>
+              <Label htmlFor='isDefault'>Hạng mặc định</Label>
+              <Switch
+                id='isDefault'
+                checked={form.isActive && form.isDefault}
+                disabled={!form.isActive}
+                onCheckedChange={(checked) => setForm((f) => ({ ...f, isDefault: checked }))}
+              />
+            </div>
+            <p className='text-muted-foreground mt-2 text-xs'>
+              Đối tác mới tạo tài khoản được tự gán hạng này. Mỗi loại đối tác chỉ có 1 hạng mặc
+              định; chọn hạng này thì hạng mặc định cũ được bỏ.
             </p>
           </div>
 

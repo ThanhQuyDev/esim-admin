@@ -189,7 +189,8 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
     }
   };
 
-  const relevantTiers = tiers.filter((t) => t.partnerType === partner.partnerType);
+  // Only a tier in use can be assigned; the list now carries inactive ones (#059).
+  const relevantTiers = tiers.filter((t) => t.partnerType === partner.partnerType && t.isActive);
   const isKol = partner.partnerType === 'kol';
   const isCompany = partner.legalType === 'company';
   const decided = partner.status !== 'pending' && partner.status !== 'rejected';

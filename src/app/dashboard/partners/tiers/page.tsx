@@ -10,7 +10,7 @@ export default function PartnerTiersPage() {
     <PageContainer
       scrollable
       pageTitle='Hạng đối tác'
-      pageDescription='Cấu hình % hoa hồng (KOL) và % giảm giá tối đa (đối tác phân phối) theo hạng.'
+      pageDescription='Danh sách hạng của đối tác tiếp thị, phân phối và API: ngưỡng xét hạng, ưu đãi, hạng mặc định và số đối tác đang áp dụng.'
     >
       <PartnerTiersView />
     </PageContainer>

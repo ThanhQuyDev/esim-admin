@@ -304,6 +304,10 @@ export type PartnerTier = {
   costMarkupPercent?: number;
   /** Negotiated rather than earned: off the public ladder (#074). */
   isInternal?: boolean;
+  /** Where a new partner of the type starts (doitac-1410 #059). */
+  isDefault?: boolean;
+  /** Partners on this tier now (doitac-1410 #059). */
+  partnerCount?: number;
   sortOrder: number;
   isActive: boolean;
 };
@@ -322,10 +326,15 @@ export type CreateTierPayload = {
   commissionPercent?: number;
   maxDiscountPercent?: number;
   attributionDays?: number;
+  minDepositVnd?: number;
+  costMarkupPercent?: number;
+  isInternal?: boolean;
+  isDefault?: boolean;
   sortOrder?: number;
   isActive?: boolean;
 };
-export type UpdateTierPayload = Partial<Omit<CreateTierPayload, 'partnerType' | 'tierCode'>>;
+/** The code can be changed too (doitac-1410 #059). */
+export type UpdateTierPayload = Partial<Omit<CreateTierPayload, 'partnerType'>>;
 
 /** A marketing link the partner created (#095). */
 export type PartnerLinkRow = {

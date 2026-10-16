@@ -1,22 +1,49 @@
 'use client';
+
+/**
+ * "Hạng đối tác" as a list (doitac-1410 #059, #060): one tab per kind of
+ * partner, every tier — public and internal, active or not — with its
+ * thresholds, its benefit, whether new partners start on it, and how many
+ * partners are on it now.
+ */
+
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { tiersQueryOptions } from '../api/queries';
-import { createTierMutation, updateTierMutation } from '../api/mutations';
+import { toast } from 'sonner';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icons } from '@/components/icons';
-import { toast } from 'sonner';
-import { useState } from 'react';
-import { PartnerTierFormDialog } from './partner-tier-form-dialog';
-import type { PartnerTier, PartnerType } from '../api/types';
+import { formatVnd } from '@/lib/format';
 
-const TABS: { value: PartnerType; label: string }[] = [
-  { value: 'kol', label: 'KOL (hoa hồng)' },
-  { value: 'distribution', label: 'Đối tác phân phối (% cộng vào giá gốc)' }
+import { createTierMutation, updateTierMutation } from '../api/mutations';
+import { tiersQueryOptions } from '../api/queries';
+import type { CreateTierPayload, PartnerTier, PartnerType } from '../api/types';
+import { PartnerTierFormDialog } from './partner-tier-form-dialog';
+
+type TierTab = 'kol' | 'distribution' | 'api';
+
+const TABS: { value: TierTab; label: string }[] = [
+  { value: 'kol', label: 'Đối tác tiếp thị' },
+  { value: 'distribution', label: 'Đối tác phân phối' },
+  { value: 'api', label: 'Đối tác API' }
 ];
 
+/** API partners run as distribution partners, on the same tiers. */
+const typeOf = (tab: TierTab): PartnerType => (tab === 'kol' ? 'kol' : 'distribution');
+
 export function PartnerTiersView() {
-  const [activeType, setActiveType] = useState<PartnerType>('kol');
+  const [tab, setTab] = useState<TierTab>('kol');
+  const activeType = typeOf(tab);
   const [editingTier, setEditingTier] = useState<PartnerTier | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -27,7 +54,7 @@ export function PartnerTiersView() {
     onSuccess: () => {
       toast.success('Đã tạo hạng đối tác.');
       setCreateOpen(false);
-      refetch();
+      void refetch();
     },
     onError: (e: Error) => toast.error(e.message || 'Tạo hạng thất bại')
   });
@@ -37,22 +64,23 @@ export function PartnerTiersView() {
     onSuccess: () => {
       toast.success('Đã cập nhật hạng đối tác.');
       setEditingTier(null);
-      refetch();
+      void refetch();
     },
     onError: (e: Error) => toast.error(e.message || 'Cập nhật thất bại')
   });
 
-  const filteredTiers = tiers
+  const rows = tiers
     .filter((t) => t.partnerType === activeType)
-    .sort((a, b) => a.sortOrder - b.sortOrder);
+    .toSorted((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
+  const isKol = activeType === 'kol';
 
   return (
-    <div className='space-y-4'>
+    <div className='grid min-w-0 grid-cols-1 gap-4'>
       <PartnerTierFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
         partnerType={activeType}
-        onSubmit={(data) => createMutation.mutate(data as import('../api/types').CreateTierPayload)}
+        onSubmit={(data) => createMutation.mutate(data as CreateTierPayload)}
         isSubmitting={createMutation.isPending}
       />
       <PartnerTierFormDialog
@@ -65,62 +93,137 @@ export function PartnerTiersView() {
       />
 
       <div className='flex flex-wrap items-center justify-between gap-3'>
-        <div className='flex gap-1 rounded-lg border p-1'>
-          {TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActiveType(tab.value)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                activeType === tab.value ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as TierTab)}>
+          <TabsList>
+            {TABS.map((t) => (
+              <TabsTrigger key={t.value} value={t.value}>
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
         <Button size='sm' onClick={() => setCreateOpen(true)}>
           <Icons.add className='mr-2 h-4 w-4' /> Thêm hạng
         </Button>
       </div>
+      {tab === 'api' && (
+        <p className='text-muted-foreground text-sm' data-testid='api-tier-note'>
+          Đối tác API được hệ thống quản lý như đối tác phân phối, nên dùng chung danh sách hạng
+          dưới đây.
+        </p>
+      )}
 
       {isLoading ? (
         <div className='flex justify-center py-12'>
           <Icons.spinner className='h-6 w-6 animate-spin' />
         </div>
-      ) : filteredTiers.length === 0 ? (
-        <p className='text-muted-foreground py-12 text-center text-sm'>Chưa có hạng nào.</p>
       ) : (
-        <div className='space-y-3'>
-          {filteredTiers.map((tier) => (
-            <div
-              key={tier.id}
-              className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4'
-            >
-              <div>
-                <div className='flex items-center gap-2'>
-                  <span className='font-medium'>{tier.tierName}</span>
-                  <Badge variant='outline'>{tier.tierCode}</Badge>
-                  {!tier.isActive && <Badge variant='destructive'>Ngừng hoạt động</Badge>}
-                  {/* A negotiated tier: off the public ladder and never
-                      touched by the weekly review (#074). */}
-                  {tier.isInternal && <Badge variant='secondary'>Hạng nội bộ</Badge>}
-                </div>
-                <p className='text-muted-foreground text-sm'>
-                  Ngưỡng doanh số: {tier.minVolumeVnd.toLocaleString('vi-VN')} VND
-                  {activeType === 'kol'
-                    ? ` · Hoa hồng: ${tier.commissionPercent}% · Ghi nhận: ${tier.attributionDays ?? 30} ngày`
-                    : `${
-                        tier.minDepositVnd
-                          ? ` HOẶC ký quỹ: ${tier.minDepositVnd.toLocaleString('vi-VN')} VND`
-                          : ''
-                      } · Giá gốc + ${tier.costMarkupPercent ?? 0}%`}
-                </p>
-              </div>
-              <Button size='sm' variant='outline' onClick={() => setEditingTier(tier)}>
-                <Icons.edit className='mr-2 h-4 w-4' /> Sửa
-              </Button>
-            </div>
-          ))}
+        <div className='overflow-x-auto rounded-lg border' data-testid='tier-rows'>
+          <Table>
+            <TableHeader className='bg-muted'>
+              <TableRow>
+                <TableHead>Mã hạng</TableHead>
+                <TableHead>Tên hạng</TableHead>
+                <TableHead className='text-right'>Ngưỡng doanh số</TableHead>
+                {isKol ? (
+                  <>
+                    <TableHead className='text-right'>Mức hoa hồng</TableHead>
+                    <TableHead className='text-right'>Số ngày ghi nhận hoa hồng</TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead className='text-right'>Mức % cộng giá gốc</TableHead>
+                    <TableHead className='text-right'>Ngưỡng ký quỹ</TableHead>
+                    <TableHead className='text-right'>Chiết khấu %</TableHead>
+                  </>
+                )}
+                <TableHead>Loại hạng</TableHead>
+                <TableHead className='text-center'>Hạng mặc định</TableHead>
+                <TableHead className='text-right'>Đối tác</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead className='text-right'>Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={isKol ? 10 : 11}
+                    className='text-muted-foreground h-24 text-center'
+                  >
+                    Chưa có hạng nào.
+                  </TableCell>
+                </TableRow>
+              )}
+              {rows.map((tier) => (
+                <TableRow key={tier.id}>
+                  <TableCell className='font-mono text-xs'>{tier.tierCode}</TableCell>
+                  <TableCell className='font-medium'>{tier.tierName}</TableCell>
+                  <TableCell className='text-right tabular-nums'>
+                    {formatVnd(Number(tier.minVolumeVnd))}
+                  </TableCell>
+                  {isKol ? (
+                    <>
+                      <TableCell className='text-right tabular-nums'>
+                        {Number(tier.commissionPercent)}%
+                      </TableCell>
+                      <TableCell className='text-right tabular-nums'>
+                        {tier.attributionDays ?? 30} ngày
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell className='text-right tabular-nums'>
+                        +{Number(tier.costMarkupPercent ?? 0)}%
+                      </TableCell>
+                      <TableCell className='text-right tabular-nums'>
+                        {Number(tier.minDepositVnd ?? 0) > 0
+                          ? formatVnd(Number(tier.minDepositVnd))
+                          : '—'}
+                      </TableCell>
+                      <TableCell className='text-right tabular-nums'>
+                        {Number(tier.maxDiscountPercent)}%
+                      </TableCell>
+                    </>
+                  )}
+                  <TableCell>
+                    <Badge variant={tier.isInternal ? 'secondary' : 'outline'}>
+                      {tier.isInternal ? 'Nội bộ' : 'Công khai'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className='text-center'>
+                    <input
+                      type='radio'
+                      name={`default-tier-${activeType}`}
+                      className='accent-primary size-4 align-middle'
+                      checked={Boolean(tier.isDefault)}
+                      disabled={!tier.isActive || updateMutation.isPending}
+                      title={
+                        tier.isActive ? undefined : 'Hạng ngừng hoạt động không thể là mặc định'
+                      }
+                      aria-label={`Đặt ${tier.tierName} làm hạng mặc định`}
+                      onChange={() =>
+                        updateMutation.mutate({ id: tier.id, data: { isDefault: true } })
+                      }
+                    />
+                  </TableCell>
+                  <TableCell className='text-right tabular-nums'>
+                    {tier.partnerCount ?? 0}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={tier.isActive ? 'default' : 'destructive'}>
+                      {tier.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className='text-right'>
+                    <Button size='sm' variant='outline' onClick={() => setEditingTier(tier)}>
+                      <Icons.edit className='mr-2 h-4 w-4' /> Sửa
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
