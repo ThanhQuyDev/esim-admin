@@ -25,6 +25,9 @@ export type Region = {
   titleVi: string | null;
   description: string | null;
   descriptionVi: string | null;
+  /** Note at the top of its website page, HTML (doitac-1410 #078). */
+  notice?: string | null;
+  noticeVi?: string | null;
   providers: string | null;
   createdAt: string;
   updatedAt: string;
@@ -56,6 +59,8 @@ export type CreateRegionPayload = {
   titleVi?: string | null;
   description?: string | null;
   descriptionVi?: string | null;
+  notice?: string | null;
+  noticeVi?: string | null;
   providers?: string | null;
   destinationIds?: number[];
 };
@@ -73,6 +78,8 @@ export type UpdateRegionPayload = {
   titleVi?: string | null;
   description?: string | null;
   descriptionVi?: string | null;
+  notice?: string | null;
+  noticeVi?: string | null;
   providers?: string | null;
   destinationIds?: number[];
 };

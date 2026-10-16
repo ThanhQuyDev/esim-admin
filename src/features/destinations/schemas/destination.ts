@@ -16,6 +16,8 @@ export const createDestinationSchema = z.object({
   titleVi: z.string().optional(),
   description: z.string().optional(),
   descriptionVi: z.string().optional(),
+  notice: z.string().optional(),
+  noticeVi: z.string().optional(),
   providers: z.string().optional()
 });
 
@@ -37,6 +39,8 @@ export const updateDestinationSchema = z.object({
   titleVi: z.string().optional(),
   description: z.string().optional(),
   descriptionVi: z.string().optional(),
+  notice: z.string().optional(),
+  noticeVi: z.string().optional(),
   providers: z.string().optional()
 });
 

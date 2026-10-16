@@ -10,6 +10,8 @@ export const createRegionSchema = z.object({
   titleVi: z.string().optional(),
   description: z.string().optional(),
   descriptionVi: z.string().optional(),
+  notice: z.string().optional(),
+  noticeVi: z.string().optional(),
   providers: z.string().optional(),
   destinationIds: z.array(z.number()).optional()
 });
@@ -26,6 +28,8 @@ export const updateRegionSchema = z.object({
   titleVi: z.string().optional(),
   description: z.string().optional(),
   descriptionVi: z.string().optional(),
+  notice: z.string().optional(),
+  noticeVi: z.string().optional(),
   providers: z.string().optional(),
   destinationIds: z.array(z.number()).optional()
 });

@@ -1,4 +1,5 @@
 'use client';
+import { EntityNoticeFields } from '@/components/entity-notice-fields';
 
 import { useState, useRef } from 'react';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
@@ -414,6 +415,8 @@ function EditDestinationDialog({
       titleVi: destination.titleVi ?? '',
       description: destination.description ?? '',
       descriptionVi: destination.descriptionVi ?? '',
+      notice: destination.notice ?? '',
+      noticeVi: destination.noticeVi ?? '',
       providers: destination.providers ?? ''
     } as UpdateDestinationFormValues,
     validators: {
@@ -447,6 +450,9 @@ function EditDestinationDialog({
           titleVi: value.titleVi || undefined,
           description: value.description || undefined,
           descriptionVi: value.descriptionVi || undefined,
+          // Always sent, so emptying the editor clears the note (#078).
+          notice: value.notice ?? '',
+          noticeVi: value.noticeVi ?? '',
           providers: value.providers || undefined
         };
 
@@ -565,6 +571,12 @@ function EditDestinationDialog({
             label='Mô tả (VI)'
             placeholder='Mô tả tiếng Việt...'
             description='Dùng được biến giá: ${fromPrice} (hiện tiền Việt ở bản tiếng Việt), ${fromPriceK} (giá rút gọn: 58K / $2.07),${fromPriceVnd}, ${fromPriceUsd}, ${planCount}, ${dataRange}, ${dayRange}, ${name}.'
+          />
+
+          <EntityNoticeFields
+            noticeVi={destination.noticeVi ?? ''}
+            notice={destination.notice ?? ''}
+            onChange={(field, html) => form.setFieldValue(field, html)}
           />
         </form.Form>
       </form.AppForm>
