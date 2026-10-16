@@ -16,6 +16,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { RefundOrderModal } from './refund-order-modal';
+import { OrderNotesSection } from './order-notes-section';
 import { ResendEsimEmailButton } from './resend-esim-email-button';
 import { RetryProvisioningDialog } from './retry-provisioning-dialog';
 import { CreateInvoiceDialog } from './create-invoice-dialog';
@@ -599,6 +600,12 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             <InfoRow label='Ngày tạo' value={formatDate(order.createdAt)} />
             <InfoRow label='Cập nhật' value={formatDate(order.updatedAt)} />
           </div>
+          {/* Notes and the refund history (doitac-1410 #067). */}
+          <OrderNotesSection
+            orderId={order.id}
+            notes={order.notes ?? []}
+            refunds={order.refunds ?? []}
+          />
         </CardContent>
       </Card>
 

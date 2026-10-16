@@ -120,3 +120,11 @@ export async function retryOrderProvisioning(
     body: JSON.stringify(itemIds?.length ? { itemIds } : {})
   });
 }
+
+/** "Thêm ghi chú" on an order (doitac-1410 #067). */
+export async function addOrderNote(orderId: number, body: string): Promise<unknown> {
+  return apiClient(`/orders/${orderId}/notes`, {
+    method: 'POST',
+    body: JSON.stringify({ body })
+  });
+}

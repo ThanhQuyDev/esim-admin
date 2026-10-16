@@ -219,6 +219,10 @@ export type OrderAfterRefund = {
 
 export type OrderDetail = Order & {
   afterRefund?: OrderAfterRefund;
+  /** Admin notes, newest first (doitac-1410 #067). */
+  notes?: OrderNote[];
+  /** Every refund with its reason and admin note (doitac-1410 #067). */
+  refunds?: OrderRefundRecord[];
   coupon: OrderCoupon | null;
   items: OrderItem[];
   invoice: AdminOrderInvoice | null;
@@ -322,4 +326,20 @@ export type SubmitManualOrderPayload = {
   quantity?: number;
   /** Several plans at once, each with its quantity (#031). */
   items?: { packageCode: string; slug: string; quantity: number }[];
+};
+
+/** "Ghi chú" an admin keeps on an order (doitac-1410 #067). */
+export type OrderNote = { id: number; body: string; createdAt: string; by: string };
+
+/** One refund of an order, with what the admin wrote (doitac-1410 #067). */
+export type OrderRefundRecord = {
+  id: number;
+  createdAt: string;
+  /** wallet | direct_bank */
+  mode: string;
+  amountVnd: number;
+  esimCount: number | null;
+  reason: string | null;
+  adminNote: string | null;
+  by: string | null;
 };
