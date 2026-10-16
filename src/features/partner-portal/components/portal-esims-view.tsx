@@ -16,7 +16,14 @@ import { useQuery } from '@tanstack/react-query';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -37,6 +44,7 @@ import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { myEsimsQueryOptions } from '../api/queries';
+import { myEsimsExportUrl } from '../api/service';
 import type { MyEsim } from '../api/types';
 import { PLAN_TYPE_LABEL, yesNo } from './portal-catalogue-dialogs';
 import {
@@ -101,7 +109,7 @@ export function PortalEsimsView() {
   }, [esims]);
 
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
+    <div className='grid min-w-0 grid-cols-1 gap-4'>
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
         <Card>
           <CardHeader>
@@ -137,9 +145,27 @@ export function PortalEsimsView() {
         </Card>
       </div>
 
-      <Card>
+      <Card className='min-w-0'>
         <CardHeader>
           <CardTitle>Danh sách eSIM</CardTitle>
+          <CardAction className='col-start-1 row-start-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end'>
+            <Button asChild size='sm' variant='outline'>
+              <a
+                data-testid='esims-export'
+                href={myEsimsExportUrl({
+                  search: search.trim() || undefined,
+                  status,
+                  planType,
+                  topUp,
+                  from: from || undefined,
+                  to: to || undefined
+                })}
+              >
+                <Icons.download className='size-4' />
+                Xuất file
+              </a>
+            </Button>
+          </CardAction>
           <CardDescription>
             eSIM từ các đơn bạn đã mua. Số liệu dung lượng do nhà mạng cập nhật nên có thể chậm hơn
             thực tế vài phút.

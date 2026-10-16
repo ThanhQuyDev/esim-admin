@@ -365,6 +365,16 @@ export async function reportEsimFault(payload: ReportEsimFaultPayload): Promise<
   });
 }
 
+/** Where the browser downloads the eSIM list, with its filters (doitac-1410 #040). */
+export function myEsimsExportUrl(filters: Record<string, string | undefined> = {}): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== '' && value !== 'all') params.set(key, value);
+  }
+  const qs = params.toString();
+  return `/api/partner-portal/esims/export${qs ? `?${qs}` : ''}`;
+}
+
 /** "Chi tiết eSIM" (doitac-1410 #039). */
 export async function getMyEsimDetail(iccid: string): Promise<MyEsimDetail> {
   return apiClient<MyEsimDetail>(`/partner-portal/esims/${encodeURIComponent(iccid)}`);
