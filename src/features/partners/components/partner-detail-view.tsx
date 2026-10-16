@@ -256,7 +256,8 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
           >
             <Icons.check className='mr-2 h-4 w-4' /> Lưu lại
           </Button>
-          {partner.status === 'pending' && (
+          {/* A rejection can be overturned by hand (#056, doitac-1410 #049). */}
+          {(partner.status === 'pending' || partner.status === 'rejected') && (
             <>
               <Button
                 size='sm'
@@ -266,9 +267,11 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
               >
                 <Icons.check className='mr-2 h-4 w-4' /> Duyệt
               </Button>
-              <Button size='sm' variant='destructive' onClick={() => setRejectOpen(true)}>
-                <Icons.close className='mr-2 h-4 w-4' /> Từ chối
-              </Button>
+              {partner.status === 'pending' && (
+                <Button size='sm' variant='destructive' onClick={() => setRejectOpen(true)}>
+                  <Icons.close className='mr-2 h-4 w-4' /> Từ chối
+                </Button>
+              )}
             </>
           )}
           {/*
@@ -310,18 +313,24 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
       {/* 1 — who the partner is. */}
       <Card>
         <CardHeader>
-          <CardTitle>1. Thông tin đối tác</CardTitle>
+          <CardTitle>1. {decided ? 'Thông tin đối tác' : 'Thông tin đăng ký'}</CardTitle>
         </CardHeader>
         <CardContent className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-          <Field label='Tên đối tác'>{partner.companyName || partner.contactName}</Field>
+          <Field label={isCompany ? 'Tên doanh nghiệp' : 'Họ tên'}>
+            {partner.companyName || partner.contactName}
+          </Field>
           {isCompany && <Field label='Người liên hệ'>{partner.contactName}</Field>}
-          <Field label='Loại đối tác'>{PARTNER_TYPE_LABELS[partner.partnerType]}</Field>
+          <Field label={decided ? 'Loại đối tác' : 'Loại hình hợp tác'}>
+            {partner.requestedType === 'api'
+              ? 'Đối tác API'
+              : PARTNER_TYPE_LABELS[partner.partnerType]}
+          </Field>
           <Field label='Email'>{partner.contactEmail}</Field>
           <Field label='Số điện thoại'>{partner.contactPhone}</Field>
           <Field label='Loại pháp nhân'>{LEGAL_TYPE_LABELS[partner.legalType]}</Field>
           {isCompany && <Field label='Mã số thuế'>{partner.taxCode}</Field>}
           {isCompany && <Field label='Địa chỉ'>{partner.businessAddress}</Field>}
-          <Field label='Ngày đăng ký'>{formatDateVn(partner.createdAt)}</Field>
+          <Field label='Ngày gửi đăng ký'>{formatDateVn(partner.createdAt)}</Field>
           {/* What the applicant attached (doitac-1410 #013), opened through the admin-only route. */}
           <div className='sm:col-span-2 lg:col-span-3' data-testid='partner-documents'>
             <p className='text-muted-foreground text-xs font-medium'>Tài liệu đính kèm</p>
@@ -354,7 +363,7 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
       {/* 2 — what they sell through, as given on the registration form. */}
       <Card>
         <CardHeader>
-          <CardTitle>2. Thông tin kênh bán</CardTitle>
+          <CardTitle>2. {isKol ? 'Kênh giới thiệu' : 'Kênh bán hàng'}</CardTitle>
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
@@ -390,89 +399,99 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
         </CardContent>
       </Card>
 
-      {/* 3 — tier, and what the partner is allowed to do. */}
-      <Card>
-        <CardHeader>
-          <CardTitle>3. Hạng đối tác và phân quyền</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Select
-            value={partner.tierCode || ''}
-            onValueChange={(tierCode) => tierMutation.mutate({ id: partnerId, data: { tierCode } })}
-          >
-            <SelectTrigger className='w-[220px]'>
-              <SelectValue placeholder='Chưa gán hạng' />
-            </SelectTrigger>
-            <SelectContent>
-              {relevantTiers.map((tier) => (
-                <SelectItem key={tier.tierCode} value={tier.tierCode}>
-                  {/* Internal tiers are assignable only from here, so the
-                      list has to say which is which (#074). */}
-                  {tier.isInternal ? `${tier.tierName} (nội bộ)` : tier.tierName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {relevantTiers.find((t) => t.tierCode === partner.tierCode)?.isInternal && (
+      {/*
+        3 — tier, and what the partner is allowed to do. Like 4 and 5 below,
+        only once the partner is approved: an application under review shows
+        just what the applicant filled in (doitac-1410 #049).
+      */}
+      {decided && (
+        <Card>
+          <CardHeader>
+            <CardTitle>3. Hạng đối tác và phân quyền</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select
+              value={partner.tierCode || ''}
+              onValueChange={(tierCode) =>
+                tierMutation.mutate({ id: partnerId, data: { tierCode } })
+              }
+            >
+              <SelectTrigger className='w-[220px]'>
+                <SelectValue placeholder='Chưa gán hạng' />
+              </SelectTrigger>
+              <SelectContent>
+                {relevantTiers.map((tier) => (
+                  <SelectItem key={tier.tierCode} value={tier.tierCode}>
+                    {/* Internal tiers are assignable only from here, so the
+                        list has to say which is which (#074). */}
+                    {tier.isInternal ? `${tier.tierName} (nội bộ)` : tier.tierName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {relevantTiers.find((t) => t.tierCode === partner.tierCode)?.isInternal && (
+              <p className='text-muted-foreground mt-2 text-xs'>
+                Đối tác đang ở hạng nội bộ — hệ thống sẽ không tự xét lại hạng cho đối tác này.
+              </p>
+            )}
             <p className='text-muted-foreground mt-2 text-xs'>
-              Đối tác đang ở hạng nội bộ — hệ thống sẽ không tự xét lại hạng cho đối tác này.
+              {partner.tierEffectiveFrom
+                ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`
+                : 'Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ, hệ thống không tính hồi tố.'}
             </p>
-          )}
-          <p className='text-muted-foreground mt-2 text-xs'>
-            {partner.tierEffectiveFrom
-              ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`
-              : 'Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ, hệ thống không tính hồi tố.'}
-          </p>
 
-          {!isKol && (
-            <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
-              <div>
-                <p className='text-sm font-medium'>Được phân quyền affiliate</p>
-                <p className='text-muted-foreground text-xs'>
-                  Cho phép đối tác phân phối tham gia luôn chương trình tiếp thị: cổng đối tác hiện
-                  thêm Link tiếp thị, Mã giảm giá, Hoa hồng và Thanh toán (#048). Tắt đi thì các mục
-                  đó ẩn lại, nhưng hoa hồng đã ghi nhận vẫn là của họ.
-                </p>
+            {!isKol && (
+              <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
+                <div>
+                  <p className='text-sm font-medium'>Được phân quyền affiliate</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Cho phép đối tác phân phối tham gia luôn chương trình tiếp thị: cổng đối tác
+                    hiện thêm Link tiếp thị, Mã giảm giá, Hoa hồng và Thanh toán (#048). Tắt đi thì
+                    các mục đó ẩn lại, nhưng hoa hồng đã ghi nhận vẫn là của họ.
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(partner.canAffiliate)}
+                  disabled={affiliateGrantMutation.isPending}
+                  onCheckedChange={(checked) =>
+                    affiliateGrantMutation.mutate({ id: partnerId, canAffiliate: checked })
+                  }
+                  aria-label='Được phân quyền affiliate'
+                />
               </div>
-              <Switch
-                checked={Boolean(partner.canAffiliate)}
-                disabled={affiliateGrantMutation.isPending}
-                onCheckedChange={(checked) =>
-                  affiliateGrantMutation.mutate({ id: partnerId, canAffiliate: checked })
-                }
-                aria-label='Được phân quyền affiliate'
-              />
-            </div>
-          )}
+            )}
 
-          {/* Only shown once the partner runs the programme (doitac-1410 #004). */}
-          {runsProgramme && (
-            <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
-              <div>
-                <p className='text-sm font-medium'>Được đặt tên link tiếp thị</p>
-                <p className='text-muted-foreground text-xs'>
-                  Cho phép đối tác tự đặt tên link (esim.vn/go/TENCHIENDICH, 8–50 ký tự chữ và số).
-                  Thường chỉ bật cho đối tác hạng cao cần tên dễ nhớ cho chiến dịch.
-                </p>
+            {/* Only shown once the partner runs the programme (doitac-1410 #004). */}
+            {runsProgramme && (
+              <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
+                <div>
+                  <p className='text-sm font-medium'>Được đặt tên link tiếp thị</p>
+                  <p className='text-muted-foreground text-xs'>
+                    Cho phép đối tác tự đặt tên link (esim.vn/go/TENCHIENDICH, 8–50 ký tự chữ và
+                    số). Thường chỉ bật cho đối tác hạng cao cần tên dễ nhớ cho chiến dịch.
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(partner.canCustomLinkCode)}
+                  disabled={linkCodeMutation.isPending}
+                  onCheckedChange={(checked) =>
+                    linkCodeMutation.mutate({ id: partnerId, canCustomLinkCode: checked })
+                  }
+                  aria-label='Được đặt tên link tiếp thị'
+                />
               </div>
-              <Switch
-                checked={Boolean(partner.canCustomLinkCode)}
-                disabled={linkCodeMutation.isPending}
-                onCheckedChange={(checked) =>
-                  linkCodeMutation.mutate({ id: partnerId, canCustomLinkCode: checked })
-                }
-                aria-label='Được đặt tên link tiếp thị'
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* 4 — the partner's figures over a chosen period. */}
       {decided && <PartnerStatsSection partner={partner} />}
 
       {/* 5 — contract lines and this partner's own deposit limits. */}
-      <PartnerContractCard ref={contractRef} partner={partner} onDirtyChange={onContractDirty} />
+      {decided && (
+        <PartnerContractCard ref={contractRef} partner={partner} onDirtyChange={onContractDirty} />
+      )}
 
       {/*
         6 — the reviewer's own note (#056). Separate from the applicant's: who
@@ -480,7 +499,7 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
       */}
       <Card>
         <CardHeader>
-          <CardTitle>6. Ghi chú của quản trị viên</CardTitle>
+          <CardTitle>{decided ? 6 : 3}. Ghi chú của quản trị viên</CardTitle>
         </CardHeader>
         <CardContent className='space-y-2'>
           <Textarea

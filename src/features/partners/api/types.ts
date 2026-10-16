@@ -138,6 +138,8 @@ export type PartnerFilters = {
   search?: string;
   /** Filter the list to one tier (#058). */
   tierCode?: string;
+  /** `newest` = by registration date only (doitac-1410 #049); default revenue. */
+  sort?: 'revenue' | 'newest';
 };
 
 export type PartnerWalletTransaction = {

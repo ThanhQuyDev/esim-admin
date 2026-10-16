@@ -95,6 +95,8 @@ export function PartnerApprovalsView() {
       ...(status === 'all' ? {} : { status }),
       ...(partnerType === 'all' ? {} : { partnerType }),
       ...(search.trim() ? { search: search.trim() } : {}),
+      // The latest application on top (doitac-1410 #049).
+      sort: 'newest',
       limit: 50
     })
   );
