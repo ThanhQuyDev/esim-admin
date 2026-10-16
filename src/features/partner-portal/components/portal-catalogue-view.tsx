@@ -48,6 +48,7 @@ import {
 } from '../api/queries';
 import type { CataloguePlan, CatalogueFilters } from '../api/types';
 import { EMPTY_CATALOGUE_FILTERS, PortalCatalogueFilters } from './portal-catalogue-filters';
+import { PortalCartBar } from './portal-cart-bar';
 import {
   AddToCartDialog,
   PLAN_TYPE_LABEL,
@@ -139,6 +140,8 @@ export function PortalCatalogueView() {
               setLimit(100);
             }}
           />
+          {/* Balance, cart and checkout between filters and list (doitac-1410 #035). */}
+          <PortalCartBar filters={deferredFilters} />
           {!isLoading && (
             <p className='text-muted-foreground text-xs' data-testid='catalogue-count'>
               {totalCount.toLocaleString('vi-VN')} gói đang bán phù hợp

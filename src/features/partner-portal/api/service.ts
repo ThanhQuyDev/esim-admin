@@ -1,5 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import type {
+  CartPurchaseResult,
+  CartQuote,
   CatalogueFilters,
   MyLedgerFilters,
   MyLedgerRow,
@@ -470,4 +472,34 @@ export function myLedgerExportUrl(filters: MyLedgerFilters = {}): string {
   }
   const qs = params.toString();
   return `/api/partner-portal/wallet/ledger/export${qs ? `?${qs}` : ''}`;
+}
+
+/** Báo giá cả giỏ hàng (doitac-1410 #035). */
+export async function quoteCart(items: { planId: number; quantity: number }[]): Promise<CartQuote> {
+  return apiClient<CartQuote>('/partner-portal/purchases/cart/quote', {
+    method: 'POST',
+    body: JSON.stringify({ items })
+  });
+}
+
+/** Thanh toán cả giỏ hàng trong một đơn (doitac-1410 #035). */
+export async function purchaseCart(payload: {
+  items: { planId: number; quantity: number }[];
+  recipientEmail?: string;
+}): Promise<CartPurchaseResult> {
+  return apiClient<CartPurchaseResult>('/partner-portal/purchases/cart', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+/** Where the browser downloads the price list (doitac-1410 #035). */
+export function catalogueExportUrl(filters: CatalogueFilters = {}): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (key === 'limit') continue;
+    if (value !== undefined && value !== '' && value !== 'all') params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return `/api/partner-portal/catalogue/export${qs ? `?${qs}` : ''}`;
 }

@@ -611,6 +611,36 @@ export type PartnerCatalogue = {
   totalCount?: number;
 };
 
+/** A cart priced by the server (doitac-1410 #035). */
+export type CartQuote = {
+  lines: {
+    planId: number;
+    name: string;
+    quantity: number;
+    unitPriceVnd: number;
+    totalVnd: number;
+    listTotalVnd: number;
+    rejection: string | null;
+  }[];
+  planCount: number;
+  esimCount: number;
+  totalVnd: number;
+  listTotalVnd: number;
+  balanceVnd: number;
+  rejection: string | null;
+};
+
+export type CartPurchaseResult = {
+  orderNumber: string;
+  status: string;
+  planCount: number;
+  quantity: number;
+  totalVnd: number;
+  refundedVnd: number;
+  esimCount: number;
+  pendingEsims: number;
+};
+
 /** The price list's filters — the admin's, minus "Hoạt động" (doitac-1410 #033). */
 export type CatalogueFilters = {
   search?: string;
