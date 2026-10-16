@@ -474,9 +474,13 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       accessorKey: 'type',
       header: 'Loại gói',
       cell: ({ row }) => (
-        <Badge variant='outline' className='capitalize'>
-          {row.original.type || '—'}
-        </Badge>
+        <div className='flex flex-col items-start gap-1' data-testid='plan-type'>
+          {/* eSIM nội địa, kept apart from travel eSIMs (doitac-1410 #072). */}
+          {row.original.isDomesticEsim && <Badge>Local</Badge>}
+          <Badge variant='outline' className='capitalize'>
+            {row.original.type || '—'}
+          </Badge>
+        </div>
       ),
       enableSorting: false,
       enableColumnFilter: true,
@@ -487,7 +491,8 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
           { value: 'fixed', label: 'Cố định' },
           { value: 'unlimited', label: 'Không giới hạn' },
           { value: 'unlimited-reduce', label: 'Không giới hạn tốc độ thấp' },
-          { value: 'daily', label: 'Theo ngày' }
+          { value: 'daily', label: 'Theo ngày' },
+          { value: 'local', label: 'Local (eSIM nội địa)' }
         ]
       }
     },

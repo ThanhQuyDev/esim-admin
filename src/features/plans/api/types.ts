@@ -25,6 +25,11 @@ export type Plan = {
   retailPrice: string;
   currency: string;
   type: string;
+  /**
+   * "Local": an eSIM nội địa, sold on its carrier's own page and never among
+   * Vietnam's travel eSIMs (doitac-1410 #072).
+   */
+  isDomesticEsim?: boolean;
   /** Speed after the high-speed quota, or the cap of a speed-only plan ("10Mbps"). */
   fupSpeed?: string | null;
   topUp: boolean;
@@ -96,6 +101,8 @@ export type CreatePlanPayload = {
   type?: string;
   topUp?: boolean;
   isActive?: boolean;
+  /** "Local" — eSIM nội địa (doitac-1410 #072). */
+  isDomesticEsim?: boolean;
   tags?: string[] | null;
   apn?: string | null;
   isNonHkIp?: boolean;

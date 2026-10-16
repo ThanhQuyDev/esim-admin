@@ -44,6 +44,8 @@ export const createPlanSchema = z.object({
   type: z.string().optional(),
   topUp: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  /** "Local" — eSIM nội địa (doitac-1410 #072). */
+  isDomesticEsim: z.boolean().optional(),
   tags: z.array(z.enum(PLAN_TAG_VALUES)).optional(),
   apn: z.string().optional(),
   isNonHkIp: z.boolean().optional(),

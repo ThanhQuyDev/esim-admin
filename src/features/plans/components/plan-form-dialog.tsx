@@ -390,6 +390,7 @@ function EditDialog({
       type: plan.type ?? '',
       topUp: plan.topUp,
       isActive: plan.isActive,
+      isDomesticEsim: plan.isDomesticEsim ?? false,
       tags: (plan.tags ?? []) as PlanTag[],
       apn: plan.apn ?? '',
       isNonHkIp: plan.isNonHkIp,
@@ -420,6 +421,7 @@ function EditDialog({
         type: value.type || undefined,
         topUp: value.topUp,
         isActive: value.isActive,
+        isDomesticEsim: value.isDomesticEsim ?? false,
         tags: value.tags ?? [],
         // null rather than undefined: an admin clearing APN or the reset policy
         // means "we do not know", and undefined would silently keep the old value.
@@ -531,6 +533,14 @@ function EditDialog({
             <FormSwitchField name='topUp' label='Top-Up' />
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
+
+          {/* "Local" = eSIM nội địa (doitac-1410 #072): its carrier's page,
+              never Vietnam's travel eSIMs. Fixes a plan imported the wrong way. */}
+          <FormSwitchField
+            name='isDomesticEsim'
+            label='Loại gói Local (eSIM nội địa)'
+            description='Bật: gói chỉ hiện trong trang eSIM nội địa theo nhà mạng. Tắt: gói là eSIM du lịch, hiện trong trang eSIM du lịch Việt Nam.'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>
