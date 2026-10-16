@@ -22,7 +22,12 @@ export function OrderNumberRedirect({ orderNumber }: { orderNumber: string }) {
   const code = orderNumber.trim().replace(/^#+/, '');
   const { data, isLoading, isError } = useQuery({
     queryKey: ['orders', 'by-number', code],
-    queryFn: () => getOrders({ page: 1, limit: 5, filters: JSON.stringify({ orderNumber: code }) })
+    queryFn: () =>
+      getOrders({
+        page: 1,
+        limit: 5,
+        filters: JSON.stringify({ orderNumber: code, includePartnerOrders: true })
+      })
   });
   const match = data?.data.find((o) => o.orderNumber.toLowerCase() === code.toLowerCase());
 
