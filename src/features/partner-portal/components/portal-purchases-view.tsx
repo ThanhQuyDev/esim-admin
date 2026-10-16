@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -55,19 +56,52 @@ const statusFilters = [
   { value: 'completed', label: 'Hoàn tất' },
   { value: 'pending', label: 'Chờ thanh toán' },
   { value: 'cancelled', label: 'Đã huỷ' },
+  { value: 'failed', label: 'Thất bại' },
   { value: 'refunded', label: 'Đã hoàn tiền' }
 ];
+
+/** "Loại đơn" (doitac-1410 #041). */
+const ORDER_TYPE_FILTERS = [
+  { value: 'all', label: 'Loại đơn: tất cả' },
+  { value: 'BUY_NEW', label: 'Đơn eSIM thường' },
+  { value: 'TOPUP', label: 'Đơn nạp topup' }
+];
+
+const EMPTY_FILTERS = {
+  orderNumber: '',
+  planName: '',
+  iccid: '',
+  email: '',
+  orderType: 'all',
+  status: 'all',
+  from: '',
+  to: ''
+};
 
 export function PortalPurchasesView() {
   // A topup on an eSIM's page links here with its order code (doitac-1410 #039).
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
-  const [status, setStatus] = useState('all');
+  // The "Đơn hàng" filters (doitac-1410 #041).
+  const [filters, setFilters] = useState(() => ({
+    ...EMPTY_FILTERS,
+    orderNumber: searchParams.get('search') ?? ''
+  }));
+  const set = (key: keyof typeof EMPTY_FILTERS) => (value: string) =>
+    setFilters((current) => ({ ...current, [key]: value }));
+  const filtered = Object.entries(filters).some(
+    ([key, value]) => value !== EMPTY_FILTERS[key as keyof typeof EMPTY_FILTERS]
+  );
 
   const { data: purchases = [], isLoading } = useQuery(
     myPurchasesQueryOptions({
-      search: search.trim() || undefined,
-      status: status === 'all' ? undefined : status,
+      orderNumber: filters.orderNumber.trim() || undefined,
+      planName: filters.planName.trim() || undefined,
+      iccid: filters.iccid.trim() || undefined,
+      email: filters.email.trim() || undefined,
+      orderType: filters.orderType,
+      status: filters.status,
+      from: filters.from || undefined,
+      to: filters.to || undefined,
       limit: 200
     })
   );
@@ -83,7 +117,7 @@ export function PortalPurchasesView() {
   );
 
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
+    <div className='grid min-w-0 grid-cols-1 gap-4'>
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
         <Card>
           <CardHeader>
@@ -119,24 +153,62 @@ export function PortalPurchasesView() {
         </Card>
       </div>
 
-      <Card>
+      <Card className='min-w-0'>
         <CardHeader>
           <CardTitle>Đơn hàng của bạn</CardTitle>
           <CardDescription>
-            Tra cứu theo mã đơn hoặc tên gói. Số tiền là số đã thanh toán cho esim.vn, đã trừ phần
-            hoàn tiền nếu có.
+            Lọc theo mã đơn, gói cước, ICCID, email khách, loại đơn, trạng thái và thời gian. Số
+            tiền là số đã thanh toán cho esim.vn, đã trừ phần hoàn tiền nếu có.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <div className='flex flex-wrap items-center gap-2'>
+          <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4'>
             <Input
-              placeholder='Tìm mã đơn hoặc tên gói'
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className='max-w-[260px]'
+              placeholder='Mã đơn hàng'
+              aria-label='Mã đơn hàng'
+              value={filters.orderNumber}
+              onChange={(e) => set('orderNumber')(e.target.value)}
+              data-testid='purchase-order-number'
             />
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className='w-[180px]'>
+            <Input
+              placeholder='Tên gói cước'
+              aria-label='Tên gói cước'
+              value={filters.planName}
+              onChange={(e) => set('planName')(e.target.value)}
+              data-testid='purchase-plan-name'
+            />
+            <Input
+              placeholder='ICCID'
+              aria-label='ICCID'
+              value={filters.iccid}
+              onChange={(e) => set('iccid')(e.target.value)}
+              data-testid='purchase-iccid'
+            />
+            <Input
+              placeholder='Email khách hàng'
+              aria-label='Email khách hàng'
+              value={filters.email}
+              onChange={(e) => set('email')(e.target.value)}
+              data-testid='purchase-email'
+            />
+            <Select value={filters.orderType} onValueChange={set('orderType')}>
+              <SelectTrigger className='w-full' aria-label='Loại đơn' data-testid='purchase-type'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ORDER_TYPE_FILTERS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filters.status} onValueChange={set('status')}>
+              <SelectTrigger
+                className='w-full'
+                aria-label='Trạng thái đơn'
+                data-testid='purchase-status'
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -147,7 +219,36 @@ export function PortalPurchasesView() {
                 ))}
               </SelectContent>
             </Select>
+            <div className='flex min-w-0 items-center gap-2'>
+              <span className='text-muted-foreground shrink-0 text-xs'>Từ</span>
+              <Input
+                type='date'
+                value={filters.from}
+                max={filters.to || undefined}
+                onChange={(e) => set('from')(e.target.value)}
+                aria-label='Thời gian từ'
+                className='min-w-0 flex-1'
+                data-testid='purchase-from'
+              />
+            </div>
+            <div className='flex min-w-0 items-center gap-2'>
+              <span className='text-muted-foreground shrink-0 text-xs'>Đến</span>
+              <Input
+                type='date'
+                value={filters.to}
+                min={filters.from || undefined}
+                onChange={(e) => set('to')(e.target.value)}
+                aria-label='Thời gian đến'
+                className='min-w-0 flex-1'
+                data-testid='purchase-to'
+              />
+            </div>
           </div>
+          {filtered && (
+            <Button variant='ghost' size='sm' onClick={() => setFilters(EMPTY_FILTERS)}>
+              Xoá bộ lọc
+            </Button>
+          )}
 
           {isLoading ? (
             <div className='flex justify-center py-12'>

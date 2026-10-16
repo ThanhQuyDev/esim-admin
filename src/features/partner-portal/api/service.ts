@@ -302,12 +302,27 @@ export async function getMyEsims(filters?: {
   return apiClient<MyEsim[]>(`/partner-portal/esims${query ? `?${query}` : ''}`);
 }
 
-export async function getMyPurchases(filters?: {
+/** The "Đơn hàng" filters of a distribution partner (doitac-1410 #041). */
+export type MyPurchaseFilters = {
   search?: string;
   status?: string;
   limit?: number;
-}): Promise<MyPurchase[]> {
-  return apiClient<MyPurchase[]>(`/partner-portal/purchases${listQuery(filters)}`);
+  orderNumber?: string;
+  planName?: string;
+  iccid?: string;
+  email?: string;
+  orderType?: string;
+  from?: string;
+  to?: string;
+};
+
+export async function getMyPurchases(filters?: MyPurchaseFilters): Promise<MyPurchase[]> {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters ?? {})) {
+    if (value !== undefined && value !== '' && value !== 'all') params.set(key, String(value));
+  }
+  const query = params.toString();
+  return apiClient<MyPurchase[]>(`/partner-portal/purchases${query ? `?${query}` : ''}`);
 }
 
 /** Bảng giá đối tác phân phối — "Sản phẩm & bảng giá" (#046). */

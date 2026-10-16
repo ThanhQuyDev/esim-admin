@@ -30,7 +30,8 @@ import {
   getMyLedger,
   getCatalogueLocations,
   getMyEsimDetail,
-  getMyEsimTopupPackages
+  getMyEsimTopupPackages,
+  type MyPurchaseFilters
 } from './service';
 
 export const partnerPortalKeys = {
@@ -174,19 +175,9 @@ export const myEsimsQueryOptions = (filters?: {
   });
 
 /** Orders a distribution partner placed themselves (#046). */
-export const myPurchasesQueryOptions = (filters?: {
-  search?: string;
-  status?: string;
-  limit?: number;
-}) =>
+export const myPurchasesQueryOptions = (filters?: MyPurchaseFilters) =>
   queryOptions({
-    queryKey: [
-      ...partnerPortalKeys.all,
-      'purchases',
-      filters?.search ?? '',
-      filters?.status ?? '',
-      filters?.limit ?? 0
-    ],
+    queryKey: [...partnerPortalKeys.all, 'purchases', filters ?? {}],
     queryFn: () => getMyPurchases(filters)
   });
 
