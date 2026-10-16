@@ -63,7 +63,8 @@ const activityConfig = {
 } satisfies ChartConfig;
 
 const destinationConfig = {
-  plansPurchased: { label: 'eSIM', color: 'var(--chart-1)' }
+  // Dark grey, as on the marketing partner's overview (doitac-1410 #029).
+  plansPurchased: { label: 'eSIM', color: 'var(--chart-3)' }
 } satisfies ChartConfig;
 
 /**
