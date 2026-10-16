@@ -82,21 +82,18 @@ export default function AppSidebar() {
         : partner.canAffiliate
           ? []
           : AFFILIATE_ONLY_PORTAL_URLS;
-    // "Thanh toán" is the marketing partner's payouts page (doitac-1410
-    // #004), but a distribution partner's own "Thanh toán" is the deposit
-    // wallet, so for them withdrawals keep "Rút tiền" until the two are merged
-    // (#032) — two menus of one name confused them, and React too.
+    // A distribution partner withdraws from their own "Thanh toán" (the
+    // deposit wallet), so the separate payouts screen is left out of their
+    // menu (doitac-1410 #032).
     const isDistribution = partner?.partnerType === 'distribution';
 
     return portalNavGroups.map((group) => ({
       ...group,
-      items: group.items
-        .filter((item) => !hidden.includes(item.url))
-        .map((item) =>
-          isDistribution && item.url === '/dashboard/portal/payouts'
-            ? { ...item, title: 'Rút tiền' }
-            : item
-        )
+      items: group.items.filter(
+        (item) =>
+          !hidden.includes(item.url) &&
+          !(isDistribution && item.url === '/dashboard/portal/payouts')
+      )
     }));
   }, [partner]);
 

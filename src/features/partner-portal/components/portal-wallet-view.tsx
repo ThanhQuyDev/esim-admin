@@ -42,7 +42,11 @@ import { formatDateVn, formatVnd } from '@/lib/format';
 
 import { PortalLedgerCard, PortalPayoutHistoryCard } from './portal-ledger-card';
 import { DepositDialog, WithdrawDialog } from './portal-wallet-dialogs';
-import { myDepositRequestsQueryOptions, myWalletQueryOptions } from '../api/queries';
+import {
+  myDepositRequestsQueryOptions,
+  myProfileQueryOptions,
+  myWalletQueryOptions
+} from '../api/queries';
 
 const METHOD_LABEL: Record<string, string> = {
   bank_transfer: 'Chuyển khoản',
@@ -69,6 +73,10 @@ const DEPOSIT_STATUS: Record<string, { label: string; className: string }> = {
 
 export function PortalWalletView() {
   const { data: wallet, isLoading } = useQuery(myWalletQueryOptions());
+  const { data: me } = useQuery(myProfileQueryOptions());
+  // Withdrawing belongs to the affiliate programme (#048); with it, the
+  // payouts live here rather than on a menu of their own (doitac-1410 #032).
+  const canWithdraw = Boolean(me?.canAffiliate);
   const { data: deposits = [] } = useQuery(myDepositRequestsQueryOptions());
 
   const [dialog, setDialog] = useState<'deposit' | 'withdraw' | null>(null);
@@ -90,7 +98,7 @@ export function PortalWalletView() {
       icon: Icons.check,
       footerStrong: 'Có thể tạo đơn hoặc rút',
       footer: 'Trừ ngay khi đơn được tạo thành công',
-      action: { label: 'Rút tiền', open: 'withdraw' as const }
+      action: canWithdraw ? { label: 'Rút tiền', open: 'withdraw' as const } : null
     },
     {
       label: 'Đang chờ rút',
@@ -244,7 +252,7 @@ export function PortalWalletView() {
       </Card>
 
       {/* Under the transactions: the deposits and the withdrawals (doitac-1410 #031). */}
-      <PortalPayoutHistoryCard />
+      {canWithdraw && <PortalPayoutHistoryCard />}
 
       <DepositDialog
         open={dialog === 'deposit'}

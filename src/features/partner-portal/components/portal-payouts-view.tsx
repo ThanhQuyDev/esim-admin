@@ -9,8 +9,9 @@
  * appearing as a detached toast.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -93,6 +94,12 @@ export function PortalPayoutsView() {
   const { data: summary } = useQuery(mySummaryQueryOptions());
   const { data: me } = useQuery(myProfileQueryOptions());
   const { data: payouts } = useQuery(myPayoutsQueryOptions());
+  const router = useRouter();
+  // A distribution partner withdraws from "Thanh toán" (doitac-1410 #032);
+  // an old bookmark of this page goes there.
+  useEffect(() => {
+    if (me?.partnerType === 'distribution') router.replace('/dashboard/portal/wallet');
+  }, [me?.partnerType, router]);
 
   const available = summary?.wallet.availableBalanceVnd ?? 0;
   // The admin's own minimum (doitac-1410 #010), not a number fixed in here.
