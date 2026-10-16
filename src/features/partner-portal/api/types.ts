@@ -461,10 +461,17 @@ export type MyTierEvaluation = {
 };
 
 /** Branding a partner sets for their own portal page. */
+/** "Cấu hình thương hiệu" (doitac-1410 #044) — read by the eSIM email too. */
 export type PartnerBrandInfo = {
   displayName?: string;
   logoUrl?: string;
+  logoPosition?: 'left' | 'center' | 'right';
   tagline?: string;
+  website?: string;
+  supportEmail?: string;
+  primaryColor?: string;
+  showUsageCheck?: boolean;
+  showInstallGuide?: boolean;
 };
 
 /** One attributed order in full, with its attribution timeline (#026). */

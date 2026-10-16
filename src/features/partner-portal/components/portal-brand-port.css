@@ -1,0 +1,643 @@
+/*
+ * "Cấu hình thương hiệu" (doitac-1410 #044) — the stylesheet of
+ * cong-doi-tac-phan-phoi-hoan-chinh-v29.html (brand-* rules, lines 619–695,
+ * plus the .btn / .icon / input base they lean on), scoped to .brand-port.
+ * Generated from the design file; edit the design, not this file.
+ */
+.brand-port {
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --border: #e2e8f0;
+  --surface: #fff;
+  --text: #0f172a;
+  font-size: 0.875rem;
+}
+.brand-port :where(h2, h3) {
+  font-weight: 600;
+}
+.brand-port :where(button) {
+  font: inherit;
+}
+.brand-port :where(p) {
+  margin: 0;
+}
+
+.brand-port .btn {
+  min-height: 2.375rem;
+  border-radius: 0.625rem;
+  border: 0.0625rem solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.5rem 0.8125rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4375rem;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  transition: 0.15s ease;
+  cursor: pointer;
+}
+.brand-port .btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  transform: none;
+}
+.brand-port .btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0.3125rem 0.875rem rgba(79, 70, 229, 0.16);
+}
+.brand-port .btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #fff;
+}
+.brand-port .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.brand-port .icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+.brand-port input,
+.brand-port select,
+.brand-port textarea {
+  width: 100%;
+  border: 0.0625rem solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 0.625rem;
+  padding: 0.5625rem 0.6875rem;
+  outline: none;
+}
+.brand-port input:focus,
+.brand-port select:focus,
+.brand-port textarea:focus {
+  border-color: #111;
+  box-shadow: 0 0 0 0.1875rem rgba(17, 17, 17, 0.06);
+}
+.brand-port.brand-settings-page {
+  --brand-blue: #4b74fb;
+  --brand-ink: #3b4170;
+  --brand-muted: #999db4;
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+  color: var(--brand-ink);
+}
+.brand-port .brand-ref-card {
+  background: #fff;
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: none;
+  padding: 1.25rem 1.5rem;
+  min-width: 0;
+}
+.brand-port .brand-company-head,
+.brand-port .brand-preference-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.brand-port .brand-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #303764;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.brand-port .brand-section-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #f5f6f8;
+  color: #4d5689;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.brand-port .brand-section-icon .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+.brand-port .brand-edit-btn {
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0.375rem 0.875rem;
+  border-color: #9ec5ff;
+  background: #f7fbff;
+  color: #3975ff;
+  border-radius: 0.5rem;
+  font-weight: 500;
+}
+.brand-port .brand-company-data {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0 0.5rem 2.75rem;
+  max-width: 54rem;
+}
+.brand-port .brand-company-row {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  font-size: 0.875rem;
+}
+.brand-port .brand-company-row dt {
+  color: var(--brand-muted);
+}
+.brand-port .brand-company-row dd {
+  margin: 0;
+  color: #252a3b;
+  line-height: 1.5;
+}
+.brand-port .brand-custom-title {
+  font-size: 1.125rem;
+  font-weight: 650;
+  color: #303030;
+  margin-bottom: 1.25rem;
+}
+.brand-port .brand-custom-grid {
+  display: grid;
+  grid-template-columns: minmax(28rem, 1fr) minmax(28rem, 1fr);
+  gap: 4.5rem;
+  align-items: start;
+}
+.brand-port .brand-custom-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.brand-port .brand-form-row {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 20rem);
+  gap: 1.25rem;
+  align-items: center;
+  min-height: 2.5rem;
+}
+.brand-port .brand-form-row.brand-logo-row {
+  align-items: start;
+  min-height: 8rem;
+}
+.brand-port .brand-form-label {
+  color: var(--brand-muted);
+  font-size: 0.875rem;
+}
+.brand-port .brand-logo-control {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+.brand-port .brand-select-file {
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0.375rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: #fff;
+  font-weight: 500;
+}
+.brand-port .brand-logo-thumb {
+  position: relative;
+  width: 5.5rem;
+  min-height: 5.5rem;
+  display: grid;
+  place-items: center;
+  padding: 0.25rem;
+}
+.brand-port .brand-logo-thumb img {
+  display: block;
+  max-width: 5rem;
+  max-height: 4.75rem;
+  object-fit: contain;
+}
+.brand-port .brand-logo-delete {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ff5d5d;
+  display: grid;
+  place-items: center;
+}
+.brand-port .brand-logo-delete .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+.brand-port .brand-position-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.brand-port .brand-position-option {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #334171;
+}
+.brand-port .brand-position-radio {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 0.0625rem solid #d6dbe7;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.brand-port .brand-position-radio::after {
+  content: '';
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: transparent;
+}
+.brand-port .brand-position-option.active .brand-position-radio {
+  border-color: var(--brand-blue);
+}
+.brand-port .brand-position-option.active .brand-position-radio::after {
+  background: var(--brand-blue);
+}
+.brand-port .brand-position-glyph {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: grid;
+  gap: 0.125rem;
+  align-content: center;
+}
+.brand-port .brand-position-glyph i {
+  display: block;
+  height: 0.125rem;
+  background: currentColor;
+  border-radius: 1rem;
+}
+.brand-port .brand-position-glyph.left i:nth-child(2) {
+  width: 0.75rem;
+}
+.brand-port .brand-position-glyph.center i:nth-child(2) {
+  width: 0.75rem;
+  justify-self: center;
+}
+.brand-port .brand-position-glyph.right i:nth-child(2) {
+  width: 0.75rem;
+  justify-self: end;
+}
+.brand-port .brand-custom-form input[type='text'],
+.brand-port .brand-custom-form input[type='email'],
+.brand-port .brand-custom-form input[type='url'] {
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 0.0625rem solid #d7dce7;
+  padding: 0.375rem 0.75rem;
+  color: #303764;
+  font-size: 0.875rem;
+  box-shadow: none;
+}
+.brand-port .brand-custom-form input::placeholder {
+  color: #a1a8bd;
+}
+.brand-port .brand-color-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.brand-port .brand-color-picker {
+  width: 2rem !important;
+  height: 2rem !important;
+  padding: 0.1875rem !important;
+  border: 0.0625rem solid #d7dce7 !important;
+  border-radius: 0.375rem !important;
+  background: #fff !important;
+}
+.brand-port .brand-info-note {
+  margin-left: 11.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--brand-muted);
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+.brand-port .brand-info-note .icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: currentColor;
+  stroke: none;
+}
+.brand-port .brand-form-actions {
+  margin-left: 11.25rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+.brand-port .brand-form-actions .btn {
+  height: 2rem;
+  min-height: 2rem;
+  border-radius: 0.5rem;
+  padding: 0.375rem 1rem;
+  font-weight: 500;
+}
+.brand-port .brand-preview-card {
+  border: 0.0625rem solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  min-height: 50rem;
+  background: #fff;
+  overflow: hidden;
+}
+.brand-port .brand-preview-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  border-bottom: 0.0625rem solid #dfe3ec;
+  margin-bottom: 1.5rem;
+}
+.brand-port .brand-preview-tab {
+  height: 2.5rem;
+  border: 0;
+  border-bottom: 0.125rem solid transparent;
+  background: transparent;
+  color: #333;
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+.brand-port .brand-preview-tab.active {
+  color: var(--brand-blue);
+  border-bottom-color: var(--brand-blue);
+}
+.brand-port .brand-preview-pane {
+  display: none;
+}
+.brand-port .brand-preview-pane.active {
+  display: block;
+}
+.brand-port .brand-email-preview {
+  max-width: 29rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem;
+  color: #303030;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.brand-port .brand-preview-logo-line {
+  display: flex;
+  margin: 1rem 0 2.75rem;
+}
+.brand-port .brand-preview-logo-line.left {
+  justify-content: flex-start;
+}
+.brand-port .brand-preview-logo-line.center {
+  justify-content: center;
+}
+.brand-port .brand-preview-logo-line.right {
+  justify-content: flex-end;
+}
+.brand-port .brand-preview-logo {
+  max-width: 10rem;
+  max-height: 7.5rem;
+  object-fit: contain;
+}
+.brand-port .brand-preview-link {
+  color: var(--brand-blue);
+}
+.brand-port .brand-preview-spacer {
+  height: 7rem;
+}
+.brand-port .brand-preview-box {
+  background: #fafafa;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.375rem;
+}
+.brand-port .brand-preview-kv {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: 0.5rem;
+  color: #35416f;
+  font-size: 0.75rem;
+}
+.brand-port .brand-preview-kv strong {
+  color: #929bb6;
+  font-weight: 650;
+}
+.brand-port .brand-preview-install {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.brand-port .brand-preview-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.875rem;
+  padding: 0 0.875rem;
+  border-radius: 62.4375rem;
+  background: #050505;
+  color: #fff;
+  font-size: 0.6875rem;
+}
+.brand-port .brand-preview-signature {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+}
+.brand-port .brand-preview-signature-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.brand-port .brand-preview-signature-line .icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.brand-port .brand-system-note {
+  border-top: 0.0625rem solid #e2e6ed;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  color: #9aa4bd;
+  font-size: 0.625rem;
+}
+.brand-port .brand-esim-preview {
+  max-width: 31rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  color: #303030;
+}
+.brand-port .brand-esim-plan-name {
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #35416f;
+  margin: 1rem 0;
+}
+.brand-port .brand-esim-qr {
+  display: grid;
+  justify-content: center;
+  margin: 1rem 0;
+}
+.brand-port .brand-esim-qr .wallet-qr {
+  transform: scale(0.82);
+  transform-origin: center;
+}
+.brand-port .brand-or {
+  text-align: center;
+  color: #9aa4bd;
+  font-size: 0.75rem;
+  margin: 0.5rem 0;
+}
+.brand-port .brand-scan-button {
+  display: flex;
+  justify-content: center;
+}
+.brand-port .brand-scan-button .btn {
+  background: #050505;
+  color: #fff;
+  border-color: #050505;
+  border-radius: 62.4375rem;
+}
+.brand-port .brand-preview-subtitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #35416f;
+  margin: 1.25rem 0 0.625rem;
+}
+.brand-port .brand-network-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 0.0625rem solid #edf0f5;
+}
+.brand-port .brand-pref-card {
+  padding-bottom: 1.5rem;
+}
+.brand-port .brand-pref-content {
+  display: grid;
+  gap: 1.25rem;
+  margin: 1.25rem 0 0 2.25rem;
+}
+.brand-port .brand-pref-block {
+  display: grid;
+  gap: 0.5rem;
+}
+.brand-port .brand-pref-title {
+  font-size: 0.875rem;
+  color: #333;
+}
+.brand-port .brand-pref-line {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  color: var(--brand-muted);
+  font-size: 0.75rem;
+}
+.brand-port .brand-pref-line strong {
+  font-size: 0.875rem;
+  color: #252a3b;
+}
+.brand-port .brand-inline-link {
+  border: 0;
+  background: transparent;
+  color: #3975ff;
+  padding: 0;
+  font-size: 0.8125rem;
+}
+.brand-port .brand-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  padding: 0 !important;
+  border: 0.0625rem solid #d4dae7 !important;
+  border-radius: 0.125rem !important;
+  background: #fff !important;
+  display: inline-grid;
+  place-items: center;
+}
+.brand-port .brand-check:checked {
+  background: var(--brand-blue) !important;
+  border-color: var(--brand-blue) !important;
+}
+.brand-port .brand-check:checked::after {
+  content: '';
+  width: 0.25rem;
+  height: 0.45rem;
+  border: solid #fff;
+  border-width: 0 0.1rem 0.1rem 0;
+  transform: rotate(45deg) translateY(-0.03rem);
+}
+@media (max-width: 75rem) {
+  .brand-port .brand-custom-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .brand-port .brand-preview-card {
+    min-height: 40rem;
+  }
+  .brand-port .brand-custom-form {
+    max-width: 42rem;
+  }
+}
+@media (max-width: 48rem) {
+  .brand-port .brand-ref-card {
+    padding: 1rem;
+  }
+  .brand-port .brand-company-data,
+  .brand-port .brand-pref-content {
+    margin-left: 0;
+  }
+  .brand-port .brand-company-row,
+  .brand-port .brand-form-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .brand-port .brand-form-row.brand-logo-row {
+    min-height: 0;
+  }
+  .brand-port .brand-info-note,
+  .brand-port .brand-form-actions {
+    margin-left: 0;
+  }
+  .brand-port .brand-form-actions {
+    justify-content: flex-start;
+  }
+  .brand-port .brand-preview-card {
+    padding: 0.75rem;
+  }
+  .brand-port .brand-preview-spacer {
+    height: 2rem;
+  }
+  .brand-port .brand-preview-kv {
+    grid-template-columns: 1fr;
+  }
+  .brand-port .brand-custom-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -11,7 +11,7 @@ export default function PortalBrandPage() {
     <PageContainer
       scrollable
       pageTitle='Cấu hình thương hiệu'
-      pageDescription='Tên hiển thị, logo và câu giới thiệu gửi tới khách hàng.'
+      pageDescription='Logo, tên thương hiệu và thông tin liên hệ hiện trong email gửi eSIM tới khách hàng của bạn.'
     >
       <PortalFeatureGate
         allow={['distribution']}
