@@ -67,8 +67,15 @@ export async function proxyPartnerPortal(request: NextRequest, path: string, ini
   }
 
   if (!res.ok) {
+    // A validation error carries no `message`, only `errors` per field — show
+    // the first one rather than "Request failed" (doitac-1410 #038).
+    const firstError = data?.errors
+      ? Object.values(data.errors as Record<string, unknown>).find(
+          (value) => typeof value === 'string' && value
+        )
+      : undefined;
     return NextResponse.json(
-      { message: data?.message || 'Request failed', errors: data?.errors },
+      { message: data?.message || firstError || 'Request failed', errors: data?.errors },
       { status: res.status }
     );
   }

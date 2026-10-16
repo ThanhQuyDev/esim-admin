@@ -549,6 +549,14 @@ export type MyEsim = {
   /** doitac-1410 #037 */
   planType?: string | null;
   topUp?: boolean;
+  /** doitac-1410 #038 */
+  durationDays?: number | null;
+  hasCallSms?: boolean;
+  tiktokAi?: boolean;
+  /** The plan allows a refund at all. */
+  refundable?: boolean;
+  /** A fault or refund request still waiting for esim.vn. */
+  openReport?: 'fault' | 'refund' | null;
 };
 
 /** An order the distribution partner placed themselves (#046). */
@@ -695,6 +703,9 @@ export type ReportEsimFaultPayload = {
   orderNumber: string;
   iccid: string;
   reason: string;
+  /** "Báo lỗi" or "Yêu cầu hoàn tiền" (doitac-1410 #038). */
+  kind?: 'fault' | 'refund';
+  attachments?: string[];
 };
 
 export type PurchaseResult = {

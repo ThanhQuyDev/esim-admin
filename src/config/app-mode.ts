@@ -68,7 +68,11 @@ export const SHARED_PREFIXES = [
   // User-scoped support tickets: the admin console lists everyone's tickets
   // through `/api/tickets`, which stays admin-only, while `/api/tickets/mine`
   // only ever returns the caller's own and is needed by both deployments.
-  '/api/tickets/mine'
+  '/api/tickets/mine',
+  // Attachments on a partner's support ticket / eSIM fault report: the upload
+  // is user-scoped (any signed-in user), so a partner needs it too
+  // (doitac-1410 #038 — it 404'd on the partner host).
+  '/api/files/upload'
 ] as const;
 
 /** True when `pathname` is `prefix` itself or a path below it. */
