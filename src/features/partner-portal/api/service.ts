@@ -46,6 +46,7 @@ import type {
   ReportEsimFaultPayload,
   MyNotificationList,
   MyEsimDetail,
+  MyPurchaseDetail,
   PartnerTopupPackage
 } from './types';
 
@@ -388,6 +389,32 @@ export function myEsimsExportUrl(filters: Record<string, string | undefined> = {
   }
   const qs = params.toString();
   return `/api/partner-portal/esims/export${qs ? `?${qs}` : ''}`;
+}
+
+/** "Chi tiết đơn hàng" (doitac-1410 #042). */
+export async function getMyPurchaseDetail(orderNumber: string): Promise<MyPurchaseDetail> {
+  return apiClient<MyPurchaseDetail>(
+    `/partner-portal/purchases/${encodeURIComponent(orderNumber)}`
+  );
+}
+
+/** "Gửi lại email eSIM" for every eSIM of an order (doitac-1410 #042). */
+export async function resendPurchaseEmail(orderNumber: string): Promise<{ sent: number }> {
+  return apiClient<{ sent: number }>(
+    `/partner-portal/purchases/${encodeURIComponent(orderNumber)}/resend-email`,
+    { method: 'POST' }
+  );
+}
+
+/** "Báo lỗi" / "Yêu cầu hoàn tiền" for a whole order — a support ticket (#042). */
+export async function requestForPurchase(
+  orderNumber: string,
+  payload: { kind: 'fault' | 'refund'; reason: string; attachments: string[] }
+): Promise<{ ticketId: number }> {
+  return apiClient<{ ticketId: number }>(
+    `/partner-portal/purchases/${encodeURIComponent(orderNumber)}/requests`,
+    { method: 'POST', body: JSON.stringify(payload) }
+  );
 }
 
 /** "Chi tiết eSIM" (doitac-1410 #039). */

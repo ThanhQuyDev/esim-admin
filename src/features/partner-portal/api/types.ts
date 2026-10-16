@@ -577,6 +577,57 @@ export type MyPurchase = {
   esimCount: number;
   createdAt: string;
   items: { planName: string | null; quantity: number; vndPrice: number }[];
+  /** doitac-1410 #042 */
+  deliveryEmail?: string | null;
+  topupPackageName?: string | null;
+  targetIccid?: string | null;
+};
+
+/** "Chi tiết đơn hàng" of a distribution partner (doitac-1410 #042). */
+export type MyPurchaseDetail = {
+  orderNumber: string;
+  status: string | null;
+  orderType: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  paymentMethod: string;
+  paidVnd: number;
+  refundedVnd: number;
+  esimCount: number;
+  deliveryEmail: string | null;
+  agentTotalVnd: number;
+  suggestedRetailTotalVnd: number;
+  topup: {
+    iccid: string | null;
+    packageName: string | null;
+    dataText: string | null;
+    durationDays: number | null;
+    isUnlimited: boolean;
+  } | null;
+  products: {
+    planName: string | null;
+    quantity: number;
+    agentTotalVnd: number;
+    suggestedRetailTotalVnd: number;
+    destination: string | null;
+    dataMb: number | null;
+    call: number | null;
+    sms: number | null;
+    durationDays: number | null;
+    operatorName: string | null;
+    speed: string | null;
+    type: string | null;
+    refundable: boolean;
+    esims: {
+      iccid: string;
+      status: string | null;
+      activatedAt: string | null;
+      expiresAt: string | null;
+      dataUsed: number | null;
+      dataTotal: number | null;
+      openReport: 'fault' | 'refund' | null;
+    }[];
+  }[];
 };
 
 /** Một dòng trong bảng giá đối tác phân phối (#046). */

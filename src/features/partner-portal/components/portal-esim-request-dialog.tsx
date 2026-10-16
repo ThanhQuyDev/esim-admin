@@ -24,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 
-import { reportEsimFaultMutation } from '../api/mutations';
+import { reportEsimFault, requestForPurchase } from '../api/service';
 import { partnerPortalKeys } from '../api/queries';
 import { uploadAttachment } from '../api/service';
 
@@ -68,7 +68,8 @@ const FAULT_COPY: Record<FaultKind, { title: string; subject: string; submit: st
 const REASON_MAX = 2000;
 const MAX_FILES = 5;
 
-export type EsimRequestTarget = { iccid: string; orderNumber: string; kind: FaultKind };
+/** No ICCID = the request is about the whole order (doitac-1410 #042). */
+export type EsimRequestTarget = { iccid?: string; orderNumber: string; kind: FaultKind };
 
 export function EsimRequestDialog({
   target,
@@ -90,7 +91,15 @@ export function EsimRequestDialog({
   };
 
   const reportFault = useMutation({
-    ...reportEsimFaultMutation,
+    mutationFn: (input: { reason: string; attachments: string[] }): Promise<unknown> =>
+      faulty!.iccid
+        ? reportEsimFault({
+            orderNumber: faulty!.orderNumber,
+            iccid: faulty!.iccid,
+            kind: faulty!.kind,
+            ...input
+          })
+        : requestForPurchase(faulty!.orderNumber, { kind: faulty!.kind, ...input }),
     onSuccess: () => {
       toast.success(
         faulty?.kind === 'refund'
@@ -135,16 +144,18 @@ export function EsimRequestDialog({
                 value={faulty?.orderNumber ?? ''}
               />
             </div>
-            <div className='space-y-2'>
-              <Label htmlFor='fault-iccid'>ICCID</Label>
-              <Input
-                id='fault-iccid'
-                tabIndex={-1}
-                readOnly
-                className='font-mono'
-                value={faulty?.iccid ?? ''}
-              />
-            </div>
+            {faulty?.iccid && (
+              <div className='space-y-2'>
+                <Label htmlFor='fault-iccid'>ICCID</Label>
+                <Input
+                  id='fault-iccid'
+                  tabIndex={-1}
+                  readOnly
+                  className='font-mono'
+                  value={faulty.iccid}
+                />
+              </div>
+            )}
           </div>
           <div className='space-y-2'>
             <Label htmlFor='fault-reason'>Mô tả</Label>
@@ -228,10 +239,7 @@ export function EsimRequestDialog({
             onClick={() =>
               faulty &&
               reportFault.mutate({
-                orderNumber: faulty.orderNumber,
-                iccid: faulty.iccid,
                 reason: reason.trim(),
-                kind: faulty.kind,
                 attachments: attachments.map((file) => file.url)
               })
             }

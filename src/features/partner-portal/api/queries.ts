@@ -31,6 +31,7 @@ import {
   getCatalogueLocations,
   getMyEsimDetail,
   getMyEsimTopupPackages,
+  getMyPurchaseDetail,
   type MyPurchaseFilters
 } from './service';
 
@@ -51,6 +52,14 @@ export const partnerPortalKeys = {
   tierEvaluations: () => [...partnerPortalKeys.all, 'tier-evaluations'] as const,
   notifications: () => [...partnerPortalKeys.all, 'notifications'] as const
 };
+
+/** "Chi tiết đơn hàng" (doitac-1410 #042). */
+export const myPurchaseDetailQueryOptions = (orderNumber: string) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'purchase', orderNumber],
+    queryFn: () => getMyPurchaseDetail(orderNumber),
+    retry: false
+  });
 
 /** "Chi tiết eSIM" (doitac-1410 #039). */
 export const myEsimDetailQueryOptions = (iccid: string) =>

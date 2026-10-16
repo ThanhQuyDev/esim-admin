@@ -11,7 +11,9 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,6 +38,8 @@ import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { myPurchasesQueryOptions } from '../api/queries';
+import { resendPurchaseEmail } from '../api/service';
+import type { MyPurchase } from '../api/types';
 
 const statusLabel: Record<
   string,
@@ -263,13 +267,14 @@ export function PortalPurchasesView() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Mã đơn</TableHead>
-                    <TableHead>Ngày mua</TableHead>
+                    <TableHead>Mã đơn hàng</TableHead>
+                    <TableHead>Khách hàng</TableHead>
                     <TableHead>Sản phẩm</TableHead>
-                    <TableHead>Loại</TableHead>
-                    <TableHead className='text-right'>Đã chi</TableHead>
-                    <TableHead className='text-right'>eSIM</TableHead>
+                    <TableHead className='text-right'>Tổng tiền</TableHead>
+                    <TableHead>Loại đơn</TableHead>
+                    <TableHead>Ngày mua</TableHead>
                     <TableHead>Trạng thái</TableHead>
+                    <TableHead className='text-right'>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -280,28 +285,21 @@ export function PortalPurchasesView() {
                     };
                     return (
                       <TableRow key={purchase.orderNumber}>
-                        <TableCell className='font-mono text-xs'>{purchase.orderNumber}</TableCell>
-                        <TableCell className='text-xs'>
-                          {formatDateTimeVn(purchase.createdAt)}
+                        <TableCell className='font-mono text-xs'>
+                          <Link
+                            href={`/dashboard/portal/orders/${encodeURIComponent(purchase.orderNumber)}`}
+                            className='hover:underline'
+                          >
+                            {purchase.orderNumber}
+                          </Link>
                         </TableCell>
-                        <TableCell className='max-w-[280px]'>
-                          <div className='space-y-0.5'>
-                            {purchase.items.length === 0 ? (
-                              <span className='text-muted-foreground text-xs'>—</span>
-                            ) : (
-                              purchase.items.map((item, index) => (
-                                <div key={`${purchase.orderNumber}-${index}`} className='text-xs'>
-                                  {item.planName ?? '—'}
-                                  {item.quantity > 1 ? ` ×${item.quantity}` : ''}
-                                </div>
-                              ))
-                            )}
-                          </div>
+                        <TableCell className='max-w-[200px] truncate text-xs'>
+                          {purchase.deliveryEmail || (
+                            <span className='text-muted-foreground'>—</span>
+                          )}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant='outline'>
-                            {purchase.orderType === 'TOPUP' ? 'Nạp thêm' : 'eSIM mới'}
-                          </Badge>
+                        <TableCell className='max-w-[260px] text-xs'>
+                          <ProductSummary purchase={purchase} />
                         </TableCell>
                         <TableCell className='text-right tabular-nums'>
                           {formatVnd(purchase.paidVnd)}
@@ -311,11 +309,19 @@ export function PortalPurchasesView() {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className='text-right tabular-nums'>
-                          {purchase.esimCount}
+                        <TableCell>
+                          <Badge variant='outline'>
+                            {purchase.orderType === 'TOPUP' ? 'Topup' : 'Mua eSIM'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className='text-xs whitespace-nowrap'>
+                          {formatDateTimeVn(purchase.createdAt)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={badge.variant}>{badge.label}</Badge>
+                        </TableCell>
+                        <TableCell className='text-right'>
+                          <PurchaseActions purchase={purchase} />
                         </TableCell>
                       </TableRow>
                     );
@@ -326,6 +332,60 @@ export function PortalPurchasesView() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * "Tên sản phẩm × số lượng", then "+ N sản phẩm khác" (doitac-1410 #042) —
+ * the prices of each line are on the order's own page.
+ */
+function ProductSummary({ purchase }: { purchase: MyPurchase }) {
+  if (purchase.orderType === 'TOPUP') {
+    return <span>{purchase.topupPackageName || 'Gói topup'}</span>;
+  }
+  const [first, ...rest] = purchase.items;
+  if (!first) return <span className='text-muted-foreground'>—</span>;
+  return (
+    <div className='space-y-0.5'>
+      <div>
+        {first.planName ?? '—'} × {first.quantity}
+      </div>
+      {rest.length > 0 && (
+        <div className='text-muted-foreground'>+ {rest.length} sản phẩm khác</div>
+      )}
+    </div>
+  );
+}
+
+/** "Xem chi tiết" and "Gửi lại email eSIM" on one order (doitac-1410 #042). */
+function PurchaseActions({ purchase }: { purchase: MyPurchase }) {
+  const resend = useMutation({
+    mutationFn: () => resendPurchaseEmail(purchase.orderNumber),
+    onSuccess: (result) =>
+      toast.success(
+        `Đã gửi lại ${result.sent} email eSIM${purchase.deliveryEmail ? ` tới ${purchase.deliveryEmail}` : ''}.`
+      ),
+    onError: (err: Error) => toast.error(err.message)
+  });
+  const canResend = purchase.orderType !== 'TOPUP' && purchase.esimCount > 0;
+  return (
+    <div className='flex flex-col items-end gap-1 whitespace-nowrap'>
+      <Button variant='link' size='sm' className='h-auto p-0 text-xs' asChild>
+        <Link href={`/dashboard/portal/orders/${encodeURIComponent(purchase.orderNumber)}`}>
+          Xem chi tiết
+        </Link>
+      </Button>
+      <Button
+        variant='ghost'
+        size='sm'
+        className='h-auto p-0 text-xs'
+        disabled={!canResend || resend.isPending}
+        title={canResend ? undefined : 'Đơn chưa có eSIM để gửi'}
+        onClick={() => resend.mutate()}
+      >
+        {resend.isPending ? 'Đang gửi…' : 'Gửi lại email eSIM'}
+      </Button>
     </div>
   );
 }
