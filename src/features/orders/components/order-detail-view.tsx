@@ -368,6 +368,13 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
     ...refundOrderMutation,
     onSuccess: (result) => {
       toast.success(`Đã hoàn tiền cho đơn hàng ${order.orderNumber}`);
+      // Refund requests sent to Airalo, with their request number (#079).
+      if (result.supplierRequests?.length) {
+        toast.info('Đã gửi yêu cầu hoàn tiền tới nhà cung cấp', {
+          description: result.supplierRequests.join(' · '),
+          duration: 20000
+        });
+      }
       // The customer is refunded either way; a supplier that refused to cancel
       // means our own money is still with them (v3 #002).
       if (result.supplierWarnings?.length) {

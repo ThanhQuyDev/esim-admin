@@ -262,11 +262,15 @@ export type RefundOrderRequest = {
    * test round 4). Each counts at its line's unit price.
    */
   esimIds?: number[];
+  /** Also ask Airalo to refund its eSIMs, for this reason (doitac-1410 #079). */
+  airaloRefundReason?: string;
 };
 
 export type OrderRefundResponse = {
   /** Suppliers that refused to cancel the refunded eSIMs (v3 #002). */
   supplierWarnings?: string[];
+  /** Refund requests sent to suppliers, e.g. Airalo (doitac-1410 #079). */
+  supplierRequests?: string[];
   id: number;
   orderId: number;
   userId: number;

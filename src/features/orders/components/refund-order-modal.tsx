@@ -23,6 +23,11 @@ import { formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AIRALO_REFUND_REASONS,
+  DEFAULT_AIRALO_REFUND_REASON,
+  type AiraloRefundReason
+} from '../utils/airalo-refund';
 import type { OrderItem, RefundOrderRequest, RefundMode } from '../api/types';
 
 interface RefundOrderModalProps {
@@ -66,6 +71,11 @@ export function RefundOrderModal({
   // picked eSIM by eSIM (#008, round 4); lines without any by the line.
   const [pickedEsimIds, setPickedEsimIds] = useState<number[]>([]);
   const [pickedItemIds, setPickedItemIds] = useState<number[]>([]);
+  // Airalo has no cancel, but takes refund requests (doitac-1410 #079).
+  const [askAiralo, setAskAiralo] = useState(true);
+  const [airaloReason, setAiraloReason] = useState<AiraloRefundReason>(
+    DEFAULT_AIRALO_REFUND_REASON
+  );
 
   // Every opening starts clean, from the order as it is now.
   useEffect(() => {
@@ -76,6 +86,8 @@ export function RefundOrderModal({
     setAdminNote('');
     setPickedEsimIds([]);
     setPickedItemIds([]);
+    setAskAiralo(true);
+    setAiraloReason(DEFAULT_AIRALO_REFUND_REASON);
   }, [open]);
 
   const isRefunded = (status?: string | null) => status === 'refunded';
@@ -127,6 +139,18 @@ export function RefundOrderModal({
   const selection = buildSelection(pickedEsimIds, pickedItemIds);
   const isPartial = selection.orderItemIds.length > 0 || selection.esimIds.length > 0;
   const selectedValue = selection.value;
+
+  /** Airalo eSIMs this refund gives back: they can go to Airalo as a request. */
+  const isAiralo = (item: OrderItem) => item.plan?.provider === 'airalo';
+  const airaloIccids = items
+    .filter((item) => isAiralo(item) && !isRefunded(item.status))
+    .flatMap((item) => {
+      const live = liveEsimsOf(item);
+      if (!isPartial || selection.orderItemIds.includes(item.id)) return live;
+      return live.filter((e) => selection.esimIds.includes(e.id));
+    })
+    .map((e) => e.iccid)
+    .filter(Boolean);
 
   // A per-item refund can never exceed what those lines were worth.
   const cap = isPartial ? Math.min(selectedValue, maxRefundable) : maxRefundable;
@@ -188,7 +212,8 @@ export function RefundOrderModal({
       reason: reason.trim() || undefined,
       adminNote: adminNote.trim() || undefined,
       orderItemIds: selection.orderItemIds.length ? selection.orderItemIds : undefined,
-      esimIds: selection.esimIds.length ? selection.esimIds : undefined
+      esimIds: selection.esimIds.length ? selection.esimIds : undefined,
+      airaloRefundReason: airaloIccids.length && askAiralo ? airaloReason : undefined
     });
   }
 
@@ -398,6 +423,49 @@ export function RefundOrderModal({
               rows={2}
             />
           </div>
+
+          {/* Airalo refund request (doitac-1410 #079) */}
+          {airaloIccids.length > 0 && (
+            <div className='space-y-2 rounded-lg border p-3' data-testid='airalo-refund-request'>
+              <label className='flex items-start gap-2 text-sm font-medium'>
+                <Checkbox
+                  checked={askAiralo}
+                  onCheckedChange={(v) => setAskAiralo(v === true)}
+                  aria-label='Gửi yêu cầu hoàn tiền tới Airalo'
+                  className='mt-0.5'
+                />
+                <span>
+                  Gửi yêu cầu hoàn tiền tới Airalo ({airaloIccids.length} eSIM)
+                  <span className='text-muted-foreground block text-xs font-normal break-all'>
+                    ICCID: {airaloIccids.join(', ')}
+                  </span>
+                </span>
+              </label>
+              {askAiralo && (
+                <>
+                  <Select
+                    value={airaloReason}
+                    onValueChange={(v) => setAiraloReason(v as AiraloRefundReason)}
+                  >
+                    <SelectTrigger id='airalo-refund-reason' aria-label='Lý do gửi Airalo'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AIRALO_REFUND_REASONS.map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className='text-muted-foreground text-xs'>
+                    Airalo duyệt thủ công từng yêu cầu; nếu được duyệt, tiền hoàn về dưới dạng
+                    credit Airalo. Mã yêu cầu được lưu vào ghi chú đơn hàng.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Admin Note */}
           <div className='space-y-2'>
