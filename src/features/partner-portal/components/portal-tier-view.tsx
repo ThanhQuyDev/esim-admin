@@ -38,6 +38,7 @@ import {
   myTiersQueryOptions,
   mySummaryQueryOptions
 } from '../api/queries';
+import { tierThresholdLabel } from './tier-threshold';
 import { internalTierNote } from './internal-tier-note';
 
 export function PortalTierView() {
@@ -152,14 +153,7 @@ export function PortalTierView() {
                     string,
                     string
                   ][])),
-              [
-                'Ngưỡng hạng hiện tại',
-                current?.isInternal
-                  ? 'Theo thỏa thuận hợp tác'
-                  : current
-                    ? formatVnd(Number(current.minVolumeVnd))
-                    : '—'
-              ]
+              ['Ngưỡng hạng hiện tại', current ? tierThresholdLabel(current, isDistribution) : '—']
             ].map(([label, value]) => (
               <div key={label} className='flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4'>
                 <span className='text-muted-foreground w-44 shrink-0 text-sm font-medium'>
@@ -195,12 +189,8 @@ export function PortalTierView() {
                     <p className='font-medium'>{t.tierName}</p>
                     {isCurrent && <Badge>Hạng của bạn</Badge>}
                   </div>
-                  <p className='text-muted-foreground mt-1 text-xs'>
-                    {t.isInternal
-                      ? 'Theo thỏa thuận hợp tác'
-                      : Number(t.minVolumeVnd) > 0
-                        ? `Từ ${formatVnd(Number(t.minVolumeVnd))} doanh số`
-                        : 'Mặc định khi được duyệt'}
+                  <p className='text-muted-foreground mt-1 text-xs' data-testid='tier-threshold'>
+                    {tierThresholdLabel(t, isDistribution)}
                   </p>
                   <div className='mt-3 space-y-1 text-xs'>
                     {isDistribution ? (

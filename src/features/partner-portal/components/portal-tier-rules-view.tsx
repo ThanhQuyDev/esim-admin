@@ -30,9 +30,9 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
-import { formatVnd } from '@/lib/format';
 
-import { myTiersQueryOptions } from '../api/queries';
+import { myProfileQueryOptions, myTiersQueryOptions } from '../api/queries';
+import { tierThresholdLabel } from './tier-threshold';
 
 const PRINCIPLES = [
   {
@@ -64,6 +64,8 @@ const STEPS = [
 
 export function PortalTierRulesView() {
   const { data: tiers } = useQuery(myTiersQueryOptions());
+  const { data: me } = useQuery(myProfileQueryOptions());
+  const isDistribution = me?.partnerType === 'distribution';
   const sorted = useMemo(
     () => [...(tiers ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
     [tiers]
@@ -109,8 +111,10 @@ export function PortalTierRulesView() {
               <TableHeader className='bg-muted'>
                 <TableRow>
                   <TableHead>Hạng</TableHead>
-                  <TableHead>Điều kiện doanh số</TableHead>
-                  <TableHead className='text-right'>Hoa hồng</TableHead>
+                  <TableHead>
+                    {isDistribution ? 'Điều kiện doanh số / ký quỹ' : 'Điều kiện doanh số'}
+                  </TableHead>
+                  {!isDistribution && <TableHead className='text-right'>Hoa hồng</TableHead>}
                   <TableHead className='text-right'>Giảm giá tối đa</TableHead>
                   <TableHead>Trạng thái</TableHead>
                 </TableRow>
@@ -118,7 +122,10 @@ export function PortalTierRulesView() {
               <TableBody>
                 {sorted.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className='text-muted-foreground h-24 text-center'>
+                    <TableCell
+                      colSpan={isDistribution ? 4 : 5}
+                      className='text-muted-foreground h-24 text-center'
+                    >
                       Chưa có cấu hình hạng nào.
                     </TableCell>
                   </TableRow>
@@ -126,16 +133,14 @@ export function PortalTierRulesView() {
                 {sorted.map((t) => (
                   <TableRow key={t.id}>
                     <TableCell className='font-medium'>{t.tierName}</TableCell>
-                    <TableCell>
-                      {t.isInternal
-                        ? 'Theo thỏa thuận hợp tác'
-                        : Number(t.minVolumeVnd) > 0
-                          ? `Từ ${formatVnd(Number(t.minVolumeVnd))}`
-                          : 'Mặc định khi được duyệt'}
+                    <TableCell data-testid='tier-rule-threshold'>
+                      {tierThresholdLabel(t, isDistribution)}
                     </TableCell>
-                    <TableCell className='text-right tabular-nums'>
-                      {Number(t.commissionPercent)}%
-                    </TableCell>
+                    {!isDistribution && (
+                      <TableCell className='text-right tabular-nums'>
+                        {Number(t.commissionPercent)}%
+                      </TableCell>
+                    )}
                     <TableCell className='text-right tabular-nums'>
                       {Number(t.maxDiscountPercent)}%
                     </TableCell>

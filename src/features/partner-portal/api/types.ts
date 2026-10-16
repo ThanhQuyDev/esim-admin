@@ -301,6 +301,8 @@ export type PartnerTier = {
   tierCode: string;
   tierName: string;
   minVolumeVnd: string | number;
+  /** The deposit that also earns a distribution tier (#073, doitac-1410 #045). */
+  minDepositVnd?: string | number;
   commissionPercent: string | number;
   maxDiscountPercent: string | number;
   /** Days a click keeps earning this tier the order (#037). */
