@@ -130,6 +130,51 @@ export type PartnerListResponse = {
   hasNextPage: boolean;
 };
 
+/** A link's state as the admin's list reads it (doitac-1410 #052). */
+export type AdminLinkState =
+  | 'active'
+  | 'inactive'
+  | 'suspended'
+  | 'appealing'
+  | 'deleted'
+  | 'restore_pending';
+
+/** The filters of "Tiếp thị liên kết" (doitac-1410 #052). */
+export type AdminLinkFilters = {
+  page?: number;
+  limit?: number;
+  partner?: string;
+  link?: string;
+  channel?: string;
+  status?: AdminLinkState | 'all';
+  createdFrom?: string;
+  createdTo?: string;
+  updatedFrom?: string;
+  updatedTo?: string;
+  actor?: 'admin' | 'partner' | 'all';
+};
+
+/** One row of "Tiếp thị liên kết" (doitac-1410 #054). */
+export type AdminLinkRow = {
+  id: number;
+  code: string;
+  label: string | null;
+  targetPath: string | null;
+  state: AdminLinkState;
+  partner: { id: number; name: string | null };
+  suspendedReason: string | null;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+  editCount: number;
+  clicks: number;
+  orders: number;
+  commissionVnd: number;
+};
+
+export type AdminLinkList = { total: number; page: number; limit: number; data: AdminLinkRow[] };
+
 /** The figures on top of "Tiếp thị liên kết" (doitac-1410 #051). */
 export type AdminLinkStats = {
   range: { from: string; to: string };

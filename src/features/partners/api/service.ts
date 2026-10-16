@@ -46,7 +46,9 @@ import type {
   UpdateProgramSettingsPayload,
   PartnerNotification,
   CreateNotificationPayload,
-  AdminLinkStats
+  AdminLinkStats,
+  AdminLinkFilters,
+  AdminLinkList
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -461,4 +463,14 @@ export async function getAdminLinkStats(range?: {
   if (range?.to) search.set('to', range.to);
   const qs = search.toString();
   return apiClient<AdminLinkStats>(`/partners/links/stats${qs ? `?${qs}` : ''}`);
+}
+
+/** Every partner's links, filtered (doitac-1410 #052). */
+export async function getAdminLinks(filters: AdminLinkFilters = {}): Promise<AdminLinkList> {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== '' && value !== 'all') search.set(key, String(value));
+  }
+  const qs = search.toString();
+  return apiClient<AdminLinkList>(`/partners/links${qs ? `?${qs}` : ''}`);
 }

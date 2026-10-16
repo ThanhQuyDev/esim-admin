@@ -1,4 +1,5 @@
-import { queryOptions } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions } from '@tanstack/react-query';
+import type { AdminLinkFilters } from './types';
 import {
   getPartners,
   getPartner,
@@ -26,7 +27,8 @@ import {
   getPartnerOptions,
   getPayoutSummary,
   getReconciliations,
-  getAdminLinkStats
+  getAdminLinkStats,
+  getAdminLinks
 } from './service';
 import type {
   PartnerFilters,
@@ -248,4 +250,12 @@ export const adminLinkStatsQueryOptions = (range?: { from?: string; to?: string 
   queryOptions({
     queryKey: [...partnerKeys.all, 'link-stats', range?.from ?? '', range?.to ?? ''],
     queryFn: () => getAdminLinkStats(range)
+  });
+
+/** Every partner's links, filtered (doitac-1410 #052). */
+export const adminLinksQueryOptions = (filters: AdminLinkFilters) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'links', filters],
+    queryFn: () => getAdminLinks(filters),
+    placeholderData: keepPreviousData
   });
