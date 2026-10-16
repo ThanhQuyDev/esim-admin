@@ -744,6 +744,11 @@ export type PartnerNotification = {
   recipients: number;
   readCount: number;
   createdAt: string;
+  /** normal | important | urgent — the banner's colour (doitac-1410 #062). */
+  priority?: string;
+  /** "Nổi bật": at the top of the page (doitac-1410 #062). */
+  isFeatured?: boolean;
+  updatedAt?: string | null;
 };
 
 export type CreateNotificationPayload = {
@@ -751,7 +756,12 @@ export type CreateNotificationPayload = {
   body: string;
   audience?: string;
   sendEmail?: boolean;
+  priority?: string;
+  isFeatured?: boolean;
 };
+
+/** "Sửa" a sent announcement; no email goes again (doitac-1410 #062). */
+export type UpdateNotificationPayload = Partial<Omit<CreateNotificationPayload, 'sendEmail'>>;
 
 /**
  * The partner page's figures over the chosen period (doitac-1410 #004): the

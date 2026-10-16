@@ -6,6 +6,7 @@
  * shows it in full and marks it read, exactly as from the bell.
  */
 
+import { noticePreview } from '@/lib/notice-banner';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { Badge } from '@/components/ui/badge';
@@ -70,7 +71,9 @@ export function PortalNotificationsView() {
                 <p className={cn('text-sm', !item.isRead && 'font-semibold')}>{item.title}</p>
                 {!item.isRead && <Badge variant='destructive'>Mới</Badge>}
               </div>
-              <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>{item.body}</p>
+              <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>
+                {noticePreview(item.body)}
+              </p>
               <p className='text-muted-foreground mt-1 text-xs'>
                 {formatDateTimeVn(item.createdAt)}
               </p>

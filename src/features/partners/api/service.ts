@@ -46,6 +46,7 @@ import type {
   UpdateProgramSettingsPayload,
   PartnerNotification,
   CreateNotificationPayload,
+  UpdateNotificationPayload,
   AdminLinkStats,
   AdminLinkFilters,
   AdminLinkList,
@@ -532,4 +533,20 @@ export async function refundPartnerPurchase(
     method: 'POST',
     body: JSON.stringify(payload)
   });
+}
+
+/** "Sửa" a sent announcement (doitac-1410 #062). */
+export async function updateNotification(
+  id: number,
+  data: UpdateNotificationPayload
+): Promise<PartnerNotification> {
+  return apiClient<PartnerNotification>(`/partners/notifications/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+/** "Xóa" a sent announcement (doitac-1410 #062). */
+export async function deleteNotification(id: number): Promise<{ ok: true }> {
+  return apiClient<{ ok: true }>(`/partners/notifications/${id}`, { method: 'DELETE' });
 }

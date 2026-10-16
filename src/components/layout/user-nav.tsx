@@ -13,6 +13,7 @@ import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
 import { logout } from '@/features/auth/api/service';
+import { resetDismissedNotices } from '@/lib/notice-banner';
 import { useRouter } from 'next/navigation';
 
 export function UserNav() {
@@ -25,6 +26,7 @@ export function UserNav() {
     // Nothing of this session may outlive it, and a full load is what makes
     // the next sign-in start clean (doitac-1410 #007).
     queryClient.clear();
+    resetDismissedNotices();
     window.location.assign('/auth/sign-in');
   };
 

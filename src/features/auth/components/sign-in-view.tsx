@@ -11,6 +11,7 @@ import { useAppForm } from '@/components/ui/tanstack-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { useEffect, useState } from 'react';
+import { resetDismissedNotices } from '@/lib/notice-banner';
 import { LoginError, login } from '../api/service';
 import { HOME_PATH, IS_PARTNER_PORTAL } from '@/config/app-mode';
 import { CHANGE_PASSWORD_PATH } from '@/features/partner-portal/components/must-change-password-gate';
@@ -67,6 +68,8 @@ export default function SignInViewPage() {
     onSuccess: (result) => {
       setNotice(null);
       setRedirecting(true);
+      // Announcements closed in the last sign-in show again (#062).
+      resetDismissedNotices();
       // A full page load, not router.push (doitac-1410 #007). The soft
       // navigation could hang with no sign of life while the dashboard
       // rendered on a cold server, and anything cached while signed out (the

@@ -20,7 +20,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Icons } from '@/components/icons';
+import { NoticeBanner, NoticeBody } from '@/components/notice-banner';
 import { formatDateTimeVn } from '@/lib/format';
+import { noticePreview } from '@/lib/notice-banner';
 
 import { notificationsQueryOptions } from '../api/queries';
 import type { PartnerNotification } from '../api/types';
@@ -72,7 +74,9 @@ export function AdminNotificationBell() {
                     className='hover:bg-muted/50 block w-full px-4 py-3 text-left'
                   >
                     <p className='truncate text-sm font-medium'>{item.title}</p>
-                    <p className='text-muted-foreground line-clamp-2 text-xs'>{item.body}</p>
+                    <p className='text-muted-foreground line-clamp-2 text-xs'>
+                      {noticePreview(item.body)}
+                    </p>
                     <p className='text-muted-foreground mt-1 text-[11px]'>
                       {formatDateTimeVn(item.createdAt)} ·{' '}
                       {AUDIENCE_LABEL[item.audience] ?? item.audience} · {item.readCount}/
@@ -86,25 +90,56 @@ export function AdminNotificationBell() {
         </PopoverContent>
       </Popover>
 
-      {open && (
-        <Dialog open onOpenChange={(next) => !next && setOpen(null)}>
-          <DialogContent className='sm:max-w-lg'>
-            <DialogHeader>
-              <DialogTitle>{open.title}</DialogTitle>
-            </DialogHeader>
-            <p className='text-muted-foreground text-xs'>
-              {formatDateTimeVn(open.createdAt)} · {AUDIENCE_LABEL[open.audience] ?? open.audience}
-              {open.sendEmail ? ` · ${open.emailsSent} email đã gửi` : ''}
-            </p>
-            <div className='text-sm leading-relaxed whitespace-pre-wrap'>{open.body}</div>
-            <div className='flex justify-end'>
-              <Button variant='outline' onClick={() => setOpen(null)}>
-                Đóng
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      {open && <SentNotificationDialog notification={open} onClose={() => setOpen(null)} />}
+    </>
+  );
+}
+
+/** One sent announcement in full, as the partners read it (#079, #062). */
+export function SentNotificationDialog({
+  notification,
+  onClose
+}: {
+  notification: PartnerNotification;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-2xl'>
+        <DialogHeader>
+          <DialogTitle>{notification.title}</DialogTitle>
+        </DialogHeader>
+        <p className='text-muted-foreground text-xs'>
+          {formatDateTimeVn(notification.createdAt)} ·{' '}
+          {AUDIENCE_LABEL[notification.audience] ?? notification.audience}
+          {notification.sendEmail ? ` · ${notification.emailsSent} email đã gửi` : ''}
+        </p>
+        <NoticeBody body={notification.body} />
+        <div className='flex justify-end'>
+          <Button variant='outline' onClick={onClose}>
+            Đóng
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * The same "nổi bật" strip on the admin's own dashboard (doitac-1410 #062),
+ * so the admin sees what partners see at the top of their page.
+ */
+export function AdminNotificationBanner() {
+  const { data = [] } = useQuery(notificationsQueryOptions());
+  const [open, setOpen] = useState<PartnerNotification | null>(null);
+  const featured = data.filter((n) => n.isFeatured);
+  return (
+    <>
+      <NoticeBanner
+        notices={featured}
+        onOpen={(notice) => setOpen(featured.find((n) => n.id === notice.id) ?? null)}
+      />
+      {open && <SentNotificationDialog notification={open} onClose={() => setOpen(null)} />}
     </>
   );
 }

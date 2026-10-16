@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import PageContainer from '@/components/layout/page-container';
+import { AdminNotificationBanner } from '@/features/partners/components/admin-notification-bell';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -118,6 +119,8 @@ export function OverviewDashboard() {
   return (
     <PageContainer>
       <div className='flex flex-1 flex-col space-y-4'>
+        {/* What partners see at the top of their page (doitac-1410 #062). */}
+        <AdminNotificationBanner />
         <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between'>
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>Tổng quan Overview</h2>

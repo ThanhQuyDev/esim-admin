@@ -856,6 +856,14 @@ export type MyNotification = {
   body: string;
   createdAt: string;
   isRead: boolean;
+  /** normal | important | urgent (doitac-1410 #062). */
+  priority?: string;
+  isFeatured?: boolean;
 };
 
-export type MyNotificationList = { unreadCount: number; data: MyNotification[] };
+export type MyNotificationList = {
+  unreadCount: number;
+  data: MyNotification[];
+  /** "Nổi bật" ones for the top of the page, read or not (#062). */
+  featured?: MyNotification[];
+};

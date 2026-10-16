@@ -17,7 +17,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Icons } from '@/components/icons';
+import { NoticeBanner, NoticeBody } from '@/components/notice-banner';
 import { formatDateTimeVn } from '@/lib/format';
+import { noticePreview } from '@/lib/notice-banner';
 
 import { markAllNotificationsReadMutation, markNotificationReadMutation } from '../api/mutations';
 import { myNotificationsQueryOptions } from '../api/queries';
@@ -33,12 +35,13 @@ export function NotificationDialog({
 }) {
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className='sm:max-w-lg'>
+      <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-2xl'>
         <DialogHeader>
           <DialogTitle>{notification.title}</DialogTitle>
         </DialogHeader>
         <p className='text-muted-foreground text-xs'>{formatDateTimeVn(notification.createdAt)}</p>
-        <div className='text-sm leading-relaxed whitespace-pre-wrap'>{notification.body}</div>
+        {/* Rich text from the admin's editor (doitac-1410 #062). */}
+        <NoticeBody body={notification.body} />
         <div className='flex justify-end'>
           <Button variant='outline' onClick={onClose}>
             Đóng
@@ -126,7 +129,9 @@ export function PortalNotificationBell() {
                       )}
                       <div className='min-w-0'>
                         <p className='truncate text-sm font-medium'>{item.title}</p>
-                        <p className='text-muted-foreground line-clamp-2 text-xs'>{item.body}</p>
+                        <p className='text-muted-foreground line-clamp-2 text-xs'>
+                          {noticePreview(item.body)}
+                        </p>
                         <p className='text-muted-foreground mt-1 text-[11px]'>
                           {formatDateTimeVn(item.createdAt)}
                         </p>
@@ -151,28 +156,25 @@ export function PortalNotificationBell() {
   );
 }
 
-/** The newest unread announcement, in a strip at the top of the page (#079). */
+/**
+ * The "nổi bật" announcements at the top of the page (#079, doitac-1410
+ * #062): the ones an admin featured, read or not, in the colour of their
+ * priority, until the partner closes them for this sign-in.
+ */
 export function PortalNotificationBanner() {
   const { data } = useQuery(myNotificationsQueryOptions());
   const { open, close, show } = useOpenNotification();
-
-  // Only the newest unread one: five banners is a screen nobody reads.
-  const latest = (data?.data ?? []).find((item) => !item.isRead);
-  if (!latest) return null;
+  const featured = data?.featured ?? [];
 
   return (
     <>
-      <div className='border-primary/30 bg-primary/5 flex flex-wrap items-center gap-2 rounded-lg border p-3'>
-        <Icons.notification className='text-primary h-4 w-4 shrink-0' />
-        <span className='text-sm font-medium'>{latest.title}</span>
-        <span className='text-muted-foreground line-clamp-1 min-w-0 flex-1 text-sm'>
-          {latest.body}
-        </span>
-        <Button size='sm' variant='outline' onClick={() => show(latest)}>
-          Xem chi tiết
-        </Button>
-      </div>
-
+      <NoticeBanner
+        notices={featured}
+        onOpen={(notice) => {
+          const full = featured.find((n) => n.id === notice.id);
+          if (full) show(full);
+        }}
+      />
       {open && <NotificationDialog notification={open} onClose={close} />}
     </>
   );
