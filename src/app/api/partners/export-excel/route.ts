@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         res.headers.get('content-type') ||
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition':
-        res.headers.get('content-disposition') || 'attachment; filename="danh-sach-doi-tac.xlsx"'
+        res.headers.get('content-disposition') || 'attachment; filename="Danh-sach-doi-tac.xlsx"'
     }
   });
 }
