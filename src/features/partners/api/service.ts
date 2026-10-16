@@ -48,7 +48,8 @@ import type {
   CreateNotificationPayload,
   AdminLinkStats,
   AdminLinkFilters,
-  AdminLinkList
+  AdminLinkList,
+  AdminLinkDetail
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -496,4 +497,9 @@ export function adminLinksExportUrl(filters: AdminLinkFilters = {}): string {
   }
   const qs = search.toString();
   return `/api/partners/links/export-excel${qs ? `?${qs}` : ''}`;
+}
+
+/** One link with its history, for "Xem chi tiết" (doitac-1410 #054). */
+export async function getAdminLinkDetail(linkId: number): Promise<AdminLinkDetail> {
+  return apiClient<AdminLinkDetail>(`/partners/links/${linkId}`);
 }

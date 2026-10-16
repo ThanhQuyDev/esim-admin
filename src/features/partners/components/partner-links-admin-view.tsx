@@ -44,7 +44,21 @@ import {
 
 import { adminLinkStatsQueryOptions, adminLinksQueryOptions } from '../api/queries';
 import { adminLinksExportUrl } from '../api/service';
-import { BulkLinkStatusDialog, CreateLinkForPartnerDialog } from './partner-links-admin-dialogs';
+import {
+  AdminLinkDetailDialog,
+  BULK_ACTION_LABEL,
+  BulkLinkStatusDialog,
+  CreateLinkForPartnerDialog,
+  type BulkLinkAction
+} from './partner-links-admin-dialogs';
+import type { AdminLinkRow } from '../api/types';
+
+/** The status buttons a row offers (doitac-1410 #054). */
+function rowActions(state: AdminLinkState): BulkLinkAction[] {
+  if (state === 'active' || state === 'inactive') return ['suspend'];
+  if (state === 'suspended' || state === 'appealing') return ['unsuspend'];
+  return ['restore'];
+}
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icons } from '@/components/icons';
 import type { AdminLinkFilters, AdminLinkState } from '../api/types';
@@ -154,6 +168,11 @@ export function PartnerLinksAdminView() {
   const [selected, setSelected] = useState<number[]>([]);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  // One row's own action, and the detail popup (doitac-1410 #054).
+  const [rowAction, setRowAction] = useState<{ link: AdminLinkRow; action: BulkLinkAction } | null>(
+    null
+  );
+  const [detail, setDetail] = useState<AdminLinkRow | null>(null);
   const allTicked = links.length > 0 && links.every((l) => selected.includes(l.id));
   const toggle = (id: number, on: boolean) =>
     setSelected((s) => (on ? [...new Set([...s, id])] : s.filter((x) => x !== id)));
@@ -377,12 +396,13 @@ export function PartnerLinksAdminView() {
                   <TableHead className='text-right'>Số đơn</TableHead>
                   <TableHead className='text-right'>Hoa hồng</TableHead>
                   <TableHead>Trạng thái</TableHead>
+                  <TableHead className='text-right'>Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody data-testid='admin-links-body'>
                 {links.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={11} className='text-muted-foreground h-24 text-center'>
+                    <TableCell colSpan={12} className='text-muted-foreground h-24 text-center'>
                       {listLoading ? 'Đang tải…' : 'Không có liên kết nào khớp bộ lọc.'}
                     </TableCell>
                   </TableRow>
@@ -442,6 +462,29 @@ export function PartnerLinksAdminView() {
                       <TableCell>
                         <Badge variant={state.variant}>{state.label}</Badge>
                       </TableCell>
+                      <TableCell className='text-right'>
+                        <div className='flex flex-col items-end gap-1 whitespace-nowrap'>
+                          <Button
+                            variant='link'
+                            size='sm'
+                            className='h-auto p-0 text-xs'
+                            onClick={() => setDetail(link)}
+                          >
+                            Xem chi tiết
+                          </Button>
+                          {rowActions(link.state).map((action) => (
+                            <Button
+                              key={action}
+                              variant='ghost'
+                              size='sm'
+                              className={`h-auto p-0 text-xs ${action === 'suspend' ? 'text-destructive' : ''}`}
+                              onClick={() => setRowAction({ link, action })}
+                            >
+                              {BULK_ACTION_LABEL[action]}
+                            </Button>
+                          ))}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -485,6 +528,37 @@ export function PartnerLinksAdminView() {
         onDone={() => setSelected([])}
       />
       <CreateLinkForPartnerDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <BulkLinkStatusDialog
+        linkIds={rowAction ? [rowAction.link.id] : []}
+        open={rowAction !== null}
+        onOpenChange={(open) => !open && setRowAction(null)}
+        onDone={() => setDetail(null)}
+        fixedAction={rowAction?.action}
+        title={
+          rowAction
+            ? `${BULK_ACTION_LABEL[rowAction.action]} liên kết «${rowAction.link.label ?? rowAction.link.code}»`
+            : undefined
+        }
+      />
+      <AdminLinkDetailDialog
+        linkId={detail?.id ?? null}
+        stateLabel={detail ? LINK_STATE_LABEL[detail.state] : undefined}
+        onClose={() => setDetail(null)}
+        actions={
+          detail
+            ? rowActions(detail.state).map((action) => (
+                <Button
+                  key={action}
+                  size='sm'
+                  variant={action === 'suspend' ? 'destructive' : 'default'}
+                  onClick={() => setRowAction({ link: detail, action })}
+                >
+                  {BULK_ACTION_LABEL[action]}
+                </Button>
+              ))
+            : undefined
+        }
+      />
     </div>
   );
 }

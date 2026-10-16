@@ -28,7 +28,8 @@ import {
   getPayoutSummary,
   getReconciliations,
   getAdminLinkStats,
-  getAdminLinks
+  getAdminLinks,
+  getAdminLinkDetail
 } from './service';
 import type {
   PartnerFilters,
@@ -258,4 +259,12 @@ export const adminLinksQueryOptions = (filters: AdminLinkFilters) =>
     queryKey: [...partnerKeys.all, 'links', filters],
     queryFn: () => getAdminLinks(filters),
     placeholderData: keepPreviousData
+  });
+
+/** One link with its history (doitac-1410 #054). */
+export const adminLinkDetailQueryOptions = (linkId: number | null) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'link', linkId],
+    queryFn: () => getAdminLinkDetail(linkId!),
+    enabled: linkId !== null
   });

@@ -57,9 +57,20 @@ const who = (role: string) =>
   role === 'admin' ? 'esim.vn' : role === 'system' ? 'Hệ thống' : 'Bạn';
 
 /** How one history line reads (figure 1). */
-function describeEvent(e: MyLinkEvent): { title: string; lines: string[] } {
+export function describeEvent(
+  e: MyLinkEvent,
+  /** Read in the admin console, the partner is "Đối tác", not "Bạn" (doitac-1410 #054). */
+  viewer: 'partner' | 'admin' = 'partner'
+): { title: string; lines: string[] } {
   const d = (e.detail ?? {}) as Record<string, string | null>;
-  const actor = who(e.actorRole);
+  const actor =
+    viewer === 'admin'
+      ? e.actorRole === 'admin'
+        ? 'Admin'
+        : e.actorRole === 'system'
+          ? 'Hệ thống'
+          : 'Đối tác'
+      : who(e.actorRole);
   switch (e.action) {
     case 'created':
       return {
@@ -88,10 +99,13 @@ function describeEvent(e: MyLinkEvent): { title: string; lines: string[] } {
     case 'restored':
       return { title: `${actor} khôi phục liên kết`, lines: [] };
     case 'suspended':
-      return { title: 'esim.vn đình chỉ liên kết', lines: d.reason ? [`Lý do: ${d.reason}`] : [] };
+      return {
+        title: `${viewer === 'admin' ? 'Admin' : 'esim.vn'} đình chỉ liên kết`,
+        lines: d.reason ? [`Lý do: ${d.reason}`] : []
+      };
     case 'unsuspended':
       return {
-        title: 'esim.vn gỡ đình chỉ liên kết',
+        title: `${viewer === 'admin' ? 'Admin' : 'esim.vn'} gỡ đình chỉ liên kết`,
         lines: d.reason ? [`Lý do: ${d.reason}`] : []
       };
     case 'appealed':
@@ -103,7 +117,7 @@ function describeEvent(e: MyLinkEvent): { title: string; lines: string[] } {
       };
     case 'restore_rejected':
       return {
-        title: 'esim.vn chưa duyệt yêu cầu khôi phục',
+        title: `${viewer === 'admin' ? 'Admin' : 'esim.vn'} chưa duyệt yêu cầu khôi phục`,
         lines: d.reason ? [`Lý do: ${d.reason}`] : []
       };
     default:

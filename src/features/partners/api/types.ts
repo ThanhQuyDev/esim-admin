@@ -173,6 +173,38 @@ export type AdminLinkRow = {
   commissionVnd: number;
 };
 
+/** "Xem chi tiết" of one link (doitac-1410 #054, #055). */
+export type AdminLinkDetail = {
+  id: number;
+  code: string;
+  label: string | null;
+  targetPath: string | null;
+  status: string;
+  deletedAt: string | null;
+  suspendedByAdmin: boolean;
+  suspendedReason: string | null;
+  appealedAt: string | null;
+  restoreRequestedAt: string | null;
+  restoreRequestReason: string | null;
+  periodClicks: number;
+  periodOrders: number;
+  periodCommissionVnd: number;
+  clickCount: number;
+  editCount: number;
+  createdAt: string;
+  statusSince: string;
+  createdBy: string;
+  lastChangedBy: string;
+  partner: { id: number; name: string | null; email: string | null };
+  events: {
+    id: number;
+    action: string;
+    actorRole: 'partner' | 'admin' | 'system';
+    detail: Record<string, unknown> | null;
+    createdAt: string;
+  }[];
+};
+
 export type AdminLinkList = { total: number; page: number; limit: number; data: AdminLinkRow[] };
 
 /** The figures on top of "Tiếp thị liên kết" (doitac-1410 #051). */

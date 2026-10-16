@@ -29,9 +29,19 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CHANNELS, buildTargetPath } from '@/features/partner-portal/components/portal-link-utils';
+import { Badge } from '@/components/ui/badge';
+import { formatDateTimeVn, formatVnd } from '@/lib/format';
+import { describeEvent } from '@/features/partner-portal/components/portal-link-dialogs';
+import {
+  CHANNELS,
+  buildTargetPath,
+  channelOf,
+  landingOf,
+  shortLinkOf,
+  subidOf
+} from '@/features/partner-portal/components/portal-link-utils';
 
-import { partnerKeys, partnersQueryOptions } from '../api/queries';
+import { adminLinkDetailQueryOptions, partnerKeys, partnersQueryOptions } from '../api/queries';
 import { adminCreateLinkForPartner, bulkLinkStatus } from '../api/service';
 
 export type BulkLinkAction = 'suspend' | 'unsuspend' | 'restore';
@@ -47,15 +57,21 @@ export function BulkLinkStatusDialog({
   linkIds,
   open,
   onOpenChange,
-  onDone
+  onDone,
+  fixedAction,
+  title
 }: {
   linkIds: number[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone: () => void;
+  /** One row's own button (doitac-1410 #054): the action is already chosen. */
+  fixedAction?: BulkLinkAction;
+  title?: string;
 }) {
   const queryClient = useQueryClient();
-  const [action, setAction] = useState<BulkLinkAction>('suspend');
+  const [chosen, setAction] = useState<BulkLinkAction>('suspend');
+  const action = fixedAction ?? chosen;
   const [reason, setReason] = useState('');
 
   const run = useMutation({
@@ -63,7 +79,10 @@ export function BulkLinkStatusDialog({
     onSuccess: (result) => {
       const verb = BULK_ACTION_LABEL[action].toLowerCase();
       if (result.done.length) toast.success(`Đã ${verb} ${result.done.length} liên kết.`);
-      if (result.skipped.length) {
+      if (result.skipped.length && fixedAction) {
+        // One link: what stopped it is the error.
+        toast.error(result.skipped[0].reason);
+      } else if (result.skipped.length) {
         toast.warning(
           `Bỏ qua ${result.skipped.length} liên kết: ${result.skipped
             .slice(0, 3)
@@ -83,15 +102,15 @@ export function BulkLinkStatusDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Thay đổi trạng thái</DialogTitle>
+          <DialogTitle>{title ?? 'Thay đổi trạng thái'}</DialogTitle>
           <DialogDescription>
-            Áp dụng cho {linkIds.length} liên kết đã chọn. Lý do hiện trong &quot;Lịch sử thay
-            đổi&quot; khi đối tác xem chi tiết liên kết. Liên kết không phù hợp với thao tác (ví dụ
-            chưa bị đình chỉ mà chọn Gỡ đình chỉ) sẽ được bỏ qua.
+            {fixedAction
+              ? 'Lý do hiện trong "Lịch sử thay đổi" khi đối tác xem chi tiết liên kết, và được gửi thông báo cho đối tác.'
+              : `Áp dụng cho ${linkIds.length} liên kết đã chọn. Lý do hiện trong "Lịch sử thay đổi" khi đối tác xem chi tiết liên kết. Liên kết không phù hợp với thao tác (ví dụ chưa bị đình chỉ mà chọn Gỡ đình chỉ) sẽ được bỏ qua.`}
           </DialogDescription>
         </DialogHeader>
         <div className='space-y-3'>
-          <div className='space-y-2'>
+          <div className={fixedAction ? 'hidden' : 'space-y-2'}>
             <Label htmlFor='bulk-action'>Thao tác</Label>
             <Select value={action} onValueChange={(v) => setAction(v as BulkLinkAction)}>
               <SelectTrigger id='bulk-action' className='w-full' data-testid='bulk-action'>
@@ -289,6 +308,110 @@ export function CreateLinkForPartnerDialog({
             {create.isPending ? 'Đang tạo…' : 'Tạo liên kết'}
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const ACTOR: Record<string, string> = { admin: 'Admin', partner: 'Đối tác', system: 'Hệ thống' };
+
+/**
+ * "Xem chi tiết" of one link for the admin (doitac-1410 #054): what the
+ * partner sees — state, link, figures — and its full change history.
+ */
+export function AdminLinkDetailDialog({
+  linkId,
+  stateLabel,
+  onClose,
+  actions
+}: {
+  linkId: number | null;
+  stateLabel?: { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' };
+  onClose: () => void;
+  /** The row's own status buttons, repeated at the foot of the popup. */
+  actions?: React.ReactNode;
+}) {
+  const { data: link, isLoading } = useQuery(adminLinkDetailQueryOptions(linkId));
+  return (
+    <Dialog open={linkId !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className='max-h-[90vh] overflow-y-auto sm:max-w-[600px]'
+        data-testid='admin-link-detail'
+      >
+        <DialogHeader>
+          <DialogTitle>{link?.label ?? 'Chi tiết liên kết'}</DialogTitle>
+          <DialogDescription className='font-mono'>
+            {link ? shortLinkOf(link.code) : ''}
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading || !link ? (
+          <p className='text-muted-foreground py-6 text-center text-sm'>Đang tải…</p>
+        ) : (
+          <div className='space-y-4 text-sm'>
+            <div className='flex flex-wrap items-center gap-2'>
+              {stateLabel && <Badge variant={stateLabel.variant}>{stateLabel.label}</Badge>}
+              <span className='text-muted-foreground text-xs'>
+                từ {formatDateTimeVn(link.statusSince)}
+              </span>
+            </div>
+            {link.suspendedReason && (
+              <p className='border-destructive/40 bg-destructive/5 rounded-lg border-l-4 p-3'>
+                Lý do đình chỉ: {link.suspendedReason}
+              </p>
+            )}
+            {link.restoreRequestReason && (
+              <p className='bg-muted/50 rounded-lg p-3'>
+                Đối tác xin khôi phục: {link.restoreRequestReason}
+              </p>
+            )}
+            <div className='grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3'>
+              {[
+                ['Đối tác', `${link.partner.name ?? '—'} (#${link.partner.id})`],
+                ['Trang đích', landingOf(link.targetPath)],
+                ['Kênh quảng bá', channelOf(link.targetPath)],
+                ['Mã phân biệt nguồn', subidOf(link.targetPath) || '—'],
+                [
+                  'Tạo lúc',
+                  `${formatDateTimeVn(link.createdAt)} · ${ACTOR[link.createdBy] ?? link.createdBy}`
+                ],
+                ['Số lần sửa', String(link.editCount)],
+                ['Lượt nhấp (tháng)', link.periodClicks.toLocaleString('vi-VN')],
+                ['Số đơn (tháng)', link.periodOrders.toLocaleString('vi-VN')],
+                ['Hoa hồng (tháng)', formatVnd(link.periodCommissionVnd)]
+              ].map(([label, value]) => (
+                <div key={label} className='min-w-0'>
+                  <p className='text-muted-foreground text-xs'>{label}</p>
+                  <p className='truncate font-medium'>{value}</p>
+                </div>
+              ))}
+            </div>
+            <div>
+              <p className='mb-2 font-medium'>Lịch sử thay đổi</p>
+              <ol className='space-y-2' data-testid='admin-link-history'>
+                {link.events.map((e) => {
+                  const { title, lines } = describeEvent(e, 'admin');
+                  return (
+                    <li key={e.id} className='border-l-2 pl-3'>
+                      <p className='text-xs font-medium'>{title}</p>
+                      {lines.map((l) => (
+                        <p key={l} className='text-muted-foreground text-xs'>
+                          {l}
+                        </p>
+                      ))}
+                      <p className='text-muted-foreground text-[11px]'>
+                        {formatDateTimeVn(e.createdAt)}
+                      </p>
+                    </li>
+                  );
+                })}
+                {link.events.length === 0 && (
+                  <li className='text-muted-foreground text-xs'>Chưa có thay đổi nào.</li>
+                )}
+              </ol>
+            </div>
+          </div>
+        )}
+        {actions && <DialogFooter className='flex-wrap gap-2'>{actions}</DialogFooter>}
       </DialogContent>
     </Dialog>
   );
