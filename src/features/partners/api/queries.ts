@@ -62,10 +62,10 @@ export const partnerQueryOptions = (id: number) =>
     queryFn: () => getPartner(id)
   });
 
-export const depositRequestsQueryOptions = (status?: string) =>
+export const depositRequestsQueryOptions = (status?: string, search?: string) =>
   queryOptions({
-    queryKey: partnerKeys.depositRequests(status),
-    queryFn: () => getDepositRequests(status)
+    queryKey: [...partnerKeys.depositRequests(status), search ?? ''],
+    queryFn: () => getDepositRequests(status, search)
   });
 
 export const commissionsQueryOptions = (filters: CommissionFilters) =>

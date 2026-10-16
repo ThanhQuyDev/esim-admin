@@ -10,7 +10,7 @@ export default function DepositRequestsPage() {
     <PageContainer
       scrollable
       pageTitle='Yêu cầu nạp ký quỹ'
-      pageDescription='Xác nhận các yêu cầu nạp ký quỹ qua chuyển khoản của đối tác phân phối.'
+      pageDescription='Xác nhận hoặc từ chối các yêu cầu nạp ký quỹ của đối tác. Đã xác nhận hoặc từ chối thì không thể hoàn tác.'
     >
       <DepositRequestsView />
     </PageContainer>

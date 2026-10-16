@@ -68,6 +68,12 @@ const DEPOSIT_STATUS: Record<string, { label: string; className: string }> = {
     label: 'Đã huỷ',
     className:
       'border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300'
+  },
+  // Refused by esim.vn, with the reason under it (doitac-1410 #063).
+  rejected: {
+    label: 'Từ chối',
+    className:
+      'border-red-200 bg-red-100 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
   }
 };
 
@@ -240,6 +246,14 @@ export function PortalWalletView() {
                           </Badge>
                         ) : (
                           <Badge variant='outline'>{req.status}</Badge>
+                        )}
+                        {req.status === 'rejected' && req.rejectionReason && (
+                          <div
+                            className='text-muted-foreground mt-1 max-w-[240px] text-xs'
+                            data-testid='deposit-rejection'
+                          >
+                            Lý do: {req.rejectionReason}
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>

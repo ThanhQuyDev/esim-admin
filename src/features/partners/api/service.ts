@@ -190,8 +190,24 @@ export async function adjustPartnerWallet(
   });
 }
 
-export async function getDepositRequests(status?: string): Promise<PartnerDepositRequest[]> {
-  return apiClient<PartnerDepositRequest[]>(`/partners/deposit-requests${toQuery({ status })}`);
+export async function getDepositRequests(
+  status?: string,
+  search?: string
+): Promise<PartnerDepositRequest[]> {
+  return apiClient<PartnerDepositRequest[]>(
+    `/partners/deposit-requests${toQuery({ status, search })}`
+  );
+}
+
+/** "Từ chối", with the reason the partner reads (doitac-1410 #063). */
+export async function rejectDepositRequest(
+  id: number,
+  reason: string
+): Promise<PartnerDepositRequest> {
+  return apiClient<PartnerDepositRequest>(`/partners/deposit-requests/${id}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ reason })
+  });
 }
 
 export async function confirmDepositRequest(id: number): Promise<PartnerDepositRequest> {

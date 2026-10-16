@@ -155,7 +155,9 @@ export type MyDepositRequest = {
   /** Where to send the partner to pay by card (#047). */
   paymentUrl?: string;
   paymentRef?: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'rejected';
+  /** Why esim.vn refused it (doitac-1410 #063). */
+  rejectionReason?: string | null;
   createdAt: string;
 };
 

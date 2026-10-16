@@ -248,10 +248,22 @@ export type PartnerDepositRequest = {
   partnerId: number;
   amountVnd: number;
   bankTransferCode: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'rejected';
   confirmedByAdminId: number | null;
   confirmedAt: string | null;
   createdAt: string;
+  // The list of doitac-1410 #063:
+  /** A company by its own name. */
+  partnerName?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  /** bank_transfer | card */
+  method?: string;
+  feeVnd?: number;
+  /** What reaches the wallet: amount less fee. */
+  creditedVnd?: number;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
 };
 
 export type OrderPartnerCommission = {
