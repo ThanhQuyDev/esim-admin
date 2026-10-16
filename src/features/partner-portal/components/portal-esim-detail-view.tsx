@@ -110,6 +110,11 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
   const { data: esim, isLoading, error } = useQuery(myEsimDetailQueryOptions(iccid));
   const [request, setRequest] = useState<EsimRequestTarget | null>(null);
   const [topupOpen, setTopupOpen] = useState(false);
+  // Billion: topup only when this very eSIM has recharge products (#064).
+  const perEsim = Boolean(esim?.plan?.topUpPerEsim);
+  const { data: perEsimTopups, isLoading: checkingTopups } = useQuery(
+    myEsimTopupPackagesQueryOptions(iccid, perEsim)
+  );
 
   const resend = useMutation({
     mutationFn: () => resendMyEsimEmail(iccid),
@@ -152,6 +157,7 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
       ? 'Đang có yêu cầu chờ esim.vn xử lý'
       : undefined;
   const plan = esim.plan;
+  const canTopup = perEsim ? (perEsimTopups?.length ?? 0) > 0 : plan.topUp;
 
   return (
     <div className='grid min-w-0 grid-cols-1 gap-4'>
@@ -198,8 +204,16 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
           </Button>
           <Button
             size='sm'
-            disabled={closed || !plan.topUp}
-            title={plan.topUp ? undefined : 'Gói này không hỗ trợ topup'}
+            disabled={closed || !canTopup}
+            title={
+              canTopup
+                ? undefined
+                : perEsim && checkingTopups
+                  ? 'Đang kiểm tra gói topup của eSIM này…'
+                  : perEsim
+                    ? 'eSIM này không có gói topup'
+                    : 'Gói này không hỗ trợ topup'
+            }
             onClick={() => setTopupOpen(true)}
           >
             Topup hộ khách

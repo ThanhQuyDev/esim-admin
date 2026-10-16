@@ -803,6 +803,8 @@ export type MyEsimDetail = {
     operatorName: string | null;
     speed: string | null;
     topUp: boolean;
+    /** Billion: ask this eSIM's recharge products (doitac-1410 #064). */
+    topUpPerEsim?: boolean;
   };
   openReport: 'fault' | 'refund' | null;
   topups: {
