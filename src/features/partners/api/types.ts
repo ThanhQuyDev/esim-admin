@@ -196,6 +196,8 @@ export type AdminLinkDetail = {
   createdBy: string;
   lastChangedBy: string;
   partner: { id: number; name: string | null; email: string | null };
+  /** Admin-only notes (doitac-1410 #055). */
+  internalNotes: { id: number; body: string; createdAt: string; by: string }[];
   events: {
     id: number;
     action: string;

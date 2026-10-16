@@ -481,6 +481,7 @@ export async function bulkLinkStatus(payload: {
   linkIds: number[];
   action: 'suspend' | 'unsuspend' | 'restore';
   reason: string;
+  internalNote?: string;
 }): Promise<{ done: number[]; skipped: { id: number; reason: string }[] }> {
   return apiClient(`/partners/links/bulk-status`, {
     method: 'PATCH',
@@ -502,4 +503,12 @@ export function adminLinksExportUrl(filters: AdminLinkFilters = {}): string {
 /** One link with its history, for "Xem chi tiết" (doitac-1410 #054). */
 export async function getAdminLinkDetail(linkId: number): Promise<AdminLinkDetail> {
   return apiClient<AdminLinkDetail>(`/partners/links/${linkId}`);
+}
+
+/** "Thêm ghi chú nội bộ" on a link (doitac-1410 #055). */
+export async function addLinkNote(linkId: number, body: string): Promise<unknown> {
+  return apiClient(`/partners/links/${linkId}/notes`, {
+    method: 'POST',
+    body: JSON.stringify({ body })
+  });
 }

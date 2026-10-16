@@ -42,7 +42,7 @@ import {
 } from '@/features/partner-portal/components/portal-link-utils';
 
 import { adminLinkDetailQueryOptions, partnerKeys, partnersQueryOptions } from '../api/queries';
-import { adminCreateLinkForPartner, bulkLinkStatus } from '../api/service';
+import { addLinkNote, adminCreateLinkForPartner, bulkLinkStatus } from '../api/service';
 
 export type BulkLinkAction = 'suspend' | 'unsuspend' | 'restore';
 
@@ -59,7 +59,8 @@ export function BulkLinkStatusDialog({
   onOpenChange,
   onDone,
   fixedAction,
-  title
+  title,
+  stateLabel
 }: {
   linkIds: number[];
   open: boolean;
@@ -68,14 +69,29 @@ export function BulkLinkStatusDialog({
   /** One row's own button (doitac-1410 #054): the action is already chosen. */
   fixedAction?: BulkLinkAction;
   title?: string;
+  /** The link's state label, shown with "từ <time>" (doitac-1410 #055). */
+  stateLabel?: { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' };
 }) {
   const queryClient = useQueryClient();
   const [chosen, setAction] = useState<BulkLinkAction>('suspend');
   const action = fixedAction ?? chosen;
   const [reason, setReason] = useState('');
+  const [note, setNote] = useState('');
+  // One link: how long it has been in its current state (doitac-1410 #055).
+  const single = fixedAction && linkIds.length === 1 ? linkIds[0] : null;
+  const { data: current } = useQuery({
+    ...adminLinkDetailQueryOptions(single),
+    enabled: open && single !== null
+  });
 
   const run = useMutation({
-    mutationFn: () => bulkLinkStatus({ linkIds, action, reason: reason.trim() }),
+    mutationFn: () =>
+      bulkLinkStatus({
+        linkIds,
+        action,
+        reason: reason.trim(),
+        ...(note.trim() ? { internalNote: note.trim() } : {})
+      }),
     onSuccess: (result) => {
       const verb = BULK_ACTION_LABEL[action].toLowerCase();
       if (result.done.length) toast.success(`Đã ${verb} ${result.done.length} liên kết.`);
@@ -92,6 +108,7 @@ export function BulkLinkStatusDialog({
       }
       void queryClient.invalidateQueries({ queryKey: partnerKeys.all });
       setReason('');
+      setNote('');
       onDone();
       onOpenChange(false);
     },
@@ -110,6 +127,13 @@ export function BulkLinkStatusDialog({
           </DialogDescription>
         </DialogHeader>
         <div className='space-y-3'>
+          {single !== null && stateLabel && (
+            <div className='flex flex-wrap items-center gap-2 text-sm' data-testid='status-since'>
+              <Badge variant={stateLabel.variant}>{stateLabel.label}</Badge>
+              <span className='text-muted-foreground'>|</span>
+              <span>từ {current ? formatDateTimeVn(current.statusSince) : '…'}</span>
+            </div>
+          )}
           <div className={fixedAction ? 'hidden' : 'space-y-2'}>
             <Label htmlFor='bulk-action'>Thao tác</Label>
             <Select value={action} onValueChange={(v) => setAction(v as BulkLinkAction)}>
@@ -134,6 +158,17 @@ export function BulkLinkStatusDialog({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder='Ví dụ: liên kết dẫn tới nội dung vi phạm chính sách quảng cáo'
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label htmlFor='bulk-note'>Ghi chú nội bộ (chỉ admin xem)</Label>
+            <Textarea
+              id='bulk-note'
+              rows={2}
+              maxLength={1000}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder='Không hiện cho đối tác'
             />
           </div>
         </div>
@@ -385,6 +420,7 @@ export function AdminLinkDetailDialog({
                 </div>
               ))}
             </div>
+            <InternalNotes linkId={link.id} notes={link.internalNotes ?? []} />
             <div>
               <p className='mb-2 font-medium'>Lịch sử thay đổi</p>
               <ol className='space-y-2' data-testid='admin-link-history'>
@@ -414,5 +450,81 @@ export function AdminLinkDetailDialog({
         {actions && <DialogFooter className='flex-wrap gap-2'>{actions}</DialogFooter>}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * "Ghi chú nội bộ" of a link (doitac-1410 #055): seen by admins only, never
+ * in the history the partner reads.
+ */
+function InternalNotes({
+  linkId,
+  notes
+}: {
+  linkId: number;
+  notes: { id: number; body: string; createdAt: string; by: string }[];
+}) {
+  const queryClient = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [body, setBody] = useState('');
+  const save = useMutation({
+    mutationFn: () => addLinkNote(linkId, body.trim()),
+    onSuccess: () => {
+      toast.success('Đã thêm ghi chú nội bộ.');
+      setBody('');
+      setAdding(false);
+      void queryClient.invalidateQueries({ queryKey: partnerKeys.all });
+    },
+    onError: (err: Error) => toast.error(err.message)
+  });
+  return (
+    <div className='bg-muted/40 space-y-2 rounded-lg p-3' data-testid='internal-notes'>
+      <div className='flex items-center justify-between gap-2'>
+        <p className='font-medium'>Ghi chú nội bộ</p>
+        {!adding && (
+          <Button size='sm' variant='outline' onClick={() => setAdding(true)}>
+            Thêm ghi chú nội bộ
+          </Button>
+        )}
+      </div>
+      {adding && (
+        <div className='space-y-2'>
+          <Textarea
+            aria-label='Ghi chú nội bộ'
+            rows={2}
+            maxLength={1000}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder='Chỉ admin xem được'
+          />
+          <div className='flex justify-end gap-2'>
+            <Button size='sm' variant='ghost' onClick={() => setAdding(false)}>
+              Huỷ
+            </Button>
+            <Button
+              size='sm'
+              disabled={body.trim().length < 2 || save.isPending}
+              onClick={() => save.mutate()}
+            >
+              {save.isPending ? 'Đang lưu…' : 'Lưu ghi chú'}
+            </Button>
+          </div>
+        </div>
+      )}
+      {notes.length === 0 ? (
+        <p className='text-muted-foreground text-xs'>Chưa có ghi chú nội bộ.</p>
+      ) : (
+        <ul className='space-y-1.5'>
+          {notes.map((n) => (
+            <li key={n.id} className='text-xs'>
+              <p className='whitespace-pre-wrap'>{n.body}</p>
+              <p className='text-muted-foreground text-[11px]'>
+                {n.by} · {formatDateTimeVn(n.createdAt)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

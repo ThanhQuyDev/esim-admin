@@ -534,6 +534,7 @@ export function PartnerLinksAdminView() {
         onOpenChange={(open) => !open && setRowAction(null)}
         onDone={() => setDetail(null)}
         fixedAction={rowAction?.action}
+        stateLabel={rowAction ? LINK_STATE_LABEL[rowAction.link.state] : undefined}
         title={
           rowAction
             ? `${BULK_ACTION_LABEL[rowAction.action]} liên kết «${rowAction.link.label ?? rowAction.link.code}»`
