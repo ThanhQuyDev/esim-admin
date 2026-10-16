@@ -581,6 +581,22 @@ export type CataloguePlan = {
   topUp?: boolean;
   hasCallSms?: boolean;
   tiktokAi?: boolean;
+  // doitac-1410 #034:
+  /** "Tốc độ sau giảm tốc". */
+  throttleSpeed?: string | null;
+  sms?: number | null;
+  call?: number | null;
+  refundable?: boolean;
+  isCheapest?: boolean;
+  /** Giá đại lý × 5/3, làm tròn nghìn. */
+  suggestedRetailVnd?: number;
+  apn?: string | null;
+  ipExport?: string | null;
+  isNonHkIp?: boolean;
+  speed?: string | null;
+  operatorName?: string | null;
+  dailyResetPolicy?: string | null;
+  dailyResetUtcOffset?: number | null;
   /** Giá niêm yết esim.vn. */
   listPriceVnd: number;
   /** Giá đối tác phải trả: giá vốn + % cộng thêm của hạng. */
@@ -622,7 +638,12 @@ export type PurchaseQuote = {
   rejection: string | null;
 };
 
-export type CreatePurchasePayload = { planId: number; quantity: number };
+export type CreatePurchasePayload = {
+  planId: number;
+  quantity: number;
+  /** Customer the QR codes are emailed to (doitac-1410 #034). */
+  recipientEmail?: string;
+};
 
 /** Một phiếu đối tác báo eSIM lỗi (#046, A4 — admin duyệt tay mới hoàn tiền). */
 export type EsimFaultReport = {

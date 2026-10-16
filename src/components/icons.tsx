@@ -369,6 +369,7 @@ export const Icons = {
 
   // Orders
   order: IconShoppingCart,
+  shoppingCart: IconShoppingCart,
 
   // Wallet
   wallet: IconWallet,

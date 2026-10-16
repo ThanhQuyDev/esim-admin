@@ -48,6 +48,12 @@ import {
 } from '../api/queries';
 import type { CataloguePlan, CatalogueFilters } from '../api/types';
 import { EMPTY_CATALOGUE_FILTERS, PortalCatalogueFilters } from './portal-catalogue-filters';
+import {
+  AddToCartDialog,
+  PLAN_TYPE_LABEL,
+  PlanDetailDialog,
+  yesNo
+} from './portal-catalogue-dialogs';
 
 export function PortalCatalogueView() {
   // The admin's filters (doitac-1410 #033); typing is deferred so each key
@@ -57,6 +63,13 @@ export function PortalCatalogueView() {
   const deferredFilters = useDeferredValue(filters);
   const [selected, setSelected] = useState<CataloguePlan | null>(null);
   const [quantity, setQuantity] = useState('1');
+  // "Xem chi tiết" and "Thêm giỏ hàng" (doitac-1410 #034).
+  const [detail, setDetail] = useState<CataloguePlan | null>(null);
+  const [carting, setCarting] = useState<CataloguePlan | null>(null);
+  // The customer the QR codes are emailed to (doitac-1410 #034).
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const emailValid =
+    !recipientEmail.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim());
 
   const { data: catalogue, isLoading } = useQuery(
     partnerCatalogueQueryOptions({ ...deferredFilters, limit })
@@ -85,10 +98,13 @@ export function PortalCatalogueView() {
       toast.success(
         result.pendingEsims > 0
           ? `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Nhà cung cấp đang cấp ${result.pendingEsims} eSIM, sẽ hiện ở Quản lý eSIM trong ít phút.`
-          : `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Tải file Excel ở trang Đơn hàng.`
+          : recipientEmail.trim()
+            ? `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Mã QR đã gửi tới ${recipientEmail.trim()}.`
+            : `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Tải file Excel ở trang Đơn hàng.`
       );
       setSelected(null);
       setQuantity('1');
+      setRecipientEmail('');
     },
     onError: (error: Error) => toast.error(error.message)
   });
@@ -147,47 +163,87 @@ export function PortalCatalogueView() {
                     <TableHead>Điểm đến</TableHead>
                     <TableHead>Dữ liệu</TableHead>
                     <TableHead>Thời hạn</TableHead>
-                    <TableHead className='text-right'>Giá vốn của bạn</TableHead>
-                    <TableHead className='text-right'>Giá niêm yết</TableHead>
-                    <TableHead className='text-right'>Chênh lệch</TableHead>
+                    <TableHead>Tốc độ sau giảm tốc</TableHead>
+                    <TableHead>Gọi / SMS</TableHead>
+                    <TableHead>Loại gói</TableHead>
+                    <TableHead>Topup</TableHead>
+                    <TableHead>Tiktok & AI</TableHead>
+                    <TableHead>Hoàn tiền</TableHead>
+                    <TableHead className='text-right'>Giá đại lý</TableHead>
+                    <TableHead className='text-right'>Giá bán lẻ đề xuất</TableHead>
+                    <TableHead>Rẻ nhất</TableHead>
                     <TableHead className='text-right'>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {plans.map((plan) => (
-                    <TableRow key={plan.id}>
-                      <TableCell className='max-w-[260px]'>{plan.name}</TableCell>
+                    <TableRow key={plan.id} data-testid={`plan-row-${plan.id}`}>
+                      <TableCell className='max-w-[240px] min-w-[180px]'>{plan.name}</TableCell>
                       <TableCell className='text-xs'>{plan.destinationName ?? '—'}</TableCell>
-                      <TableCell className='text-xs tabular-nums'>
+                      <TableCell className='text-xs whitespace-nowrap tabular-nums'>
                         {formatDataSize(plan.dataMb)}
                       </TableCell>
-                      <TableCell className='text-xs tabular-nums'>
+                      <TableCell className='text-xs whitespace-nowrap tabular-nums'>
                         {plan.durationDays} ngày
                       </TableCell>
-                      <TableCell className='text-right font-medium tabular-nums'>
-                        {plan.purchasable ? formatVnd(plan.unitPriceVnd) : '—'}
+                      <TableCell className='text-xs'>{plan.throttleSpeed || '—'}</TableCell>
+                      <TableCell className='text-xs whitespace-nowrap'>
+                        {/* One cell for the three, calls and SMS beneath (#034). */}
+                        <span className='block'>{yesNo(plan.hasCallSms)}</span>
+                        {plan.hasCallSms && (
+                          <>
+                            <span className='text-muted-foreground block'>
+                              Gọi: {plan.call ?? 0} phút
+                            </span>
+                            <span className='text-muted-foreground block'>
+                              SMS: {plan.sms ?? 0}
+                            </span>
+                          </>
+                        )}
                       </TableCell>
-                      <TableCell className='text-muted-foreground text-right tabular-nums'>
-                        {formatVnd(plan.listPriceVnd)}
+                      <TableCell className='text-xs'>
+                        {PLAN_TYPE_LABEL[plan.type ?? ''] ?? plan.type ?? '—'}
                       </TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        <span
-                          className={plan.marginVnd < 0 ? 'text-destructive' : 'text-green-600'}
-                        >
-                          {plan.marginVnd < 0 ? '−' : '+'}
-                          {formatVnd(Math.abs(plan.marginVnd))}
+                      <TableCell className='text-xs'>{yesNo(plan.topUp)}</TableCell>
+                      <TableCell className='text-xs'>{yesNo(plan.tiktokAi)}</TableCell>
+                      <TableCell className='text-xs'>
+                        <span className={plan.refundable ? '' : 'text-destructive'}>
+                          {yesNo(plan.refundable)}
                         </span>
                       </TableCell>
+                      <TableCell className='text-right font-medium whitespace-nowrap tabular-nums'>
+                        {plan.purchasable ? formatVnd(plan.unitPriceVnd) : '—'}
+                      </TableCell>
+                      <TableCell className='text-right whitespace-nowrap tabular-nums'>
+                        {plan.purchasable ? formatVnd(plan.suggestedRetailVnd ?? 0) : '—'}
+                      </TableCell>
+                      <TableCell className='text-xs'>{yesNo(plan.isCheapest)}</TableCell>
                       <TableCell className='text-right'>
-                        {plan.purchasable ? (
-                          <Button size='sm' onClick={() => setSelected(plan)}>
-                            Đặt mua
+                        <div className='flex justify-end gap-1'>
+                          <Button size='sm' variant='ghost' onClick={() => setDetail(plan)}>
+                            Xem chi tiết
                           </Button>
-                        ) : (
-                          <Badge variant='outline' title='Gói chưa có giá vốn'>
-                            Chưa bán
-                          </Badge>
-                        )}
+                          {plan.purchasable ? (
+                            <>
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                onClick={() => setCarting(plan)}
+                                aria-label='Thêm giỏ hàng'
+                              >
+                                <Icons.shoppingCart className='size-4' />
+                                Thêm giỏ hàng
+                              </Button>
+                              <Button size='sm' onClick={() => setSelected(plan)}>
+                                Đặt mua
+                              </Button>
+                            </>
+                          ) : (
+                            <Badge variant='outline' title='Gói chưa có giá vốn'>
+                              Chưa bán
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -228,6 +284,27 @@ export function PortalCatalogueView() {
               </p>
             </div>
 
+            <div className='space-y-2'>
+              <Label htmlFor='purchase-email'>Email nhận mã QR eSIM</Label>
+              <Input
+                id='purchase-email'
+                type='email'
+                placeholder='khachhang@email.com'
+                value={recipientEmail}
+                aria-invalid={!emailValid}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+              />
+              <p
+                className={
+                  emailValid ? 'text-muted-foreground text-xs' : 'text-destructive text-xs'
+                }
+              >
+                {emailValid
+                  ? 'Hệ thống gửi thẳng mã QR của từng eSIM tới email này, kèm logo thương hiệu của bạn. Để trống thì chỉ tải mã eSIM bằng file Excel ở trang Đơn hàng.'
+                  : 'Email không hợp lệ.'}
+              </p>
+            </div>
+
             <div className='bg-muted/50 space-y-2 rounded-md p-3 text-sm'>
               <Row label='Giá vốn một eSIM' value={formatVnd(quote?.unitPriceVnd ?? 0)} />
               <Row
@@ -264,12 +341,18 @@ export function PortalCatalogueView() {
               disabled={
                 !selected ||
                 parsedQuantity < 1 ||
+                !emailValid ||
                 quoting ||
                 Boolean(quote?.rejection) ||
                 purchase.isPending
               }
               onClick={() =>
-                selected && purchase.mutate({ planId: selected.id, quantity: parsedQuantity })
+                selected &&
+                purchase.mutate({
+                  planId: selected.id,
+                  quantity: parsedQuantity,
+                  ...(recipientEmail.trim() ? { recipientEmail: recipientEmail.trim() } : {})
+                })
               }
             >
               {purchase.isPending ? 'Đang đặt…' : `Xác nhận trừ ${formatVnd(quote?.totalVnd ?? 0)}`}
@@ -277,6 +360,9 @@ export function PortalCatalogueView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PlanDetailDialog plan={detail} onOpenChange={(o) => !o && setDetail(null)} />
+      <AddToCartDialog plan={carting} onOpenChange={(o) => !o && setCarting(null)} />
     </div>
   );
 }
