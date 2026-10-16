@@ -17,6 +17,8 @@ export interface LinkableDestination {
   slug: string;
   slugVi: string | null;
   imageUrl: string | null;
+  /** eSIMs sold for it (doitac-1410 #077). */
+  soldCount: number;
 }
 
 /** Where the customer-facing site lives. */
@@ -68,6 +70,7 @@ type SearchRecord = {
   flagUrl?: string | null;
   iconUrl?: string | null;
   avatarUrl?: string | null;
+  soldCount?: number | string | null;
 };
 
 function toLinkable(kind: LinkableDestination['kind'], record: SearchRecord): LinkableDestination {
@@ -82,7 +85,8 @@ function toLinkable(kind: LinkableDestination['kind'], record: SearchRecord): Li
     imageUrl:
       kind === 'destination'
         ? (record.flagUrl ?? record.avatarUrl ?? null)
-        : (record.iconUrl ?? record.avatarUrl ?? null)
+        : (record.iconUrl ?? record.avatarUrl ?? null),
+    soldCount: Number(record.soldCount ?? 0)
   };
 }
 

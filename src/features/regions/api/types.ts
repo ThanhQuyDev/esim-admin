@@ -19,6 +19,8 @@ export type Region = {
   iconUrl: string | null;
   isPopular: boolean;
   isActive: boolean;
+  /** eSIMs sold for it, all plans together (doitac-1410 #077). */
+  soldCount?: number;
   title: string | null;
   titleVi: string | null;
   description: string | null;

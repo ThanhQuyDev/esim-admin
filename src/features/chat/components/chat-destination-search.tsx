@@ -200,6 +200,13 @@ export function ChatDestinationSearch() {
                     <span className='text-muted-foreground shrink-0 text-[10px]'>
                       {item.kind === 'destination' ? 'Quốc gia' : 'Khu vực'}
                     </span>
+                    {/* Which ones sell, to send the customer the best one (#077). */}
+                    <span
+                      className='shrink-0 rounded bg-emerald-50 px-1 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                      data-testid={`chat-destination-sold-${key}`}
+                    >
+                      {item.soldCount.toLocaleString('vi-VN')} lượt bán
+                    </span>
                   </div>
                   <div className='flex gap-1.5'>
                     <Button

@@ -57,6 +57,19 @@ export const columns: ColumnDef<Destination>[] = [
     cell: ({ row }) => <Badge variant='outline'>{row.original.countryCode}</Badge>
   },
   {
+    // Which ones sell (doitac-1410 #077).
+    id: 'soldCount',
+    accessorKey: 'soldCount',
+    header: ({ column }: { column: Column<Destination, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Lượt bán' />
+    ),
+    cell: ({ row }) => (
+      <span className='tabular-nums' data-testid='sold-count'>
+        {Number(row.original.soldCount ?? 0).toLocaleString('vi-VN')}
+      </span>
+    )
+  },
+  {
     id: 'isPopular',
     accessorKey: 'isPopular',
     header: 'Nổi bật',
