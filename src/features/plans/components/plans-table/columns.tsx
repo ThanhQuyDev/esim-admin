@@ -310,12 +310,24 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       accessorFn: (row) =>
         Number(row.sms ?? 0) > 0 || Number(row.call ?? 0) > 0 ? 'true' : 'false',
       header: 'Gọi / SMS',
+      // One column instead of three (doitac-1410 #071): Có/Không, then the
+      // call minutes and the SMS under it — few plans carry either.
       cell: ({ row }) => {
-        const hasCallSms = Number(row.original.sms ?? 0) > 0 || Number(row.original.call ?? 0) > 0;
+        const call = Number(row.original.call ?? 0);
+        const sms = Number(row.original.sms ?? 0);
+        const hasCallSms = sms > 0 || call > 0;
         return (
-          <Badge variant={hasCallSms ? 'default' : 'secondary'}>
-            {hasCallSms ? 'Có' : 'Không'}
-          </Badge>
+          <div className='space-y-0.5 text-xs whitespace-nowrap' data-testid='plan-call-sms'>
+            <Badge variant={hasCallSms ? 'default' : 'secondary'}>
+              {hasCallSms ? 'Có' : 'Không'}
+            </Badge>
+            {hasCallSms && (
+              <>
+                <div>Call: {call > 0 ? `${call} phút` : '—'}</div>
+                <div>SMS: {sms > 0 ? sms : '—'}</div>
+              </>
+            )}
+          </div>
         );
       },
       enableSorting: false,
@@ -328,22 +340,6 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
           { value: 'false', label: 'Không' }
         ]
       }
-    },
-    {
-      id: 'sms',
-      accessorKey: 'sms',
-      header: 'SMS',
-      cell: ({ row }) => <span>{row.original.sms != null ? row.original.sms : '—'}</span>,
-      enableSorting: false
-    },
-    {
-      id: 'call',
-      accessorKey: 'call',
-      header: 'Gọi điện',
-      cell: ({ row }) => (
-        <span>{row.original.call != null ? `${row.original.call} phút` : '—'}</span>
-      ),
-      enableSorting: false
     },
     {
       id: 'price',
