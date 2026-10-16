@@ -602,6 +602,8 @@ export type MyPurchaseDetail = {
   paymentMethod: string;
   paidVnd: number;
   refundedVnd: number;
+  /** Money that went back to the wallet, each time (doitac-1410 #058). */
+  refunds?: { amountVnd: number; reason: string | null; at: string }[];
   esimCount: number;
   deliveryEmail: string | null;
   agentTotalVnd: number;
@@ -614,6 +616,9 @@ export type MyPurchaseDetail = {
     isUnlimited: boolean;
   } | null;
   products: {
+    /** The order line, and one eSIM at the agent price (doitac-1410 #058). */
+    itemId?: number;
+    unitVnd?: number;
     planName: string | null;
     quantity: number;
     agentTotalVnd: number;

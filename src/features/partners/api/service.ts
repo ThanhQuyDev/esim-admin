@@ -512,3 +512,24 @@ export async function addLinkNote(linkId: number, body: string): Promise<unknown
     body: JSON.stringify({ body })
   });
 }
+
+/** "Xem chi tiết" of a partner order (doitac-1410 #058). */
+export async function getAdminPartnerOrderDetail<T>(
+  orderNumber: string,
+  partnerType: 'kol' | 'distribution'
+): Promise<T> {
+  return apiClient<T>(
+    `/partners/orders/${encodeURIComponent(orderNumber)}/detail${toQuery({ partnerType })}`
+  );
+}
+
+/** "Hoàn tiền" on a distribution partner's order, back to their wallet (#058). */
+export async function refundPartnerPurchase(
+  orderNumber: string,
+  payload: { iccids?: string[]; itemIds?: number[]; reason: string }
+): Promise<{ refundedVnd: number; esims: string[] }> {
+  return apiClient(`/partners/orders/${encodeURIComponent(orderNumber)}/refund`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}

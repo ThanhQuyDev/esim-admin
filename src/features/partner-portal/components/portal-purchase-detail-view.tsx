@@ -30,8 +30,13 @@ import {
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
+import { adminPartnerOrderDetailQueryOptions } from '@/features/partners/api/queries';
+import type { AdminOrderPartner } from '@/features/partners/api/types';
+import { PartnerPurchaseRefundDialog } from '@/features/partners/components/partner-purchase-refund-dialog';
+
 import { myPurchaseDetailQueryOptions } from '../api/queries';
 import { resendPurchaseEmail } from '../api/service';
+import type { MyPurchaseDetail } from '../api/types';
 import { PLAN_TYPE_LABEL } from './portal-catalogue-dialogs';
 import {
   EsimRequestDialog,
@@ -65,9 +70,33 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function PortalPurchaseDetailView({ orderNumber }: { orderNumber: string }) {
-  const { data: order, isLoading, error } = useQuery(myPurchaseDetailQueryOptions(orderNumber));
+/**
+ * `admin` is the admin's "Xem chi tiết" from "Đơn hàng đối tác" (doitac-1410
+ * #058): the same page the partner reads, with who the partner is and a
+ * "Hoàn tiền" that picks products or eSIMs instead of the partner's requests.
+ */
+export function PortalPurchaseDetailView({
+  orderNumber,
+  admin = false
+}: {
+  orderNumber: string;
+  admin?: boolean;
+}) {
+  const mine = useQuery({ ...myPurchaseDetailQueryOptions(orderNumber), enabled: !admin });
+  const asAdmin = useQuery({
+    ...adminPartnerOrderDetailQueryOptions<MyPurchaseDetail & { partner: AdminOrderPartner }>(
+      orderNumber,
+      'distribution'
+    ),
+    enabled: admin
+  });
+  const { data: order, isLoading, error } = admin ? asAdmin : mine;
+  const partner = admin ? asAdmin.data?.partner : undefined;
+  const listHref = admin
+    ? '/dashboard/partners/orders?tab=distribution'
+    : '/dashboard/portal/orders';
   const [request, setRequest] = useState<EsimRequestTarget | null>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
 
   const resend = useMutation({
     mutationFn: () => resendPurchaseEmail(orderNumber),
@@ -92,7 +121,7 @@ export function PortalPurchaseDetailView({ orderNumber }: { orderNumber: string 
           {(error as Error | null)?.message ?? 'Không tìm thấy đơn hàng này.'}
         </p>
         <Button asChild variant='outline' size='sm'>
-          <Link href='/dashboard/portal/orders'>Về danh sách đơn hàng</Link>
+          <Link href={listHref}>Về danh sách đơn hàng</Link>
         </Button>
       </div>
     );
@@ -110,46 +139,60 @@ export function PortalPurchaseDetailView({ orderNumber }: { orderNumber: string 
     <div className='grid min-w-0 grid-cols-1 gap-4'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <Button asChild variant='ghost' size='sm' className='px-2'>
-          <Link href='/dashboard/portal/orders'>
+          <Link href={listHref}>
             <Icons.chevronLeft className='size-4' />
             Danh sách đơn hàng
           </Link>
         </Button>
-        <div className='flex flex-wrap gap-2' data-testid='purchase-detail-actions'>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={isTopup || order.esimCount === 0 || resend.isPending}
-            title={isTopup ? 'Đơn topup không có eSIM mới để gửi' : undefined}
-            onClick={() => resend.mutate()}
-          >
-            <Icons.mail className='size-4' />
-            {resend.isPending ? 'Đang gửi…' : 'Gửi lại email eSIM'}
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={closed}
-            onClick={() => setRequest({ orderNumber: order.orderNumber, kind: 'fault' })}
-          >
-            Báo lỗi
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={closed || (!isTopup && !anyRefundable)}
-            title={
-              closed
-                ? 'Đơn đã được hoàn tiền'
-                : !isTopup && !anyRefundable
-                  ? 'Các gói trong đơn này không hỗ trợ hoàn tiền'
-                  : undefined
-            }
-            onClick={() => setRequest({ orderNumber: order.orderNumber, kind: 'refund' })}
-          >
-            Yêu cầu hoàn tiền
-          </Button>
-        </div>
+        {admin ? (
+          <div className='flex flex-wrap gap-2' data-testid='purchase-detail-actions'>
+            <Button
+              variant='destructive'
+              size='sm'
+              disabled={closed || order.paidVnd - order.refundedVnd <= 0}
+              title={closed ? 'Đơn đã được hoàn tiền' : undefined}
+              onClick={() => setRefundOpen(true)}
+            >
+              Hoàn tiền
+            </Button>
+          </div>
+        ) : (
+          <div className='flex flex-wrap gap-2' data-testid='purchase-detail-actions'>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={isTopup || order.esimCount === 0 || resend.isPending}
+              title={isTopup ? 'Đơn topup không có eSIM mới để gửi' : undefined}
+              onClick={() => resend.mutate()}
+            >
+              <Icons.mail className='size-4' />
+              {resend.isPending ? 'Đang gửi…' : 'Gửi lại email eSIM'}
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={closed}
+              onClick={() => setRequest({ orderNumber: order.orderNumber, kind: 'fault' })}
+            >
+              Báo lỗi
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={closed || (!isTopup && !anyRefundable)}
+              title={
+                closed
+                  ? 'Đơn đã được hoàn tiền'
+                  : !isTopup && !anyRefundable
+                    ? 'Các gói trong đơn này không hỗ trợ hoàn tiền'
+                    : undefined
+              }
+              onClick={() => setRequest({ orderNumber: order.orderNumber, kind: 'refund' })}
+            >
+              Yêu cầu hoàn tiền
+            </Button>
+          </div>
+        )}
       </div>
 
       <Card className='min-w-0'>
@@ -157,6 +200,20 @@ export function PortalPurchaseDetailView({ orderNumber }: { orderNumber: string 
           <CardTitle>Thông tin đơn hàng</CardTitle>
         </CardHeader>
         <CardContent className='grid grid-cols-1 gap-x-8 md:grid-cols-2'>
+          {partner && (
+            <InfoRow
+              label='Đối tác'
+              value={
+                <Link
+                  href={`/dashboard/partners/${partner.id}`}
+                  className='text-primary hover:underline'
+                  data-testid='detail-partner'
+                >
+                  {partner.name} · #{partner.id}
+                </Link>
+              }
+            />
+          )}
           <InfoRow
             label='Mã đơn hàng'
             value={<span className='font-mono'>{order.orderNumber}</span>}
@@ -204,7 +261,9 @@ export function PortalPurchaseDetailView({ orderNumber }: { orderNumber: string 
             <InfoRow
               label='eSIM được topup'
               value={
-                order.topup.iccid ? (
+                order.topup.iccid && admin ? (
+                  <span className='font-mono'>{order.topup.iccid}</span>
+                ) : order.topup.iccid ? (
                   <Link
                     href={`/dashboard/portal/esims/${encodeURIComponent(order.topup.iccid)}`}
                     className='text-primary font-mono hover:underline'
@@ -296,13 +355,20 @@ export function PortalPurchaseDetailView({ orderNumber }: { orderNumber: string 
                           <TableCell className='text-xs'>{dateOrDash(esim.activatedAt)}</TableCell>
                           <TableCell className='text-xs'>{dateOrDash(esim.expiresAt)}</TableCell>
                           <TableCell className='text-right'>
-                            <Button variant='link' size='sm' className='h-auto p-0 text-xs' asChild>
-                              <Link
-                                href={`/dashboard/portal/esims/${encodeURIComponent(esim.iccid)}`}
+                            {!admin && (
+                              <Button
+                                variant='link'
+                                size='sm'
+                                className='h-auto p-0 text-xs'
+                                asChild
                               >
-                                Xem chi tiết
-                              </Link>
-                            </Button>
+                                <Link
+                                  href={`/dashboard/portal/esims/${encodeURIComponent(esim.iccid)}`}
+                                >
+                                  Xem chi tiết
+                                </Link>
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -315,7 +381,32 @@ export function PortalPurchaseDetailView({ orderNumber }: { orderNumber: string 
         </Card>
       ))}
 
-      <EsimRequestDialog target={request} onClose={() => setRequest(null)} />
+      {(order.refunds ?? []).length > 0 && (
+        <Card className='min-w-0' data-testid='purchase-refunds'>
+          <CardHeader>
+            <CardTitle>Lịch sử hoàn tiền về ví</CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-2'>
+            {(order.refunds ?? []).map((refund, index) => (
+              <div
+                key={`${refund.at}-${index}`}
+                className='flex flex-col gap-0.5 border-b pb-2 text-sm last:border-0 sm:flex-row sm:justify-between sm:gap-4'
+              >
+                <span className='min-w-0 break-words'>{refund.reason ?? 'Hoàn tiền'}</span>
+                <span className='shrink-0 tabular-nums'>
+                  +{formatVnd(refund.amountVnd)} · {dateOrDash(refund.at)}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {admin ? (
+        <PartnerPurchaseRefundDialog order={order} open={refundOpen} onOpenChange={setRefundOpen} />
+      ) : (
+        <EsimRequestDialog target={request} onClose={() => setRequest(null)} />
+      )}
     </div>
   );
 }

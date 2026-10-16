@@ -24,6 +24,7 @@ import { formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 import { myOrderDetailQueryOptions } from '../api/queries';
+import type { MyOrderDetail } from '../api/types';
 import { COMMISSION_STATUS, ProductLine, refundedQtyOf } from './orders-table/columns';
 
 function formatMoment(value: string | null): string {
@@ -45,6 +46,32 @@ interface OrderDetailDialogProps {
 export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDialogProps) {
   const { data, isLoading } = useQuery(myOrderDetailQueryOptions(orderNumber));
 
+  return (
+    <Dialog open={Boolean(orderNumber)} onOpenChange={onOpenChange}>
+      <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-xl'>
+        <DialogHeader>
+          <DialogTitle>Chi tiết đơn {orderNumber}</DialogTitle>
+          <DialogDescription>
+            Sản phẩm, hoa hồng và lịch sử ghi nhận nguồn giới thiệu của đơn này.
+          </DialogDescription>
+        </DialogHeader>
+        <OrderDetailBody data={data} isLoading={isLoading} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * The order itself — also the admin's "Xem chi tiết" page of a marketing
+ * partner's order (doitac-1410 #058), so both read exactly the same thing.
+ */
+export function OrderDetailBody({
+  data,
+  isLoading
+}: {
+  data: MyOrderDetail | undefined;
+  isLoading: boolean;
+}) {
   // A refused order shows no status badge, but says why (doitac-1410 #027).
   const refused = data?.commissionStatus === 'rejected';
   const status =
@@ -97,116 +124,105 @@ export function OrderDetailDialog({ orderNumber, onOpenChange }: OrderDetailDial
   ];
 
   return (
-    <Dialog open={Boolean(orderNumber)} onOpenChange={onOpenChange}>
-      <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-xl'>
-        <DialogHeader>
-          <DialogTitle>Chi tiết đơn {orderNumber}</DialogTitle>
-          <DialogDescription>
-            Sản phẩm, hoa hồng và lịch sử ghi nhận nguồn giới thiệu của đơn này.
-          </DialogDescription>
-          {refundedEsims > 0 && (
-            <Badge variant='secondary' className='w-fit' data-testid='order-refunded-esims'>
-              {refundedEsims >= totalEsims
-                ? `Đã hoàn tiền toàn bộ ${totalEsims} eSIM`
-                : `Đã hoàn ${refundedEsims}/${totalEsims} eSIM`}
-            </Badge>
-          )}
-        </DialogHeader>
+    <div className='space-y-4'>
+      {refundedEsims > 0 && (
+        <Badge variant='secondary' className='w-fit' data-testid='order-refunded-esims'>
+          {refundedEsims >= totalEsims
+            ? `Đã hoàn tiền toàn bộ ${totalEsims} eSIM`
+            : `Đã hoàn ${refundedEsims}/${totalEsims} eSIM`}
+        </Badge>
+      )}
 
-        {isLoading && <p className='text-muted-foreground py-8 text-center text-sm'>Đang tải…</p>}
+      {isLoading && <p className='text-muted-foreground py-8 text-center text-sm'>Đang tải…</p>}
 
-        {data && (
-          <div className='space-y-4'>
-            <div className='space-y-1'>
-              {data.items.map((item, index) => (
-                <ProductLine key={`${item.planName}-${index}`} item={item} wrap />
-              ))}
-            </div>
-
-            <Separator />
-
-            <dl className='grid grid-cols-2 gap-3 text-sm'>
-              <div>
-                <dt className='text-muted-foreground'>Tổng doanh thu đơn</dt>
-                <dd className='font-medium tabular-nums'>{formatVnd(data.revenueVnd)}</dd>
-                {data.refundedVnd > 0 && (
-                  <dd className='text-muted-foreground text-xs tabular-nums'>
-                    Đã hoàn {formatVnd(data.refundedVnd)} · còn{' '}
-                    {formatVnd(Math.max(0, data.revenueVnd - data.refundedVnd))}
-                  </dd>
-                )}
-              </div>
-              <div>
-                <dt className='text-muted-foreground'>Hoa hồng</dt>
-                <dd className='font-medium tabular-nums'>
-                  {data.commissionVnd == null ? '—' : formatVnd(data.commissionVnd)}
-                  {data.commissionPercent != null && (
-                    <span className='text-muted-foreground font-normal'>
-                      {' '}
-                      ({data.commissionPercent}%)
-                    </span>
-                  )}
-                </dd>
-              </div>
-              <div className={noCommission ? 'col-span-2' : undefined}>
-                <dt className='text-muted-foreground'>Trạng thái đơn</dt>
-                <dd>
-                  {status ? (
-                    <Badge variant='outline' className={status.className}>
-                      {status.label}
-                    </Badge>
-                  ) : (
-                    <span className='text-muted-foreground'>Không phát sinh hoa hồng</span>
-                  )}
-                  {noCommission && (
-                    <p className='text-destructive mt-1 text-xs' data-testid='no-commission-reason'>
-                      Lý do:{' '}
-                      {rejection ??
-                        'Đơn không đủ điều kiện tính hoa hồng (hạng 0% hoặc đơn chưa thanh toán).'}
-                    </p>
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className='text-muted-foreground'>Nguồn ghi nhận</dt>
-                <dd className='font-mono text-xs'>
-                  {data.source.type === 'link'
-                    ? `/go/${data.source.code}`
-                    : (data.source.code ?? '—')}
-                </dd>
-              </div>
-            </dl>
-
-            <Separator />
-
-            <div>
-              <p className='mb-3 text-sm font-medium'>Lịch sử ghi nhận nguồn giới thiệu</p>
-              <ol className='space-y-3'>
-                {steps.map((step) => (
-                  <li
-                    key={'key' in step && step.key ? step.key : step.label}
-                    className='flex gap-3'
-                  >
-                    <span
-                      className={cn(
-                        'mt-1.5 size-2 shrink-0 rounded-full',
-                        step.at ? 'bg-primary' : 'bg-muted-foreground/30'
-                      )}
-                    />
-                    <div className='min-w-0'>
-                      <p className='text-sm'>{step.label}</p>
-                      <p className='text-muted-foreground text-xs'>
-                        {formatMoment(step.at ?? null)}
-                        {step.hint && ` · ${step.hint}`}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
+      {data && (
+        <div className='space-y-4'>
+          <div className='space-y-1'>
+            {data.items.map((item, index) => (
+              <ProductLine key={`${item.planName}-${index}`} item={item} wrap />
+            ))}
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+
+          <Separator />
+
+          <dl className='grid grid-cols-2 gap-3 text-sm'>
+            <div>
+              <dt className='text-muted-foreground'>Tổng doanh thu đơn</dt>
+              <dd className='font-medium tabular-nums'>{formatVnd(data.revenueVnd)}</dd>
+              {data.refundedVnd > 0 && (
+                <dd className='text-muted-foreground text-xs tabular-nums'>
+                  Đã hoàn {formatVnd(data.refundedVnd)} · còn{' '}
+                  {formatVnd(Math.max(0, data.revenueVnd - data.refundedVnd))}
+                </dd>
+              )}
+            </div>
+            <div>
+              <dt className='text-muted-foreground'>Hoa hồng</dt>
+              <dd className='font-medium tabular-nums'>
+                {data.commissionVnd == null ? '—' : formatVnd(data.commissionVnd)}
+                {data.commissionPercent != null && (
+                  <span className='text-muted-foreground font-normal'>
+                    {' '}
+                    ({data.commissionPercent}%)
+                  </span>
+                )}
+              </dd>
+            </div>
+            <div className={noCommission ? 'col-span-2' : undefined}>
+              <dt className='text-muted-foreground'>Trạng thái đơn</dt>
+              <dd>
+                {status ? (
+                  <Badge variant='outline' className={status.className}>
+                    {status.label}
+                  </Badge>
+                ) : (
+                  <span className='text-muted-foreground'>Không phát sinh hoa hồng</span>
+                )}
+                {noCommission && (
+                  <p className='text-destructive mt-1 text-xs' data-testid='no-commission-reason'>
+                    Lý do:{' '}
+                    {rejection ??
+                      'Đơn không đủ điều kiện tính hoa hồng (hạng 0% hoặc đơn chưa thanh toán).'}
+                  </p>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className='text-muted-foreground'>Nguồn ghi nhận</dt>
+              <dd className='font-mono text-xs'>
+                {data.source.type === 'link'
+                  ? `/go/${data.source.code}`
+                  : (data.source.code ?? '—')}
+              </dd>
+            </div>
+          </dl>
+
+          <Separator />
+
+          <div>
+            <p className='mb-3 text-sm font-medium'>Lịch sử ghi nhận nguồn giới thiệu</p>
+            <ol className='space-y-3'>
+              {steps.map((step) => (
+                <li key={'key' in step && step.key ? step.key : step.label} className='flex gap-3'>
+                  <span
+                    className={cn(
+                      'mt-1.5 size-2 shrink-0 rounded-full',
+                      step.at ? 'bg-primary' : 'bg-muted-foreground/30'
+                    )}
+                  />
+                  <div className='min-w-0'>
+                    <p className='text-sm'>{step.label}</p>
+                    <p className='text-muted-foreground text-xs'>
+                      {formatMoment(step.at ?? null)}
+                      {step.hint && ` · ${step.hint}`}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

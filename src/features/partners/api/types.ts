@@ -668,6 +668,8 @@ export type AdminDistributionOrderRow = {
   partnerName: string | null;
   status: string;
   orderType: string | null;
+  topupPackageName?: string | null;
+  deliveryEmail?: string | null;
   paidVnd: number;
   listVnd: number;
   refundedVnd: number;
@@ -684,6 +686,25 @@ export type PartnerOrderFilters = {
   search?: string;
   status?: string;
   limit?: number;
+  // doitac-1410 #058
+  iccid?: string;
+  planName?: string;
+  email?: string;
+  /** Vietnamese days, YYYY-MM-DD. */
+  from?: string;
+  to?: string;
+  /** Marketing: link | coupon | member. */
+  source?: string;
+  /** Distribution: BUY_NEW | TOPUP. */
+  orderType?: string;
+};
+
+/** Who the order belongs to, on the admin's "Xem chi tiết" (doitac-1410 #058). */
+export type AdminOrderPartner = {
+  id: number;
+  name: string;
+  contactName: string | null;
+  email: string | null;
 };
 
 /** The partner programme's settings (#075, #076, #077). */

@@ -29,7 +29,8 @@ import {
   getReconciliations,
   getAdminLinkStats,
   getAdminLinks,
-  getAdminLinkDetail
+  getAdminLinkDetail,
+  getAdminPartnerOrderDetail
 } from './service';
 import type {
   PartnerFilters,
@@ -267,4 +268,15 @@ export const adminLinkDetailQueryOptions = (linkId: number | null) =>
     queryKey: [...partnerKeys.all, 'link', linkId],
     queryFn: () => getAdminLinkDetail(linkId!),
     enabled: linkId !== null
+  });
+
+/** "Xem chi tiết" of a partner order (doitac-1410 #058). */
+export const adminPartnerOrderDetailQueryOptions = <T>(
+  orderNumber: string,
+  partnerType: 'kol' | 'distribution'
+) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'order-detail', partnerType, orderNumber],
+    queryFn: () => getAdminPartnerOrderDetail<T>(orderNumber, partnerType),
+    retry: false
   });
