@@ -75,9 +75,26 @@ function formatData(mb: number | null): string {
   return `${Math.round(mb)} MB`;
 }
 
+/** "Loại gói eSIM" (doitac-1410 #037). */
+const PLAN_TYPE_FILTERS = [
+  { value: 'all', label: 'Loại gói: tất cả' },
+  { value: 'fixed', label: 'Cố định' },
+  { value: 'daily', label: 'Theo ngày' },
+  { value: 'unlimited', label: 'Không giới hạn' },
+  { value: 'unlimited-reduce', label: 'Không giới hạn giảm tốc' }
+];
+
 export function PortalEsimsView() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
+  // Plan type, top-up and the created range (doitac-1410 #037).
+  const [planType, setPlanType] = useState('all');
+  const [topUp, setTopUp] = useState('all');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const filtered = Boolean(
+    search.trim() || status !== 'all' || planType !== 'all' || topUp !== 'all' || from || to
+  );
   /** eSIM đang được báo lỗi, hoặc null khi hộp thoại đóng (#046, A4). */
   const [faulty, setFaulty] = useState<{ iccid: string; orderNumber: string } | null>(null);
   const [reason, setReason] = useState('');
@@ -100,7 +117,11 @@ export function PortalEsimsView() {
     myEsimsQueryOptions({
       search: search.trim() || undefined,
       status: status === 'all' ? undefined : status,
-      limit: 200
+      limit: 200,
+      ...(planType !== 'all' ? { planType } : {}),
+      ...(topUp !== 'all' ? { topUp } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {})
     })
   );
 
@@ -160,15 +181,15 @@ export function PortalEsimsView() {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <div className='flex flex-wrap items-center gap-2'>
+          <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'>
             <Input
               placeholder='Tìm ICCID, mã đơn hoặc tên gói'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className='max-w-[260px]'
+              data-testid='esim-search'
             />
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className='w-[180px]'>
+              <SelectTrigger className='w-full' aria-label='Trạng thái'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -179,7 +200,73 @@ export function PortalEsimsView() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={planType} onValueChange={setPlanType}>
+              <SelectTrigger
+                className='w-full'
+                aria-label='Loại gói eSIM'
+                data-testid='esim-plan-type'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PLAN_TYPE_FILTERS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={topUp} onValueChange={setTopUp}>
+              <SelectTrigger className='w-full' aria-label='Hỗ trợ topup' data-testid='esim-topup'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>Hỗ trợ topup: tất cả</SelectItem>
+                <SelectItem value='true'>Hỗ trợ topup: Có</SelectItem>
+                <SelectItem value='false'>Hỗ trợ topup: Không</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className='flex min-w-0 items-center gap-2'>
+              <span className='text-muted-foreground shrink-0 text-xs'>Tạo từ</span>
+              <Input
+                type='date'
+                value={from}
+                max={to || undefined}
+                onChange={(e) => setFrom(e.target.value)}
+                aria-label='Thời gian tạo từ'
+                className='min-w-0 flex-1'
+                data-testid='esim-from'
+              />
+            </div>
+            <div className='flex min-w-0 items-center gap-2'>
+              <span className='text-muted-foreground shrink-0 text-xs'>đến</span>
+              <Input
+                type='date'
+                value={to}
+                min={from || undefined}
+                onChange={(e) => setTo(e.target.value)}
+                aria-label='Thời gian tạo đến'
+                className='min-w-0 flex-1'
+                data-testid='esim-to'
+              />
+            </div>
           </div>
+          {filtered && (
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={() => {
+                setSearch('');
+                setStatus('all');
+                setPlanType('all');
+                setTopUp('all');
+                setFrom('');
+                setTo('');
+              }}
+            >
+              Xoá bộ lọc
+            </Button>
+          )}
 
           {isLoading ? (
             <div className='flex justify-center py-12'>

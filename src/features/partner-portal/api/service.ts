@@ -284,8 +284,20 @@ export async function getMyEsims(filters?: {
   search?: string;
   status?: string;
   limit?: number;
+  /** doitac-1410 #037 */
+  planType?: string;
+  topUp?: string;
+  from?: string;
+  to?: string;
 }): Promise<MyEsim[]> {
-  return apiClient<MyEsim[]>(`/partner-portal/esims${listQuery(filters)}`);
+  const params = new URLSearchParams(listQuery(filters).replace(/^\?/, ''));
+  // Plan type, top-up and the created range (doitac-1410 #037).
+  for (const key of ['planType', 'topUp', 'from', 'to'] as const) {
+    const value = filters?.[key];
+    if (value) params.set(key, value);
+  }
+  const query = params.toString();
+  return apiClient<MyEsim[]>(`/partner-portal/esims${query ? `?${query}` : ''}`);
 }
 
 export async function getMyPurchases(filters?: {

@@ -143,15 +143,14 @@ export const myEsimsQueryOptions = (filters?: {
   search?: string;
   status?: string;
   limit?: number;
+  /** doitac-1410 #037 */
+  planType?: string;
+  topUp?: string;
+  from?: string;
+  to?: string;
 }) =>
   queryOptions({
-    queryKey: [
-      ...partnerPortalKeys.all,
-      'esims',
-      filters?.search ?? '',
-      filters?.status ?? '',
-      filters?.limit ?? 0
-    ],
+    queryKey: [...partnerPortalKeys.all, 'esims', filters ?? {}],
     queryFn: () => getMyEsims(filters)
   });
 

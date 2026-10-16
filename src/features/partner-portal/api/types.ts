@@ -546,6 +546,9 @@ export type MyEsim = {
   activatedAt: string | null;
   expiresAt: string | null;
   createdAt: string | null;
+  /** doitac-1410 #037 */
+  planType?: string | null;
+  topUp?: boolean;
 };
 
 /** An order the distribution partner placed themselves (#046). */
