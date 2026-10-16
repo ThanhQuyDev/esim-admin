@@ -20,3 +20,21 @@ export async function setProviderSalesStatus(
     { method: 'PUT', body: JSON.stringify(data) }
   );
 }
+
+/** Where the full catalogue sync stands (doitac-1410 #074). */
+export type FullSyncStatus = {
+  running: boolean;
+  trigger: 'cron' | 'manual' | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  errors: string[];
+};
+
+export async function getFullSyncStatus(): Promise<FullSyncStatus> {
+  return apiClient<FullSyncStatus>(`${BASE}/full-sync`);
+}
+
+/** "Cập nhật lại toàn bộ sản phẩm": the 6-hourly sync, now. */
+export async function startFullSync(): Promise<{ started: boolean; status: FullSyncStatus }> {
+  return apiClient(`${BASE}/full-sync`, { method: 'POST' });
+}

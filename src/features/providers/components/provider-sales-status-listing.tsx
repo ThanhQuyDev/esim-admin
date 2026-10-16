@@ -2,6 +2,7 @@ import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { providerSalesStatusesQueryOptions } from '../api/queries';
 import { ProviderSalesStatusTable } from './provider-sales-status-table';
+import { FullSyncButton } from './full-sync-button';
 
 export default function ProviderSalesStatusListingPage() {
   const queryClient = getQueryClient();
@@ -9,7 +10,11 @@ export default function ProviderSalesStatusListingPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProviderSalesStatusTable />
+      <div className='space-y-4'>
+        {/* doitac-1410 #074 */}
+        <FullSyncButton />
+        <ProviderSalesStatusTable />
+      </div>
     </HydrationBoundary>
   );
 }
