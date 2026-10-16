@@ -1,3 +1,4 @@
+import { downloadFilename } from '@/lib/download-filename';
 import { apiClient } from '@/lib/api-client';
 import type {
   CreateInvoiceForOrderPayload,
@@ -90,7 +91,8 @@ export async function exportOrdersExcel(filters: OrderFilters): Promise<void> {
 
   const blob = await res.blob();
   const disposition = res.headers.get('content-disposition');
-  const filename = disposition?.match(/filename="?([^"]+)"?/)?.[1] || 'don-hang-doi-soat.xlsx';
+  const filename =
+    disposition?.match(/filename="?([^"]+)"?/)?.[1] || downloadFilename('Doi-soat-don-hang');
 
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);

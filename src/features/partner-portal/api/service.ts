@@ -1,3 +1,4 @@
+import { downloadFilename } from '@/lib/download-filename';
 import { apiClient } from '@/lib/api-client';
 import type {
   CartPurchaseResult,
@@ -190,12 +191,18 @@ export async function updateMyLink(id: number, data: UpdateLinkPayload): Promise
 
 /** Download the order list as a spreadsheet (#027). */
 export async function exportMyOrders(): Promise<void> {
-  await downloadPortalFile('/api/partner-portal/orders/export', 'don-hang-doi-tac.xlsx');
+  await downloadPortalFile(
+    '/api/partner-portal/orders/export',
+    downloadFilename('Danh-sach-don-hang')
+  );
 }
 
 /** Download the link list as a spreadsheet (#017). */
 export async function exportMyLinks(): Promise<void> {
-  await downloadPortalFile('/api/partner-portal/links/export', 'link-tiep-thi.xlsx');
+  await downloadPortalFile(
+    '/api/partner-portal/links/export',
+    downloadFilename('Danh-sach-link-tiep-thi')
+  );
 }
 
 /** Fetch a file the API generated and hand it to the browser as a download. */

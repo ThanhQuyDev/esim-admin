@@ -1,4 +1,5 @@
 'use client';
+import { downloadFilename } from '@/lib/download-filename';
 
 /**
  * Marketing links: the builder, the QR for the selected link, and the list of
@@ -222,7 +223,7 @@ export function PortalLinksView() {
     if (!canvas) return;
     const a = document.createElement('a');
     a.href = canvas.toDataURL('image/png');
-    a.download = 'partner-qr.png';
+    a.download = downloadFilename('Ma-QR-lien-ket', 'png');
     a.click();
   };
 

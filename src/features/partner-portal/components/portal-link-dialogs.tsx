@@ -1,4 +1,5 @@
 'use client';
+import { downloadFilename } from '@/lib/download-filename';
 
 /**
  * The popups behind each row of the marketing link list (doitac-1410 #018):
@@ -137,7 +138,7 @@ function downloadHistoryCsv(link: MyLink, events: MyLinkEvent[]) {
   const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Lich-su-lien-ket_${link.code}.csv`;
+  a.download = downloadFilename(`Lich-su-lien-ket-${link.code}`, 'csv');
   a.click();
   URL.revokeObjectURL(a.href);
 }

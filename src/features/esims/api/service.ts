@@ -1,3 +1,4 @@
+import { downloadFilename } from '@/lib/download-filename';
 import { apiClient } from '@/lib/api-client';
 import type {
   Esim,
@@ -94,7 +95,7 @@ export async function exportEsimsExcel(filters: EsimFilters): Promise<void> {
   const blob = await res.blob();
   const disposition = res.headers.get('content-disposition');
   const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
-  const filename = filenameMatch?.[1] || 'esims-export.xlsx';
+  const filename = filenameMatch?.[1] || downloadFilename('Danh-sach-eSIM');
 
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);

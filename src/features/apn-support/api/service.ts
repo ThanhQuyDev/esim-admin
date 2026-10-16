@@ -1,3 +1,4 @@
+import { downloadFilename } from '@/lib/download-filename';
 import { apiClient } from '@/lib/api-client';
 import type {
   ApnSupport,
@@ -64,7 +65,11 @@ export async function downloadApnExcel(): Promise<void> {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `apn-tiktok-gpt-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  // The API's own name; the same shape if it sent none (doitac-1410 #075).
+  const disposition = res.headers.get('content-disposition');
+  link.download =
+    disposition?.match(/filename="?([^"]+)"?/)?.[1] ||
+    downloadFilename('Danh-sach-APN-TikTok-ChatGPT');
   document.body.appendChild(link);
   link.click();
   link.remove();

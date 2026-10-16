@@ -1,4 +1,5 @@
 'use client';
+import { downloadFilename } from '@/lib/download-filename';
 
 import { useRef } from 'react';
 import { toast } from 'sonner';
@@ -52,7 +53,7 @@ export function PaymentLinkQrDialog({ link, onOpenChange }: PaymentLinkQrDialogP
       const url = canvas.toDataURL('image/png');
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `qr-${link.virtualOrderId}.png`;
+      anchor.download = downloadFilename(`Ma-QR-thanh-toan-${link.virtualOrderId}`, 'png');
       anchor.click();
     } catch {
       toast.error('Tải ảnh mã QR thất bại');
