@@ -146,7 +146,8 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 const destinationConfig = {
-  plansPurchased: { label: 'eSIM', color: 'var(--chart-1)' }
+  // Light grey, as on the admin overview's destination chart (doitac-1410 #048).
+  plansPurchased: { label: 'eSIM', color: 'var(--chart-4)' }
 } satisfies ChartConfig;
 
 /** A bucket start as the axis should read it. */
