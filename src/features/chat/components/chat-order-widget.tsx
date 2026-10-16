@@ -9,6 +9,7 @@ import { useChatStore } from '../utils/store';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { formatVnd } from '@/lib/format';
+import { orderValuesAfterRefund, ValueAfterRefund } from '@/features/orders/utils/refund-values';
 
 interface CustomerOrder {
   id: number;
@@ -17,8 +18,12 @@ interface CustomerOrder {
   status: string;
   totalAmount: number;
   currency: string;
-  /** What the customer actually pays, in dong — the figure admins work with. */
+  /** The cash part, in dong. */
   vndPrice: number;
+  payableVndPrice?: number | null;
+  /** The eXU part — the whole order when paid from the wallet (doitac-1410 #068). */
+  walletSpentVndAmount?: number | null;
+  refundedAmountVnd?: number | null;
   createdAt: string;
 }
 
@@ -30,12 +35,14 @@ function getStatusBadgeVariant(status: string) {
   switch (status.toLowerCase()) {
     case 'completed':
     case 'delivered':
+    case 'paid':
       return 'default';
     case 'processing':
     case 'pending':
       return 'secondary';
     case 'cancelled':
     case 'failed':
+    case 'refunded':
       return 'destructive';
     default:
       return 'outline';
@@ -46,6 +53,10 @@ function getStatusLabel(status: string) {
   switch (status.toLowerCase()) {
     case 'completed':
       return 'Hoàn thành';
+    case 'paid':
+      return 'Đã thanh toán';
+    case 'refunded':
+      return 'Đã hoàn tiền';
     case 'delivered':
       return 'Đã giao';
     case 'processing':
@@ -146,10 +157,15 @@ export function ChatOrderWidget() {
                 </div>
                 <p className='text-muted-foreground truncate'>{order.planName}</p>
                 <div className='flex items-center justify-between'>
-                  {/* Dong, not dollars: `totalAmount`/`currency` carry the provider
-                    side of the sale, while `vndPrice` is what the customer pays —
-                    the same figure the orders table shows (#071). */}
-                  <span className='font-semibold'>{formatVnd(order.vndPrice)}</span>
+                  {/* What the order is worth: cash + eXU, less refunds — the
+                    same figure as the orders table. `vndPrice` alone is only
+                    the cash, so an order paid in eXU read 0đ (doitac-1410 #068). */}
+                  <ValueAfterRefund
+                    className='font-semibold'
+                    value={orderValuesAfterRefund(order).vnd}
+                    original={orderValuesAfterRefund(order).originalVnd}
+                    format={formatVnd}
+                  />
                   <span className='text-muted-foreground'>
                     {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                   </span>
