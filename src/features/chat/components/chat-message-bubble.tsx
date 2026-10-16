@@ -126,7 +126,12 @@ export function ChatMessageBubble({
                 />
               </button>
             </DialogTrigger>
-            <DialogContent className='max-w-[95vw] border-none bg-black/90 p-2 sm:max-w-3xl'>
+            {/* The close "x" was black on this black backdrop, so it could not
+                be seen (doitac-1410 #076): a white round button instead. */}
+            <DialogContent
+              className='max-w-[95vw] border-none bg-black/90 p-2 sm:max-w-3xl [&>button]:top-3 [&>button]:right-3 [&>button]:z-10 [&>button]:rounded-full [&>button]:bg-white/20 [&>button]:p-2 [&>button]:text-white [&>button]:opacity-100 [&>button]:hover:bg-white/35 [&>button_svg]:size-5'
+              data-testid='chat-image-viewer'
+            >
               <DialogTitle className='sr-only'>
                 {message.fileName ?? 'Hình ảnh đính kèm'}
               </DialogTitle>
