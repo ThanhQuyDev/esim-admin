@@ -699,6 +699,69 @@ export type EsimFaultReport = {
   createdAt: string;
 };
 
+/** "Chi tiết eSIM" on the partner portal (doitac-1410 #039). */
+export type MyEsimDetail = {
+  iccid: string;
+  status: string | null;
+  orderNumber: string;
+  deliveryEmail: string | null;
+  apn: string | null;
+  /** The plan's slug, shown as "Mã gói cước". */
+  planCode: string | null;
+  ipExport: string | null;
+  refundable: boolean;
+  dailyResetPolicy: string | null;
+  dailyResetUtcOffset: number | null;
+  agentPriceVnd: number;
+  suggestedRetailVnd: number;
+  createdAt: string | null;
+  activatedAt: string | null;
+  expiresAt: string | null;
+  updatedAt: string | null;
+  dataUsed: number | null;
+  dataTotal: number | null;
+  smdpAddress: string | null;
+  activationCode: string | null;
+  lpa: string | null;
+  appleInstallUrl: string | null;
+  androidInstallUrl: string | null;
+  plan: {
+    name: string | null;
+    destination: string | null;
+    type: string | null;
+    dataMb: number | null;
+    durationDays: number | null;
+    call: number | null;
+    sms: number | null;
+    operatorName: string | null;
+    speed: string | null;
+    topUp: boolean;
+  };
+  openReport: 'fault' | 'refund' | null;
+  topups: {
+    orderNumber: string;
+    status: string;
+    priceVnd: number;
+    packageName: string | null;
+    dataText: string | null;
+    durationDays: number | null;
+    isUnlimited: boolean;
+    createdAt: string | null;
+  }[];
+};
+
+/** A topup package for "Topup hộ khách", at the partner's price (#039). */
+export type PartnerTopupPackage = {
+  packageId: string;
+  name: string;
+  dataText: string | null;
+  durationDays: number | null;
+  isUnlimited: boolean;
+  agentPriceVnd: number;
+  retailPriceVnd: number;
+  purchasable: boolean;
+};
+
 export type ReportEsimFaultPayload = {
   orderNumber: string;
   iccid: string;

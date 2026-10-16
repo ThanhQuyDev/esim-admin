@@ -9,6 +9,7 @@
  * is what this lists — by order number and by when they bought.
  */
 
+import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -58,7 +59,9 @@ const statusFilters = [
 ];
 
 export function PortalPurchasesView() {
-  const [search, setSearch] = useState('');
+  // A topup on an eSIM's page links here with its order code (doitac-1410 #039).
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
   const [status, setStatus] = useState('all');
 
   const { data: purchases = [], isLoading } = useQuery(

@@ -28,7 +28,9 @@ import {
   getPurchaseQuote,
   getMyEsimFaults,
   getMyLedger,
-  getCatalogueLocations
+  getCatalogueLocations,
+  getMyEsimDetail,
+  getMyEsimTopupPackages
 } from './service';
 
 export const partnerPortalKeys = {
@@ -48,6 +50,23 @@ export const partnerPortalKeys = {
   tierEvaluations: () => [...partnerPortalKeys.all, 'tier-evaluations'] as const,
   notifications: () => [...partnerPortalKeys.all, 'notifications'] as const
 };
+
+/** "Chi tiết eSIM" (doitac-1410 #039). */
+export const myEsimDetailQueryOptions = (iccid: string) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'esim', iccid],
+    queryFn: () => getMyEsimDetail(iccid),
+    retry: false
+  });
+
+/** Topup packages for "Topup hộ khách" (doitac-1410 #039). */
+export const myEsimTopupPackagesQueryOptions = (iccid: string, enabled: boolean) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'esim', iccid, 'topup-packages'],
+    queryFn: () => getMyEsimTopupPackages(iccid),
+    enabled,
+    retry: false
+  });
 
 export const myProfileQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.me(), queryFn: getMyPartner, retry: false });

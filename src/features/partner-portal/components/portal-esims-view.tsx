@@ -12,23 +12,12 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -47,44 +36,16 @@ import {
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
-import { reportEsimFaultMutation } from '../api/mutations';
-import { myEsimsQueryOptions, partnerPortalKeys } from '../api/queries';
-import { uploadAttachment } from '../api/service';
+import { myEsimsQueryOptions } from '../api/queries';
 import type { MyEsim } from '../api/types';
 import { PLAN_TYPE_LABEL, yesNo } from './portal-catalogue-dialogs';
-
-/** How the provider's status words read to a partner counting stock. */
-const statusLabel: Record<
-  string,
-  { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }
-> = {
-  available: { label: 'Chưa kích hoạt', variant: 'outline' },
-  // Local stock handed to the partner, not switched on yet (doitac-1410 #038).
-  sold: { label: 'Chưa kích hoạt', variant: 'outline' },
-  active: { label: 'Đang dùng', variant: 'default' },
-  expired: { label: 'Đã hết hạn', variant: 'destructive' },
-  deactivated: { label: 'Đã ngừng', variant: 'secondary' },
-  refunded: { label: 'Đã hoàn tiền', variant: 'secondary' }
-};
-
-type FaultKind = 'fault' | 'refund';
-
-/** What each request reads as — the subject goes on the support ticket (doitac-1410 #038). */
-const FAULT_COPY: Record<FaultKind, { title: string; subject: string; submit: string }> = {
-  fault: {
-    title: 'Báo lỗi eSIM',
-    subject: 'eSIM lỗi hoặc không kích hoạt được',
-    submit: 'Gửi báo lỗi'
-  },
-  refund: {
-    title: 'Yêu cầu hoàn tiền',
-    subject: 'Hoàn tiền đơn hàng / eSIM lỗi',
-    submit: 'Gửi yêu cầu hoàn tiền'
-  }
-};
-
-const REASON_MAX = 2000;
-const MAX_FILES = 5;
+import {
+  EsimRequestDialog,
+  type EsimRequestTarget,
+  type FaultKind,
+  esimStatusLabel,
+  formatData
+} from './portal-esim-request-dialog';
 
 const statusFilters = [
   { value: 'all', label: 'Tất cả trạng thái' },
@@ -93,13 +54,6 @@ const statusFilters = [
   { value: 'expired', label: 'Đã hết hạn' },
   { value: 'deactivated', label: 'Đã ngừng' }
 ];
-
-/** Provider figures are in MB; a partner reads GB. */
-function formatData(mb: number | null): string {
-  if (mb == null) return '—';
-  if (mb >= 1024) return `${(mb / 1024).toFixed(1).replace('.0', '')} GB`;
-  return `${Math.round(mb)} MB`;
-}
 
 /** "Loại gói eSIM" (doitac-1410 #037). */
 const PLAN_TYPE_FILTERS = [
@@ -122,35 +76,7 @@ export function PortalEsimsView() {
     search.trim() || status !== 'all' || planType !== 'all' || topUp !== 'all' || from || to
   );
   /** eSIM đang được báo lỗi / xin hoàn tiền, hoặc null khi hộp thoại đóng (#046, A4; #038). */
-  const [faulty, setFaulty] = useState<{
-    iccid: string;
-    orderNumber: string;
-    kind: FaultKind;
-  } | null>(null);
-  const [reason, setReason] = useState('');
-  const [attachments, setAttachments] = useState<{ name: string; url: string }[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const queryClient = useQueryClient();
-
-  const closeFault = () => {
-    setFaulty(null);
-    setReason('');
-    setAttachments([]);
-  };
-
-  const reportFault = useMutation({
-    ...reportEsimFaultMutation,
-    onSuccess: () => {
-      toast.success(
-        faulty?.kind === 'refund'
-          ? 'Đã gửi yêu cầu hoàn tiền. esim.vn sẽ kiểm tra và phản hồi qua phiếu hỗ trợ.'
-          : 'Đã gửi báo lỗi. esim.vn sẽ kiểm tra và phản hồi qua phiếu hỗ trợ.'
-      );
-      closeFault();
-      void queryClient.invalidateQueries({ queryKey: partnerPortalKeys.all });
-    },
-    onError: (error: Error) => toast.error(error.message)
-  });
+  const [faulty, setFaulty] = useState<EsimRequestTarget | null>(null);
 
   const { data: esims = [], isLoading } = useQuery(
     myEsimsQueryOptions({
@@ -340,7 +266,7 @@ export function PortalEsimsView() {
                 </TableHeader>
                 <TableBody>
                   {esims.map((esim) => {
-                    const badge = statusLabel[esim.status ?? ''] ?? {
+                    const badge = esimStatusLabel[esim.status ?? ''] ?? {
                       label: esim.status ?? '—',
                       variant: 'outline' as const
                     };
@@ -403,143 +329,7 @@ export function PortalEsimsView() {
         </CardContent>
       </Card>
 
-      <Dialog open={faulty !== null} onOpenChange={(open) => !open && closeFault()}>
-        <DialogContent className='sm:max-w-md'>
-          <DialogHeader>
-            <DialogTitle>{FAULT_COPY[faulty?.kind ?? 'fault'].title}</DialogTitle>
-            <DialogDescription>
-              Yêu cầu được gửi thành phiếu hỗ trợ. esim.vn kiểm tra với nhà cung cấp rồi mới hoàn
-              tiền vào ví — phiếu này không trừ hay cộng tiền ngay.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className='space-y-3'>
-            <div className='space-y-2'>
-              <Label htmlFor='fault-subject'>Tiêu đề</Label>
-              <Input
-                id='fault-subject'
-                tabIndex={-1}
-                readOnly
-                value={FAULT_COPY[faulty?.kind ?? 'fault'].subject}
-              />
-            </div>
-            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-              <div className='space-y-2'>
-                <Label htmlFor='fault-order'>Mã đơn hàng</Label>
-                <Input
-                  id='fault-order'
-                  tabIndex={-1}
-                  readOnly
-                  className='font-mono'
-                  value={faulty?.orderNumber ?? ''}
-                />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='fault-iccid'>ICCID</Label>
-                <Input
-                  id='fault-iccid'
-                  tabIndex={-1}
-                  readOnly
-                  className='font-mono'
-                  value={faulty?.iccid ?? ''}
-                />
-              </div>
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='fault-reason'>Mô tả</Label>
-              <Textarea
-                id='fault-reason'
-                rows={4}
-                maxLength={REASON_MAX}
-                placeholder='Ví dụ: quét QR báo mã đã được dùng'
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
-              <p className='text-muted-foreground text-right text-xs tabular-nums'>
-                {reason.length}/{REASON_MAX}
-              </p>
-            </div>
-            <div className='space-y-2'>
-              <input
-                id='faultAttachment'
-                type='file'
-                className='hidden'
-                accept='image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt'
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = '';
-                  if (!file) return;
-                  setUploading(true);
-                  try {
-                    const url = await uploadAttachment(file);
-                    setAttachments((current) => [...current, { name: file.name, url }]);
-                  } catch (err) {
-                    toast.error((err as Error).message);
-                  } finally {
-                    setUploading(false);
-                  }
-                }}
-              />
-              <div className='flex flex-wrap items-center gap-2'>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  asChild
-                  disabled={uploading || attachments.length >= MAX_FILES}
-                >
-                  <label htmlFor='faultAttachment' className='cursor-pointer'>
-                    <Icons.upload className='size-4' />
-                    {uploading ? 'Đang tải tệp…' : 'Đính kèm tài liệu'}
-                  </label>
-                </Button>
-                <span className='text-muted-foreground text-xs'>
-                  Ảnh chụp màn hình, video… tối đa {MAX_FILES} tệp
-                </span>
-              </div>
-              {attachments.length > 0 && (
-                <ul className='space-y-1 text-xs' data-testid='fault-attachments'>
-                  {attachments.map((file, index) => (
-                    <li key={file.url} className='flex items-center justify-between gap-2'>
-                      <span className='truncate'>{file.name}</span>
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-auto p-0 text-xs'
-                        onClick={() =>
-                          setAttachments((current) => current.filter((_, i) => i !== index))
-                        }
-                      >
-                        Bỏ
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant='outline' onClick={closeFault}>
-              Huỷ
-            </Button>
-            <Button
-              disabled={reason.trim().length < 5 || reportFault.isPending || uploading}
-              onClick={() =>
-                faulty &&
-                reportFault.mutate({
-                  orderNumber: faulty.orderNumber,
-                  iccid: faulty.iccid,
-                  reason: reason.trim(),
-                  kind: faulty.kind,
-                  attachments: attachments.map((file) => file.url)
-                })
-              }
-            >
-              {reportFault.isPending ? 'Đang gửi…' : FAULT_COPY[faulty?.kind ?? 'fault'].submit}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EsimRequestDialog target={faulty} onClose={() => setFaulty(null)} />
     </div>
   );
 }

@@ -44,7 +44,9 @@ import type {
   PurchaseResult,
   EsimFaultReport,
   ReportEsimFaultPayload,
-  MyNotificationList
+  MyNotificationList,
+  MyEsimDetail,
+  PartnerTopupPackage
 } from './types';
 
 export async function applyAsPartner(
@@ -360,6 +362,37 @@ export async function reportEsimFault(payload: ReportEsimFaultPayload): Promise<
   return apiClient<EsimFaultReport>('/partner-portal/esim-faults', {
     method: 'POST',
     body: JSON.stringify(payload)
+  });
+}
+
+/** "Chi tiết eSIM" (doitac-1410 #039). */
+export async function getMyEsimDetail(iccid: string): Promise<MyEsimDetail> {
+  return apiClient<MyEsimDetail>(`/partner-portal/esims/${encodeURIComponent(iccid)}`);
+}
+
+/** "Gửi lại email eSIM" for one eSIM (doitac-1410 #039). */
+export async function resendMyEsimEmail(iccid: string): Promise<{ sent: number }> {
+  return apiClient<{ sent: number }>(
+    `/partner-portal/esims/${encodeURIComponent(iccid)}/resend-email`,
+    { method: 'POST' }
+  );
+}
+
+/** Topup packages for one eSIM at the partner's price (doitac-1410 #039). */
+export async function getMyEsimTopupPackages(iccid: string): Promise<PartnerTopupPackage[]> {
+  return apiClient<PartnerTopupPackage[]>(
+    `/partner-portal/esims/${encodeURIComponent(iccid)}/topup-packages`
+  );
+}
+
+/** "Topup hộ khách", paid from the deposit wallet (doitac-1410 #039). */
+export async function topupMyEsim(
+  iccid: string,
+  packageId: string
+): Promise<{ orderNumber: string; status: string; amountVnd: number }> {
+  return apiClient(`/partner-portal/esims/${encodeURIComponent(iccid)}/topup`, {
+    method: 'POST',
+    body: JSON.stringify({ packageId })
   });
 }
 
