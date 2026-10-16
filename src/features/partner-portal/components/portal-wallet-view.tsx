@@ -38,24 +38,12 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
-import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
+import { formatDateVn, formatVnd } from '@/lib/format';
 
+import { PortalLedgerCard, PortalPayoutHistoryCard } from './portal-ledger-card';
 import { DepositDialog, WithdrawDialog } from './portal-wallet-dialogs';
-import {
-  myDepositRequestsQueryOptions,
-  myWalletQueryOptions,
-  myWalletTransactionsQueryOptions
-} from '../api/queries';
+import { myDepositRequestsQueryOptions, myWalletQueryOptions } from '../api/queries';
 
-/** What a wallet line is, when it carries no reason of its own. */
-const TX_TYPE_LABEL: Record<string, string> = {
-  deposit: 'Nạp ký quỹ',
-  deposit_bonus: 'Khuyến mãi nạp ký quỹ',
-  manual_credit: 'esim.vn cộng tiền',
-  manual_debit: 'esim.vn trừ tiền',
-  order_purchase: 'Mua eSIM',
-  order_purchase_reversal: 'Hoàn tiền đơn mua'
-};
 const METHOD_LABEL: Record<string, string> = {
   bank_transfer: 'Chuyển khoản',
   card: 'Thẻ tín dụng'
@@ -81,9 +69,6 @@ const DEPOSIT_STATUS: Record<string, { label: string; className: string }> = {
 
 export function PortalWalletView() {
   const { data: wallet, isLoading } = useQuery(myWalletQueryOptions());
-  const { data: transactions = [], isLoading: txLoading } = useQuery(
-    myWalletTransactionsQueryOptions()
-  );
   const { data: deposits = [] } = useQuery(myDepositRequestsQueryOptions());
 
   const [dialog, setDialog] = useState<'deposit' | 'withdraw' | null>(null);
@@ -176,6 +161,9 @@ export function PortalWalletView() {
         })}
       </div>
 
+      {/* "Lịch sử giao dịch" with filters and the one-file export (doitac-1410 #031). */}
+      <PortalLedgerCard />
+
       <Card>
         <CardHeader>
           <CardTitle className='flex flex-wrap items-center gap-2'>
@@ -255,68 +243,8 @@ export function PortalWalletView() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Lịch sử giao dịch</CardTitle>
-          <CardDescription>Mọi khoản ghi có và ghi nợ trên ví ký quỹ.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className='rounded-lg border'>
-            <Table>
-              <TableHeader className='bg-muted'>
-                <TableRow>
-                  <TableHead>Thời điểm</TableHead>
-                  <TableHead>Nội dung</TableHead>
-                  <TableHead className='text-right'>Số tiền</TableHead>
-                  <TableHead className='text-right'>Số dư sau</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {txLoading && (
-                  <TableRow>
-                    <TableCell colSpan={4} className='text-muted-foreground h-24 text-center'>
-                      Đang tải giao dịch…
-                    </TableCell>
-                  </TableRow>
-                )}
-                {!txLoading && transactions.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className='h-24 text-center'>
-                      <p className='text-muted-foreground text-sm'>Chưa có giao dịch nào.</p>
-                    </TableCell>
-                  </TableRow>
-                )}
-                {transactions.map((tx) => {
-                  const isCredit = tx.amountVnd > 0;
-                  return (
-                    <TableRow key={tx.id}>
-                      <TableCell className='whitespace-nowrap'>
-                        {formatDateTimeVn(tx.createdAt)}
-                      </TableCell>
-                      <TableCell>{tx.reason || TX_TYPE_LABEL[tx.type] || tx.type}</TableCell>
-                      <TableCell className='text-right'>
-                        <span
-                          className={
-                            isCredit
-                              ? 'font-medium tabular-nums text-emerald-600 dark:text-emerald-400'
-                              : 'font-medium tabular-nums text-red-600 dark:text-red-400'
-                          }
-                        >
-                          {isCredit ? '+' : ''}
-                          {formatVnd(tx.amountVnd)}
-                        </span>
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        {formatVnd(tx.balanceAfterVnd)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Under the transactions: the deposits and the withdrawals (doitac-1410 #031). */}
+      <PortalPayoutHistoryCard />
 
       <DepositDialog
         open={dialog === 'deposit'}

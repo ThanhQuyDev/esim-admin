@@ -1,5 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import type {
+  MyLedgerFilters,
+  MyLedgerRow,
   MyPartner,
   UpdateMyProfilePayload,
   MyWalletSummary,
@@ -442,4 +444,24 @@ export async function markMyNotificationRead(id: number): Promise<void> {
 
 export async function markAllMyNotificationsRead(): Promise<void> {
   await apiClient('/partner-portal/notifications/read-all', { method: 'POST' });
+}
+
+/** "Lịch sử giao dịch" with its filters (doitac-1410 #031). */
+export async function getMyLedger(filters: MyLedgerFilters = {}): Promise<MyLedgerRow[]> {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
+  const qs = params.toString();
+  return apiClient<MyLedgerRow[]>(`/partner-portal/wallet/ledger${qs ? `?${qs}` : ''}`);
+}
+
+/** Where the browser downloads the same view as a spreadsheet (doitac-1410 #031). */
+export function myLedgerExportUrl(filters: MyLedgerFilters = {}): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
+  const qs = params.toString();
+  return `/api/partner-portal/wallet/ledger/export${qs ? `?${qs}` : ''}`;
 }

@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { MyLinksQuery } from './types';
+import type { MyLedgerFilters, MyLinksQuery } from './types';
 import {
   getMyPartner,
   getMyWallet,
@@ -26,7 +26,8 @@ import {
   getMyPurchases,
   getPartnerCatalogue,
   getPurchaseQuote,
-  getMyEsimFaults
+  getMyEsimFaults,
+  getMyLedger
 } from './service';
 
 export const partnerPortalKeys = {
@@ -52,6 +53,13 @@ export const myProfileQueryOptions = () =>
 
 export const myWalletQueryOptions = () =>
   queryOptions({ queryKey: partnerPortalKeys.wallet(), queryFn: getMyWallet });
+
+/** "Lịch sử giao dịch" with its filters (doitac-1410 #031). */
+export const myLedgerQueryOptions = (filters: MyLedgerFilters) =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.walletTransactions(), 'ledger', filters],
+    queryFn: () => getMyLedger(filters)
+  });
 
 export const myWalletTransactionsQueryOptions = () =>
   queryOptions({

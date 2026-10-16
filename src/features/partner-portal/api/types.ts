@@ -108,6 +108,34 @@ export type MyWalletTransaction = {
   createdAt: string;
 };
 
+/** One line of "Lịch sử giao dịch" (doitac-1410 #031). */
+export type MyLedgerKind =
+  | 'purchase'
+  | 'refund'
+  | 'deposit'
+  | 'payout'
+  | 'adjustment'
+  | 'commission';
+
+export type MyLedgerRow = {
+  id: number;
+  createdAt: string;
+  type: string;
+  kind: MyLedgerKind;
+  kindLabel: string;
+  code: string | null;
+  description: string;
+  amountVnd: number;
+  balanceAfterVnd: number;
+};
+
+export type MyLedgerFilters = {
+  code?: string;
+  kind?: string;
+  from?: string;
+  to?: string;
+};
+
 export type PartnerTopupMethod = 'bank_transfer' | 'card';
 
 export type MyDepositRequest = {
