@@ -53,6 +53,23 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
         <CardContent className='grid gap-4 md:grid-cols-2'>
           <div className='space-y-3'>
             <InfoRow label='ID' value={esim.id} />
+            {/* Which order the eSIM came from (doitac-1410 #069). */}
+            <InfoRow
+              label='Mã đơn hàng'
+              value={
+                esim.orderNumber ? (
+                  <Link
+                    href={`/dashboard/orders/${encodeURIComponent(esim.orderNumber)}`}
+                    className='text-primary font-mono text-xs hover:underline'
+                    data-testid='esim-order-number'
+                  >
+                    {esim.orderNumber}
+                  </Link>
+                ) : (
+                  <span className='text-muted-foreground'>Chưa gắn đơn hàng (eSIM trong kho)</span>
+                )
+              }
+            />
             <InfoRow
               label='ICCID'
               value={<span className='font-mono text-xs'>{esim.iccid}</span>}

@@ -1,6 +1,8 @@
 export type Esim = {
   id: number;
   orderItemId: number;
+  /** The order the eSIM was bought in (doitac-1410 #069). */
+  orderNumber?: string | null;
   userId: number;
   planId: number;
   iccid: string;
