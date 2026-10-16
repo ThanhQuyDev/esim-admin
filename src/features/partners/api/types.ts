@@ -588,6 +588,8 @@ export type AdminPayoutRow = {
   id: number;
   partnerId: number;
   contactName: string | null;
+  /** A company by its own name (doitac-1410 #057). */
+  partnerName?: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   partnerType: string | null;
@@ -616,6 +618,8 @@ export type PayoutFilters = {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
+  /** "Kỳ tài chính" as YYYY-MM (doitac-1410 #057). */
+  period?: string;
   page?: number;
   limit?: number;
 };

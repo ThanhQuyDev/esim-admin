@@ -69,11 +69,24 @@ const periodLabel = (period: string) => {
   return `Tháng ${month}/${year}`;
 };
 
+/** The last twelve financial periods, newest first (doitac-1410 #057). */
+function recentPeriods(): string[] {
+  const now = new Date();
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+}
+
+const payoutPartnerName = (row: AdminPayoutRow) =>
+  row.partnerName ?? row.contactName ?? `Đối tác #${row.partnerId}`;
+
 export function PayoutsView() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [period, setPeriod] = useState('all');
   const [selected, setSelected] = useState<number[]>([]);
   const [detailOf, setDetailOf] = useState<AdminPayoutRow | null>(null);
   const [bulkReject, setBulkReject] = useState(false);
@@ -85,9 +98,10 @@ export function PayoutsView() {
       ...(search.trim() && { search: search.trim() }),
       ...(status !== 'all' && { status }),
       ...(dateFrom && { dateFrom }),
-      ...(dateTo && { dateTo })
+      ...(dateTo && { dateTo }),
+      ...(period !== 'all' && { period })
     }),
-    [search, status, dateFrom, dateTo]
+    [search, status, dateFrom, dateTo, period]
   );
 
   const { data, isLoading } = useQuery(payoutsQueryOptions(filters));
@@ -126,10 +140,11 @@ export function PayoutsView() {
   const allTicked = payouts.length > 0 && selected.length === payouts.length;
 
   return (
-    <div className='space-y-4'>
+    <div className='grid min-w-0 grid-cols-1 gap-4'>
       <div className='flex flex-wrap items-center gap-2'>
         <Input
           placeholder='Tìm tên, email, SĐT hoặc ID đối tác'
+          data-testid='payout-search'
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className='max-w-[280px]'
@@ -151,8 +166,25 @@ export function PayoutsView() {
             aria-label='Đến ngày'
           />
         </div>
+        <Select value={period} onValueChange={setPeriod}>
+          <SelectTrigger
+            className='w-[180px]'
+            aria-label='Kỳ tài chính'
+            data-testid='payout-period'
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>Mọi kỳ tài chính</SelectItem>
+            {recentPeriods().map((value) => (
+              <SelectItem key={value} value={value}>
+                {periodLabel(value)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className='w-[180px]'>
+          <SelectTrigger className='w-[180px]' aria-label='Trạng thái' data-testid='payout-status'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -229,7 +261,7 @@ export function PayoutsView() {
           Không có yêu cầu rút tiền nào khớp bộ lọc.
         </p>
       ) : (
-        <div className='rounded-lg border'>
+        <div className='overflow-x-auto rounded-lg border'>
           <Table>
             <TableHeader>
               <TableRow>
@@ -266,9 +298,7 @@ export function PayoutsView() {
                     />
                   </TableCell>
                   <TableCell>
-                    <div className='font-medium'>
-                      {row.contactName ?? `Đối tác #${row.partnerId}`}
-                    </div>
+                    <div className='font-medium'>{payoutPartnerName(row)}</div>
                     <div className='text-muted-foreground text-xs'>
                       #{row.partnerId} · {row.contactEmail ?? '—'}
                     </div>
@@ -389,9 +419,7 @@ function PayoutDetailDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>
-            Chi tiết tài chính · {row.contactName ?? `Đối tác #${row.partnerId}`}
-          </DialogTitle>
+          <DialogTitle>Chi tiết tài chính · {payoutPartnerName(row)}</DialogTitle>
         </DialogHeader>
 
         <dl className='grid grid-cols-2 gap-3 text-sm'>

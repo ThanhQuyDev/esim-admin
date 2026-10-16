@@ -13,7 +13,7 @@ export default function PartnerPayoutsPage() {
       pageTitle='Tài chính'
       pageDescription='Yêu cầu rút tiền của đối tác tiếp thị và tiền ký quỹ của đối tác phân phối.'
     >
-      <div className='space-y-4'>
+      <div className='grid min-w-0 grid-cols-1 gap-4'>
         <PayoutSummaryTiles />
         <PayoutsView />
       </div>
