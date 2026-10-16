@@ -265,6 +265,16 @@ export type OrderPartnerCommission = {
   /** Why a `rejected` commission earned nothing — a self-referral code (#041). */
   rejectionReason?: string | null;
   createdAt: string;
+  // The "Hoa hồng theo đơn" table (doitac-1410 #056):
+  commissionPercentSnapshot?: number | string | null;
+  partnerName?: string | null;
+  orderNumber?: string | null;
+  orderAt?: string | null;
+  orderRevenueVnd?: number;
+  /** MM/YYYY in Vietnam. */
+  period?: string | null;
+  source?: { type: 'link' | 'coupon' | 'member'; code: string | null };
+  attributionWarning?: string | null;
 };
 
 export type PartnerPayout = {
@@ -542,6 +552,8 @@ export type CommissionFilters = {
 export type ReconciliationRow = {
   partnerId: number;
   contactName: string | null;
+  /** A company by its own name (doitac-1410 #056). */
+  partnerName?: string | null;
   contactEmail: string | null;
   validOrders: number;
   esimsSold: number;

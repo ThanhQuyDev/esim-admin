@@ -231,7 +231,7 @@ export function ReconciliationsView() {
                   </TableCell>
                   <TableCell>
                     <div className='font-medium'>
-                      {row.contactName ?? `Đối tác #${row.partnerId}`}
+                      {row.partnerName ?? row.contactName ?? `Đối tác #${row.partnerId}`}
                     </div>
                     <div className='text-muted-foreground text-xs'>
                       #{row.partnerId} · {row.contactEmail ?? '—'}
@@ -298,7 +298,8 @@ function ReconciliationDetailDialog({
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
           <DialogTitle>
-            Chi tiết hoa hồng tiếp thị · {row.contactName ?? `Đối tác #${row.partnerId}`}
+            Chi tiết hoa hồng tiếp thị ·{' '}
+            {row.partnerName ?? row.contactName ?? `Đối tác #${row.partnerId}`}
           </DialogTitle>
         </DialogHeader>
 

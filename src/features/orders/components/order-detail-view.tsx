@@ -45,7 +45,7 @@ const orderStatusVariant: Record<string, 'default' | 'secondary' | 'destructive'
  * withholds the commission — they mark a pattern worth a look at the partner's
  * other orders.
  */
-const attributionWarningLabels: Record<string, { badge: string; note: string }> = {
+export const attributionWarningLabels: Record<string, { badge: string; note: string }> = {
   same_device_or_ip: {
     badge: 'Cùng thiết bị / IP',
     note: 'Đơn này phát sinh từ cùng thiết bị hoặc cùng IP với một đơn khác của đối tác.'
