@@ -14,15 +14,10 @@ import type { PartnerTier } from '../api/types';
 
 const num = (v: string | number | undefined) => Number(v ?? 0);
 
-function TierTable({
-  tiers,
-  metricLabel,
-  metric
-}: {
-  tiers: PartnerTier[];
-  metricLabel: string;
-  metric: (t: PartnerTier) => string;
-}) {
+/** A policy column beyond the thresholds every tier has (doitac-1410 #061). */
+type TierColumn = { label: string; value: (t: PartnerTier) => string };
+
+function TierTable({ tiers, columns }: { tiers: PartnerTier[]; columns: TierColumn[] }) {
   if (tiers.length === 0) {
     return (
       <p className='text-muted-foreground rounded-lg border p-6 text-center text-sm'>
@@ -41,7 +36,12 @@ function TierTable({
             <th className='px-3 py-2 text-left font-medium'>Hạng</th>
             <th className='px-3 py-2 text-left font-medium'>Mã</th>
             <th className='px-3 py-2 text-right font-medium'>Doanh số tối thiểu</th>
-            <th className='px-3 py-2 text-right font-medium'>{metricLabel}</th>
+            {columns.map((c) => (
+              <th key={c.label} className='px-3 py-2 text-right font-medium'>
+                {c.label}
+              </th>
+            ))}
+            <th className='px-3 py-2 text-left font-medium'>Loại hạng</th>
             <th className='px-3 py-2 text-left font-medium'>Trạng thái</th>
           </tr>
         </thead>
@@ -53,7 +53,16 @@ function TierTable({
               <td className='px-3 py-2 text-right'>
                 {num(t.minVolumeVnd) === 0 ? '—' : formatVnd(num(t.minVolumeVnd))}
               </td>
-              <td className='px-3 py-2 text-right'>{metric(t)}</td>
+              {columns.map((c) => (
+                <td key={c.label} className='px-3 py-2 text-right whitespace-nowrap'>
+                  {c.value(t)}
+                </td>
+              ))}
+              <td className='px-3 py-2'>
+                <Badge variant={t.isInternal ? 'secondary' : 'outline'}>
+                  {t.isInternal ? 'Nội bộ' : 'Công khai'}
+                </Badge>
+              </td>
               <td className='px-3 py-2'>
                 <Badge variant={t.isActive ? 'default' : 'secondary'}>
                   {t.isActive ? 'Đang áp dụng' : 'Tạm dừng'}
@@ -84,7 +93,7 @@ export function PartnerSettingsView() {
   const distributionTiers = all.filter((t) => t.partnerType === 'distribution');
 
   return (
-    <div className='space-y-6'>
+    <div className='grid min-w-0 grid-cols-1 gap-6'>
       <ProgramSettingsForm />
 
       {/* Bonus balance on deposits, set up ahead of time (doitac-1410 #015). */}
@@ -106,8 +115,11 @@ export function PartnerSettingsView() {
         </p>
         <TierTable
           tiers={kolTiers}
-          metricLabel='Hoa hồng'
-          metric={(t) => `${num(t.commissionPercent)}%`}
+          columns={[
+            { label: 'Hoa hồng', value: (t) => `${num(t.commissionPercent)}%` },
+            // doitac-1410 #061
+            { label: 'Số ngày ghi nhận hoa hồng', value: (t) => `${t.attributionDays ?? 30} ngày` }
+          ]}
         />
       </div>
 
@@ -119,8 +131,15 @@ export function PartnerSettingsView() {
         </p>
         <TierTable
           tiers={distributionTiers}
-          metricLabel='Giá gốc +%'
-          metric={(t) => `+${num(t.costMarkupPercent)}%`}
+          columns={[
+            { label: 'Giá gốc +%', value: (t) => `+${num(t.costMarkupPercent)}%` },
+            // doitac-1410 #061
+            {
+              label: 'Ngưỡng ký quỹ',
+              value: (t) => (num(t.minDepositVnd) > 0 ? formatVnd(num(t.minDepositVnd)) : '—')
+            },
+            { label: 'Chiết khấu %', value: (t) => `${num(t.maxDiscountPercent)}%` }
+          ]}
         />
       </div>
     </div>
