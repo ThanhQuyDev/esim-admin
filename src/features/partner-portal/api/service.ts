@@ -391,6 +391,17 @@ export function myEsimsExportUrl(filters: Record<string, string | undefined> = {
   return `/api/partner-portal/esims/export${qs ? `?${qs}` : ''}`;
 }
 
+/** Where the browser downloads the order list, with its filters (doitac-1410 #043). */
+export function myPurchasesExportUrl(filters: MyPurchaseFilters = {}): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (key === 'limit') continue;
+    if (value !== undefined && value !== '' && value !== 'all') params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return `/api/partner-portal/purchases/export${qs ? `?${qs}` : ''}`;
+}
+
 /** "Chi tiết đơn hàng" (doitac-1410 #042). */
 export async function getMyPurchaseDetail(orderNumber: string): Promise<MyPurchaseDetail> {
   return apiClient<MyPurchaseDetail>(

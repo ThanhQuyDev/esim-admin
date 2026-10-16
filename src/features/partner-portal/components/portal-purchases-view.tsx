@@ -17,7 +17,14 @@ import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -38,7 +45,7 @@ import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { myPurchasesQueryOptions } from '../api/queries';
-import { resendPurchaseEmail } from '../api/service';
+import { myPurchasesExportUrl, resendPurchaseEmail } from '../api/service';
 import type { MyPurchase } from '../api/types';
 
 const statusLabel: Record<
@@ -96,18 +103,18 @@ export function PortalPurchasesView() {
     ([key, value]) => value !== EMPTY_FILTERS[key as keyof typeof EMPTY_FILTERS]
   );
 
+  const listFilters = {
+    orderNumber: filters.orderNumber.trim() || undefined,
+    planName: filters.planName.trim() || undefined,
+    iccid: filters.iccid.trim() || undefined,
+    email: filters.email.trim() || undefined,
+    orderType: filters.orderType,
+    status: filters.status,
+    from: filters.from || undefined,
+    to: filters.to || undefined
+  };
   const { data: purchases = [], isLoading } = useQuery(
-    myPurchasesQueryOptions({
-      orderNumber: filters.orderNumber.trim() || undefined,
-      planName: filters.planName.trim() || undefined,
-      iccid: filters.iccid.trim() || undefined,
-      email: filters.email.trim() || undefined,
-      orderType: filters.orderType,
-      status: filters.status,
-      from: filters.from || undefined,
-      to: filters.to || undefined,
-      limit: 200
-    })
+    myPurchasesQueryOptions({ ...listFilters, limit: 200 })
   );
 
   const totals = useMemo(
@@ -160,6 +167,14 @@ export function PortalPurchasesView() {
       <Card className='min-w-0'>
         <CardHeader>
           <CardTitle>Đơn hàng của bạn</CardTitle>
+          <CardAction className='col-start-1 row-start-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end'>
+            <Button asChild size='sm' variant='outline'>
+              <a data-testid='purchases-export' href={myPurchasesExportUrl(listFilters)}>
+                <Icons.download className='size-4' />
+                Xuất file
+              </a>
+            </Button>
+          </CardAction>
           <CardDescription>
             Lọc theo mã đơn, gói cước, ICCID, email khách, loại đơn, trạng thái và thời gian. Số
             tiền là số đã thanh toán cho esim.vn, đã trừ phần hoàn tiền nếu có.
