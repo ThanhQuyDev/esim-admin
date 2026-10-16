@@ -292,6 +292,8 @@ export type PartnerRevenueByType = {
 export type PartnerActivityByType = {
   range: { from: string; to: string };
   orders: { total: number; byType: { partnerType: string; orders: number }[] };
+  /** The 30 days "đang hoạt động" is judged on (doitac-1410 #047). */
+  activeRange?: { from: string; to: string };
   activePartners: {
     total: number;
     byType: { partnerType: string; partners: number }[];

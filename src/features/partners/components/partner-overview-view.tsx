@@ -308,7 +308,7 @@ export function PartnerOverviewView() {
           <StatByType
             label='Đối tác đang hoạt động'
             value={(activity?.activePartners.total ?? 0).toLocaleString('vi-VN')}
-            hint={`Có phát sinh giao dịch trong kỳ · tổng ${partners.total} hồ sơ`}
+            hint={`Có giao dịch trong 30 ngày tính đến hết kỳ · tổng ${partners.total} hồ sơ`}
             rows={(activity?.activePartners.byType ?? []).map((r) => ({
               partnerType: r.partnerType,
               count: r.partners
