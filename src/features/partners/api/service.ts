@@ -474,3 +474,26 @@ export async function getAdminLinks(filters: AdminLinkFilters = {}): Promise<Adm
   const qs = search.toString();
   return apiClient<AdminLinkList>(`/partners/links${qs ? `?${qs}` : ''}`);
 }
+
+/** "Thay đổi trạng thái" for the ticked links (doitac-1410 #053). */
+export async function bulkLinkStatus(payload: {
+  linkIds: number[];
+  action: 'suspend' | 'unsuspend' | 'restore';
+  reason: string;
+}): Promise<{ done: number[]; skipped: { id: number; reason: string }[] }> {
+  return apiClient(`/partners/links/bulk-status`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+}
+
+/** Where the browser downloads the link list, with its filters (doitac-1410 #053). */
+export function adminLinksExportUrl(filters: AdminLinkFilters = {}): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (key === 'page' || key === 'limit') continue;
+    if (value !== undefined && value !== '' && value !== 'all') search.set(key, String(value));
+  }
+  const qs = search.toString();
+  return `/api/partners/links/export-excel${qs ? `?${qs}` : ''}`;
+}

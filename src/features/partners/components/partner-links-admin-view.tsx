@@ -43,6 +43,10 @@ import {
 } from '@/features/partner-portal/components/portal-period-filter';
 
 import { adminLinkStatsQueryOptions, adminLinksQueryOptions } from '../api/queries';
+import { adminLinksExportUrl } from '../api/service';
+import { BulkLinkStatusDialog, CreateLinkForPartnerDialog } from './partner-links-admin-dialogs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Icons } from '@/components/icons';
 import type { AdminLinkFilters, AdminLinkState } from '../api/types';
 
 /** The six states the admin works with (doitac-1410 #052). */
@@ -146,6 +150,14 @@ export function PartnerLinksAdminView() {
   const links = list?.data ?? [];
   const pages = Math.max(1, Math.ceil((list?.total ?? 0) / PAGE_SIZE));
 
+  // Ticked rows for "Thay đổi trạng thái" (doitac-1410 #053).
+  const [selected, setSelected] = useState<number[]>([]);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const allTicked = links.length > 0 && links.every((l) => selected.includes(l.id));
+  const toggle = (id: number, on: boolean) =>
+    setSelected((s) => (on ? [...new Set([...s, id])] : s.filter((x) => x !== id)));
+
   return (
     <div className='grid min-w-0 grid-cols-1 gap-4'>
       <PortalPeriodFilter value={period} onChange={setPeriod} />
@@ -178,8 +190,36 @@ export function PartnerLinksAdminView() {
       </div>
 
       <Card className='min-w-0'>
-        <CardHeader>
+        <CardHeader className='flex flex-row flex-wrap items-center justify-between gap-2'>
           <CardTitle>Danh sách liên kết</CardTitle>
+          <div className='flex flex-wrap gap-2'>
+            <Button
+              size='sm'
+              variant='outline'
+              disabled={selected.length === 0}
+              onClick={() => setBulkOpen(true)}
+              data-testid='links-bulk-status'
+            >
+              Thay đổi trạng thái{selected.length ? ` (${selected.length})` : ''}
+            </Button>
+            <Button asChild size='sm' variant='outline'>
+              <a
+                data-testid='links-export'
+                href={adminLinksExportUrl({
+                  ...filters,
+                  partner: filters.partner.trim(),
+                  link: filters.link.trim()
+                })}
+              >
+                <Icons.download className='size-4' />
+                Xuất file
+              </a>
+            </Button>
+            <Button size='sm' onClick={() => setCreateOpen(true)} data-testid='links-create'>
+              <Icons.add className='size-4' />
+              Tạo link giúp đối tác
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4'>
@@ -314,6 +354,19 @@ export function PartnerLinksAdminView() {
             <Table>
               <TableHeader className='bg-muted'>
                 <TableRow>
+                  <TableHead className='w-8'>
+                    <Checkbox
+                      aria-label='Chọn tất cả liên kết trên trang'
+                      checked={allTicked}
+                      onCheckedChange={(on) =>
+                        setSelected((s) =>
+                          on
+                            ? [...new Set([...s, ...links.map((l) => l.id)])]
+                            : s.filter((id) => !links.some((l) => l.id === id))
+                        )
+                      }
+                    />
+                  </TableHead>
                   <TableHead>Đối tác</TableHead>
                   <TableHead>Liên kết</TableHead>
                   <TableHead>Kênh quảng bá</TableHead>
@@ -329,7 +382,7 @@ export function PartnerLinksAdminView() {
               <TableBody data-testid='admin-links-body'>
                 {links.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className='text-muted-foreground h-24 text-center'>
+                    <TableCell colSpan={11} className='text-muted-foreground h-24 text-center'>
                       {listLoading ? 'Đang tải…' : 'Không có liên kết nào khớp bộ lọc.'}
                     </TableCell>
                   </TableRow>
@@ -337,7 +390,17 @@ export function PartnerLinksAdminView() {
                 {links.map((link) => {
                   const state = LINK_STATE_LABEL[link.state];
                   return (
-                    <TableRow key={link.id}>
+                    <TableRow
+                      key={link.id}
+                      data-state={selected.includes(link.id) ? 'selected' : undefined}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Chọn liên kết ${link.code}`}
+                          checked={selected.includes(link.id)}
+                          onCheckedChange={(on) => toggle(link.id, on === true)}
+                        />
+                      </TableCell>
                       <TableCell className='text-xs'>
                         <Link
                           href={`/dashboard/partners/${link.partner.id}`}
@@ -414,6 +477,14 @@ export function PartnerLinksAdminView() {
           </div>
         </CardContent>
       </Card>
+
+      <BulkLinkStatusDialog
+        linkIds={selected}
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        onDone={() => setSelected([])}
+      />
+      <CreateLinkForPartnerDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }
