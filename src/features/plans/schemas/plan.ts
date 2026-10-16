@@ -46,6 +46,8 @@ export const createPlanSchema = z.object({
   isActive: z.boolean().optional(),
   /** "Local" — eSIM nội địa (doitac-1410 #072). */
   isDomesticEsim: z.boolean().optional(),
+  /** Refund support: by the rule, or set by hand (doitac-1410 #080). */
+  refundSupport: z.enum(['auto', 'yes', 'no']).optional(),
   tags: z.array(z.enum(PLAN_TAG_VALUES)).optional(),
   apn: z.string().optional(),
   isNonHkIp: z.boolean().optional(),

@@ -108,6 +108,11 @@ export type OrderItemPlan = {
   countryCode: string;
   provider: string;
   locationInfo?: PlanLocationInfo | null;
+  /**
+   * Whether its eSIMs can be refunded (doitac-1410 #080): set by hand, else by
+   * the rule. Refundable eSIMs are the roaming ones.
+   */
+  isRefundable?: boolean;
 };
 
 export type OrderItemEsim = {

@@ -477,6 +477,12 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
         <div className='flex flex-col items-start gap-1' data-testid='plan-type'>
           {/* eSIM nội địa, kept apart from travel eSIMs (doitac-1410 #072). */}
           {row.original.isDomesticEsim && <Badge>Local</Badge>}
+          {/* Not refundable (doitac-1410 #080). */}
+          {row.original.isRefundable === false && (
+            <Badge variant='secondary' data-testid='plan-no-refund'>
+              Không hoàn tiền
+            </Badge>
+          )}
           <Badge variant='outline' className='capitalize'>
             {row.original.type || '—'}
           </Badge>

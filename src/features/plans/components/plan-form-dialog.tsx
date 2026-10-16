@@ -391,6 +391,12 @@ function EditDialog({
       topUp: plan.topUp,
       isActive: plan.isActive,
       isDomesticEsim: plan.isDomesticEsim ?? false,
+      refundSupport:
+        plan.refundableOverride === true
+          ? 'yes'
+          : plan.refundableOverride === false
+            ? 'no'
+            : 'auto',
       tags: (plan.tags ?? []) as PlanTag[],
       apn: plan.apn ?? '',
       isNonHkIp: plan.isNonHkIp,
@@ -422,6 +428,8 @@ function EditDialog({
         topUp: value.topUp,
         isActive: value.isActive,
         isDomesticEsim: value.isDomesticEsim ?? false,
+        refundableOverride:
+          value.refundSupport === 'yes' ? true : value.refundSupport === 'no' ? false : null,
         tags: value.tags ?? [],
         // null rather than undefined: an admin clearing APN or the reset policy
         // means "we do not know", and undefined would silently keep the old value.
@@ -541,10 +549,30 @@ function EditDialog({
             label='Loại gói Local (eSIM nội địa)'
             description='Bật: gói chỉ hiện trong trang eSIM nội địa theo nhà mạng. Tắt: gói là eSIM du lịch, hiện trong trang eSIM du lịch Việt Nam.'
           />
+
+          {/* Refund support (doitac-1410 #080): by the rule unless set here. */}
+          <FormSelectField
+            name='refundSupport'
+            label='Hỗ trợ hoàn tiền'
+            options={[
+              {
+                value: 'auto',
+                label: `Tự động theo quy tắc (${ruleRefundLabel(plan)})`
+              },
+              { value: 'yes', label: 'Có' },
+              { value: 'no', label: 'Không' }
+            ]}
+            description='Quy tắc: gói Local của MicroEsim, Viettel, eSIM nội địa và gói Billion của T-Mobile / CMLink / SK Telecom / KDDI / Unitel không hoàn tiền; còn lại có. Gói hoàn được là eSIM Roaming.'
+          />
         </form.Form>
       </form.AppForm>
     </FormDialog>
   );
+}
+
+/** What the rule says for this plan (doitac-1410 #080). */
+function ruleRefundLabel(plan: Plan): string {
+  return (plan.refundableByRule ?? plan.isRefundable) === false ? 'Không' : 'Có';
 }
 
 export function PlanFormDialogTrigger() {

@@ -37,6 +37,9 @@ function formatDate(date: string | null | undefined) {
 export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   const { data: esim } = useSuspenseQuery(esimQueryOptions(esimId));
   const [topupOpen, setTopupOpen] = useState(false);
+  // What the supplier said, else the plan's refund rule: refundable eSIMs
+  // roam, local ones do not (doitac-1410 #080).
+  const isRoaming = esim.isRoaming ?? esim.plan?.isRefundable ?? false;
 
   return (
     <div className='grid gap-6 md:grid-cols-2'>
@@ -84,8 +87,8 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
             <InfoRow
               label='Roaming'
               value={
-                <Badge variant={esim.isRoaming ? 'default' : 'secondary'}>
-                  {esim.isRoaming ? 'Có' : 'Không'}
+                <Badge variant={isRoaming ? 'default' : 'secondary'} data-testid='esim-roaming'>
+                  {isRoaming ? 'Có' : 'Không'}
                 </Badge>
               }
             />

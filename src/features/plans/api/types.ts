@@ -30,6 +30,15 @@ export type Plan = {
    * Vietnam's travel eSIMs (doitac-1410 #072).
    */
   isDomesticEsim?: boolean;
+  /**
+   * Whether its eSIMs can be refunded (doitac-1410 #080): set by hand, else by
+   * the rule. Refundable eSIMs are the roaming ones.
+   */
+  isRefundable?: boolean;
+  /** Refund support set by hand; null = by the rule (#080). */
+  refundableOverride?: boolean | null;
+  /** What the rule alone says (#080). */
+  refundableByRule?: boolean;
   /** Speed after the high-speed quota, or the cap of a speed-only plan ("10Mbps"). */
   fupSpeed?: string | null;
   topUp: boolean;
@@ -103,6 +112,8 @@ export type CreatePlanPayload = {
   isActive?: boolean;
   /** "Local" — eSIM nội địa (doitac-1410 #072). */
   isDomesticEsim?: boolean;
+  /** Refund support set by hand; null = by the rule (doitac-1410 #080). */
+  refundableOverride?: boolean | null;
   tags?: string[] | null;
   apn?: string | null;
   isNonHkIp?: boolean;

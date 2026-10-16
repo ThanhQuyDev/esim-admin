@@ -78,6 +78,11 @@ export type EsimPlan = {
   sms: number | null;
   /** Domestic eSIM: never expires ("Vô thời hạn", #024). */
   isDomesticEsim?: boolean;
+  /**
+   * Whether its eSIMs can be refunded (doitac-1410 #080): set by hand, else by
+   * the rule. Refundable eSIMs are the roaming ones.
+   */
+  isRefundable?: boolean;
   isLocalInventory?: boolean;
   costPrice: number;
   price: number;
