@@ -12,7 +12,7 @@
  * lượng (đủ tiền là mua được), giao hàng bằng một file Excel tải về.
  */
 
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -46,16 +46,22 @@ import {
   partnerCatalogueQueryOptions,
   purchaseQuoteQueryOptions
 } from '../api/queries';
-import type { CataloguePlan } from '../api/types';
+import type { CataloguePlan, CatalogueFilters } from '../api/types';
+import { EMPTY_CATALOGUE_FILTERS, PortalCatalogueFilters } from './portal-catalogue-filters';
 
 export function PortalCatalogueView() {
-  const [search, setSearch] = useState('');
+  // The admin's filters (doitac-1410 #033); typing is deferred so each key
+  // press does not fire its own request.
+  const [filters, setFilters] = useState<CatalogueFilters>(EMPTY_CATALOGUE_FILTERS);
+  const [limit, setLimit] = useState(100);
+  const deferredFilters = useDeferredValue(filters);
   const [selected, setSelected] = useState<CataloguePlan | null>(null);
   const [quantity, setQuantity] = useState('1');
 
   const { data: catalogue, isLoading } = useQuery(
-    partnerCatalogueQueryOptions({ search: search.trim() || undefined, limit: 300 })
+    partnerCatalogueQueryOptions({ ...deferredFilters, limit })
   );
+  const totalCount = catalogue?.totalCount ?? 0;
   const { data: wallet } = useQuery(myWalletQueryOptions());
 
   const plans = catalogue?.plans ?? [];
@@ -95,13 +101,13 @@ export function PortalCatalogueView() {
   };
 
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
+    <div className='grid min-w-0 flex-1 grid-cols-1 gap-4'>
       {/*
         No cards above the list (doitac-1410 #006): the balance moved to the top
         bar, and the % added to cost price is a trade secret never shown to a
         partner.
       */}
-      <Card>
+      <Card className='min-w-0'>
         <CardHeader>
           <CardTitle>Bảng giá phân phối</CardTitle>
           <CardDescription>
@@ -110,12 +116,19 @@ export function PortalCatalogueView() {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <Input
-            placeholder='Tìm theo tên gói hoặc điểm đến'
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className='max-w-[320px]'
+          <PortalCatalogueFilters
+            value={filters}
+            onChange={(next) => {
+              setFilters(next);
+              setLimit(100);
+            }}
           />
+          {!isLoading && (
+            <p className='text-muted-foreground text-xs' data-testid='catalogue-count'>
+              {totalCount.toLocaleString('vi-VN')} gói đang bán phù hợp
+              {plans.length < totalCount ? ` · đang hiện ${plans.length}` : ''}
+            </p>
+          )}
 
           {isLoading ? (
             <div className='flex justify-center py-12'>
@@ -123,7 +136,7 @@ export function PortalCatalogueView() {
             </div>
           ) : plans.length === 0 ? (
             <p className='text-muted-foreground py-12 text-center text-sm'>
-              Không có gói nào khớp với tìm kiếm này.
+              Không có gói nào khớp với bộ lọc này.
             </p>
           ) : (
             <div className='overflow-x-auto'>
@@ -180,6 +193,13 @@ export function PortalCatalogueView() {
                   ))}
                 </TableBody>
               </Table>
+              {plans.length < totalCount && (
+                <div className='flex justify-center pt-3'>
+                  <Button variant='outline' size='sm' onClick={() => setLimit((l) => l + 100)}>
+                    Xem thêm gói
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

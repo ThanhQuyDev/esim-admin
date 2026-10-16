@@ -576,6 +576,11 @@ export type CataloguePlan = {
   destinationName: string | null;
   durationDays: number;
   dataMb: number;
+  /** fixed / daily / unlimited / unlimited-reduce (doitac-1410 #033). */
+  type?: string | null;
+  topUp?: boolean;
+  hasCallSms?: boolean;
+  tiktokAi?: boolean;
   /** Giá niêm yết esim.vn. */
   listPriceVnd: number;
   /** Giá đối tác phải trả: giá vốn + % cộng thêm của hạng. */
@@ -587,6 +592,21 @@ export type CataloguePlan = {
 
 export type PartnerCatalogue = {
   plans: CataloguePlan[];
+  totalCount?: number;
+};
+
+/** The price list's filters — the admin's, minus "Hoạt động" (doitac-1410 #033). */
+export type CatalogueFilters = {
+  search?: string;
+  location?: string;
+  duration?: string;
+  data?: string;
+  type?: string;
+  topUp?: string;
+  hasCallSms?: string;
+  tiktokAi?: string;
+  isCheapest?: string;
+  limit?: number;
 };
 
 /** Báo giá một lần mua, tính trước khi bấm (#046). */

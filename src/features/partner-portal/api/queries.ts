@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { MyLedgerFilters, MyLinksQuery } from './types';
+import type { CatalogueFilters, MyLedgerFilters, MyLinksQuery } from './types';
 import {
   getMyPartner,
   getMyWallet,
@@ -27,7 +27,8 @@ import {
   getPartnerCatalogue,
   getPurchaseQuote,
   getMyEsimFaults,
-  getMyLedger
+  getMyLedger,
+  getCatalogueLocations
 } from './service';
 
 export const partnerPortalKeys = {
@@ -172,10 +173,18 @@ export const myPurchasesQueryOptions = (filters?: {
   });
 
 /** Bảng giá đối tác phân phối — "Sản phẩm & bảng giá" (#046). */
-export const partnerCatalogueQueryOptions = (filters?: { search?: string; limit?: number }) =>
+export const partnerCatalogueQueryOptions = (filters: CatalogueFilters = {}) =>
   queryOptions({
-    queryKey: [...partnerPortalKeys.all, 'catalogue', filters?.search ?? '', filters?.limit ?? 0],
+    queryKey: [...partnerPortalKeys.all, 'catalogue', filters],
     queryFn: () => getPartnerCatalogue(filters)
+  });
+
+/** "Điểm đến" options of the price list (doitac-1410 #033). */
+export const catalogueLocationsQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'catalogue', 'locations'],
+    queryFn: getCatalogueLocations,
+    staleTime: 10 * 60 * 1000
   });
 
 /**

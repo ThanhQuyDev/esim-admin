@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import type {
+  CatalogueFilters,
   MyLedgerFilters,
   MyLedgerRow,
   MyPartner,
@@ -294,15 +295,20 @@ export async function getMyPurchases(filters?: {
 }
 
 /** Bảng giá đối tác phân phối — "Sản phẩm & bảng giá" (#046). */
-export async function getPartnerCatalogue(filters?: {
-  search?: string;
-  limit?: number;
-}): Promise<PartnerCatalogue> {
+export async function getPartnerCatalogue(
+  filters: CatalogueFilters = {}
+): Promise<PartnerCatalogue> {
   const params = new URLSearchParams();
-  if (filters?.search) params.set('search', filters.search);
-  if (filters?.limit) params.set('limit', String(filters.limit));
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== '' && value !== 'all') params.set(key, String(value));
+  }
   const query = params.toString();
   return apiClient<PartnerCatalogue>(`/partner-portal/catalogue${query ? `?${query}` : ''}`);
+}
+
+/** The price list's "Điểm đến" options (doitac-1410 #033). */
+export async function getCatalogueLocations(): Promise<{ value: string; label: string }[]> {
+  return apiClient<{ value: string; label: string }[]>('/partner-portal/catalogue/locations');
 }
 
 /** Số tiền sẽ bị trừ, tính trước khi bấm mua (#046). */
