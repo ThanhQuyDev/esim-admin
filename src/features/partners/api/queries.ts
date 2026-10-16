@@ -25,7 +25,8 @@ import {
   getPartnerOrders,
   getPartnerOptions,
   getPayoutSummary,
-  getReconciliations
+  getReconciliations,
+  getAdminLinkStats
 } from './service';
 import type {
   PartnerFilters,
@@ -240,4 +241,11 @@ export const depositPromotionsQueryOptions = () =>
   queryOptions({
     queryKey: [...partnerKeys.all, 'deposit-promotions'],
     queryFn: () => getDepositPromotions()
+  });
+
+/** The figures on top of "Tiếp thị liên kết" (doitac-1410 #051). */
+export const adminLinkStatsQueryOptions = (range?: { from?: string; to?: string }) =>
+  queryOptions({
+    queryKey: [...partnerKeys.all, 'link-stats', range?.from ?? '', range?.to ?? ''],
+    queryFn: () => getAdminLinkStats(range)
   });

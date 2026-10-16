@@ -260,6 +260,12 @@ export const navGroups: NavGroup[] = [
             access: { role: [1] }
           },
           {
+            // Every partner's marketing links (doitac-1410 #051–#055).
+            title: 'Tiếp thị liên kết',
+            url: '/dashboard/partners/links',
+            access: { role: [1] }
+          },
+          {
             title: 'Yêu cầu nạp ký quỹ',
             url: '/dashboard/partners/deposit-requests',
             access: { role: [1] }

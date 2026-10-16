@@ -45,7 +45,8 @@ import type {
   PartnerProgramSettings,
   UpdateProgramSettingsPayload,
   PartnerNotification,
-  CreateNotificationPayload
+  CreateNotificationPayload,
+  AdminLinkStats
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -448,4 +449,16 @@ export async function saveDepositPromotion(
 
 export async function deleteDepositPromotion(id: number): Promise<void> {
   await apiClient(`/partners/deposit-promotions/${id}`, { method: 'DELETE' });
+}
+
+/** The figures on top of "Tiếp thị liên kết" (doitac-1410 #051). */
+export async function getAdminLinkStats(range?: {
+  from?: string;
+  to?: string;
+}): Promise<AdminLinkStats> {
+  const search = new URLSearchParams();
+  if (range?.from) search.set('from', range.from);
+  if (range?.to) search.set('to', range.to);
+  const qs = search.toString();
+  return apiClient<AdminLinkStats>(`/partners/links/stats${qs ? `?${qs}` : ''}`);
 }

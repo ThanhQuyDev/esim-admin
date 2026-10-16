@@ -130,6 +130,16 @@ export type PartnerListResponse = {
   hasNextPage: boolean;
 };
 
+/** The figures on top of "Tiếp thị liên kết" (doitac-1410 #051). */
+export type AdminLinkStats = {
+  range: { from: string; to: string };
+  days: number;
+  total: { links: number; active: number; orders: number; commissionVnd: number };
+  retargeted: number;
+  suspended: { links: number; appealing: number };
+  restorePending: { links: number; deleted: number; paused: number };
+};
+
 export type PartnerFilters = {
   page?: number;
   limit?: number;
