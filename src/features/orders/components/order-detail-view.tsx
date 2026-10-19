@@ -361,6 +361,23 @@ function commissionStatusVariant(
  */
 // The words are shared with the partner portal (doitac-1410 #027).
 const rejectionReasonLabel = commissionRejectionText;
+const DEVICE_TYPE_LABEL: Record<string, string> = {
+  desktop: 'Máy tính',
+  mobile: 'Di động',
+  tablet: 'Máy tính bảng'
+};
+
+/** "Di động · Safari 18 · iOS 18"; "—" for orders made in the CMS or before #082. */
+function deviceLabel(device: Order['device']): string {
+  if (!device) return '—';
+  const parts = [
+    device.type ? DEVICE_TYPE_LABEL[device.type] : null,
+    device.browser,
+    device.os
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : '—';
+}
+
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
   const [refundOpen, setRefundOpen] = useState(false);
@@ -547,6 +564,11 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             <InfoRow
               label='Mã đơn hàng'
               value={<span className='font-mono text-xs font-medium'>{order.orderNumber}</span>}
+            />
+            {/* Desktop / mobile / tablet and the browser it was bought from (#082). */}
+            <InfoRow
+              label='Thiết bị'
+              value={<span data-testid='order-device'>{deviceLabel(order.device)}</span>}
             />
             {/* After refunds, the original struck through beside it (#009). */}
             <InfoRow

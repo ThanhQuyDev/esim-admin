@@ -29,12 +29,20 @@ export type OrderUser = {
   deletedAt?: string | null;
 };
 
+export type OrderDevice = {
+  type: 'desktop' | 'mobile' | 'tablet' | null;
+  browser: string | null;
+  os: string | null;
+};
+
 export type Order = {
   id: number;
   userId: number;
   user: OrderUser;
   userEmail?: string;
   orderNumber: string;
+  /** Device the order was placed from; null for CMS and older orders (doitac-1410 #082). */
+  device?: OrderDevice | null;
   status: string;
   totalAmount: number;
   currency: string;
