@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import {
   getFinancialComparison,
+  getOrdersByDevice,
   getOverview,
   getOverviewSummary,
   getProviderComparison,
@@ -21,6 +22,8 @@ export const overviewKeys = {
     [...overviewKeys.all, 'provider-comparison', query] as const,
   topDestinations: (query: TopDestinationsQuery) =>
     [...overviewKeys.all, 'top-destinations', query] as const,
+  ordersByDevice: (filters: OverviewFilters) =>
+    [...overviewKeys.all, 'orders-by-device', filters] as const,
   financialComparison: (query: FinancialComparisonQuery) =>
     [...overviewKeys.all, 'financial-comparison', query] as const
 };
@@ -53,4 +56,10 @@ export const financialComparisonQueryOptions = (query: FinancialComparisonQuery 
   queryOptions({
     queryKey: overviewKeys.financialComparison(query),
     queryFn: () => getFinancialComparison(query)
+  });
+
+export const ordersByDeviceQueryOptions = (filters: OverviewFilters = {}) =>
+  queryOptions({
+    queryKey: overviewKeys.ordersByDevice(filters),
+    queryFn: () => getOrdersByDevice(filters)
   });

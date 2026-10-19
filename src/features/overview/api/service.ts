@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api-client';
 import type {
   FinancialComparisonQuery,
   FinancialComparisonResponse,
+  OrdersByDeviceResponse,
   OverviewFilters,
   OverviewResponse,
   OverviewSummary,
@@ -47,6 +48,14 @@ export async function getTopDestinations(
 ): Promise<TopDestinationsResponse> {
   return apiClient<TopDestinationsResponse>(
     `/overview/top-destinations${buildOverviewQuery(query)}`
+  );
+}
+
+export async function getOrdersByDevice(
+  filters: OverviewFilters = {}
+): Promise<OrdersByDeviceResponse> {
+  return apiClient<OrdersByDeviceResponse>(
+    `/overview/orders-by-device${buildOverviewQuery(filters)}`
   );
 }
 

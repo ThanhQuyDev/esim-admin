@@ -18,6 +18,7 @@ import { Icons } from '@/components/icons';
 import { formatNumber, formatVnd } from '@/lib/format';
 import { AreaGraph } from './area-graph';
 import { BarGraph } from './bar-graph';
+import { DeviceGraph } from './device-graph';
 import { PieGraph } from './pie-graph';
 import { RecentSales } from './recent-sales';
 import { OverviewFilters, type OverviewFiltersValue } from './overview-filters';
@@ -186,6 +187,10 @@ export function OverviewDashboard() {
           </div>
           <div className='col-span-4 min-h-0 md:col-span-3'>
             <PieGraph filters={queryFilters} />
+          </div>
+          {/* Successful orders by device (doitac-1410 #083). */}
+          <div className='col-span-4 md:col-span-3'>
+            <DeviceGraph filters={queryFilters} />
           </div>
         </div>
       </div>

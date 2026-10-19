@@ -72,6 +72,14 @@ export interface TopDestinationsResponse {
   }>;
 }
 
+/** Successful orders per device (doitac-1410 #083). */
+export type OrderDeviceType = 'desktop' | 'mobile' | 'tablet' | 'unknown';
+
+export interface OrdersByDeviceResponse {
+  data: Array<{ deviceType: OrderDeviceType; orders: number; percent: number }>;
+  total: number;
+}
+
 export interface FinancialComparisonQuery extends Omit<OverviewFilters, 'groupBy'> {
   groupBy?: FinancialGroupBy;
   limit?: number;
