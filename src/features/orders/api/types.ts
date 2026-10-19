@@ -113,6 +113,9 @@ export type OrderItemPlan = {
    * the rule. Refundable eSIMs are the roaming ones.
    */
   isRefundable?: boolean;
+  /** Exit IP country the supplier states, "SG", "HK"… (doitac-1410 #081). */
+  ipExport?: string | null;
+  topUp?: boolean;
 };
 
 export type OrderItemEsim = {

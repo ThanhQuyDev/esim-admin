@@ -173,6 +173,12 @@ function CopyLinkButton({ value }: { value: string }) {
   );
 }
 
+/** "Có" / "Không", or "—" when the plan is not loaded (doitac-1410 #081). */
+function yesNo(value: boolean | undefined | null): string {
+  if (value === undefined || value === null) return '—';
+  return value ? 'Có' : 'Không';
+}
+
 function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemPlan | null }) {
   return (
     <div className='rounded-lg border p-4 space-y-4'>
@@ -204,14 +210,29 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
             label='LPA'
             value={<span className='font-mono text-xs break-all'>{esim.lpa || '—'}</span>}
           />
+          {/* IP instead of Match ID, plus the phone number and what the eSIM
+              supports (doitac-1410 #081). */}
           <InfoRow
-            label='Match ID'
-            value={<span className='font-mono text-xs break-all'>{esim.matchId || '—'}</span>}
+            label='IP'
+            value={
+              <span className='font-mono text-xs' data-testid='esim-ip'>
+                {plan?.ipExport || '—'}
+              </span>
+            }
           />
           <InfoRow label='APN' value={esim.apnValue || '—'} />
           <InfoRow
             label='eSIM Tran No'
             value={<span className='font-mono text-xs'>{esim.esimTranNo || '—'}</span>}
+          />
+          <InfoRow label='Số điện thoại' value={esim.phoneNumber || '—'} />
+          <InfoRow
+            label='Hỗ trợ Topup'
+            value={<span data-testid='esim-topup'>{yesNo(plan?.topUp)}</span>}
+          />
+          <InfoRow
+            label='Hỗ trợ hoàn tiền'
+            value={<span data-testid='esim-refundable'>{yesNo(plan?.isRefundable)}</span>}
           />
         </div>
 
@@ -228,7 +249,6 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
           <InfoRow label='Đã dùng' value={formatDataMb(esim.dataUsed)} />
           <InfoRow label='Còn lại' value={remainingData(esim.dataUsed, esim.dataTotal)} />
           <InfoRow label='Tổng dung lượng' value={formatDataMb(esim.dataTotal)} />
-          <InfoRow label='SĐT' value={esim.phoneNumber || '—'} />
           {/* Minutes / SMS instead of the Roaming flag, which said nothing useful
               about the eSIM (#013). Shown only when the plan carries an
               allowance, so a data-only eSIM does not grow a "Không" row. */}
