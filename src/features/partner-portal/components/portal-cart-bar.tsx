@@ -29,6 +29,7 @@ import { myWalletQueryOptions, partnerPortalKeys } from '../api/queries';
 import { catalogueExportUrl, purchaseCart, quoteCart } from '../api/service';
 import type { CatalogueFilters } from '../api/types';
 import { clearCart, removeFromCart, setCartQuantity, usePartnerCart } from '../lib/partner-cart';
+import { PortalCartFileImport } from './portal-cart-file-import';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -234,12 +235,16 @@ export function PortalCartBar({ filters }: { filters: CatalogueFilters }) {
             Thanh toán
           </Button>
         </div>
-        <Button asChild size='sm' variant='outline'>
-          <a href={catalogueExportUrl(filters)} data-testid='catalogue-export'>
-            <Icons.download className='size-4' />
-            Xuất bảng giá
-          </a>
-        </Button>
+        <div className='flex flex-wrap items-center gap-2'>
+          {/* Many eSIMs at once from a file (doitac-1410 #084). */}
+          <PortalCartFileImport />
+          <Button asChild size='sm' variant='outline'>
+            <a href={catalogueExportUrl(filters)} data-testid='catalogue-export'>
+              <Icons.download className='size-4' />
+              Xuất bảng giá
+            </a>
+          </Button>
+        </div>
       </div>
       <CartCheckoutDialog open={checkout} onOpenChange={setCheckout} />
     </>

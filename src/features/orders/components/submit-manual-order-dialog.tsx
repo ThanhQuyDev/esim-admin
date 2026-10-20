@@ -12,6 +12,7 @@ import { submitManualOrderMutation } from '../api/mutations';
 import { submitManualOrderSchema, type SubmitManualOrderFormValues } from '../schemas/admin';
 import type { SubmitManualOrderPayload } from '../api/types';
 import { ManualOrderLines, emptyManualOrderLine, type ManualOrderLine } from './manual-order-lines';
+import { ManualOrderFileImport } from './manual-order-file-import';
 
 interface SubmitManualOrderDialogProps {
   open: boolean;
@@ -133,6 +134,7 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
               description='Chỉ dùng khi email chưa có tài khoản'
             />
           </div>
+          <ManualOrderFileImport lines={lines} onChange={setLines} />
           {/* One row per kind of eSIM, each with its filters and quantity (#031). */}
           <ManualOrderLines lines={lines} onChange={setLines} showErrors={triedSubmit} />
         </form.Form>

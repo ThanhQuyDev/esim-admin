@@ -348,6 +348,18 @@ export type SubmitManualOrderPayload = {
   items?: { packageCode: string; slug: string; quantity: number }[];
 };
 
+/** An order file read for "Đặt đơn hộ khách", each row with its plan (doitac-1410 #084). */
+export type ManualOrderFilePreview = {
+  lines: {
+    row: number;
+    slug: string;
+    quantity: number;
+    plan: { id: number; slug: string; packageCode: string; label: string } | null;
+    error: string | null;
+  }[];
+  errorCount: number;
+};
+
 /** "Ghi chú" an admin keeps on an order (doitac-1410 #067). */
 export type OrderNote = { id: number; body: string; createdAt: string; by: string };
 

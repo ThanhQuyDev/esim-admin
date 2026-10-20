@@ -1,6 +1,7 @@
 import { downloadFilename } from '@/lib/download-filename';
 import { apiClient } from '@/lib/api-client';
 import type {
+  CartFilePreview,
   CartPurchaseResult,
   CartQuote,
   CatalogueFilters,
@@ -607,6 +608,22 @@ export async function purchaseCart(payload: {
     body: JSON.stringify(payload)
   });
 }
+
+/** Reads an order file and prices it; charges nothing (doitac-1410 #084). */
+export async function previewCartFile(file: File): Promise<CartFilePreview> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch('/api/partner-portal/purchases/cart/import-file', {
+    method: 'POST',
+    body: formData
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || `Không đọc được file: ${res.status}`);
+  return body as CartFilePreview;
+}
+
+/** Where the browser downloads the order file template (doitac-1410 #084). */
+export const CART_FILE_TEMPLATE_URL = '/api/partner-portal/purchases/cart/import-template';
 
 /** Where the browser downloads the price list (doitac-1410 #035). */
 export function catalogueExportUrl(filters: CatalogueFilters = {}): string {

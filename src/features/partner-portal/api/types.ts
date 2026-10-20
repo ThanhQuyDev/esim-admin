@@ -719,6 +719,27 @@ export type CartPurchaseResult = {
   pendingEsims: number;
 };
 
+/** An order file read for the cart, priced, one order per QR email (doitac-1410 #084). */
+export type CartFilePreview = {
+  lines: {
+    row: number;
+    slug: string;
+    quantity: number;
+    email: string | null;
+    planId: number | null;
+    name: string | null;
+    destinationName: string | null;
+    unitPriceVnd: number;
+    totalVnd: number;
+    error: string | null;
+  }[];
+  orders: { email: string | null; planCount: number; esimCount: number; totalVnd: number }[];
+  totalVnd: number;
+  balanceVnd: number;
+  errorCount: number;
+  rejection: string | null;
+};
+
 /** The price list's filters — the admin's, minus "Hoạt động" (doitac-1410 #033). */
 export type CatalogueFilters = {
   search?: string;
