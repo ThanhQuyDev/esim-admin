@@ -9,7 +9,7 @@ import { refundOrderMutation, retryOrderProvisioningMutation } from '../api/muta
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { OrderItemEsim, OrderItemPlan } from '../api/types';
+import type { Order, OrderItemEsim, OrderItemPlan } from '../api/types';
 import { Icons } from '@/components/icons';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
