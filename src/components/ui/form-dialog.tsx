@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -87,8 +86,13 @@ export function FormDialog({
         {/* Divider */}
         <div className='h-px bg-gradient-to-r from-transparent via-border to-transparent' />
 
-        {/* Scrollable content */}
-        <ScrollArea className='min-h-0 flex-1 px-8 py-6'>{children}</ScrollArea>
+        {/* Scrollable content. A plain scrolling box (doitac-1410 #084): the
+            ScrollArea's viewport took the height of its content instead of the
+            space left, so a long form ran under the buttons and could not be
+            scrolled to its end. */}
+        <div className='min-h-0 flex-1 overflow-y-auto px-8 py-6' data-slot='form-dialog-body'>
+          {children}
+        </div>
 
         {/* Divider */}
         <div className='h-px bg-gradient-to-r from-transparent via-border to-transparent' />
