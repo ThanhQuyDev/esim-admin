@@ -24,6 +24,7 @@ import {
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { INVOICE_FILTER_OPTIONS } from '../../utils/invoice-filter';
 import { DEFAULT_ORDER_STATUS, buildOrderApiFilters } from '../../utils/order-filters';
+import { partnersQueryOptions } from '@/features/partners/api/queries';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
@@ -51,6 +52,7 @@ export function OrdersTable() {
     status: parseAsString.withDefault(DEFAULT_ORDER_STATUS),
     invoice: parseAsString,
     kind: parseAsString,
+    partner: parseAsString,
     createdFrom: parseAsString,
     createdTo: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
@@ -111,6 +113,11 @@ export function OrdersTable() {
     ...ordersQueryOptions(filters),
     placeholderData: keepPreviousData
   });
+
+  // Affiliate (KOL) partners for the partner filter (vande #023).
+  const { data: affiliates } = useQuery(
+    partnersQueryOptions({ partnerType: 'kol', page: 1, limit: 100, sort: 'newest' })
+  );
 
   const tableData = data?.data ?? [];
   const totalCount = data?.totalCount ?? 0;
@@ -181,6 +188,27 @@ export function OrdersTable() {
             {ORDER_KIND_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {/* One affiliate partner's orders (vande #023). */}
+        <Select
+          value={params.partner ?? 'all'}
+          onValueChange={(value) =>
+            startTransition(() => {
+              setParams({ partner: value === 'all' ? null : value, page: 1 });
+            })
+          }
+        >
+          <SelectTrigger className='w-60' aria-label='Lọc theo đối tác Affiliate'>
+            <SelectValue placeholder='Đối tác Affiliate' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>Đối tác Affiliate: Tất cả</SelectItem>
+            {(affiliates?.data ?? []).map((partner) => (
+              <SelectItem key={partner.id} value={String(partner.id)}>
+                {partner.companyName || partner.contactName} (#{partner.id})
               </SelectItem>
             ))}
           </SelectContent>

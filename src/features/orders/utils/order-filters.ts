@@ -20,6 +20,8 @@ export type OrderFilterParams = {
   invoice?: string | null;
   /** esim | affiliate | topup (#017). */
   kind?: string | null;
+  /** Affiliate partner id (vande #023). */
+  partner?: string | null;
   createdFrom?: string | null;
   createdTo?: string | null;
 };
@@ -47,6 +49,8 @@ export function buildOrderApiFilters(params: OrderFilterParams): Record<string, 
   Object.assign(filters, invoiceFilterToApi(params.invoice));
 
   if (params.kind && params.kind !== 'all') filters.kind = params.kind;
+  const partnerId = Number(params.partner);
+  if (Number.isInteger(partnerId) && partnerId > 0) filters.affiliatePartnerId = partnerId;
   if (params.createdFrom) filters.createdFrom = params.createdFrom;
   if (params.createdTo) filters.createdTo = params.createdTo;
 

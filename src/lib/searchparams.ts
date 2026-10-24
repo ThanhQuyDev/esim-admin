@@ -60,6 +60,8 @@ export const searchParams = {
   iccid: parseAsString,
   /** esim | affiliate | topup (#017) */
   kind: parseAsString,
+  /** One affiliate partner's orders (vande #023). */
+  partner: parseAsString,
   createdFrom: parseAsString,
   createdTo: parseAsString,
   // esims list (#020). `esimStatus` rather than `status`, which is already a

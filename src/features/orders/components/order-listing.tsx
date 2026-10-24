@@ -18,6 +18,7 @@ export default function OrderListingPage() {
     status: searchParamsCache.get('status'),
     invoice: searchParamsCache.get('invoice'),
     kind: searchParamsCache.get('kind'),
+    partner: searchParamsCache.get('partner'),
     createdFrom: searchParamsCache.get('createdFrom'),
     createdTo: searchParamsCache.get('createdTo')
   });
