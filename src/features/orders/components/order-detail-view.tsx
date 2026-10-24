@@ -259,6 +259,10 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
               value={<span className='font-medium'>{callSmsSummary(plan)}</span>}
             />
           )}
+          {/* The phone the eSIM went on (vande #011). */}
+          <InfoRow label='EID' value={esim.eid || '—'} />
+          {esim.deviceModel && <InfoRow label='Thiết bị' value={esim.deviceModel} />}
+          <InfoRow label='Cài đặt' value={formatDate(esim.installedAt)} />
           <InfoRow label='Kích hoạt' value={formatDate(esim.activatedAt)} />
           <InfoRow label='Hết hạn' value={formatDate(esim.expiresAt)} />
         </div>

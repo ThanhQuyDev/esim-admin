@@ -24,6 +24,12 @@ export type Esim = {
   dataTotal: string;
   expiresAt: string | null;
   activatedAt: string | null;
+  /** Added to a phone (downloaded / installed) at — from the supplier (vande #011). */
+  installedAt?: string | null;
+  /** The phone's EID once the eSIM is on it (vande #011). */
+  eid?: string | null;
+  /** Phone model the supplier reports, e.g. "iPhone 17 Pro Max". */
+  deviceModel?: string | null;
   esimTranNo: string;
   provider: string;
   phoneNumber: string;

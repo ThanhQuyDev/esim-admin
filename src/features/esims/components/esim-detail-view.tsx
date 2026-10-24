@@ -94,10 +94,15 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                 </Badge>
               }
             />
+            {/* The moments the supplier reports, in order (vande #011). */}
+            <InfoRow label='Ngày tạo' value={formatDate(esim.createdAt)} />
+            <InfoRow label='Cài đặt lúc' value={formatDate(esim.installedAt)} />
             <InfoRow label='Kích hoạt lúc' value={formatDate(esim.activatedAt)} />
             <InfoRow label='Hết hạn lúc' value={formatDate(esim.expiresAt)} />
-            <InfoRow label='Ngày tạo' value={formatDate(esim.createdAt)} />
             <InfoRow label='Cập nhật lúc' value={formatDate(esim.updatedAt)} />
+            {/* Settles "scanned on the wrong phone" / "phone is locked" claims. */}
+            <InfoRow label='EID thiết bị' value={esim.eid || '—'} />
+            <InfoRow label='Thiết bị' value={esim.deviceModel || '—'} />
           </div>
         </CardContent>
       </Card>
