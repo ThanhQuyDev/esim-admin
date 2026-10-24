@@ -1,4 +1,6 @@
 'use client';
+
+import Link from 'next/link';
 import { formatDateVn } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -68,12 +70,34 @@ export const columns: ColumnDef<Esim>[] = [
     ),
     cell: ({ row }) => <span className='font-mono text-xs'>{row.original.iccid}</span>,
     meta: {
-      label: 'ICCID',
-      placeholder: 'Tìm kiếm ICCID...',
+      // One box for order number, email, ICCID and plan name (vande #021).
+      label: 'Tìm kiếm',
+      placeholder: 'Tìm theo mã đơn hàng, email, ICCID hoặc tên gói...',
       variant: 'text' as const,
-      icon: Icons.search
+      icon: Icons.search,
+      inputClassName: 'h-8 w-full min-w-[16rem] md:w-[28rem]'
     },
     enableColumnFilter: true
+  },
+  {
+    // Which order the eSIM came from (vande #021); opens that order.
+    id: 'orderNumber',
+    accessorKey: 'orderNumber',
+    header: 'Mã đơn hàng',
+    cell: ({ row }) =>
+      row.original.orderNumber ? (
+        <Link
+          href={`/dashboard/orders?q=${encodeURIComponent(row.original.orderNumber)}&status=all`}
+          className='font-mono text-xs underline-offset-2 hover:underline'
+          data-testid='esim-order-number'
+        >
+          {row.original.orderNumber}
+        </Link>
+      ) : (
+        <span className='text-muted-foreground text-xs'>—</span>
+      ),
+    enableSorting: false,
+    enableColumnFilter: false
   },
   {
     id: 'planName',
@@ -82,13 +106,8 @@ export const columns: ColumnDef<Esim>[] = [
     accessorFn: (row) => row.plan?.name ?? '',
     header: 'Tên gói',
     cell: ({ row }) => planDisplayName(row.original.plan),
-    meta: {
-      label: 'Tên gói',
-      placeholder: 'Tìm kiếm tên gói...',
-      variant: 'text' as const,
-      icon: Icons.search
-    },
-    enableColumnFilter: true,
+    // Searched through the one box above (vande #021).
+    enableColumnFilter: false,
     enableSorting: false
   },
   {

@@ -54,6 +54,8 @@ export const searchParams = {
   invoice: parseAsString,
   // orders: buyer / order lookups and the #017 filters
   orderNumber: parseAsString,
+  /** One search box: order number, email, ICCID or plan name (vande #021). */
+  q: parseAsString,
   userEmail: parseAsString,
   iccid: parseAsString,
   /** esim | affiliate | topup (#017) */

@@ -40,6 +40,7 @@ export function OrdersTable() {
   const [params, setParams] = useQueryStates({
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
+    q: parseAsString,
     orderNumber: parseAsString,
     userEmail: parseAsString,
     iccid: parseAsString,
@@ -55,34 +56,22 @@ export function OrdersTable() {
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
-  // Local state for text inputs
-  const [localOrderNumber, setLocalOrderNumber] = useState(params.orderNumber ?? '');
-  const [localUserEmail, setLocalUserEmail] = useState(params.userEmail ?? '');
-  const [localIccid, setLocalIccid] = useState(params.iccid ?? '');
-  const [localPlanName, setLocalPlanName] = useState(params.planName ?? '');
+  // One search box for order number, email, ICCID and plan name (vande #021);
+  // it replaces the four inputs that each took one of them.
+  const [localQuery, setLocalQuery] = useState(params.q ?? '');
 
-  // Debounced callbacks to sync local state → URL params
-  const debouncedSetOrderNumber = useDebouncedCallback((value: string) => {
+  const debouncedSetQuery = useDebouncedCallback((value: string) => {
     startTransition(() => {
-      setParams({ orderNumber: value || null, page: 1 });
-    });
-  }, 500);
-
-  const debouncedSetUserEmail = useDebouncedCallback((value: string) => {
-    startTransition(() => {
-      setParams({ userEmail: value || null, page: 1 });
-    });
-  }, 500);
-
-  const debouncedSetIccid = useDebouncedCallback((value: string) => {
-    startTransition(() => {
-      setParams({ iccid: value || null, page: 1 });
-    });
-  }, 500);
-
-  const debouncedSetPlanName = useDebouncedCallback((value: string) => {
-    startTransition(() => {
-      setParams({ planName: value || null, page: 1 });
+      // The old one-field params are cleared, so they cannot narrow the
+      // results without a visible input to undo them.
+      setParams({
+        q: value || null,
+        orderNumber: null,
+        userEmail: null,
+        iccid: null,
+        planName: null,
+        page: 1
+      });
     });
   }, 500);
 
@@ -145,52 +134,17 @@ export function OrdersTable() {
   return (
     <div className='flex flex-1 flex-col space-y-4'>
       <div className='flex flex-wrap items-center gap-3'>
-        <div className='relative w-56'>
+        <div className='relative w-full md:w-[30rem]'>
           <Icons.search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
           <Input
-            placeholder='Tìm theo mã đơn hàng...'
-            value={localOrderNumber}
+            placeholder='Tìm theo mã đơn hàng, email, ICCID hoặc tên gói cước...'
+            value={localQuery}
             onChange={(e) => {
-              setLocalOrderNumber(e.target.value);
-              debouncedSetOrderNumber(e.target.value);
+              setLocalQuery(e.target.value);
+              debouncedSetQuery(e.target.value);
             }}
             className='pl-8'
-          />
-        </div>
-        <div className='relative w-56'>
-          <Icons.search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
-          <Input
-            placeholder='Tìm theo email...'
-            value={localUserEmail}
-            onChange={(e) => {
-              setLocalUserEmail(e.target.value);
-              debouncedSetUserEmail(e.target.value);
-            }}
-            className='pl-8'
-          />
-        </div>
-        <div className='relative w-56'>
-          <Icons.search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
-          <Input
-            placeholder='Tìm theo ICCID...'
-            value={localIccid}
-            onChange={(e) => {
-              setLocalIccid(e.target.value);
-              debouncedSetIccid(e.target.value);
-            }}
-            className='pl-8'
-          />
-        </div>
-        <div className='relative w-56'>
-          <Icons.search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
-          <Input
-            placeholder='Tìm theo tên gói cước...'
-            value={localPlanName}
-            onChange={(e) => {
-              setLocalPlanName(e.target.value);
-              debouncedSetPlanName(e.target.value);
-            }}
-            className='pl-8'
+            data-testid='orders-search'
           />
         </div>
         <Select

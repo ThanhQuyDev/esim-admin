@@ -28,7 +28,8 @@ function boolOf(values: string[] | null | undefined): boolean | undefined {
 export function buildEsimApiFilters(params: EsimFilterParams): Record<string, unknown> {
   const filters: Record<string, unknown> = {};
 
-  if (params.name) filters.search = params.name;
+  // The one search box (vande #021): order number, email, ICCID or plan name.
+  if (params.name) filters.q = params.name;
   if (params.planName) filters.planName = params.planName;
   if (params.packageType?.length) filters.planType = params.packageType;
 

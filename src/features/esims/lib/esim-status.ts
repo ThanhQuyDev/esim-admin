@@ -9,7 +9,8 @@
  */
 export const ESIM_STATUS_LABELS: Record<string, string> = {
   available: 'Chưa bán',
-  sold: 'Đã bán',
+  // "Đã gửi eSIM", what actually happened for the customer (vande #021).
+  sold: 'Đã gửi eSIM',
   active: 'Đang dùng',
   expired: 'Hết hạn',
   deactivated: 'Đã huỷ kích hoạt',

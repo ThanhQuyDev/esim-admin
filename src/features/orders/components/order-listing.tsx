@@ -10,6 +10,7 @@ export default function OrderListingPage() {
   // One mapping shared with OrdersTable, so the prefetched query is the one it
   // reads — the two had drifted apart by four filters (#017).
   const apiFilters = buildOrderApiFilters({
+    q: searchParamsCache.get('q'),
     orderNumber: searchParamsCache.get('orderNumber'),
     userEmail: searchParamsCache.get('userEmail'),
     iccid: searchParamsCache.get('iccid'),

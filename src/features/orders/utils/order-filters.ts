@@ -10,6 +10,8 @@ import { invoiceFilterToApi } from './invoice-filter';
  * every page load. The server copy had already fallen behind by four filters.
  */
 export type OrderFilterParams = {
+  /** One search box: order number, email, ICCID or plan name (vande #021). */
+  q?: string | null;
   orderNumber?: string | null;
   userEmail?: string | null;
   iccid?: string | null;
@@ -31,6 +33,8 @@ export const DEFAULT_ORDER_STATUS = 'paid';
 export function buildOrderApiFilters(params: OrderFilterParams): Record<string, unknown> {
   const filters: Record<string, unknown> = {};
 
+  if (params.q?.trim()) filters.q = params.q.trim();
+  // Still honoured for links made before the single box (vande #021).
   if (params.orderNumber) filters.orderNumber = params.orderNumber;
   if (params.userEmail) filters.userEmail = params.userEmail;
   if (params.iccid) filters.iccid = params.iccid;
