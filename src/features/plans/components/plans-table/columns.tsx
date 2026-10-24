@@ -226,13 +226,17 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       ),
       cell: ({ row }) => (
         <div className='flex flex-col'>
-          {/* Call/SMS allowance shown in the name so an admin can tell the plan
-            types apart at a glance (#008). */}
-          <span className='font-medium'>{planDisplayName(row.original)}</span>
-          <div className='text-muted-foreground flex items-center gap-1 text-xs'>
-            <span className='font-mono'>#{row.original.id}</span>
-            <CopyIdButton value={String(row.original.id)} />
-          </div>
+          {/* Three lines (vande #020): the name under the one naming rule, the
+            supplier's own name, and the supplier code. The id line it replaces
+            was no longer used. */}
+          <span className='font-medium' data-testid='plan-standard-name'>
+            {row.original.standardName || planDisplayName(row.original)}
+          </span>
+          {row.original.standardName && row.original.standardName !== row.original.name && (
+            <span className='text-muted-foreground text-xs' data-testid='plan-supplier-name'>
+              {planDisplayName(row.original)}
+            </span>
+          )}
           {/* Supplier package code, to paste into a blog post's plan list
             (#034, test round 4). Long codes are cut to their start; the copy
             button and the tooltip carry the full code. */}

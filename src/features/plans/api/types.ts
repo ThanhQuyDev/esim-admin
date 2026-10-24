@@ -50,6 +50,8 @@ export type Plan = {
   topUp: boolean;
   /** A data add-on rather than a top-up (vande #019). */
   isAddOn?: boolean;
+  /** The name under the one naming rule (vande #020); `name` is the supplier's. */
+  standardName?: string | null;
   apn: string | null;
   /**
    * Exit IP is local rather than routed via Hong Kong, i.e. TikTok and ChatGPT
