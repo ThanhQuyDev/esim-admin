@@ -103,6 +103,27 @@ export type EsimPlan = {
   speed: string;
   operatorName: string;
   isActive: boolean;
+  /** Fields the eSIM detail page shows (vande #022). */
+  standardName?: string | null;
+  isAddOn?: boolean;
+  vndCostPrice?: number | null;
+  vndPrice?: number | null;
+  fupSpeed?: string | null;
+  apn?: string | null;
+  ipExport?: string | null;
+  isKyc?: boolean | null;
+  hotSpotAllow?: string | null;
+  dailyResetPolicy?: 'rolling_24h' | 'calendar_day' | null;
+  /** Hours east of UTC, for a calendar-day reset. */
+  dailyResetUtcOffset?: number | null;
+  region?: { id: number; name: string } | null;
+  appSupport?: {
+    tiktokIos: boolean;
+    tiktokAndroid: boolean;
+    tiktokAllDevices: boolean;
+    chatGpt: boolean;
+    known: boolean;
+  };
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

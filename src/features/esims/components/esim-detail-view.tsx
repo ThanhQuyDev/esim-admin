@@ -1,22 +1,28 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
 import { esimQrLogoSettings } from '../lib/esim-qr';
 import { AdminTopupDialog } from './admin-topup-dialog';
+import { EsimFormDialog } from './esim-form-dialog';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
+import { AlertModal } from '@/components/modal/alert-modal';
 import { esimStatusLabel, esimStatusVariant } from '../lib/esim-status';
-import { formatDateTimeVn, formatVnd } from '@/lib/format';
-import Link from 'next/link';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { QRCodeSVG } from 'qrcode.react';
+import { formatDataSize, formatDateTimeVn, formatVnd } from '@/lib/format';
 import { esimQueryOptions } from '../api/queries';
+import { deleteEsimMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { callSmsSummary, planDisplayName } from '@/features/plans/utils/plan-label';
 import { providerLabel } from '@/features/overview/api/constants';
 import { formatUsd, planUsd } from '@/lib/plan-price';
+import type { EsimDetail, EsimPlan } from '../api/types';
 
 interface EsimDetailViewProps {
   esimId: number;
@@ -26,9 +32,48 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4'>
       <span className='text-muted-foreground w-44 shrink-0 text-sm font-medium'>{label}</span>
-      <span className='text-sm'>{value || '—'}</span>
+      <span className='min-w-0 text-sm break-words'>{value || '—'}</span>
     </div>
   );
+}
+
+function YesNo({ value, testId }: { value: boolean | null | undefined; testId?: string }) {
+  if (value === null || value === undefined) return <>—</>;
+  return (
+    <Badge variant={value ? 'default' : 'secondary'} data-testid={testId}>
+      {value ? 'Có' : 'Không'}
+    </Badge>
+  );
+}
+
+/** Copy a value, with a short "copied" tick. */
+function CopyButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type='button'
+      className='text-muted-foreground hover:text-foreground inline-flex items-center'
+      aria-label={label}
+      title={label}
+      onClick={async () => {
+        await navigator.clipboard.writeText(value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+    >
+      {copied ? (
+        <Icons.check className='size-3.5 text-green-500' />
+      ) : (
+        <Icons.copy className='size-3.5' />
+      )}
+    </button>
+  );
+}
+
+/** Data used: "0 MB" when nothing yet, never "Không giới hạn". */
+function usedData(mb: number): string {
+  const rounded = Math.round(mb);
+  return rounded > 0 ? formatDataSize(rounded) : '0 MB';
 }
 
 function formatDate(date: string | null | undefined) {
@@ -36,207 +81,305 @@ function formatDate(date: string | null | undefined) {
   return formatDateTimeVn(date);
 }
 
+const PLAN_TYPE_LABELS: Record<string, string> = {
+  fixed: 'Cố định',
+  'data-in-total': 'Cố định',
+  month: 'Theo tháng',
+  daily: 'Theo ngày',
+  'daily-limit-service-cutoff': 'Theo ngày (hết data thì ngắt)',
+  unlimited: 'Không giới hạn',
+  'unlimited-reduce': 'Không giới hạn (giảm tốc sau data tốc độ cao)'
+};
+
+/** "Không" / "Có" / "Add-on" — Billion add-ons apart from top-ups (vande #019). */
+function topUpLabel(plan: EsimPlan | null): string {
+  if (!plan) return '—';
+  if (plan.isAddOn) return 'Add-on';
+  return plan.topUp ? 'Có' : 'Không';
+}
+
+function isDailyPlan(plan: EsimPlan | null): boolean {
+  return !!plan && ['daily', 'daily-limit-service-cutoff', 'unlimited-reduce'].includes(plan.type);
+}
+
+/** "23:59 (UTC+8)" for a calendar day, "Sau mỗi 24 giờ" for a rolling cycle (#063). */
+function dailyResetText(plan: EsimPlan | null): string | null {
+  if (!plan || !isDailyPlan(plan)) return null;
+  if (plan.dailyResetPolicy === 'rolling_24h') return 'Sau mỗi 24 giờ';
+  if (plan.dailyResetPolicy === 'calendar_day') {
+    const offset = plan.dailyResetUtcOffset;
+    if (offset === null || offset === undefined) return '23:59';
+    const hours = offset;
+    const sign = hours >= 0 ? '+' : '-';
+    return `23:59 (UTC${sign}${Math.abs(hours)})`;
+  }
+  return null;
+}
+
+/** The storefront's verdict on TikTok / AI apps (#045). */
+function appSupportText(plan: EsimPlan | null): string | null {
+  const support = plan?.appSupport;
+  if (!support) return null;
+  if (support.tiktokAllDevices && support.chatGpt) return 'Hỗ trợ tất cả TikTok, AI và App';
+  if (!support.known) return 'Chưa rõ (APN chưa có trong bảng APN)';
+  const works = [
+    support.tiktokIos && !support.tiktokAndroid ? 'TikTok trên iPhone' : null,
+    !support.tiktokIos && support.tiktokAndroid ? 'TikTok trên Android' : null,
+    support.chatGpt ? 'ChatGPT' : null
+  ].filter(Boolean);
+  return works.length ? `Chỉ hỗ trợ ${works.join(', ')}` : 'Không hỗ trợ TikTok, ChatGPT và Claude';
+}
+
+/** Days used / total days, counted from activation (or install) to expiry. */
+function daysProgress(esim: EsimDetail): { used: number; total: number } | null {
+  const start = esim.activatedAt ?? esim.installedAt;
+  const total =
+    esim.chosenDays && esim.chosenDays > 0 ? esim.chosenDays : (esim.plan?.durationDays ?? 0);
+  if (!total) return null;
+  if (!start) return { used: 0, total };
+  const end = esim.expiresAt ? new Date(esim.expiresAt).getTime() : Infinity;
+  const now = Math.min(Date.now(), end);
+  const used = Math.max(0, Math.ceil((now - new Date(start).getTime()) / 86_400_000));
+  return { used: Math.min(used, total), total };
+}
+
+function dataProgress(esim: EsimDetail): { used: number; total: number } | null {
+  const used = Number(esim.dataUsed) || 0;
+  const total = Number(esim.dataTotal) || esim.plan?.dataMb || 0;
+  if (!total) return null;
+  return { used: Math.min(used, total), total };
+}
+
+function UsageBar({
+  title,
+  used,
+  total,
+  text,
+  testId
+}: {
+  title: string;
+  used: number;
+  total: number;
+  text: string;
+  testId: string;
+}) {
+  const percent = total > 0 ? Math.round((used / total) * 100) : 0;
+  return (
+    <div className='space-y-2' data-testid={testId}>
+      <div className='flex items-center justify-between text-sm'>
+        <span className='font-medium'>{title}</span>
+        <span className='text-muted-foreground'>
+          {text} · {percent}%
+        </span>
+      </div>
+      <Progress value={percent} aria-label={title} />
+    </div>
+  );
+}
+
 export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   const { data: esim } = useSuspenseQuery(esimQueryOptions(esimId));
+  const router = useRouter();
   const [topupOpen, setTopupOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const { mutate: deleteEsim, isPending: deleting } = useMutation({
+    ...deleteEsimMutation,
+    onSuccess: () => {
+      toast.success('Đã xoá eSIM');
+      router.push('/dashboard/esims');
+    },
+    onError: (e) => toast.error(e.message || 'Không xoá được eSIM')
+  });
+
+  const plan = esim.plan;
   // What the supplier said, else the plan's refund rule: refundable eSIMs
   // roam, local ones do not (doitac-1410 #080).
-  const isRoaming = esim.isRoaming ?? esim.plan?.isRefundable ?? false;
+  const isRoaming = esim.isRoaming ?? plan?.isRefundable ?? false;
+  // The standard name when the plan has one (vande #020).
+  const planName = plan?.standardName || planDisplayName(plan);
+  const usd = plan ? planUsd(plan) : null;
+  const days = daysProgress(esim);
+  const data = dataProgress(esim);
+  // Airalo does not report when the plan itself started (vande #022).
+  const showActivated = esim.provider !== 'airalo' && plan?.provider !== 'airalo';
+  const lpa = esim.lpa || '';
+  const iosLink = lpa ? `https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=${lpa}` : '';
+  const androidLink = lpa
+    ? `https://esimsetup.android.com/esim_qrcode_provisioning?carddata=${lpa}`
+    : '';
 
   return (
     <div className='grid gap-6 md:grid-cols-2'>
-      {/* eSIM Info */}
+      {/* Admin actions first (vande #022). */}
       <Card className='md:col-span-2'>
         <CardHeader>
-          <CardTitle className='flex items-center gap-3'>
-            Thông tin eSIM
+          <CardTitle>Thao tác quản trị</CardTitle>
+        </CardHeader>
+        <CardContent className='flex flex-wrap items-center gap-3'>
+          {esim.iccid && (
+            <Button variant='outline' onClick={() => setTopupOpen(true)}>
+              <Icons.wallet className='mr-2 h-4 w-4' />
+              Topup hộ khách
+            </Button>
+          )}
+          <EsimFormDialog
+            esim={esim}
+            trigger={
+              <Button variant='outline' data-testid='esim-edit'>
+                <Icons.edit className='mr-2 h-4 w-4' />
+                Sửa
+              </Button>
+            }
+          />
+          <Button
+            variant='outline'
+            className='text-destructive'
+            onClick={() => setDeleteOpen(true)}
+            data-testid='esim-delete'
+          >
+            <Icons.trash className='mr-2 h-4 w-4' />
+            Xóa
+          </Button>
+        </CardContent>
+      </Card>
+      <AdminTopupDialog iccid={esim.iccid} open={topupOpen} onOpenChange={setTopupOpen} />
+      <AlertModal
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        loading={deleting}
+        onConfirm={() => deleteEsim(esim.id)}
+        title='Xoá eSIM này?'
+        description={`ICCID ${esim.iccid}. Hành động này không thể hoàn tác.`}
+      />
+
+      {/* eSIM info, named after its plan (vande #022). */}
+      <Card className='md:col-span-2'>
+        <CardHeader>
+          <CardTitle className='flex flex-wrap items-center gap-3' data-testid='esim-info-title'>
+            Thông tin eSIM{planName && planName !== '—' ? `: ${planName}` : ''}
             <Badge variant={esimStatusVariant(esim.lifecycleStatus ?? esim.status)}>
               {esimStatusLabel(esim.lifecycleStatus ?? esim.status)}
             </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className='grid gap-4 md:grid-cols-2'>
-          <div className='space-y-3'>
-            <InfoRow label='ID' value={esim.id} />
-            {/* Which order the eSIM came from (doitac-1410 #069). */}
-            <InfoRow
-              label='Mã đơn hàng'
-              value={
-                esim.orderNumber ? (
-                  <Link
-                    href={`/dashboard/orders/${encodeURIComponent(esim.orderNumber)}`}
-                    className='text-primary font-mono text-xs hover:underline'
-                    data-testid='esim-order-number'
-                  >
-                    {esim.orderNumber}
-                  </Link>
-                ) : (
-                  <span className='text-muted-foreground'>Chưa gắn đơn hàng (eSIM trong kho)</span>
-                )
-              }
-            />
-            <InfoRow
-              label='ICCID'
-              value={<span className='font-mono text-xs'>{esim.iccid}</span>}
-            />
-            <InfoRow label='Nhà cung cấp' value={providerLabel(esim.provider)} />
-            <InfoRow label='Số điện thoại' value={esim.phoneNumber} />
-            <InfoRow label='eSIM Tran No' value={esim.esimTranNo} />
-            <InfoRow label='APN' value={esim.apnValue} />
-          </div>
-          <div className='space-y-3'>
-            <InfoRow label='Dữ liệu' value={`${esim.dataUsed} / ${esim.dataTotal}`} />
-            <InfoRow
-              label='Roaming'
-              value={
-                <Badge variant={isRoaming ? 'default' : 'secondary'} data-testid='esim-roaming'>
-                  {isRoaming ? 'Có' : 'Không'}
-                </Badge>
-              }
-            />
-            {/* The moments the supplier reports, in order (vande #011). */}
-            <InfoRow label='Ngày tạo' value={formatDate(esim.createdAt)} />
-            <InfoRow label='Cài đặt lúc' value={formatDate(esim.installedAt)} />
-            <InfoRow label='Kích hoạt lúc' value={formatDate(esim.activatedAt)} />
-            <InfoRow label='Hết hạn lúc' value={formatDate(esim.expiresAt)} />
-            <InfoRow label='Cập nhật lúc' value={formatDate(esim.updatedAt)} />
-            {/* Settles "scanned on the wrong phone" / "phone is locked" claims. */}
-            <InfoRow label='EID thiết bị' value={esim.eid || '—'} />
-            <InfoRow label='Thiết bị' value={esim.deviceModel || '—'} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Admin actions */}
-      {esim.iccid && (
-        <Card className='md:col-span-2'>
-          <CardHeader>
-            <CardTitle>Thao tác quản trị</CardTitle>
-          </CardHeader>
-          <CardContent className='flex flex-wrap items-center gap-3'>
-            <Button variant='outline' onClick={() => setTopupOpen(true)}>
-              <Icons.wallet className='mr-2 h-4 w-4' />
-              Topup hộ khách
-            </Button>
-            <span className='text-muted-foreground text-xs'>
-              Nạp thêm dung lượng cho khách mà không qua cổng thanh toán.
-            </span>
-          </CardContent>
-        </Card>
-      )}
-
-      <AdminTopupDialog iccid={esim.iccid} open={topupOpen} onOpenChange={setTopupOpen} />
-
-      {/* QR Code from LPA */}
-      {esim.lpa && (
-        <Card className='md:col-span-2'>
-          <CardHeader>
-            <CardTitle>QR Code cài đặt eSIM</CardTitle>
-          </CardHeader>
-          <CardContent className='flex flex-col items-center gap-4'>
-            <div className='rounded-lg border bg-white p-4'>
-              <QRCodeSVG
-                value={esim.lpa}
-                size={200}
-                level='H'
-                imageSettings={esimQrLogoSettings(200)}
+        <CardContent className='space-y-6'>
+          <div className='grid gap-4 md:grid-cols-2'>
+            <div className='space-y-3' data-testid='esim-info-left'>
+              {/* Which order the eSIM came from (doitac-1410 #069). */}
+              <InfoRow
+                label='Mã đơn hàng'
+                value={
+                  esim.orderNumber ? (
+                    <Link
+                      href={`/dashboard/orders/${encodeURIComponent(esim.orderNumber)}`}
+                      className='text-primary font-mono text-xs hover:underline'
+                      data-testid='esim-order-number'
+                    >
+                      {esim.orderNumber}
+                    </Link>
+                  ) : (
+                    <span className='text-muted-foreground'>
+                      Chưa gắn đơn hàng (eSIM trong kho)
+                    </span>
+                  )
+                }
               />
+              <InfoRow
+                label='ICCID'
+                value={
+                  <span className='flex items-center gap-1.5 font-mono text-xs'>
+                    {esim.iccid}
+                    <CopyButton value={esim.iccid} label='Copy ICCID' />
+                  </span>
+                }
+              />
+              <InfoRow
+                label='Dữ liệu'
+                value={data ? `${usedData(data.used)} / ${formatDataSize(data.total)}` : '—'}
+              />
+              <InfoRow label='Phút gọi / SMS' value={callSmsSummary(plan) ?? 'Không (chỉ data)'} />
+              <InfoRow label='Hỗ trợ Topup' value={topUpLabel(plan)} />
+              <InfoRow label='Hỗ trợ hoàn tiền' value={<YesNo value={plan?.isRefundable} />} />
+              <InfoRow label='Giá vốn VNĐ' value={plan ? formatVnd(plan.vndCostPrice ?? 0) : '—'} />
+              <InfoRow label='Giá bán VNĐ' value={plan ? formatVnd(plan.vndPrice ?? 0) : '—'} />
+              <InfoRow label='Giá bán $' value={usd ? formatUsd(usd.price) : '—'} />
             </div>
-            <p className='text-muted-foreground max-w-md text-center text-xs'>
-              Quét mã QR này bằng camera điện thoại để cài đặt eSIM. Mã được tạo từ LPA:{' '}
-              <span className='font-mono'>{esim.lpa}</span>
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Technical Details */}
-      <Card className='md:col-span-2'>
-        <CardHeader>
-          <CardTitle>Thông tin kỹ thuật</CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-3'>
-          <InfoRow
-            label='SMDP Address'
-            value={<span className='font-mono text-xs break-all'>{esim.smdpAddress}</span>}
-          />
-          <InfoRow
-            label='Activation Code'
-            value={<span className='font-mono text-xs break-all'>{esim.activationCode}</span>}
-          />
-          <InfoRow
-            label='LPA'
-            value={<span className='font-mono text-xs break-all'>{esim.lpa}</span>}
-          />
-          <InfoRow
-            label='Match ID'
-            value={<span className='font-mono text-xs break-all'>{esim.matchId}</span>}
-          />
-          {esim.directAppleInstallationUrl && (
-            <InfoRow
-              label='Apple Install URL'
-              value={
-                <a
-                  href={esim.directAppleInstallationUrl}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-primary underline break-all text-xs'
-                >
-                  {esim.directAppleInstallationUrl}
-                </a>
-              }
-            />
-          )}
+            <div className='space-y-3' data-testid='esim-info-right'>
+              <InfoRow
+                label='Nhà cung cấp'
+                value={providerLabel(esim.provider || plan?.provider)}
+              />
+              <InfoRow
+                label='Loại gói'
+                value={plan ? (PLAN_TYPE_LABELS[plan.type] ?? plan.type) : '—'}
+              />
+              <InfoRow
+                label='Mã gói NCC'
+                value={
+                  plan?.providerPlanId ? (
+                    <span className='flex items-center gap-1.5 font-mono text-xs'>
+                      {plan.providerPlanId}
+                      <CopyButton value={plan.providerPlanId} label='Copy mã gói' />
+                    </span>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+              <InfoRow
+                label='Slug gói eSIM'
+                value={plan?.slug ? <span className='font-mono text-xs'>{plan.slug}</span> : '—'}
+              />
+              {/* The moments the supplier reports, in order (vande #011). */}
+              <InfoRow label='Ngày tạo' value={formatDate(esim.createdAt)} />
+              <InfoRow label='Cài đặt lúc' value={formatDate(esim.installedAt)} />
+              {showActivated && (
+                <InfoRow label='Kích hoạt gói lúc' value={formatDate(esim.activatedAt)} />
+              )}
+              <InfoRow label='Hết hạn lúc' value={formatDate(esim.expiresAt)} />
+              <InfoRow label='Thời gian cập nhật' value={formatDate(esim.updatedAt)} />
+            </div>
+          </div>
+          {/* Days and data used, side by side (vande #022). */}
+          <div className='grid gap-6 border-t pt-4 md:grid-cols-2'>
+            {days ? (
+              <UsageBar
+                title='Thời gian sử dụng'
+                used={days.used}
+                total={days.total}
+                text={`${days.used} / ${days.total} ngày`}
+                testId='esim-days-progress'
+              />
+            ) : (
+              <p className='text-muted-foreground text-sm'>Thời gian sử dụng: —</p>
+            )}
+            {data ? (
+              <UsageBar
+                title='Data đã dùng'
+                used={data.used}
+                total={data.total}
+                text={`${usedData(data.used)} / ${formatDataSize(data.total)}`}
+                testId='esim-data-progress'
+              />
+            ) : (
+              <p className='text-muted-foreground text-sm'>Data đã dùng: —</p>
+            )}
+          </div>
         </CardContent>
       </Card>
-
-      {/* User Info */}
-      {esim.user && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Người dùng</CardTitle>
-          </CardHeader>
-          <CardContent className='space-y-3'>
-            <InfoRow label='ID' value={esim.user.id} />
-            {/* Template-stringing the two names printed "null null" for an
-                account with no name on it (#024). */}
-            <InfoRow
-              label='Họ tên'
-              value={[esim.user.firstName, esim.user.lastName].filter(Boolean).join(' ')}
-            />
-            <InfoRow label='Email' value={esim.user.email} />
-            {/* Was "Provider", which showed the sign-in method (email / google)
-                and read as if it were the eSIM's supplier. The useful field here
-                is the eSIM's own phone number (#024). */}
-            <InfoRow label='Số điện thoại' value={esim.phoneNumber} />
-            <InfoRow
-              label='Vai trò'
-              value={<Badge variant='outline'>{esim.user.role?.name}</Badge>}
-            />
-            <InfoRow
-              label='Trạng thái'
-              value={
-                <Badge variant={esim.user.status?.name === 'active' ? 'default' : 'secondary'}>
-                  {esim.user.status?.name}
-                </Badge>
-              }
-            />
-          </CardContent>
-        </Card>
-      )}
 
       {/* Topups applied to this eSIM (#026). Read from the snapshot each topup
           order stored, so a package that has since been withdrawn or repriced
           still reports what was actually bought. */}
       {esim.topups && esim.topups.length > 0 && (
-        <Card>
+        <Card className='md:col-span-2'>
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <Icons.refresh className='h-4 w-4' />
-              Gói đã Topup ({esim.topups.length})
+              Gói đã Topup / Mua thêm data ({esim.topups.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className='space-y-4'>
+          <CardContent className='grid gap-4 md:grid-cols-2'>
             {esim.topups.map((topup) => (
               <div key={topup.orderId} className='space-y-2 rounded-lg border p-3'>
                 <div className='flex flex-wrap items-center justify-between gap-2'>
@@ -271,71 +414,192 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
         </Card>
       )}
 
-      {/* Plan Info */}
-      {esim.plan && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gói eSIM</CardTitle>
-          </CardHeader>
-          <CardContent className='space-y-3'>
-            <InfoRow label='Tên gói' value={planDisplayName(esim.plan)} />
+      {/* Technical details, two columns (vande #022). */}
+      <Card className='md:col-span-2'>
+        <CardHeader>
+          <CardTitle>Thông tin kỹ thuật</CardTitle>
+        </CardHeader>
+        <CardContent className='grid gap-4 md:grid-cols-2'>
+          <div className='space-y-3' data-testid='esim-tech-left'>
+            <InfoRow label='Tên gói cước' value={plan?.name} />
             <InfoRow
-              label='Phút gọi / SMS'
-              value={callSmsSummary(esim.plan) ?? 'Không (chỉ data)'}
+              label='SMDP Address'
+              value={<span className='font-mono text-xs break-all'>{esim.smdpAddress}</span>}
             />
-            <InfoRow label='Nhà cung cấp' value={providerLabel(esim.plan.provider)} />
-            <InfoRow label='Provider Plan ID' value={esim.plan.providerPlanId} />
-            {esim.plan.destination && (
-              <>
-                <Separator />
-                <InfoRow
-                  label='Điểm đến'
-                  value={
-                    <span className='flex items-center gap-2'>
-                      {esim.plan.destination.flagUrl && (
-                        <img
-                          src={esim.plan.destination.flagUrl}
-                          alt={esim.plan.destination.name}
-                          className='h-4 w-6 rounded object-cover'
-                        />
-                      )}
-                      {esim.plan.destination.name}
-                    </span>
-                  }
-                />
-                <InfoRow label='Mã quốc gia' value={esim.plan.destination.countryCode} />
-              </>
-            )}
-            <Separator />
-            <InfoRow label='Dung lượng' value={`${esim.plan.dataMb} MB`} />
-            {/* Days the customer picked for a day pass (vande #006). */}
             <InfoRow
-              label='Thời hạn'
+              label='Activation Code'
+              value={<span className='font-mono text-xs break-all'>{esim.activationCode}</span>}
+            />
+            <InfoRow
+              label='LPA'
+              value={<span className='font-mono text-xs break-all'>{lpa}</span>}
+            />
+            <InfoRow label='APN' value={esim.apnValue || plan?.apn} />
+            <InfoRow label='Vị trí IP' value={plan?.ipExport} />
+            <InfoRow
+              label='Điểm đến'
+              value={
+                plan?.destination ? (
+                  <span className='flex items-center gap-2'>
+                    {plan.destination.flagUrl && (
+                      <img
+                        src={plan.destination.flagUrl}
+                        alt={plan.destination.name}
+                        className='h-4 w-6 rounded object-cover'
+                      />
+                    )}
+                    {plan.destination.name}
+                    {plan.destination.countryCode ? ` (${plan.destination.countryCode})` : ''}
+                  </span>
+                ) : (
+                  (plan?.region?.name ?? '—')
+                )
+              }
+            />
+            <InfoRow
+              label='Nhà mạng'
+              value={
+                plan?.operatorName
+                  ? `${plan.operatorName}${plan.speed ? ` (${plan.speed})` : ''}`
+                  : plan?.speed
+              }
+            />
+            <InfoRow label='Tốc độ sau khi hết data' value={plan?.fupSpeed} />
+          </div>
+          <div className='space-y-3' data-testid='esim-tech-right'>
+            <InfoRow
+              label='Tổng dung lượng'
+              value={
+                plan
+                  ? plan.dataMb > 0
+                    ? `${formatDataSize(plan.dataMb)}${isDailyPlan(plan) ? ' / ngày' : ''}`
+                    : 'Không giới hạn'
+                  : '—'
+              }
+            />
+            <InfoRow label='Tổng phút gọi / SMS' value={callSmsSummary(plan) ?? 'Không'} />
+            <InfoRow
+              label='Tổng thời gian'
               value={
                 esim.chosenDays && esim.chosenDays > 0
                   ? `${esim.chosenDays} ngày (khách chọn)`
-                  : `${esim.plan.durationDays} ngày`
+                  : plan
+                    ? `${plan.durationDays} ngày`
+                    : '—'
               }
             />
-            <InfoRow label='Tốc độ' value={esim.plan.speed} />
-            <InfoRow label='Nhà mạng' value={esim.plan.operatorName} />
-            <InfoRow label='Loại' value={esim.plan.type} />
+            <InfoRow label='eKYC' value={<YesNo value={plan?.isKyc} />} />
+            <InfoRow label='Hot-Spot Allow' value={plan?.hotSpotAllow} />
             <InfoRow
-              label='Top-up'
-              value={
-                <Badge variant={esim.plan.topUp ? 'default' : 'secondary'}>
-                  {esim.plan.topUp ? 'Có' : 'Không'}
-                </Badge>
-              }
+              label='Số điện thoại'
+              value={esim.phoneNumber ? `Có: ${esim.phoneNumber}` : 'Không'}
             />
-            <Separator />
-            {/* In dollars for every plan, đồng-priced ones too (vande #005). */}
-            <InfoRow label='Giá gốc' value={formatUsd(planUsd(esim.plan).cost, 4)} />
-            <InfoRow label='Giá bán' value={formatUsd(planUsd(esim.plan).price)} />
-            <InfoRow label='Giá lẻ' value={formatUsd(planUsd(esim.plan).retail)} />
-          </CardContent>
-        </Card>
-      )}
+            <InfoRow label='Roaming' value={<YesNo value={isRoaming} testId='esim-roaming' />} />
+            <InfoRow label='Thời gian làm mới mỗi ngày' value={dailyResetText(plan)} />
+            <InfoRow label='Hỗ trợ dùng TikTok & AI' value={appSupportText(plan)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* User on the left, QR on the right (vande #022). */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông tin người dùng</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-3' data-testid='esim-user'>
+          {esim.user ? (
+            <>
+              <InfoRow label='ID' value={esim.user.id} />
+              {/* Template-stringing the two names printed "null null" for an
+                  account with no name on it (#024). */}
+              <InfoRow
+                label='Họ tên'
+                value={[esim.user.firstName, esim.user.lastName].filter(Boolean).join(' ')}
+              />
+              <InfoRow label='Email' value={esim.user.email} />
+              <InfoRow label='Số điện thoại' value={esim.phoneNumber} />
+              <InfoRow
+                label='Trạng thái'
+                value={
+                  <Badge variant={esim.user.status?.name === 'active' ? 'default' : 'secondary'}>
+                    {esim.user.status?.name}
+                  </Badge>
+                }
+              />
+            </>
+          ) : (
+            <p className='text-muted-foreground text-sm'>Chưa gắn người dùng.</p>
+          )}
+          {/* The phone the eSIM went onto: settles "scanned on the wrong phone"
+              and "phone is locked" claims (vande #011, #022). */}
+          <InfoRow
+            label='EID thiết bị'
+            value={
+              esim.eid ? (
+                <span className='flex items-center gap-1.5 font-mono text-xs break-all'>
+                  {esim.eid}
+                  <CopyButton value={esim.eid} label='Copy EID' />
+                </span>
+              ) : (
+                '—'
+              )
+            }
+          />
+          <InfoRow label='Thiết bị' value={esim.deviceModel} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>QR Code cài đặt eSIM</CardTitle>
+        </CardHeader>
+        <CardContent className='flex flex-col items-center gap-4' data-testid='esim-qr'>
+          {lpa ? (
+            <>
+              <div className='rounded-lg border bg-white p-4'>
+                <QRCodeSVG
+                  value={lpa}
+                  size={200}
+                  level='H'
+                  imageSettings={esimQrLogoSettings(200)}
+                />
+              </div>
+              <p className='text-muted-foreground max-w-md text-center text-xs'>
+                Quét mã QR này bằng camera điện thoại để cài đặt eSIM.
+              </p>
+              {/* One-tap install links to send the customer (vande #022). */}
+              <div className='w-full space-y-2'>
+                {[
+                  { label: 'Cài đặt nhanh iOS', href: iosLink, testId: 'esim-quick-ios' },
+                  {
+                    label: 'Cài đặt nhanh Android',
+                    href: androidLink,
+                    testId: 'esim-quick-android'
+                  }
+                ].map((link) => (
+                  <div
+                    key={link.label}
+                    className='flex items-center justify-between gap-2 rounded-md border px-3 py-2'
+                    data-testid={link.testId}
+                  >
+                    <a
+                      href={link.href}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-primary truncate text-sm hover:underline'
+                    >
+                      {link.label}
+                    </a>
+                    <CopyButton value={link.href} label={`Copy link ${link.label}`} />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className='text-muted-foreground text-sm'>Chưa có LPA để tạo mã QR.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -343,8 +607,9 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
 export function EsimDetailSkeleton() {
   return (
     <div className='grid animate-pulse gap-6 md:grid-cols-2'>
+      <div className='bg-muted h-24 rounded-lg md:col-span-2' />
       <div className='bg-muted h-72 rounded-lg md:col-span-2' />
-      <div className='bg-muted h-72 rounded-lg md:col-span-2' />
+      <div className='bg-muted h-64 rounded-lg md:col-span-2' />
       <div className='bg-muted h-64 rounded-lg' />
       <div className='bg-muted h-64 rounded-lg' />
     </div>
