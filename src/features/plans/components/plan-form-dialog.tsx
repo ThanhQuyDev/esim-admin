@@ -562,7 +562,7 @@ function EditDialog({
               { value: 'yes', label: 'Có' },
               { value: 'no', label: 'Không' }
             ]}
-            description='Quy tắc: gói Local của MicroEsim, Viettel, eSIM nội địa và gói Billion của T-Mobile / CMLink / SK Telecom / KDDI / Unitel không hoàn tiền; còn lại có. Gói hoàn được là eSIM Roaming.'
+            description='Quy tắc (vande #010): gói Local của MicroEsim (kể cả LocalIIJ), Viettel, eSIM nội địa, và gói Billion của T-Mobile / CMLink (CO-OTA) / Orange / Telus / SK Telecom / Unitel hoặc gói SIM Local (KDDI, SoftBank, TrueMove H Local…) không hoàn tiền; gói Billion Connect và còn lại có. Gói hoàn được là eSIM Roaming.'
           />
         </form.Form>
       </form.AppForm>
