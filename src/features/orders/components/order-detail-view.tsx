@@ -974,6 +974,24 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                       {item.status}
                     </Badge>
                   </div>
+                  {/* The supplier refused this line (vande #003): paid, no eSIM. */}
+                  {item.provisioning?.lastError && (
+                    <div
+                      className='border-destructive/40 bg-destructive/5 text-destructive mb-3 space-y-1 rounded-md border p-3 text-sm'
+                      data-testid={`provision-error-${item.id}`}
+                    >
+                      <p className='font-semibold'>
+                        Nhà cung cấp chưa nhận đơn — đã thử {item.provisioning.attempts} lần
+                      </p>
+                      <p className='break-words'>Lỗi: {item.provisioning.lastError}</p>
+                      <p className='text-muted-foreground'>
+                        Lần thử gần nhất: {formatDate(item.provisioning.lastAttemptAt)}.{' '}
+                        {item.provisioning.nextAutoRetryAt
+                          ? `Hệ thống tự gọi lại lúc ${formatDate(item.provisioning.nextAutoRetryAt)}.`
+                          : 'Hệ thống đã ngừng tự gọi lại — bấm "Gọi lại API lấy eSIM" hoặc hoàn tiền cho khách.'}
+                      </p>
+                    </div>
+                  )}
                   <div className='grid gap-3 md:grid-cols-2'>
                     <div className='space-y-2'>
                       <InfoRow label='ID' value={item.id} />

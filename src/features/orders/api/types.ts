@@ -161,6 +161,17 @@ export type OrderItem = {
   orderRequestId: string;
   providerOrderId: string;
   providerOrderCode: string;
+  /**
+   * The supplier has not taken this line yet (vande #003): its last refusal,
+   * how many tries, and when the system tries again (null = no more automatic
+   * tries; use "Gọi lại API lấy eSIM" or refund).
+   */
+  provisioning?: {
+    attempts: number;
+    lastError: string | null;
+    lastAttemptAt: string | null;
+    nextAutoRetryAt: string | null;
+  } | null;
   status: string;
   price: number;
   currency: string;
