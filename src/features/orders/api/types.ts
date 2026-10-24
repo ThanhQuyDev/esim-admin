@@ -80,7 +80,16 @@ export type OrderCoupon = {
   maxUsage: number;
   maxUsagePerUser: number;
   usageCount: number;
+  /** In đồng (vande #027). */
   minOrderAmount: number;
+  /** "percent" or "fixed" (a flat amount in đồng). */
+  discountType?: 'percent' | 'fixed';
+  discountAmount?: number | null;
+  /** Cap on a percentage discount, in đồng. */
+  maxDiscountAmount?: number | null;
+  /** Public code anyone can use, or a private one (vande #027). */
+  isPublic?: boolean;
+  partnerId?: number | null;
   expiresAt: string;
   isActive: boolean;
   createdAt: string;

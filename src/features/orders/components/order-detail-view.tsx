@@ -902,14 +902,20 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   order.partnerCommission.partnerName || `#${order.partnerCommission.partnerId}`
                 }
               />
+              {/* Named as on the partner pages (vande #027): the link the
+                  customer came through, or the partner's own discount code. */}
               <InfoRow
-                label='Mã liên kết'
+                label='Nguồn ghi nhận'
                 value={
-                  order.partnerCommission.linkCode ? (
-                    <Badge variant='outline'>{order.partnerCommission.linkCode}</Badge>
-                  ) : (
-                    order.referralCode || '—'
-                  )
+                  <span data-testid='affiliate-source'>
+                    {order.partnerCommission.linkCode ? (
+                      <Badge variant='outline'>Link {order.partnerCommission.linkCode}</Badge>
+                    ) : order.couponCode ? (
+                      <Badge variant='outline'>Mã {order.couponCode}</Badge>
+                    ) : (
+                      'Khách gắn với đối tác'
+                    )}
+                  </span>
                 }
               />
               <InfoRow
@@ -957,11 +963,41 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           </CardHeader>
           <CardContent className='grid gap-4 md:grid-cols-2'>
             <div className='space-y-3'>
-              <InfoRow label='Mã' value={<Badge variant='secondary'>{order.coupon.code}</Badge>} />
-              <InfoRow label='Giảm giá' value={`${order.coupon.discountPercent}%`} />
+              {/* Public or private code beside it (vande #027). */}
+              <InfoRow
+                label='Mã'
+                value={
+                  <span className='flex flex-wrap items-center gap-2'>
+                    <Badge variant='secondary'>{order.coupon.code}</Badge>
+                    <Badge variant='outline' data-testid='coupon-visibility'>
+                      {order.coupon.isPublic === false ? 'Mã riêng tư' : 'Mã chung'}
+                    </Badge>
+                  </span>
+                }
+              />
+              {/* A percentage shows its cap in đồng beside it (vande #027). */}
+              <InfoRow
+                label='Giảm giá'
+                value={
+                  <span data-testid='coupon-discount'>
+                    {order.coupon.discountType === 'fixed'
+                      ? formatCurrency(Number(order.coupon.discountAmount ?? 0), 'VND')
+                      : `${Number(order.coupon.discountPercent)}%${
+                          Number(order.coupon.maxDiscountAmount) > 0
+                            ? ` (tối đa ${formatCurrency(Number(order.coupon.maxDiscountAmount), 'VND')})`
+                            : ''
+                        }`}
+                  </span>
+                }
+              />
+              {/* In đồng, not the order's currency (vande #027). */}
               <InfoRow
                 label='Đơn tối thiểu'
-                value={formatCurrency(order.coupon.minOrderAmount, order.currency)}
+                value={
+                  <span data-testid='coupon-min-order'>
+                    {formatCurrency(Number(order.coupon.minOrderAmount ?? 0), 'VND')}
+                  </span>
+                }
               />
             </div>
             <div className='space-y-3'>
