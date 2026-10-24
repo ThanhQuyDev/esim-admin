@@ -25,6 +25,7 @@ import { destinationsQueryOptions } from '@/features/destinations/api/queries';
 import { regionsQueryOptions } from '@/features/regions/api/queries';
 import { locationKeywords, locationLabel } from '@/features/plans/utils/location-options';
 import { PlanPicker, type PickedPlan } from './plan-picker';
+import { PROVIDER_OPTIONS } from '@/lib/catalog-filters';
 
 /**
  * The plans of an order placed on a customer's behalf (#031, test round 4):
@@ -40,6 +41,10 @@ export type ManualOrderLine = {
   data: string;
   type: string;
   topUp: string; // '' | 'true' | 'false'
+  /** Supplier slug, '' for any (vande #028). */
+  provider: string;
+  /** TikTok & AI: '' | 'true' | 'false' (vande #028). */
+  tiktok: string;
   planCode: string;
   plan: PickedPlan | null;
   quantity: string;
@@ -56,6 +61,8 @@ export function emptyManualOrderLine(): ManualOrderLine {
     data: '',
     type: '',
     topUp: '',
+    provider: '',
+    tiktok: '',
     planCode: '',
     plan: null,
     quantity: '1',
@@ -88,6 +95,8 @@ function lineFilters(line: ManualOrderLine): Record<string, unknown> {
   if (line.data.trim()) filters.data = line.data.trim();
   if (line.type) filters.type = line.type;
   if (line.topUp) filters.topUp = line.topUp === 'true';
+  if (line.provider) filters.provider = [line.provider];
+  if (line.tiktok) filters.isNonHkIp = line.tiktok === 'true';
   if (line.planCode.trim()) filters.planCode = line.planCode.trim();
   return filters;
 }
@@ -218,7 +227,9 @@ export function ManualOrderLines({
               </Button>
             )}
           </div>
-          <div className='grid grid-cols-1 gap-2 md:grid-cols-3'>
+          {/* Short filters on one row; the long code box below the country,
+              then supplier, topup, TikTok & AI and a reset (vande #028). */}
+          <div className='grid grid-cols-1 gap-2 md:grid-cols-4'>
             <LocationPicker
               value={line.location}
               onChange={(location) => update(line.key, { location })}
@@ -254,6 +265,30 @@ export function ManualOrderLines({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className='grid grid-cols-1 gap-2 md:grid-cols-[2fr_1fr_1fr_1fr_auto]'>
+            <Input
+              placeholder='Mã gói / slug'
+              value={line.planCode}
+              onChange={(e) => update(line.key, { planCode: e.target.value })}
+              aria-label='Mã gói'
+            />
+            <Select
+              value={line.provider || ANY}
+              onValueChange={(v) => update(line.key, { provider: v === ANY ? '' : v })}
+            >
+              <SelectTrigger aria-label='Nhà cung cấp'>
+                <SelectValue placeholder='Nhà cung cấp' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Mọi nhà cung cấp</SelectItem>
+                {PROVIDER_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select
               value={line.topUp || ANY}
               onValueChange={(v) => update(line.key, { topUp: v === ANY ? '' : v })}
@@ -267,12 +302,40 @@ export function ManualOrderLines({
                 <SelectItem value='false'>Không topup</SelectItem>
               </SelectContent>
             </Select>
-            <Input
-              placeholder='Mã gói / slug'
-              value={line.planCode}
-              onChange={(e) => update(line.key, { planCode: e.target.value })}
-              aria-label='Mã gói'
-            />
+            <Select
+              value={line.tiktok || ANY}
+              onValueChange={(v) => update(line.key, { tiktok: v === ANY ? '' : v })}
+            >
+              <SelectTrigger aria-label='Tiktok & AI'>
+                <SelectValue placeholder='Tiktok & AI' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Tiktok & AI: tất cả</SelectItem>
+                <SelectItem value='true'>Dùng được Tiktok & AI</SelectItem>
+                <SelectItem value='false'>Không dùng được</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() =>
+                update(line.key, {
+                  location: '',
+                  duration: '',
+                  data: '',
+                  type: '',
+                  topUp: '',
+                  provider: '',
+                  tiktok: '',
+                  planCode: ''
+                })
+              }
+              aria-label={`Đặt lại bộ lọc dòng ${index + 1}`}
+              data-testid={`manual-line-${index}-reset`}
+            >
+              <Icons.close className='h-4 w-4 md:mr-0' />
+              <span className='md:hidden'>Đặt lại</span>
+            </Button>
           </div>
           <div className='grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px]'>
             <PlanPicker

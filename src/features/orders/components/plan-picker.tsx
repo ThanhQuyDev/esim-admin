@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -16,12 +17,38 @@ import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
 import { formatDataSize, formatVnd } from '@/lib/format';
-import { plansQueryOptions } from '@/features/plans/api/queries';
+import { planKeys } from '@/features/plans/api/queries';
+import { getPlans } from '@/features/plans/api/service';
 import { planDisplayName } from '@/features/plans/utils/plan-label';
 import type { Plan } from '@/features/plans/api/types';
 
-/** Enough rows to scan, few enough to stay one quick request. */
-const RESULT_LIMIT = 25;
+/**
+ * Every plan the filters match (vande #028). 25 newest-first showed only the
+ * plans synced last — for Vietnam, MicroEsim's — and hid the rest. The API
+ * serves 200 a page, so the pages are fetched together, up to a ceiling that
+ * covers any one country (Vietnam on beta: 433).
+ */
+const PAGE_SIZE = 200;
+const MAX_RESULTS = 1000;
+
+async function fetchAllPlans(filters: string, sort: string) {
+  const first = await getPlans({ page: 1, limit: PAGE_SIZE, filters, sort });
+  const total = first.totalCount ?? first.data.length;
+  const pages = Math.min(Math.ceil(total / PAGE_SIZE), MAX_RESULTS / PAGE_SIZE);
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(pages - 1, 0) }, (_, i) =>
+      getPlans({ page: i + 2, limit: PAGE_SIZE, filters, sort })
+    )
+  );
+  return { data: [first, ...rest].flatMap((page) => page.data), totalCount: total };
+}
+
+/** Shortest, smallest, cheapest first: how the admin scans for the right one. */
+const RESULT_SORT = JSON.stringify([
+  { orderBy: 'durationDays', order: 'ASC' },
+  { orderBy: 'dataMb', order: 'ASC' },
+  { orderBy: 'vndPrice', order: 'ASC' }
+]);
 
 export type PickedPlan = {
   id: number;
@@ -63,24 +90,23 @@ export function PlanPicker({
   const [term, setTerm] = useState('');
   const search = useDebounce(term.trim(), 300);
 
+  // Only plans that can actually be sold: ordering a disabled plan on a
+  // customer's behalf would fail at provisioning, after the order exists.
+  const filterJson = JSON.stringify({
+    ...(extraFilters ?? {}),
+    ...(search ? { search } : {}),
+    isActive: true
+  });
   const { data, isFetching } = useQuery({
-    ...plansQueryOptions({
-      page: 1,
-      limit: RESULT_LIMIT,
-      // Only plans that can actually be sold: ordering a disabled plan on a
-      // customer's behalf would fail at provisioning, after the order exists.
-      filters: JSON.stringify({
-        ...(extraFilters ?? {}),
-        ...(search ? { search } : {}),
-        isActive: true
-      })
-    }),
+    queryKey: [...planKeys.all, 'picker', filterJson],
+    queryFn: () => fetchAllPlans(filterJson, RESULT_SORT),
     // The list is only needed while the popover is open.
     // Re-runs as the filters change, so the list is ready when it opens.
     enabled: open || !!extraFilters
   });
 
   const plans = data?.data ?? [];
+  const total = data?.totalCount ?? plans.length;
 
   return (
     <div className='space-y-2'>
@@ -121,6 +147,16 @@ export function PlanPicker({
             />
             <CommandList id='plan-picker-list'>
               <CommandEmpty>{isFetching ? 'Đang tìm...' : 'Không tìm thấy gói nào.'}</CommandEmpty>
+              {plans.length > 0 && (
+                <p
+                  className='text-muted-foreground px-3 pt-2 text-xs'
+                  data-testid={`${testId}-count`}
+                >
+                  {total > plans.length
+                    ? `Hiện ${plans.length} / ${total} gói — thêm điều kiện lọc để thu hẹp.`
+                    : `${plans.length} gói`}
+                </p>
+              )}
               <CommandGroup>
                 {plans.map((plan) => (
                   <CommandItem
@@ -146,11 +182,30 @@ export function PlanPicker({
                     />
                     <div className='flex min-w-0 flex-1 flex-col'>
                       <div className='flex items-baseline justify-between gap-2'>
-                        <span className='truncate font-medium'>{planDisplayName(plan)}</span>
+                        <span className='flex min-w-0 items-center gap-1.5'>
+                          <span className='truncate font-medium'>
+                            {plan.standardName || planDisplayName(plan)}
+                          </span>
+                          {/* The cheapest of its kind, at a glance (vande #028). */}
+                          {plan.isCheapest && (
+                            <Badge
+                              variant='outline'
+                              className='shrink-0 px-1 py-0 text-[10px]'
+                              data-testid='plan-picker-cheapest'
+                            >
+                              Rẻ nhất
+                            </Badge>
+                          )}
+                        </span>
                         <span className='shrink-0 tabular-nums'>
                           {formatVnd(Number(plan.vndPrice))}
                         </span>
                       </div>
+                      {plan.vndCostPrice ? (
+                        <span className='text-muted-foreground self-end text-xs tabular-nums'>
+                          Giá vốn (gồm thuế phí): {formatVnd(Number(plan.vndCostPrice))}
+                        </span>
+                      ) : null}
                       <span className='text-muted-foreground truncate text-xs'>
                         {planMeta(plan)}
                       </span>
