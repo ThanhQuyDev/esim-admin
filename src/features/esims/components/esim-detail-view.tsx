@@ -19,7 +19,13 @@ import { deleteEsimMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { callSmsSummary, planDisplayName } from '@/features/plans/utils/plan-label';
+import {
+  callSmsSummary,
+  dailyResetText,
+  isDailyPlanType,
+  planDisplayName,
+  planTypeLabel
+} from '@/features/plans/utils/plan-label';
 import { providerLabel } from '@/features/overview/api/constants';
 import { formatUsd, planUsd } from '@/lib/plan-price';
 import type { EsimDetail, EsimPlan } from '../api/types';
@@ -81,39 +87,15 @@ function formatDate(date: string | null | undefined) {
   return formatDateTimeVn(date);
 }
 
-const PLAN_TYPE_LABELS: Record<string, string> = {
-  fixed: 'Cố định',
-  'data-in-total': 'Cố định',
-  month: 'Theo tháng',
-  daily: 'Theo ngày',
-  'daily-limit-service-cutoff': 'Theo ngày (hết data thì ngắt)',
-  unlimited: 'Không giới hạn',
-  'unlimited-reduce': 'Không giới hạn (giảm tốc sau data tốc độ cao)'
-};
+function isDailyPlan(plan: EsimPlan | null): boolean {
+  return isDailyPlanType(plan?.type);
+}
 
 /** "Không" / "Có" / "Add-on" — Billion add-ons apart from top-ups (vande #019). */
 function topUpLabel(plan: EsimPlan | null): string {
   if (!plan) return '—';
   if (plan.isAddOn) return 'Add-on';
   return plan.topUp ? 'Có' : 'Không';
-}
-
-function isDailyPlan(plan: EsimPlan | null): boolean {
-  return !!plan && ['daily', 'daily-limit-service-cutoff', 'unlimited-reduce'].includes(plan.type);
-}
-
-/** "23:59 (UTC+8)" for a calendar day, "Sau mỗi 24 giờ" for a rolling cycle (#063). */
-function dailyResetText(plan: EsimPlan | null): string | null {
-  if (!plan || !isDailyPlan(plan)) return null;
-  if (plan.dailyResetPolicy === 'rolling_24h') return 'Sau mỗi 24 giờ';
-  if (plan.dailyResetPolicy === 'calendar_day') {
-    const offset = plan.dailyResetUtcOffset;
-    if (offset === null || offset === undefined) return '23:59';
-    const hours = offset;
-    const sign = hours >= 0 ? '+' : '-';
-    return `23:59 (UTC${sign}${Math.abs(hours)})`;
-  }
-  return null;
 }
 
 /** The storefront's verdict on TikTok / AI apps (#045). */
@@ -309,10 +291,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                 label='Nhà cung cấp'
                 value={providerLabel(esim.provider || plan?.provider)}
               />
-              <InfoRow
-                label='Loại gói'
-                value={plan ? (PLAN_TYPE_LABELS[plan.type] ?? plan.type) : '—'}
-              />
+              <InfoRow label='Loại gói' value={planTypeLabel(plan?.type) ?? '—'} />
               <InfoRow
                 label='Mã gói NCC'
                 value={

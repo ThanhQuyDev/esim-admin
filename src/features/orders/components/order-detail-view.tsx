@@ -2,7 +2,14 @@
 
 import { esimQrLogoSettings } from '@/features/esims/lib/esim-qr';
 import { esimStatusLabel, esimStatusVariant } from '@/features/esims/lib/esim-status';
-import { callSmsSummary, hasCallOrSms, planDisplayName } from '@/features/plans/utils/plan-label';
+import {
+  callSmsSummary,
+  dailyResetText,
+  hasCallOrSms,
+  isDailyPlanType,
+  planDisplayName,
+  planTypeLabel
+} from '@/features/plans/utils/plan-label';
 import { useSuspenseQuery, useMutation } from '@tanstack/react-query';
 import { orderQueryOptions } from '../api/queries';
 import { refundOrderMutation, retryOrderProvisioningMutation } from '../api/mutations';
@@ -22,7 +29,7 @@ import { RetryProvisioningDialog } from './retry-provisioning-dialog';
 import { CreateInvoiceDialog } from './create-invoice-dialog';
 import { InvoiceViewDialog } from './invoice-view-dialog';
 import { canIssueInvoice } from '../utils/invoice-filter';
-import { formatCountry, formatDateTimeVn } from '@/lib/format';
+import { formatCountry, formatDataSize, formatDateTimeVn } from '@/lib/format';
 import { ValueAfterRefund } from '../utils/refund-values';
 import { commissionRejectionText } from '@/lib/commission-rejection';
 import { providerLabel } from '@/features/overview/api/constants';
@@ -186,7 +193,14 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <span className='font-mono text-xs font-medium'>{esim.iccid}</span>
-          <Badge variant={esimStatusVariant(esim.status)}>{esimStatusLabel(esim.status)}</Badge>
+          {/* The eSIM list's status — "Đã gửi eSIM", "Đang dùng", "Hết hạn",
+              "Đã hoàn tiền" — not the supplier's raw one (vande #024). */}
+          <Badge
+            variant={esimStatusVariant(esim.lifecycleStatus ?? esim.status)}
+            data-testid='order-esim-status'
+          >
+            {esimStatusLabel(esim.lifecycleStatus ?? esim.status)}
+          </Badge>
         </div>
         {esim.provider && <Badge variant='outline'>{esim.provider}</Badge>}
       </div>
@@ -222,9 +236,10 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
             }
           />
           <InfoRow label='APN' value={esim.apnValue || '—'} />
+          {/* KYC instead of the supplier's transaction number (vande #024). */}
           <InfoRow
-            label='eSIM Tran No'
-            value={<span className='font-mono text-xs'>{esim.esimTranNo || '—'}</span>}
+            label='Yêu cầu KYC'
+            value={<span data-testid='esim-kyc'>{yesNo(plan?.isKyc)}</span>}
           />
           <InfoRow label='Số điện thoại' value={esim.phoneNumber || '—'} />
           <InfoRow
@@ -234,6 +249,10 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
           <InfoRow
             label='Hỗ trợ hoàn tiền'
             value={<span data-testid='esim-refundable'>{yesNo(plan?.isRefundable)}</span>}
+          />
+          <InfoRow
+            label='Giờ làm mới mỗi ngày'
+            value={<span data-testid='esim-daily-reset'>{dailyResetText(plan) ?? '—'}</span>}
           />
         </div>
 
@@ -247,9 +266,10 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
               <InfoRow label='Tốc độ sau khi hết data' value={plan.fupSpeed || '—'} />
             </>
           )}
+          {/* Total first, then what is used of it (vande #024). */}
+          <InfoRow label='Tổng dung lượng' value={formatDataMb(esim.dataTotal)} />
           <InfoRow label='Đã dùng' value={formatDataMb(esim.dataUsed)} />
           <InfoRow label='Còn lại' value={remainingData(esim.dataUsed, esim.dataTotal)} />
-          <InfoRow label='Tổng dung lượng' value={formatDataMb(esim.dataTotal)} />
           {/* Minutes / SMS instead of the Roaming flag, which said nothing useful
               about the eSIM (#013). Shown only when the plan carries an
               allowance, so a data-only eSIM does not grow a "Không" row. */}
@@ -966,10 +986,22 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             {order.items.map((item) => (
               <div key={item.id} className='space-y-4'>
                 <div className='rounded-lg border p-4'>
-                  <div className='mb-3 flex items-center justify-between'>
-                    <h4 className='text-sm font-semibold'>
-                      {planDisplayName(item.plan, `Plan #${item.planId}`)}
-                    </h4>
+                  <div className='mb-3 flex flex-wrap items-center justify-between gap-2'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <h4 className='text-sm font-semibold' data-testid='order-item-name'>
+                        {item.plan?.standardName ||
+                          planDisplayName(item.plan, `Plan #${item.planId}`)}
+                      </h4>
+                      {/* Kind of plan, in a thin frame beside the name (vande #024). */}
+                      {planTypeLabel(item.plan?.type) && (
+                        <span
+                          className='text-muted-foreground rounded border px-1.5 py-0.5 text-xs'
+                          data-testid='order-item-type'
+                        >
+                          {planTypeLabel(item.plan?.type)}
+                        </span>
+                      )}
+                    </div>
                     <Badge
                       variant={
                         item.status === 'completed'
@@ -1000,50 +1032,72 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                       </p>
                     </div>
                   )}
+                  {/* Product left, supplier and offer right (vande #024). The
+                      dollar price is the line's, quantity included — it used to
+                      show the unit price beside a line total in đồng. */}
                   <div className='grid gap-3 md:grid-cols-2'>
-                    <div className='space-y-2'>
-                      <InfoRow label='ID' value={item.id} />
+                    <div className='space-y-2' data-testid='order-item-left'>
+                      <InfoRow
+                        label='Tên gói cước'
+                        value={
+                          item.plan?.standardName ||
+                          planDisplayName(item.plan, `Plan #${item.planId}`)
+                        }
+                      />
                       <InfoRow label='Số lượng' value={item.quantity} />
-                      <InfoRow label='Giá' value={formatCurrency(item.price, item.currency)} />
-                      <InfoRow label='Giá VND' value={formatCurrency(item.vndPrice, 'VND')} />
                       <InfoRow
                         label='Giá vốn VND'
                         value={formatCurrency(item.vndCostPrice, 'VND')}
                       />
+                      <InfoRow label='Giá bán VND' value={formatCurrency(item.vndPrice, 'VND')} />
+                      <InfoRow
+                        label='Giá bán $'
+                        value={
+                          <span data-testid='order-item-usd'>
+                            {formatCurrency(
+                              Math.round(Number(item.price) * Number(item.quantity || 1) * 100) /
+                                100,
+                              item.currency
+                            )}
+                            {Number(item.quantity) > 1 && (
+                              <span className='text-muted-foreground'>
+                                {' '}
+                                ({formatCurrency(Number(item.price), item.currency)} ×{' '}
+                                {item.quantity})
+                              </span>
+                            )}
+                          </span>
+                        }
+                      />
+                      <InfoRow
+                        label='Mã gói NCC'
+                        value={
+                          item.plan?.providerPlanId ? (
+                            <span className='font-mono text-xs'>{item.plan.providerPlanId}</span>
+                          ) : (
+                            '—'
+                          )
+                        }
+                      />
+                      <InfoRow
+                        label='Slug gói eSIM'
+                        value={
+                          item.plan?.slug ? (
+                            <span className='font-mono text-xs'>{item.plan.slug}</span>
+                          ) : (
+                            '—'
+                          )
+                        }
+                      />
                     </div>
-                    <div className='space-y-2'>
+                    <div className='space-y-2' data-testid='order-item-right'>
                       {item.plan && (
                         <>
                           <InfoRow label='Nhà cung cấp' value={providerLabel(item.plan.provider)} />
-                          <InfoRow label='Quốc gia' value={formatCountry(item.plan.countryCode)} />
-                          {/* A day pass is sold for the days the customer picked;
-                              the plan itself says 1 day (vande #006). */}
                           <InfoRow
-                            label='Thời hạn'
+                            label='Điểm đến'
                             value={
-                              item.periodNum && item.periodNum > 0
-                                ? `${item.periodNum} ngày (khách chọn)`
-                                : `${item.plan.durationDays} ngày`
-                            }
-                          />
-                          <InfoRow
-                            label='Dung lượng'
-                            value={
-                              item.plan.dataMb >= 1024
-                                ? `${(item.plan.dataMb / 1024).toFixed(1)} GB`
-                                : `${item.plan.dataMb} MB`
-                            }
-                          />
-                          <InfoRow label='Tốc độ' value={item.plan.speed} />
-                          {/* Allowance on the product line too, so it is visible
-                              without opening the eSIM cards below (#013). */}
-                          {hasCallOrSms(item.plan) && (
-                            <InfoRow label='Phút gọi / SMS' value={callSmsSummary(item.plan)} />
-                          )}
-                          {item.plan.locationInfo && (
-                            <InfoRow
-                              label='Điểm đến'
-                              value={
+                              item.plan.locationInfo ? (
                                 <div className='flex items-center gap-2'>
                                   {item.plan.locationInfo.thumbnailUrl && (
                                     // eslint-disable-next-line @next/next/no-img-element
@@ -1058,12 +1112,41 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                                       item.plan.locationInfo.title ??
                                       item.plan.locationInfo.slug}
                                   </span>
-                                  <Badge variant='outline' className='text-[10px]'>
-                                    {item.plan.locationInfo.type}
-                                  </Badge>
                                 </div>
-                              }
-                            />
+                              ) : (
+                                formatCountry(item.plan.countryCode)
+                              )
+                            }
+                          />
+                          {/* A day pass is sold for the days the customer picked;
+                              the plan itself says 1 day (vande #006). */}
+                          <InfoRow
+                            label='Thời hạn'
+                            value={
+                              item.periodNum && item.periodNum > 0
+                                ? `${item.periodNum} ngày (khách chọn)`
+                                : `${item.plan.durationDays} ngày`
+                            }
+                          />
+                          <InfoRow
+                            label='Dung lượng'
+                            value={
+                              <span data-testid='order-item-data'>
+                                {item.plan.dataMb > 0
+                                  ? `${formatDataSize(item.plan.dataMb)}${
+                                      isDailyPlanType(item.plan.type) ? '/ngày' : ''
+                                    }`
+                                  : item.plan.fupSpeed
+                                    ? `Không giới hạn ${item.plan.fupSpeed}`
+                                    : 'Không giới hạn'}
+                              </span>
+                            }
+                          />
+                          <InfoRow label='Throttling' value={item.plan.fupSpeed || '—'} />
+                          {/* Allowance on the product line too, so it is visible
+                              without opening the eSIM cards below (#013). */}
+                          {hasCallOrSms(item.plan) && (
+                            <InfoRow label='Phút gọi / SMS' value={callSmsSummary(item.plan)} />
                           )}
                         </>
                       )}

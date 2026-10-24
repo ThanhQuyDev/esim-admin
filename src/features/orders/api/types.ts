@@ -124,9 +124,21 @@ export type OrderItemPlan = {
   /** Exit IP country the supplier states, "SG", "HK"… (doitac-1410 #081). */
   ipExport?: string | null;
   topUp?: boolean;
+  /** For the order's product block (vande #024). */
+  standardName?: string | null;
+  providerPlanId?: string | null;
+  type?: string | null;
+  isAddOn?: boolean;
+  isAbleMultidate?: boolean;
+  isKyc?: boolean;
+  dailyResetPolicy?: 'rolling_24h' | 'calendar_day' | null;
+  /** Hours east of UTC, for a calendar-day reset. */
+  dailyResetUtcOffset?: number | null;
 };
 
 export type OrderItemEsim = {
+  /** What the eSIM list shows: sold / active / expired / refunded (vande #024). */
+  lifecycleStatus?: string;
   id: number;
   orderItemId: number;
   userId: number;

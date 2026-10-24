@@ -68,3 +68,51 @@ export function callSmsSummary(plan: PlanLabelSource | null | undefined): string
   if (sms > 0) parts.push(`${sms} SMS`);
   return parts.length > 0 ? parts.join(' · ') : null;
 }
+
+/** "Cố định" / "Theo ngày" / "Không giới hạn" / "Không giới hạn giảm tốc" (vande #024). */
+export const PLAN_TYPE_LABELS: Record<string, string> = {
+  fixed: 'Cố định',
+  'data-in-total': 'Cố định',
+  month: 'Theo tháng',
+  daily: 'Theo ngày',
+  'daily-limit-service-cutoff': 'Theo ngày',
+  unlimited: 'Không giới hạn',
+  'unlimited-reduce': 'Không giới hạn giảm tốc'
+};
+
+export function planTypeLabel(type: string | null | undefined): string | null {
+  return type ? (PLAN_TYPE_LABELS[type] ?? type) : null;
+}
+
+const DAILY_TYPES = ['daily', 'daily-limit-service-cutoff', 'unlimited-reduce'];
+
+/** Whether the allowance is per day. */
+export function isDailyPlanType(type: string | null | undefined): boolean {
+  return !!type && DAILY_TYPES.includes(type);
+}
+
+/**
+ * "Giờ làm mới mỗi ngày" (#063): "Sau mỗi 24 giờ" for a rolling cycle,
+ * "23:59 (UTC+8)" for the supplier's calendar day. Null for a plan with no
+ * daily allowance, or when the supplier has not said.
+ */
+export function dailyResetText(
+  plan:
+    | {
+        type?: string | null;
+        dailyResetPolicy?: string | null;
+        /** Hours east of UTC. */
+        dailyResetUtcOffset?: number | null;
+      }
+    | null
+    | undefined
+): string | null {
+  if (!plan || !isDailyPlanType(plan.type)) return null;
+  if (plan.dailyResetPolicy === 'rolling_24h') return 'Sau mỗi 24 giờ';
+  if (plan.dailyResetPolicy === 'calendar_day') {
+    const offset = plan.dailyResetUtcOffset;
+    if (offset === null || offset === undefined) return '23:59';
+    return `23:59 (UTC${offset >= 0 ? '+' : '-'}${Math.abs(offset)})`;
+  }
+  return null;
+}
