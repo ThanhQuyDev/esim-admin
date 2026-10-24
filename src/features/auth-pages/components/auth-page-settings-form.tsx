@@ -182,7 +182,7 @@ export function AuthPageSettingsForm({ setting }: { setting: AuthPageSetting }) 
                 id='signUpUrl-partner'
                 value={signUpUrl}
                 onChange={(event) => setSignUpUrl(event.target.value)}
-                placeholder='Để trống: biểu mẫu đăng ký đối tác trên web (/dang-ky-doi-tac)'
+                placeholder='Để trống: không hiện link Đăng ký (đối tác đăng ký qua esim.vn/dang-ky-doi-tac)'
                 maxLength={500}
               />
             </div>

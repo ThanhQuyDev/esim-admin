@@ -50,7 +50,10 @@ const DEFAULTS: Record<AppMode, AuthPageContent> = {
     subheading: 'Nhập email và mật khẩu bạn đã đăng ký để vào cổng đối tác.',
     // The storefront's application form (#053, test round 4): partners sign up
     // there, so the portal's own address need not be public.
-    signUpUrl: PARTNER_SIGN_UP_URL
+    // No sign-up link by default (vande #009): people found it and made junk
+    // accounts. An admin can still put one back from "Cấu hình trang đăng
+    // nhập"; partners apply through the storefront form either way.
+    signUpUrl: null
   }
 };
 
@@ -77,8 +80,9 @@ export function mergeAuthPageContent(
     quoteAuthor: setting.quoteAuthor?.trim() || base.quoteAuthor,
     heading: setting.heading?.trim() || base.heading,
     subheading: setting.subheading?.trim() || base.subheading,
-    // The admin console never offers a sign-up, whatever is stored.
-    signUpUrl: mode === 'admin' ? null : setting.signUpUrl?.trim() || base.signUpUrl
+    // The admin console never offers a sign-up, whatever is stored; the
+    // partner portal only when the CMS names a link (vande #009).
+    signUpUrl: mode === 'admin' ? null : setting.signUpUrl?.trim() || null
   };
 }
 
