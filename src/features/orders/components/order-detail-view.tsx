@@ -904,11 +904,15 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   />
                 }
               />
+              {/* Four decimals (vande #007): one decimal times the order
+                  value missed the commission by a few hundred đồng. */}
               <InfoRow
                 label='Tỷ lệ trên giá trị đơn'
                 value={
                   order.partnerCommission.commissionPercent > 0
-                    ? `${order.partnerCommission.commissionPercent}%`
+                    ? `${order.partnerCommission.commissionPercent.toLocaleString('vi-VN', {
+                        maximumFractionDigits: 4
+                      })}%`
                     : '—'
                 }
               />
