@@ -364,7 +364,7 @@ export type SubmitManualOrderPayload = {
   slug?: string;
   quantity?: number;
   /** Several plans at once, each with its quantity (#031). */
-  items?: { packageCode: string; slug: string; quantity: number }[];
+  items?: { packageCode: string; slug: string; quantity: number; periodNum?: number }[];
 };
 
 /** An order file read for "Đặt đơn hộ khách", each row with its plan (doitac-1410 #084). */

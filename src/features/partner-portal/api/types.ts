@@ -664,6 +664,8 @@ export type CataloguePlan = {
   throttleSpeed?: string | null;
   sms?: number | null;
   call?: number | null;
+  /** A day pass: the partner picks 1–365 days (vande #014). */
+  isAbleMultidate?: boolean;
   refundable?: boolean;
   isCheapest?: boolean;
   /** Giá đại lý × 5/3, làm tròn nghìn. */
@@ -693,6 +695,8 @@ export type PartnerCatalogue = {
 export type CartQuote = {
   lines: {
     planId: number;
+    /** Days of a day pass; null for a fixed plan (vande #014). */
+    periodNum?: number | null;
     name: string;
     quantity: number;
     unitPriceVnd: number;

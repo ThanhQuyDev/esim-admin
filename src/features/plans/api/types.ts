@@ -18,6 +18,8 @@ export type Plan = {
   sms: number | null;
   call: number | null;
   costPrice: string;
+  /** A day pass sold for 1–365 days, e.g. eSIM Access (vande #014). */
+  isAbleMultidate?: boolean;
   /** Dollar prices, also for plans quoted in đồng (vande #005). */
   usdPrice?: number | string | null;
   usdCostPrice?: number | string | null;

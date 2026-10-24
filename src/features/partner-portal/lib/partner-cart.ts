@@ -14,7 +14,14 @@ export type CartLine = {
   destinationName: string | null;
   unitPriceVnd: number;
   quantity: number;
+  /** Days of a day pass (vande #014); absent for a fixed plan. */
+  periodNum?: number | null;
 };
+
+/** A line is a plan for a number of days: 7 and 10 days are two lines. */
+export function cartLineKey(line: { planId: number; periodNum?: number | null }): string {
+  return `${line.planId}:${line.periodNum && line.periodNum > 1 ? line.periodNum : ''}`;
+}
 
 const KEY = 'esim_partner_cart';
 const listeners = new Set<() => void>();
@@ -45,26 +52,27 @@ function write(lines: CartLine[]): void {
 
 export function addToCart(line: CartLine): void {
   const lines = read();
-  const existing = lines.find((l) => l.planId === line.planId);
+  const key = cartLineKey(line);
+  const existing = lines.find((l) => cartLineKey(l) === key);
   write(
     existing
       ? lines.map((l) =>
-          l.planId === line.planId ? { ...line, quantity: l.quantity + line.quantity } : l
+          cartLineKey(l) === key ? { ...line, quantity: l.quantity + line.quantity } : l
         )
       : [...lines, line]
   );
 }
 
-export function setCartQuantity(planId: number, quantity: number): void {
+export function setCartQuantity(key: string, quantity: number): void {
   write(
     quantity > 0
-      ? read().map((l) => (l.planId === planId ? { ...l, quantity } : l))
-      : read().filter((l) => l.planId !== planId)
+      ? read().map((l) => (cartLineKey(l) === key ? { ...l, quantity } : l))
+      : read().filter((l) => cartLineKey(l) !== key)
   );
 }
 
-export function removeFromCart(planId: number): void {
-  write(read().filter((l) => l.planId !== planId));
+export function removeFromCart(key: string): void {
+  write(read().filter((l) => cartLineKey(l) !== key));
 }
 
 export function clearCart(): void {

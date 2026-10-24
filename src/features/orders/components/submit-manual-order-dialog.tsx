@@ -11,7 +11,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { submitManualOrderMutation } from '../api/mutations';
 import { submitManualOrderSchema, type SubmitManualOrderFormValues } from '../schemas/admin';
 import type { SubmitManualOrderPayload } from '../api/types';
-import { ManualOrderLines, emptyManualOrderLine, type ManualOrderLine } from './manual-order-lines';
+import {
+  ManualOrderLines,
+  emptyManualOrderLine,
+  manualLineDays,
+  type ManualOrderLine
+} from './manual-order-lines';
 import { ManualOrderFileImport } from './manual-order-file-import';
 
 interface SubmitManualOrderDialogProps {
@@ -52,7 +57,12 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
     validators: { onSubmit: submitManualOrderSchema },
     onSubmit: async ({ value }) => {
       setTriedSubmit(true);
-      const ready = lines.every((line) => line.plan && Number(line.quantity) >= 1);
+      const ready = lines.every(
+        (line) =>
+          line.plan &&
+          Number(line.quantity) >= 1 &&
+          (!line.plan.isAbleMultidate || (Number(line.days) >= 1 && Number(line.days) <= 365))
+      );
       if (!ready) return;
       const customerName = value.customerName.trim();
       const payload: SubmitManualOrderPayload = {
@@ -63,7 +73,8 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
         items: lines.map((line) => ({
           packageCode: line.plan!.packageCode,
           slug: line.plan!.slug,
-          quantity: Number(line.quantity)
+          quantity: Number(line.quantity),
+          ...(manualLineDays(line) ? { periodNum: manualLineDays(line) } : {})
         }))
       };
       await mutation.mutateAsync(payload);

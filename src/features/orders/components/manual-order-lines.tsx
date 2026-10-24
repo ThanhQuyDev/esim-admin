@@ -43,6 +43,8 @@ export type ManualOrderLine = {
   planCode: string;
   plan: PickedPlan | null;
   quantity: string;
+  /** Days of a day pass, 1–365 (vande #014); ignored for fixed plans. */
+  days: string;
 };
 
 let nextKey = 1;
@@ -56,8 +58,16 @@ export function emptyManualOrderLine(): ManualOrderLine {
     topUp: '',
     planCode: '',
     plan: null,
-    quantity: '1'
+    quantity: '1',
+    days: '1'
   };
+}
+
+/** Days to send for a line: only a day pass bought for more than one day. */
+export function manualLineDays(line: ManualOrderLine): number | undefined {
+  if (!line.plan?.isAbleMultidate) return undefined;
+  const days = Math.round(Number(line.days));
+  return days > 1 && days <= 365 ? days : undefined;
 }
 
 const TYPE_OPTIONS = [
@@ -286,6 +296,33 @@ export function ManualOrderLines({
               />
             </div>
           </div>
+          {/* A day pass is bought for the days the customer wants (vande #014):
+              eSIM Access sells 1–365, priced on the whole cost. */}
+          {line.plan?.isAbleMultidate && (
+            <div className='grid grid-cols-1 gap-2 md:grid-cols-[1fr_120px]'>
+              <p className='text-muted-foreground self-end text-xs'>
+                Gói theo ngày: nhập số ngày khách dùng (1–365). Giá tính theo tổng giá vốn của số
+                ngày đó.
+              </p>
+              <div className='space-y-2'>
+                <label className='text-sm font-medium'>Số ngày dùng</label>
+                <Input
+                  type='number'
+                  min={1}
+                  max={365}
+                  value={line.days}
+                  onChange={(e) => update(line.key, { days: e.target.value })}
+                  aria-label={`Số ngày dòng ${index + 1}`}
+                  data-testid={`manual-line-${index}-days`}
+                />
+              </div>
+            </div>
+          )}
+          {showErrors &&
+            line.plan?.isAbleMultidate &&
+            !(Number(line.days) >= 1 && Number(line.days) <= 365) && (
+              <p className='text-destructive text-xs'>Số ngày phải từ 1 đến 365.</p>
+            )}
           {showErrors && !line.plan && (
             <p className='text-destructive text-xs'>Hãy chọn một gói eSIM cho dòng này.</p>
           )}

@@ -117,15 +117,25 @@ export function AddToCartDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [quantity, setQuantity] = useState('1');
+  const [daysText, setDaysText] = useState('1');
   if (!plan) return null;
   const qty = Number(quantity);
-  const valid = Number.isInteger(qty) && qty > 0;
+  // A day pass is bought for the days the customer needs (vande #014).
+  const multiday = !!plan.isAbleMultidate;
+  const days = multiday ? Number(daysText) : 1;
+  const daysValid = !multiday || (Number.isInteger(days) && days >= 1 && days <= 365);
+  const valid = Number.isInteger(qty) && qty > 0 && daysValid;
+  // An estimate; the cart is priced again by the server before paying.
+  const unitVnd = Math.round((plan.unitPriceVnd * (multiday ? days : 1)) / 1000) * 1000;
 
   return (
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open) setQuantity('1');
+        if (!open) {
+          setQuantity('1');
+          setDaysText('1');
+        }
         onOpenChange(open);
       }}
     >
@@ -135,6 +145,22 @@ export function AddToCartDialog({
           <DialogDescription>{plan.name}</DialogDescription>
         </DialogHeader>
         <div className='space-y-2'>
+          {multiday && (
+            <>
+              <Label htmlFor='cart-days'>Số ngày dùng (1–365)</Label>
+              <Input
+                id='cart-days'
+                type='number'
+                min={1}
+                max={365}
+                step={1}
+                value={daysText}
+                onChange={(e) => setDaysText(e.target.value)}
+                data-testid='cart-days'
+              />
+              {!daysValid && <p className='text-destructive text-xs'>Số ngày phải từ 1 đến 365.</p>}
+            </>
+          )}
           <Label htmlFor='cart-quantity'>Số lượng eSIM</Label>
           <Input
             id='cart-quantity'
@@ -145,11 +171,16 @@ export function AddToCartDialog({
             onChange={(e) => setQuantity(e.target.value)}
           />
           <p className='text-muted-foreground text-xs'>
-            Giá đại lý {formatVnd(plan.unitPriceVnd)} / eSIM
+            Giá đại lý {formatVnd(multiday && valid ? unitVnd : plan.unitPriceVnd)} / eSIM
+            {multiday && valid && days > 1
+              ? ` (${days} ngày, ước tính — giỏ hàng tính lại chính xác)`
+              : multiday
+                ? ' / ngày'
+                : ''}
             {valid && (
               <>
                 {' '}
-                · Thành tiền <Badge variant='outline'>{formatVnd(plan.unitPriceVnd * qty)}</Badge>
+                · Thành tiền <Badge variant='outline'>{formatVnd(unitVnd * qty)}</Badge>
               </>
             )}
           </p>
@@ -163,13 +194,15 @@ export function AddToCartDialog({
             onClick={() => {
               addToCart({
                 planId: plan.id,
-                name: plan.name,
+                name: multiday && days > 1 ? `${plan.name} — ${days} ngày` : plan.name,
                 destinationName: plan.destinationName,
-                unitPriceVnd: plan.unitPriceVnd,
-                quantity: qty
+                unitPriceVnd: unitVnd,
+                quantity: qty,
+                ...(multiday && days > 1 ? { periodNum: days } : {})
               });
               toast.success(`Đã thêm ${qty} eSIM "${plan.name}" vào giỏ hàng.`);
               setQuantity('1');
+              setDaysText('1');
               onOpenChange(false);
             }}
           >

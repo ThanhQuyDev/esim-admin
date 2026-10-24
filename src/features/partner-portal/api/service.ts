@@ -591,7 +591,9 @@ export function myLedgerExportUrl(filters: MyLedgerFilters = {}): string {
 }
 
 /** Báo giá cả giỏ hàng (doitac-1410 #035). */
-export async function quoteCart(items: { planId: number; quantity: number }[]): Promise<CartQuote> {
+export async function quoteCart(
+  items: { planId: number; quantity: number; periodNum?: number }[]
+): Promise<CartQuote> {
   return apiClient<CartQuote>('/partner-portal/purchases/cart/quote', {
     method: 'POST',
     body: JSON.stringify({ items })
@@ -600,7 +602,7 @@ export async function quoteCart(items: { planId: number; quantity: number }[]): 
 
 /** Thanh toán cả giỏ hàng trong một đơn (doitac-1410 #035). */
 export async function purchaseCart(payload: {
-  items: { planId: number; quantity: number }[];
+  items: { planId: number; quantity: number; periodNum?: number }[];
   recipientEmail?: string;
 }): Promise<CartPurchaseResult> {
   return apiClient<CartPurchaseResult>('/partner-portal/purchases/cart', {

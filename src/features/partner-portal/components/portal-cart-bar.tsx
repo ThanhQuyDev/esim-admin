@@ -28,7 +28,13 @@ import { formatVnd } from '@/lib/format';
 import { myWalletQueryOptions, partnerPortalKeys } from '../api/queries';
 import { catalogueExportUrl, purchaseCart, quoteCart } from '../api/service';
 import type { CatalogueFilters } from '../api/types';
-import { clearCart, removeFromCart, setCartQuantity, usePartnerCart } from '../lib/partner-cart';
+import {
+  cartLineKey,
+  clearCart,
+  removeFromCart,
+  setCartQuantity,
+  usePartnerCart
+} from '../lib/partner-cart';
 import { PortalCartFileImport } from './portal-cart-file-import';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,7 +50,11 @@ function CartCheckoutDialog({
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const emailValid = !email.trim() || EMAIL.test(email.trim());
-  const items = cart.map((l) => ({ planId: l.planId, quantity: l.quantity }));
+  const items = cart.map((l) => ({
+    planId: l.planId,
+    quantity: l.quantity,
+    ...(l.periodNum && l.periodNum > 1 ? { periodNum: l.periodNum } : {})
+  }));
 
   // Priced by the server, the same way the order will be (doitac-1410 #035).
   const { data: quote, isFetching } = useQuery({
@@ -90,9 +100,12 @@ function CartCheckoutDialog({
           <div className='space-y-4'>
             <ul className='divide-y rounded-lg border'>
               {cart.map((line) => {
-                const priced = quote?.lines.find((l) => l.planId === line.planId);
+                const priced = quote?.lines.find(
+                  (l) =>
+                    l.planId === line.planId && (l.periodNum ?? null) === (line.periodNum ?? null)
+                );
                 return (
-                  <li key={line.planId} className='flex flex-wrap items-center gap-3 p-3'>
+                  <li key={cartLineKey(line)} className='flex flex-wrap items-center gap-3 p-3'>
                     <div className='min-w-0 basis-full sm:basis-0 sm:flex-1'>
                       <p className='truncate text-sm font-medium'>{line.name}</p>
                       <p className='text-muted-foreground text-xs'>
@@ -112,7 +125,7 @@ function CartCheckoutDialog({
                       value={line.quantity}
                       onChange={(e) => {
                         const v = Math.trunc(Number(e.target.value));
-                        if (v > 0) setCartQuantity(line.planId, v);
+                        if (v > 0) setCartQuantity(cartLineKey(line), v);
                       }}
                     />
                     <span className='ml-auto w-28 text-right text-sm font-medium tabular-nums sm:ml-0'>
@@ -122,7 +135,7 @@ function CartCheckoutDialog({
                       size='icon'
                       variant='ghost'
                       aria-label={`Bỏ ${line.name}`}
-                      onClick={() => removeFromCart(line.planId)}
+                      onClick={() => removeFromCart(cartLineKey(line))}
                     >
                       <Icons.trash className='size-4' />
                     </Button>

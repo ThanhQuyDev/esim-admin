@@ -28,6 +28,8 @@ export type PickedPlan = {
   slug: string;
   packageCode: string;
   label: string;
+  /** A day pass, sold for the days chosen (vande #014). */
+  isAbleMultidate?: boolean;
 };
 
 /**
@@ -130,7 +132,8 @@ export function PlanPicker({
                         id: plan.id,
                         slug: plan.slug,
                         packageCode: plan.providerPlanId,
-                        label: planSummary(plan)
+                        label: planSummary(plan),
+                        isAbleMultidate: !!plan.isAbleMultidate
                       });
                       setOpen(false);
                     }}
