@@ -76,7 +76,7 @@ export type EsimPlan = {
   /** Call minutes / SMS included; both null on a data-only plan (#008). */
   call: number | null;
   sms: number | null;
-  /** Domestic eSIM: never expires ("Vô thời hạn", #024). */
+  /** Domestic eSIM (tab "eSIM nội địa"); expires on its imported date (vande #002). */
   isDomesticEsim?: boolean;
   /**
    * Whether its eSIMs can be refunded (doitac-1410 #080): set by hand, else by

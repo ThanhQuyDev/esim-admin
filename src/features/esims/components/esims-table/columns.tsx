@@ -259,8 +259,8 @@ export const columns: ColumnDef<Esim>[] = [
     ),
     cell: ({ row }) => {
       const date = row.original.expiresAt;
-      // A domestic eSIM has no end date (#024, test round 4).
-      if (row.original.plan?.isDomesticEsim) return 'Vô thời hạn';
+      // Domestic eSIMs show their real end date too — the "Expried Time" of
+      // the import file (vande #002); they used to read "Vô thời hạn".
       if (!date) return '—';
       // Unsold stock that has already expired is dead: delivery now refuses it
       // (#021), so it has to be visible instead of sitting in the list looking
