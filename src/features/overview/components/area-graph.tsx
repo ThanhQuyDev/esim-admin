@@ -27,6 +27,13 @@ const financialComparisonConfig = {
     label: 'Tổng doanh thu',
     color: 'var(--chart-2)'
   },
+  // What partners earn on the orders they brought in: it comes out of profit
+  // (vande #016). Fixed magenta, apart from the green profit for colour-blind
+  // readers.
+  partnerCommission: {
+    label: 'Hoa hồng đối tác',
+    color: '#d0459a'
+  },
   profit: {
     label: 'Lợi nhuận',
     // A fixed green, not a theme slot: --chart-3 is grey in most themes, and
@@ -64,7 +71,14 @@ export function AreaGraph({ filters }: AreaGraphProps) {
 
   const totals = isFinancialSeries(data)
     ? data.totals
-    : { costPrice: 0, totalRevenue: 0, profit: 0, profitMarginPercent: 0, plansSold: 0 };
+    : {
+        costPrice: 0,
+        totalRevenue: 0,
+        partnerCommission: 0,
+        profit: 0,
+        profitMarginPercent: 0,
+        plansSold: 0
+      };
 
   if (error) {
     return (
@@ -88,7 +102,8 @@ export function AreaGraph({ filters }: AreaGraphProps) {
           <Badge variant='outline'>Lợi nhuận {formatVnd(totals.profit)}</Badge>
         </CardTitle>
         <CardDescription>
-          Tổng doanh thu {formatVnd(totals.totalRevenue)} · Giá vốn {formatVnd(totals.costPrice)}
+          Tổng doanh thu {formatVnd(totals.totalRevenue)} · Giá vốn {formatVnd(totals.costPrice)} ·
+          Hoa hồng đối tác {formatVnd(totals.partnerCommission)}. Lợi nhuận đã trừ hoa hồng.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -130,6 +145,10 @@ export function AreaGraph({ filters }: AreaGraphProps) {
                 <stop offset='5%' stopColor='var(--color-totalRevenue)' stopOpacity={0.45} />
                 <stop offset='95%' stopColor='var(--color-totalRevenue)' stopOpacity={0.05} />
               </linearGradient>
+              <linearGradient id='fill-partner-commission' x1='0' y1='0' x2='0' y2='1'>
+                <stop offset='5%' stopColor='var(--color-partnerCommission)' stopOpacity={0.45} />
+                <stop offset='95%' stopColor='var(--color-partnerCommission)' stopOpacity={0.05} />
+              </linearGradient>
               <linearGradient id='fill-profit' x1='0' y1='0' x2='0' y2='1'>
                 <stop offset='5%' stopColor='var(--color-profit)' stopOpacity={0.45} />
                 <stop offset='95%' stopColor='var(--color-profit)' stopOpacity={0.05} />
@@ -148,6 +167,13 @@ export function AreaGraph({ filters }: AreaGraphProps) {
               type='monotone'
               fill='url(#fill-total-revenue)'
               stroke='var(--color-totalRevenue)'
+              strokeWidth={2}
+            />
+            <Area
+              dataKey='partnerCommission'
+              type='monotone'
+              fill='url(#fill-partner-commission)'
+              stroke='var(--color-partnerCommission)'
               strokeWidth={2}
             />
             <Area

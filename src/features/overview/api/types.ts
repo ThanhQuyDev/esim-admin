@@ -15,7 +15,15 @@ export type OverviewGroupBy = 'day' | 'week' | 'month' | 'year';
 
 export type ProviderMetric = 'orders' | 'revenue' | 'plansSold' | 'successRate';
 export type ProviderGroupBy = 'day' | 'week' | 'month' | 'year' | 'provider';
-export type FinancialGroupBy = 'day' | 'week' | 'month' | 'year' | 'provider' | 'destination';
+export type FinancialGroupBy =
+  | 'day'
+  | 'week'
+  | 'month'
+  | 'year'
+  | 'provider'
+  | 'destination'
+  /** Direct / partner-referred / partner wallet orders (vande #016). */
+  | 'orderSource';
 
 export interface OverviewFilters {
   preset?: OverviewPreset;
@@ -91,6 +99,9 @@ export interface FinancialComparisonQuery extends Omit<OverviewFilters, 'groupBy
 export interface FinancialTotals {
   costPrice: number;
   totalRevenue: number;
+  /** Partner commission still owed on these sales (vande #016). */
+  partnerCommission: number;
+  /** Revenue − cost − partner commission. */
   profit: number;
   profitMarginPercent: number;
   /** Plans delivered behind these figures; refunded products excluded. */
@@ -102,6 +113,7 @@ export interface FinancialComparisonSeriesResponse {
     date: string;
     costPrice: number;
     totalRevenue: number;
+    partnerCommission: number;
     profit: number;
     plansSold: number;
   }>;
@@ -111,8 +123,11 @@ export interface FinancialComparisonSeriesResponse {
 export interface FinancialComparisonGroupedResponse {
   data: Array<{
     group: string;
+    /** groupBy=orderSource only. */
+    orders?: number;
     costPrice: number;
     totalRevenue: number;
+    partnerCommission: number;
     profit: number;
     profitMarginPercent: number;
     plansSold: number;

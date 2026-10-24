@@ -20,6 +20,7 @@ import { AreaGraph } from './area-graph';
 import { BarGraph } from './bar-graph';
 import { DeviceGraph } from './device-graph';
 import { PieGraph } from './pie-graph';
+import { ProfitBySourceGraph } from './profit-by-source-graph';
 import { RecentSales } from './recent-sales';
 import { OverviewFilters, type OverviewFiltersValue } from './overview-filters';
 import { overviewSummaryQueryOptions } from '../api/queries';
@@ -187,6 +188,10 @@ export function OverviewDashboard() {
           </div>
           <div className='col-span-4 min-h-0 md:col-span-3'>
             <PieGraph filters={queryFilters} />
+          </div>
+          {/* Profit after partner commission, by kind of order (vande #016). */}
+          <div className='col-span-4'>
+            <ProfitBySourceGraph filters={queryFilters} />
           </div>
           {/* Successful orders by device (doitac-1410 #083). */}
           <div className='col-span-4 md:col-span-3'>
