@@ -18,6 +18,10 @@ export type Plan = {
   sms: number | null;
   call: number | null;
   costPrice: string;
+  /** Dollar prices, also for plans quoted in đồng (vande #005). */
+  usdPrice?: number | string | null;
+  usdCostPrice?: number | string | null;
+  usdRetailPrice?: number | string | null;
   /** Cost incl. the supplier surcharge, in đồng (v3 #018). */
   vndCostPrice?: number | string | null;
   vndPrice: string;

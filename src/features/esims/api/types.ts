@@ -87,6 +87,10 @@ export type EsimPlan = {
   costPrice: number;
   price: number;
   retailPrice: number;
+  /** Dollar prices, also for plans quoted in đồng (vande #005). */
+  usdPrice?: number | null;
+  usdCostPrice?: number | null;
+  usdRetailPrice?: number | null;
   currency: string;
   type: string;
   topUp: boolean;

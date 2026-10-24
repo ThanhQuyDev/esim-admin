@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import * as React from 'react';
 import { PROVIDER_OPTIONS } from '@/lib/catalog-filters';
+import { formatUsd, planUsd } from '@/lib/plan-price';
 import { providerLabel } from '@/features/overview/api/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -344,24 +345,28 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       header: ({ column }: { column: Column<Plan, unknown> }) => (
         <DataTableColumnHeader column={column} title='Giá' />
       ),
-      cell: ({ row }) => (
-        <div className='flex flex-col'>
-          <span className='font-medium'>
-            ${row.original.price} {row.original.currency} -{' '}
-            {Number(row.original.vndPrice).toLocaleString('vi-VN')}đ
-          </span>
-          <span className='text-muted-foreground text-xs'>
-            Giá gốc: ${row.original.costPrice} · Giá bán: ${row.original.retailPrice}
-          </span>
-          {/* Includes the supplier's surcharge (v3 #018); "Giá gốc" is the raw
-              figure their API quotes. */}
-          {row.original.vndCostPrice ? (
-            <span className='text-muted-foreground text-xs'>
-              Giá vốn (gồm thuế phí): {Number(row.original.vndCostPrice).toLocaleString('vi-VN')}đ
+      cell: ({ row }) => {
+        // Dollars for every plan, đồng-priced ones too (vande #005): a Viettel
+        // plan used to read "Giá gốc: $198000.0000".
+        const usd = planUsd(row.original);
+        return (
+          <div className='flex flex-col'>
+            <span className='font-medium'>
+              {formatUsd(usd.price)} - {Number(row.original.vndPrice).toLocaleString('vi-VN')}đ
             </span>
-          ) : null}
-        </div>
-      )
+            <span className='text-muted-foreground text-xs'>
+              Giá gốc: {formatUsd(usd.cost, 4)} · Giá bán: {formatUsd(usd.retail)}
+            </span>
+            {/* Includes the supplier's surcharge (v3 #018); "Giá gốc" is the raw
+              figure their API quotes. */}
+            {row.original.vndCostPrice ? (
+              <span className='text-muted-foreground text-xs'>
+                Giá vốn (gồm thuế phí): {Number(row.original.vndCostPrice).toLocaleString('vi-VN')}đ
+              </span>
+            ) : null}
+          </div>
+        );
+      }
     },
     {
       id: 'discount',

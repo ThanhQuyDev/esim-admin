@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { callSmsSummary, planDisplayName } from '@/features/plans/utils/plan-label';
 import { providerLabel } from '@/features/overview/api/constants';
+import { formatUsd, planUsd } from '@/lib/plan-price';
 
 interface EsimDetailViewProps {
   esimId: number;
@@ -315,9 +316,10 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               }
             />
             <Separator />
-            <InfoRow label='Giá gốc' value={`${esim.plan.costPrice} ${esim.plan.currency}`} />
-            <InfoRow label='Giá bán' value={`${esim.plan.price} ${esim.plan.currency}`} />
-            <InfoRow label='Giá lẻ' value={`${esim.plan.retailPrice} ${esim.plan.currency}`} />
+            {/* In dollars for every plan, đồng-priced ones too (vande #005). */}
+            <InfoRow label='Giá gốc' value={formatUsd(planUsd(esim.plan).cost, 4)} />
+            <InfoRow label='Giá bán' value={formatUsd(planUsd(esim.plan).price)} />
+            <InfoRow label='Giá lẻ' value={formatUsd(planUsd(esim.plan).retail)} />
           </CardContent>
         </Card>
       )}
