@@ -14,7 +14,7 @@ import {
   isExpiredStock
 } from '../../lib/esim-status';
 import { callSmsSummary, hasCallOrSms, planDisplayName } from '@/features/plans/utils/plan-label';
-import { PROVIDER_LABELS } from '@/features/overview/api/constants';
+import { PROVIDER_LABELS, providerLabel } from '@/features/overview/api/constants';
 
 const packageTypeOptions = [
   { value: 'fixed', label: 'Cố định' },
@@ -31,10 +31,11 @@ const YES_NO_OPTIONS = [
 ];
 
 /** Real supplier names: this screen is admin-only (see PROVIDER_LABELS). */
-const PROVIDER_FILTER_OPTIONS = Object.entries(PROVIDER_LABELS).map(([value, label]) => ({
-  value,
-  label
-}));
+// The bare "itel" only labels stock imported before vande #001; it is not a
+// filter option of its own any more.
+const PROVIDER_FILTER_OPTIONS = Object.entries(PROVIDER_LABELS)
+  .filter(([value]) => value !== 'itel')
+  .map(([value, label]) => ({ value, label }));
 
 export const columns: ColumnDef<Esim>[] = [
   {
@@ -142,7 +143,7 @@ export const columns: ColumnDef<Esim>[] = [
     id: 'provider',
     accessorKey: 'provider',
     header: 'Nhà cung cấp',
-    cell: ({ row }) => row.original.provider || '—',
+    cell: ({ row }) => providerLabel(row.original.provider),
     enableColumnFilter: true,
     meta: {
       label: 'Nhà cung cấp',

@@ -43,7 +43,7 @@ const KIND_COPY: Record<
     button: 'Import eSIM nội địa',
     title: 'Import eSIM nội địa từ Excel',
     description:
-      'SIM data dùng trong nước. Gói nhập ở đây hiện trong tab "eSIM nội địa" ở trang chủ và có trang riêng cho từng nhà mạng.',
+      'SIM data dùng trong nước. Gói nhập ở đây hiện trong tab "eSIM nội địa" ở trang chủ và có trang riêng cho từng nhà mạng, nhà cung cấp ghi là "<Nhà mạng> nội địa". File có cột "eSIM Type" thì dòng Local là nội địa, dòng Travel là du lịch — cột này được ưu tiên hơn nút bấm.',
     carriers: ['Wintel', 'iTEL', 'VNSKY'],
     placeholder: 'VD: Wintel, iTEL, VNSKY'
   },
@@ -51,7 +51,7 @@ const KIND_COPY: Record<
     button: 'Import eSIM du lịch (nhà mạng VN)',
     title: 'Import eSIM du lịch của nhà mạng trong nước',
     description:
-      'eSIM cho khách đi nước ngoài do nhà mạng Việt Nam bán. Gói nhập ở đây hiện trong tab Quốc gia → Việt Nam cùng các gói du lịch khác, KHÔNG vào tab eSIM nội địa.',
+      'eSIM cho khách đi nước ngoài do nhà mạng Việt Nam bán. Gói nhập ở đây hiện trong tab Quốc gia → Việt Nam cùng các gói du lịch khác, KHÔNG vào tab eSIM nội địa. File có cột "eSIM Type" thì dòng Travel là du lịch, dòng Local là nội địa — cột này được ưu tiên hơn nút bấm.',
     carriers: ['Viettel'],
     placeholder: 'VD: Viettel'
   }

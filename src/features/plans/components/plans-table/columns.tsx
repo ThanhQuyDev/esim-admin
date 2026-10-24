@@ -1,6 +1,8 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
 import * as React from 'react';
+import { PROVIDER_OPTIONS } from '@/lib/catalog-filters';
+import { providerLabel } from '@/features/overview/api/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -207,8 +209,8 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       cell: ({ row }) => {
         const provider = row.original.provider;
         return (
-          <Badge variant='outline' className='capitalize'>
-            {provider || '—'}
+          <Badge variant='outline' className='ml-1'>
+            {providerLabel(provider)}
           </Badge>
         );
       },
@@ -217,14 +219,9 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       meta: {
         label: 'Nhà cung cấp',
         variant: 'multiSelect' as const,
-        options: [
-          { value: 'esimaccess', label: 'EsimAccess' },
-          { value: 'airalo', label: 'Airalo' },
-          { value: 'gadgetkorea', label: 'Gadget Korea' },
-          { value: 'microesim', label: 'MicroEsim' },
-          { value: 'billion', label: 'Billion Connect' },
-          { value: 'viettel', label: 'Viettel' }
-        ]
+        // The shared supplier list, so the domestic suppliers ("iTel nội
+        // địa"…, vande #001) are filterable here too.
+        options: PROVIDER_OPTIONS
       }
     },
     {

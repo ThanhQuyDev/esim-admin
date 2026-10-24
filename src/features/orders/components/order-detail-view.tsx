@@ -25,6 +25,7 @@ import { canIssueInvoice } from '../utils/invoice-filter';
 import { formatCountry, formatDateTimeVn } from '@/lib/format';
 import { ValueAfterRefund } from '../utils/refund-values';
 import { commissionRejectionText } from '@/lib/commission-rejection';
+import { providerLabel } from '@/features/overview/api/constants';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -987,7 +988,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                     <div className='space-y-2'>
                       {item.plan && (
                         <>
-                          <InfoRow label='Nhà cung cấp' value={item.plan.provider} />
+                          <InfoRow label='Nhà cung cấp' value={providerLabel(item.plan.provider)} />
                           <InfoRow label='Quốc gia' value={formatCountry(item.plan.countryCode)} />
                           <InfoRow label='Thời hạn' value={`${item.plan.durationDays} ngày`} />
                           <InfoRow

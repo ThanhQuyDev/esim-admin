@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { callSmsSummary, planDisplayName } from '@/features/plans/utils/plan-label';
+import { providerLabel } from '@/features/overview/api/constants';
 
 interface EsimDetailViewProps {
   esimId: number;
@@ -77,7 +78,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               label='ICCID'
               value={<span className='font-mono text-xs'>{esim.iccid}</span>}
             />
-            <InfoRow label='Nhà cung cấp' value={esim.provider} />
+            <InfoRow label='Nhà cung cấp' value={providerLabel(esim.provider)} />
             <InfoRow label='Số điện thoại' value={esim.phoneNumber} />
             <InfoRow label='eSIM Tran No' value={esim.esimTranNo} />
             <InfoRow label='APN' value={esim.apnValue} />
@@ -276,7 +277,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               label='Phút gọi / SMS'
               value={callSmsSummary(esim.plan) ?? 'Không (chỉ data)'}
             />
-            <InfoRow label='Nhà cung cấp' value={esim.plan.provider} />
+            <InfoRow label='Nhà cung cấp' value={providerLabel(esim.plan.provider)} />
             <InfoRow label='Provider Plan ID' value={esim.plan.providerPlanId} />
             {esim.plan.destination && (
               <>

@@ -12,9 +12,13 @@ export const OVERVIEW_PROVIDERS = [
   'microesim',
   'billion',
   'viettel',
-  // Domestic stock; an order for it (e.g. placed on a customer's behalf) was
-  // missing from the overview (#063, test round 4).
-  'itel'
+  // Domestic eSIMs are suppliers of their own, "<carrier> nội địa" (vande
+  // #001): Viettel's domestic plans no longer count as its travel plans. An
+  // order for them was missing from the overview before (#063, test round 4).
+  'viettel-noidia',
+  'itel-noidia',
+  'wintel-noidia',
+  'vnsky-noidia'
 ] as const satisfies readonly OverviewProvider[];
 
 /**
@@ -29,8 +33,31 @@ export const PROVIDER_LABELS: Record<string, string> = {
   microesim: 'MicroEsim',
   billion: 'Billion Connect',
   viettel: 'Viettel',
+  'viettel-noidia': 'Viettel nội địa',
+  'itel-noidia': 'iTel nội địa',
+  'wintel-noidia': 'Wintel nội địa',
+  'vnsky-noidia': 'VNSKY nội địa',
+  // Domestic stock imported before vande #001 carried the bare carrier.
   itel: 'iTel'
 };
+
+/**
+ * Display name of any supplier slug. A domestic carrier added later by an
+ * import ("mobifone-noidia") still reads "Mobifone nội địa" without a code
+ * change.
+ */
+export function providerLabel(provider: string | null | undefined): string {
+  const slug = (provider ?? '').toLowerCase();
+  if (!slug) return '—';
+  if (PROVIDER_LABELS[slug]) return PROVIDER_LABELS[slug];
+  const domestic = slug.match(/^(.+)-noidia$/);
+  if (domestic) {
+    const carrier = domestic[1];
+    const base = PROVIDER_LABELS[carrier] ?? carrier.charAt(0).toUpperCase() + carrier.slice(1);
+    return `${base} nội địa`;
+  }
+  return provider ?? slug;
+}
 
 /**
  * Masked supplier codes, shown ONLY on the Tổng quan screen so the dashboard
@@ -49,6 +76,10 @@ export const PROVIDER_CODE_LABELS: Record<string, string> = {
   microesim: 'MI',
   billion: 'BL',
   viettel: 'VT',
+  'viettel-noidia': 'VT-ND',
+  'itel-noidia': 'IT-ND',
+  'wintel-noidia': 'WT-ND',
+  'vnsky-noidia': 'VS-ND',
   itel: 'IT'
 };
 
@@ -61,5 +92,5 @@ export const PROVIDER_CODE_LABELS: Record<string, string> = {
  * visible cue to add them to {@link PROVIDER_CODE_LABELS}.
  */
 export function providerCodeLabel(provider: string): string {
-  return PROVIDER_CODE_LABELS[provider] ?? 'NCC-KHÁC';
+  return PROVIDER_CODE_LABELS[provider] ?? (provider.endsWith('-noidia') ? 'ND-KHÁC' : 'NCC-KHÁC');
 }

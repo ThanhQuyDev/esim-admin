@@ -5,7 +5,10 @@ export type OverviewProvider =
   | 'microesim'
   | 'billion'
   | 'viettel'
-  | 'itel';
+  | 'viettel-noidia'
+  | 'itel-noidia'
+  | 'wintel-noidia'
+  | 'vnsky-noidia';
 
 export type OverviewPreset = 'today' | 'yesterday' | 'last7days' | 'last30days';
 export type OverviewGroupBy = 'day' | 'week' | 'month' | 'year';

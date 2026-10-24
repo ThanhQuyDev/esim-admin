@@ -50,6 +50,14 @@ export function ImportEsimResultDialog({
             {/* Prices picked up from the file on a re-upload — see #024. */}
             <StatCard label='Gói cập nhật giá' value={result.planUpdated ?? 0} variant='info' />
           </div>
+          {/* eSIMs still in stock that a re-upload filed under their right plan
+              (e.g. a domestic file first imported as travel) — vande #001. */}
+          {(result.esimMoved ?? 0) > 0 && (
+            <p className='text-muted-foreground text-sm'>
+              Đã chuyển {result.esimMoved} eSIM chưa bán sang đúng gói theo file (gói cũ hết eSIM
+              thì tự ngừng bán).
+            </p>
+          )}
 
           {/* Errors */}
           {hasErrors && (

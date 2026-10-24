@@ -189,6 +189,8 @@ export type ImportEsimsExcelResponse = {
   planCreated: number;
   /** Existing plans whose prices were refreshed from the uploaded file. */
   planUpdated: number;
+  /** Unsold eSIMs moved to the plan their row now names (vande #001). */
+  esimMoved?: number;
   errors: ImportEsimsExcelError[];
   message?: string;
 };
