@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -47,10 +47,21 @@ export function RetryProvisioningDialog({
   const blocked = useMemo(() => items.filter((item) => !!ineligibleReason(item)), [items]);
 
   // Everything retryable starts ticked: the common case is "all of them".
-  const [selected, setSelected] = useState<number[]>(() => retryable.map((item) => item.id));
+  const [ticked, setTicked] = useState<number[]>(() => retryable.map((item) => item.id));
+
+  // The ticks were set once, when the page first rendered. After a retry the
+  // order reloads with its eSIMs, but the ticks still held those lines, so the
+  // button read "Gọi lại (1)" over lines marked "Đã có eSIM" until the page
+  // was refreshed (vande #025). Tick afresh on every opening …
+  useEffect(() => {
+    if (open) setTicked(retryable.map((item) => item.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  // … and never count a line that can no longer be retried, even while open.
+  const selected = ticked.filter((id) => retryable.some((item) => item.id === id));
 
   const toggle = (id: number, on: boolean) =>
-    setSelected((prev) => (on ? [...prev, id] : prev.filter((value) => value !== id)));
+    setTicked((prev) => (on ? [...prev, id] : prev.filter((value) => value !== id)));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
