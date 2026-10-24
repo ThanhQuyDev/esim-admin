@@ -303,7 +303,15 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
             )}
             <Separator />
             <InfoRow label='Dung lượng' value={`${esim.plan.dataMb} MB`} />
-            <InfoRow label='Thời hạn' value={`${esim.plan.durationDays} ngày`} />
+            {/* Days the customer picked for a day pass (vande #006). */}
+            <InfoRow
+              label='Thời hạn'
+              value={
+                esim.chosenDays && esim.chosenDays > 0
+                  ? `${esim.chosenDays} ngày (khách chọn)`
+                  : `${esim.plan.durationDays} ngày`
+              }
+            />
             <InfoRow label='Tốc độ' value={esim.plan.speed} />
             <InfoRow label='Nhà mạng' value={esim.plan.operatorName} />
             <InfoRow label='Loại' value={esim.plan.type} />

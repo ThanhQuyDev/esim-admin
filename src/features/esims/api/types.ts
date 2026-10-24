@@ -122,6 +122,8 @@ export type EsimDetail = Esim & {
   plan: EsimPlan | null;
   /** Newest first. Only the detail endpoint returns this (#026). */
   topups?: EsimTopup[];
+  /** Days the customer picked for a day pass; null for fixed plans (vande #006). */
+  chosenDays?: number | null;
 };
 
 export type EsimFilters = {

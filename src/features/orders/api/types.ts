@@ -176,6 +176,8 @@ export type OrderItem = {
   price: number;
   currency: string;
   quantity: number;
+  /** Days the customer picked for a day pass; null for fixed plans (vande #006). */
+  periodNum?: number | null;
   vndPrice: number;
   vndCostPrice: number;
   /** This line's share of the order discount, by price (#009). */

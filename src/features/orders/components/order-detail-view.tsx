@@ -1008,7 +1008,16 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                         <>
                           <InfoRow label='Nhà cung cấp' value={providerLabel(item.plan.provider)} />
                           <InfoRow label='Quốc gia' value={formatCountry(item.plan.countryCode)} />
-                          <InfoRow label='Thời hạn' value={`${item.plan.durationDays} ngày`} />
+                          {/* A day pass is sold for the days the customer picked;
+                              the plan itself says 1 day (vande #006). */}
+                          <InfoRow
+                            label='Thời hạn'
+                            value={
+                              item.periodNum && item.periodNum > 0
+                                ? `${item.periodNum} ngày (khách chọn)`
+                                : `${item.plan.durationDays} ngày`
+                            }
+                          />
                           <InfoRow
                             label='Dung lượng'
                             value={
