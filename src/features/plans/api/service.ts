@@ -97,6 +97,20 @@ export async function importGadgetKoreaExcel(
   return res.json();
 }
 
+/** Delete the plans ticked in the list (vande #019). */
+export async function bulkDeletePlans(ids: number[]): Promise<{ deleted: number }> {
+  return apiClient<{ deleted: number }>('/plans/bulk-delete', {
+    method: 'POST',
+    body: JSON.stringify({ ids })
+  });
+}
+
+/** How many plans match the filters: the list's total, one row fetched. */
+export async function countPlans(filters: Record<string, unknown>): Promise<number> {
+  const res = await getPlans({ page: 1, limit: 1, filters: JSON.stringify(filters) });
+  return res.totalCount ?? 0;
+}
+
 export async function batchDiscount(data: BatchDiscountPayload): Promise<void> {
   await apiClient('/plans/batch-discount', {
     method: 'PATCH',

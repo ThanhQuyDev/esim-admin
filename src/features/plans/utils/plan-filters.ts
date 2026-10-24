@@ -51,17 +51,11 @@ export function buildPlanApiFilters(params: PlanFilterParams): Record<string, un
   }
   if (params.data) filters.data = params.data;
 
-  // Exact destination or region id. A substring match could not tell "Trung
-  // Quốc" from "Trung Quốc + Hong Kong"; more than one pick cannot be expressed
-  // as a single id, so only a single selection is sent (#010).
-  if (params.country?.length === 1) {
-    const [kind, rawId] = params.country[0].split(':');
-    const id = Number(rawId);
-    if (Number.isInteger(id) && id > 0) {
-      if (kind === 'r') filters.regionId = id;
-      else if (kind === 'd') filters.destinationId = id;
-    }
-  }
+  // Exact destination / region ids, every one picked (vande #019). A
+  // substring match could not tell "Trung Quốc" from "Trung Quốc + Hong Kong"
+  // (#010); sending only a single pick dropped the filter for two or more.
+  const locations = (params.country ?? []).filter((value) => /^[dr]:\d+$/.test(value));
+  if (locations.length) filters.locations = locations;
 
   const hasCallSms = boolOf(params.hasCallSms);
   if (hasCallSms !== undefined) filters.hasCallSms = hasCallSms;
@@ -73,8 +67,11 @@ export function buildPlanApiFilters(params: PlanFilterParams): Record<string, un
   const isNonHkIp = boolOf(params.isNonHkIp);
   if (isNonHkIp !== undefined) filters.isNonHkIp = isNonHkIp;
 
-  const topUp = boolOf(params.topUp);
-  if (topUp !== undefined) filters.topUp = topUp;
+  // Không / Có / Add-on (vande #019). Links saved before read true / false.
+  const topUpKind = (params.topUp ?? [])
+    .map((value) => (value === 'true' ? 'topup' : value === 'false' ? 'none' : value))
+    .filter((value) => ['none', 'topup', 'addon'].includes(value));
+  if (topUpKind.length && topUpKind.length < 3) filters.topUpKind = [...new Set(topUpKind)];
 
   return filters;
 }

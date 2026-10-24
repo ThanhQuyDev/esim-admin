@@ -48,6 +48,8 @@ export type Plan = {
   /** Speed after the high-speed quota, or the cap of a speed-only plan ("10Mbps"). */
   fupSpeed?: string | null;
   topUp: boolean;
+  /** A data add-on rather than a top-up (vande #019). */
+  isAddOn?: boolean;
   apn: string | null;
   /**
    * Exit IP is local rather than routed via Hong Kong, i.e. TikTok and ChatGPT
@@ -115,6 +117,7 @@ export type CreatePlanPayload = {
   currency?: string;
   type?: string;
   topUp?: boolean;
+  isAddOn?: boolean;
   isActive?: boolean;
   /** "Local" — eSIM nội địa (doitac-1410 #072). */
   isDomesticEsim?: boolean;

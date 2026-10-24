@@ -208,6 +208,7 @@ function CreateDialog({
       currency: 'USD',
       type: '',
       topUp: false,
+      isAddOn: false,
       isActive: true,
       tags: [] as PlanTag[],
       apn: '',
@@ -250,6 +251,7 @@ function CreateDialog({
         isNonHkIp: value.isNonHkIp ?? false,
         ...(value.ipExport?.trim() && { ipExport: value.ipExport.trim() }),
         topUp: value.topUp ?? false,
+        isAddOn: value.isAddOn ?? false,
         isActive: value.isActive ?? true
       };
       await createMut.mutateAsync(payload);
@@ -346,6 +348,15 @@ function CreateDialog({
             <FormSwitchField name='topUp' label='Top-Up' />
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
+          {/* Billion's "Mua thêm dung lượng" (vande #019): shown as Add-on in
+              the Top-Up column of the list. */}
+          <div className='grid grid-cols-2 gap-4'>
+            <FormSwitchField
+              name='isAddOn'
+              label='Add-on'
+              description='Gói mua thêm dung lượng (không phải gia hạn).'
+            />
+          </div>
         </form.Form>
       </form.AppForm>
     </FormDialog>
@@ -389,6 +400,7 @@ function EditDialog({
       currency: plan.currency ?? 'USD',
       type: plan.type ?? '',
       topUp: plan.topUp,
+      isAddOn: plan.isAddOn ?? false,
       isActive: plan.isActive,
       isDomesticEsim: plan.isDomesticEsim ?? false,
       refundSupport:
@@ -426,6 +438,7 @@ function EditDialog({
         currency: value.currency || undefined,
         type: value.type || undefined,
         topUp: value.topUp,
+        isAddOn: value.isAddOn,
         isActive: value.isActive,
         isDomesticEsim: value.isDomesticEsim ?? false,
         refundableOverride:
@@ -540,6 +553,15 @@ function EditDialog({
           <div className='grid grid-cols-2 gap-4'>
             <FormSwitchField name='topUp' label='Top-Up' />
             <FormSwitchField name='isActive' label='Hoạt động' />
+          </div>
+          {/* Billion's "Mua thêm dung lượng" (vande #019): shown as Add-on in
+              the Top-Up column of the list. */}
+          <div className='grid grid-cols-2 gap-4'>
+            <FormSwitchField
+              name='isAddOn'
+              label='Add-on'
+              description='Gói mua thêm dung lượng (không phải gia hạn).'
+            />
           </div>
 
           {/* "Local" = eSIM nội địa (doitac-1410 #072): its carrier's page,

@@ -43,6 +43,7 @@ export const createPlanSchema = z.object({
   currency: z.string().optional(),
   type: z.string().optional(),
   topUp: z.boolean().optional(),
+  isAddOn: z.boolean().optional(),
   isActive: z.boolean().optional(),
   /** "Local" — eSIM nội địa (doitac-1410 #072). */
   isDomesticEsim: z.boolean().optional(),

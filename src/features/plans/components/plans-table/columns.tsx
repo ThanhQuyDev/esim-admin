@@ -53,7 +53,6 @@ export function shortCode(code: string, keep = 12): string {
 /** TikTok / ChatGPT as the storefront judges it (#045, test round 4). */
 function AppSupportCell({ plan }: { plan: Plan }) {
   const support = plan.appSupport;
-  const source = plan.isNonHkIp ? 'IP' : plan.apn ? `APN ${plan.apn}` : null;
   let label = 'Không';
   let variant: 'default' | 'secondary' | 'outline' = 'secondary';
   if (support?.tiktokAllDevices && support.chatGpt) {
@@ -71,17 +70,11 @@ function AppSupportCell({ plan }: { plan: Plan }) {
     label = 'Chưa rõ';
     variant = 'outline';
   }
+  // The verdict only: APN has its own column, and the exit IP is in the plan's
+  // detail (vande #019).
   return (
     <div className='flex flex-col items-start gap-0.5' data-testid='plan-app-support'>
       <Badge variant={variant}>{label}</Badge>
-      {(plan.ipExport || source) && (
-        <span
-          className='text-muted-foreground max-w-[160px] truncate text-xs'
-          title={plan.apn ?? ''}
-        >
-          {plan.ipExport ? `IP: ${plan.ipExport}` : source}
-        </span>
-      )}
     </div>
   );
 }
@@ -404,12 +397,17 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       }
     },
     {
+      // Không / Có / Add-on (vande #019): Billion sells data add-ons apart from
+      // top-ups that extend the plan.
       id: 'topUp',
-      accessorFn: (row) => (row.topUp ? 'true' : 'false'),
+      accessorFn: (row) => (row.isAddOn ? 'addon' : row.topUp ? 'topup' : 'none'),
       header: 'Top-Up',
       cell: ({ row }) => (
-        <Badge variant={row.original.topUp ? 'default' : 'secondary'}>
-          {row.original.topUp ? 'Có' : 'Không'}
+        <Badge
+          variant={row.original.isAddOn ? 'outline' : row.original.topUp ? 'default' : 'secondary'}
+          data-testid='plan-topup'
+        >
+          {row.original.isAddOn ? 'Add-on' : row.original.topUp ? 'Có' : 'Không'}
         </Badge>
       ),
       enableSorting: false,
@@ -417,7 +415,11 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       meta: {
         label: 'Topup',
         variant: 'multiSelect' as const,
-        options: YES_NO_OPTIONS
+        options: [
+          { value: 'none', label: 'Không' },
+          { value: 'topup', label: 'Có' },
+          { value: 'addon', label: 'Add-on' }
+        ]
       }
     },
     {

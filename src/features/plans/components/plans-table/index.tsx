@@ -16,6 +16,8 @@ import { exportPlansExcel } from '../../api/service';
 import { buildPlanApiFilters } from '../../utils/plan-filters';
 import { buildColumns, columns } from './columns';
 import { BatchDiscountDialog } from '../batch-discount-dialog';
+import { BulkDeletePlansButton } from '../bulk-delete-plans-button';
+import { ApnFilterCounts } from '../apn-filter-counts';
 import { locationKeywords, locationLabel } from '../../utils/location-options';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
@@ -126,12 +128,17 @@ export function PlansTable() {
 
   return (
     <DataTable table={table} totalRowCount={responseData.totalCount}>
+      <ApnFilterCounts filters={apiFilters} />
       <DataTableToolbar table={table}>
         <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
           {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
           Export Excel
         </Button>
         <BatchDiscountDialog
+          selectedIds={selectedIds}
+          onSuccess={() => table.resetRowSelection()}
+        />
+        <BulkDeletePlansButton
           selectedIds={selectedIds}
           onSuccess={() => table.resetRowSelection()}
         />
