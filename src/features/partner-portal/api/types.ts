@@ -449,6 +449,16 @@ export type MyCoupon = {
   id: number;
   code: string;
   discountPercent: number;
+  /** % off or a flat amount off (vande #054). */
+  discountType?: 'percent' | 'fixed';
+  /** Flat amount off, for a `fixed` code. */
+  discountAmount?: number;
+  /** Ceiling on a % code; null = no ceiling. */
+  maxDiscountAmount?: number | null;
+  /** Minimum order to use the code; null = none. */
+  minOrderAmount?: number | null;
+  /** Uses per customer; null = no limit. */
+  maxUsagePerUser?: number | null;
   usageCount: number;
   maxUsage: number | null;
   expiresAt: string | null;

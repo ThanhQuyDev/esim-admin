@@ -84,6 +84,39 @@ function couponState(coupon: MyCoupon): {
   return { label: 'Đang hoạt động', variant: 'default' };
 }
 
+/** "Giảm 10%" or "Giảm 50.000 ₫" — what the customer gets (vande #054). */
+function couponHeadline(coupon: MyCoupon): string {
+  return coupon.discountType === 'fixed'
+    ? `Giảm ${formatVnd(coupon.discountAmount ?? 0)}`
+    : `Giảm ${coupon.discountPercent}%`;
+}
+
+/**
+ * The terms of a code, spelled out so the partner can quote them to a
+ * customer (vande #054): the page used to show only the %.
+ */
+function couponTerms(coupon: MyCoupon): [string, string][] {
+  const fixed = coupon.discountType === 'fixed';
+  return [
+    ['Hình thức giảm', fixed ? 'Giảm theo số tiền' : 'Giảm theo %'],
+    ...(fixed
+      ? []
+      : ([
+          [
+            'Giảm tối đa',
+            coupon.maxDiscountAmount ? formatVnd(coupon.maxDiscountAmount) : 'Không giới hạn'
+          ]
+        ] as [string, string][])),
+    ['Đơn tối thiểu', coupon.minOrderAmount ? formatVnd(coupon.minOrderAmount) : 'Không yêu cầu'],
+    [
+      'Lượt / người',
+      coupon.maxUsagePerUser
+        ? `${coupon.maxUsagePerUser.toLocaleString('vi-VN')} lượt`
+        : 'Không giới hạn'
+    ]
+  ];
+}
+
 export function PortalCouponsView() {
   const { data: coupons, isLoading } = useQuery(myCouponsQueryOptions());
   const { data: me } = useQuery(myProfileQueryOptions());
@@ -218,19 +251,29 @@ export function PortalCouponsView() {
               return (
                 <Card key={coupon.id} className='@container/card'>
                   <CardHeader>
-                    <CardDescription className='font-mono text-xs tracking-wider'>
+                    <CardTitle
+                      className='font-mono text-lg font-bold tracking-wide break-all sm:text-xl sm:tracking-wider'
+                      data-testid='coupon-code'
+                    >
                       {coupon.code}
-                    </CardDescription>
-                    <CardTitle className='text-2xl font-semibold tabular-nums'>
-                      {coupon.discountPercent}%
                     </CardTitle>
-                    <CardAction>
+                    {/* The status sits under the code so a 20-character code
+                        keeps the whole width on a phone. */}
+                    <CardDescription className='text-foreground flex flex-wrap items-center justify-between gap-2 text-base font-semibold'>
+                      {couponHeadline(coupon)}
                       <Badge variant={state.variant}>{state.label}</Badge>
-                    </CardAction>
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className='space-y-2 text-xs'>
+                    {couponTerms(coupon).map(([label, value]) => (
+                      <div key={label} className='flex items-center justify-between gap-3'>
+                        <span className='text-muted-foreground'>{label}</span>
+                        <span className='text-right font-medium tabular-nums'>{value}</span>
+                      </div>
+                    ))}
+                    <div className='border-t' />
                     <div className='flex items-center justify-between'>
-                      <span className='text-muted-foreground'>Lượt dùng</span>
+                      <span className='text-muted-foreground'>Lượt đã dùng</span>
                       <span className='font-medium tabular-nums'>
                         {coupon.usageCount.toLocaleString('vi-VN')}
                         {coupon.maxUsage != null && ` / ${coupon.maxUsage.toLocaleString('vi-VN')}`}
