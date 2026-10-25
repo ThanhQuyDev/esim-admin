@@ -630,7 +630,7 @@ export type PayoutSummary = {
 /** A withdrawal request with the partner and the account behind it (#069). */
 export type AdminPayoutRow = {
   id: number;
-  /** "Mã yêu cầu", e.g. RT000123 (vande #067). */
+  /** "Mã yêu cầu", e.g. WD-000123 (vande #067). */
   code?: string;
   partnerId: number;
   contactName: string | null;

@@ -112,7 +112,7 @@ function recentPeriods(): string[] {
   });
 }
 
-const payoutCode = (row: AdminPayoutRow) => row.code ?? `RT${String(row.id).padStart(6, '0')}`;
+const payoutCode = (row: AdminPayoutRow) => row.code ?? `WD-${String(row.id).padStart(6, '0')}`;
 
 /** A withdrawal or a deposit, in the shape the list reads. */
 type FinanceRow = {
