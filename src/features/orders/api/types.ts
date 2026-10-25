@@ -38,6 +38,15 @@ export type OrderDevice = {
 export type Order = {
   id: number;
   userId: number;
+  /** The buyer's tier and cashback rate when they ordered (vande #065). */
+  membershipTierSnapshot?: string | null;
+  cashbackPercentSnapshot?: number | null;
+  /** The referrer's reward on this order, if a referral code was used. */
+  referralReward?: {
+    rewardVnd: number;
+    status: string;
+    referrerTierSnapshot: string | null;
+  } | null;
   /** "Vị trí & IP" of the buyer (vande #058). */
   buyerIp?: string | null;
   buyerLocation?: string | null;

@@ -30,6 +30,72 @@ import {
 } from '../utils/airalo-refund';
 import type { OrderItem, RefundOrderRequest, RefundMode } from '../api/types';
 
+const TIER_LABEL: Record<string, string> = {
+  traveler: 'Du khách',
+  silver: 'Bạc',
+  gold: 'Vàng',
+  platinum: 'Bạch kim'
+};
+
+export type RefundBenefits = {
+  tier: string | null;
+  cashbackPercent: number | null;
+  cashbackVnd: number;
+  referral: { rewardVnd: number; status: string; referrerTierSnapshot: string | null } | null;
+};
+
+/**
+ * The share of a benefit a refund of `amountVnd` takes back — the backend's
+ * rule: proportional to everything refunded so far, less what an earlier
+ * refund already took (wallets.service getWalletBenefitReversalVnd).
+ */
+function reversalVnd(
+  benefitVnd: number,
+  r: { totalOrderValue: number; alreadyRefunded: number; amountVnd: number }
+): number {
+  if (!(benefitVnd > 0) || !(r.totalOrderValue > 0)) return 0;
+  const share = (refunded: number) =>
+    Math.round((benefitVnd * Math.min(refunded, r.totalOrderValue)) / r.totalOrderValue);
+  return Math.max(0, share(r.alreadyRefunded + r.amountVnd) - share(r.alreadyRefunded));
+}
+
+/** "Cashback 3% (hạng Vàng lúc đặt) …" — the lines of "Tác động khi hoàn tiền". */
+export function benefitLines(
+  benefits: RefundBenefits | undefined,
+  r: { totalOrderValue: number; alreadyRefunded: number; amountVnd: number }
+): string[] {
+  if (!benefits) {
+    return [
+      'Cashback của đơn sẽ bị thu hồi từ ví người mua',
+      'Thưởng giới thiệu sẽ bị thu hồi (nếu có)'
+    ];
+  }
+  const tier = benefits.tier ? (TIER_LABEL[benefits.tier] ?? benefits.tier) : null;
+  const pct = benefits.cashbackPercent;
+  const head = `Cashback${pct != null ? ` ${pct}%` : ''}${tier ? ` (hạng ${tier} lúc đặt)` : ''}`;
+  const lines = [
+    benefits.cashbackVnd > 0
+      ? `${head}: ${formatVnd(benefits.cashbackVnd)} — thu hồi ${formatVnd(reversalVnd(benefits.cashbackVnd, r))} từ ví người mua`
+      : `${head}: đơn không phát sinh cashback, không thu hồi gì`
+  ];
+  const ref = benefits.referral;
+  if (!ref) {
+    lines.push('Thưởng giới thiệu: đơn không dùng mã giới thiệu, không thu hồi gì');
+  } else {
+    const refTier = ref.referrerTierSnapshot
+      ? ` (người giới thiệu hạng ${TIER_LABEL[ref.referrerTierSnapshot] ?? ref.referrerTierSnapshot} lúc đặt)`
+      : '';
+    lines.push(
+      ref.status === 'credited'
+        ? `Thưởng giới thiệu ${formatVnd(ref.rewardVnd)}${refTier} — thu hồi ${formatVnd(reversalVnd(ref.rewardVnd, r))}`
+        : ref.status === 'pending'
+          ? `Thưởng giới thiệu ${formatVnd(ref.rewardVnd)}${refTier} chưa cộng cho người giới thiệu — sẽ không được cộng`
+          : `Thưởng giới thiệu ${formatVnd(ref.rewardVnd)}${refTier} đã được thu hồi trước đó`
+    );
+  }
+  return lines;
+}
+
 interface RefundOrderModalProps {
   orderId: number;
   orderNumber: string;
@@ -38,6 +104,11 @@ interface RefundOrderModalProps {
   refundedAmountVnd?: number | null;
   /** Lines of the order, so part of it can be refunded on its own. */
   items?: OrderItem[];
+  /**
+   * What the refund takes back, as fixed when the order was placed (vande
+   * #065): the buyer's tier and cashback, the referrer's reward.
+   */
+  benefits?: RefundBenefits;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: RefundOrderRequest) => void;
@@ -51,6 +122,7 @@ export function RefundOrderModal({
   walletSpentVndAmount,
   refundedAmountVnd,
   items = [],
+  benefits,
   open,
   onOpenChange,
   onSubmit,
@@ -495,13 +567,18 @@ export function RefundOrderModal({
           {/* Impact Preview */}
           <div className='bg-muted rounded-lg p-4'>
             <p className='mb-2 text-xs font-semibold'>Tác động khi hoàn tiền:</p>
-            <ul className='space-y-1 text-xs'>
-              <li className='text-muted-foreground'>
-                • Cashback (2%) sẽ bị thu hồi từ ví người mua
-              </li>
-              <li className='text-muted-foreground'>
-                • Thưởng giới thiệu (10,000đ) sẽ bị thu hồi (nếu có)
-              </li>
+            <ul className='space-y-1 text-xs' data-testid='refund-impact'>
+              {/* The real figures of this order, not a fixed 2% / 10.000đ
+                  (vande #065). */}
+              {benefitLines(benefits, {
+                totalOrderValue,
+                alreadyRefunded,
+                amountVnd: amountVnd || 0
+              }).map((line) => (
+                <li key={line} className='text-muted-foreground'>
+                  • {line}
+                </li>
+              ))}
               {mode === 'wallet' && (
                 <li className='text-green-600'>
                   • +{formatVnd(amountVnd || 0)} sẽ được hoàn vào ví eXu (365 ngày)

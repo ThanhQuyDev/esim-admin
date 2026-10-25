@@ -485,6 +485,12 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         walletSpentVndAmount={order.walletSpentVndAmount}
         refundedAmountVnd={order.refundedAmountVnd}
         items={order.items}
+        benefits={{
+          tier: order.membershipTierSnapshot ?? null,
+          cashbackPercent: order.cashbackPercentSnapshot ?? null,
+          cashbackVnd: Number(order.cashbackAmountVnd ?? 0),
+          referral: order.referralReward ?? null
+        }}
         open={refundOpen}
         onOpenChange={setRefundOpen}
         onSubmit={(data) => refundMutation.mutate({ id: order.id, data })}
