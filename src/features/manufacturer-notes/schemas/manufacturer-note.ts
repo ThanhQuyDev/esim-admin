@@ -12,7 +12,9 @@ export const manufacturerNoteSchema = z.object({
     .max(255, 'Tên hãng quá dài'),
   language: z.string().min(1, 'Chọn ngôn ngữ'),
   note: z.string().min(1, 'Nhập nội dung ghi chú'),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  /** Position among the brand's notes (vande #042); typed as text in the box. */
+  sortOrder: z.union([z.string(), z.number()]).optional()
 });
 
 export type ManufacturerNoteFormValues = z.infer<typeof manufacturerNoteSchema>;

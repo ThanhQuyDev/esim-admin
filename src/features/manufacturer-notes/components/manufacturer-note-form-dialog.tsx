@@ -36,7 +36,7 @@ const DIALOG_NOTE = 'Ghi chú hiện dưới danh sách máy của hãng đó, �
 
 /** Identical for create and edit, so the fields live in one place. */
 function NoteFields({ current }: { current?: string }) {
-  const { FormTextareaField, FormSelectField, FormSwitchField } =
+  const { FormTextareaField, FormSelectField, FormSwitchField, FormTextField } =
     useFormFields<ManufacturerNoteFormValues>();
 
   // The brands on the device list, so a note always matches its rows and nobody
@@ -55,7 +55,7 @@ function NoteFields({ current }: { current?: string }) {
           label='Hãng'
           options={brandOptions}
           placeholder='Chọn hãng'
-          description='Lấy từ danh sách "Thiết bị được hỗ trợ". Mỗi hãng một ghi chú cho mỗi ngôn ngữ.'
+          description='Lấy từ danh sách "Thiết bị được hỗ trợ".'
         />
         <FormSelectField
           name='language'
@@ -69,7 +69,15 @@ function NoteFields({ current }: { current?: string }) {
         name='note'
         label='Nội dung ghi chú'
         placeholder='VD: iPhone bán ở Trung Quốc đại lục không hỗ trợ eSIM…'
-        description='Mỗi hãng một ghi chú cho mỗi ngôn ngữ.'
+        description='Một hãng có thể có nhiều ghi chú — mỗi ghi chú hiện thành một ô riêng dưới danh sách máy. Xuống dòng được giữ nguyên.'
+      />
+
+      <FormTextField
+        name='sortOrder'
+        label='Thứ tự'
+        type='number'
+        placeholder='0'
+        description='Các ghi chú của cùng hãng xếp từ số nhỏ đến số lớn.'
       />
 
       <FormSwitchField
@@ -86,7 +94,8 @@ function toPayload(value: ManufacturerNoteFormValues): CreateManufacturerNotePay
     manufacturer: value.manufacturer.trim(),
     language: value.language,
     note: value.note,
-    isActive: value.isActive ?? true
+    isActive: value.isActive ?? true,
+    sortOrder: Number(value.sortOrder) || 0
   };
 }
 
@@ -112,7 +121,8 @@ function CreateDialog({
       manufacturer: '',
       language: 'vi',
       note: '',
-      isActive: true
+      isActive: true,
+      sortOrder: '0'
     } as ManufacturerNoteFormValues,
     validators: { onSubmit: manufacturerNoteSchema },
     onSubmit: async ({ value }) => {
@@ -168,7 +178,8 @@ function EditDialog({
       manufacturer: item.manufacturer,
       language: item.language,
       note: item.note,
-      isActive: item.isActive
+      isActive: item.isActive,
+      sortOrder: String(item.sortOrder ?? 0)
     } as ManufacturerNoteFormValues,
     validators: { onSubmit: manufacturerNoteSchema },
     onSubmit: async ({ value }) => {

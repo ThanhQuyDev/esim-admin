@@ -37,6 +37,14 @@ export const columns: ColumnDef<ManufacturerNote>[] = [
     enableSorting: false
   },
   {
+    // Several notes per brand (vande #042): the order they show in.
+    id: 'sortOrder',
+    accessorKey: 'sortOrder',
+    header: 'Thứ tự',
+    cell: ({ row }) => <div className='text-muted-foreground'>{row.original.sortOrder ?? 0}</div>,
+    enableSorting: false
+  },
+  {
     id: 'isActive',
     accessorKey: 'isActive',
     header: 'Hiển thị',
