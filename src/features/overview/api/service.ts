@@ -1,5 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import type {
+  OverviewAudience,
+  OverviewKpis,
   FinancialComparisonQuery,
   FinancialComparisonResponse,
   OrdersByDeviceResponse,
@@ -65,4 +67,16 @@ export async function getFinancialComparison(
   return apiClient<FinancialComparisonResponse>(
     `/overview/financial-comparison${buildOverviewQuery(query)}`
   );
+}
+
+/** The five KPI cards (vande #059). */
+export async function getOverviewKpis(filters: OverviewFilters = {}): Promise<OverviewKpis> {
+  return apiClient<OverviewKpis>(`/overview/kpis${buildOverviewQuery(filters)}`);
+}
+
+/** Visits and orders by device, new or returning, and place (vande #059). */
+export async function getOverviewAudience(
+  filters: OverviewFilters = {}
+): Promise<OverviewAudience> {
+  return apiClient<OverviewAudience>(`/overview/audience${buildOverviewQuery(filters)}`);
 }

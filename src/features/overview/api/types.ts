@@ -145,3 +145,43 @@ export interface OverviewResponse {
   topDestinations: TopDestinationsResponse;
   financialComparison: FinancialComparisonResponse;
 }
+
+/** The five KPI cards of Tổng quan (vande #059). */
+export type OverviewKpis = {
+  revenue: {
+    netRevenueVnd: number;
+    costVnd: number;
+    partnerCommissionVnd: number;
+    grossProfitVnd: number;
+  };
+  orders: {
+    paidOrders: number;
+    esimsSold: number;
+    visits: number;
+    /** Paid orders ÷ visits; null before any visit was recorded. */
+    conversionPercent: number | null;
+  };
+  partners: { active: number; kol: number; distribution: number; pending: number };
+  payouts: {
+    pendingVnd: number;
+    pendingPartners: number;
+    commissionPendingVnd: number;
+    commissionAvailableVnd: number;
+    depositAvailableVnd: number;
+  };
+  customers: { newUsers: number; plansSold: number; failedOrders: number };
+};
+
+/** Visits and paid web orders, side by side (vande #059). */
+export type OverviewAudience = {
+  totalVisitors: number;
+  devices: { deviceType: OrderDeviceType; visits: number; orders: number }[];
+  customers: { kind: 'new' | 'returning'; visits: number; orders: number }[];
+  countries: {
+    country: string;
+    name: string;
+    visitors: number;
+    percent: number;
+    cities: { city: string; visitors: number; percent: number }[];
+  }[];
+};

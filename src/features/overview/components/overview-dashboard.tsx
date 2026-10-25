@@ -1,29 +1,17 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import PageContainer from '@/components/layout/page-container';
 import { AdminNotificationBanner } from '@/features/partners/components/admin-notification-bell';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
-import { Icons } from '@/components/icons';
-import { formatNumber, formatVnd } from '@/lib/format';
 import { AreaGraph } from './area-graph';
 import { BarGraph } from './bar-graph';
-import { DeviceGraph } from './device-graph';
+import { AudienceCountries, AudienceCustomerGraph, AudienceDeviceGraph } from './audience-graphs';
+import { OverviewKpiCards } from './overview-kpi-cards';
 import { PieGraph } from './pie-graph';
 import { ProfitBySourceGraph } from './profit-by-source-graph';
 import { RecentSales } from './recent-sales';
 import { OverviewFilters, type OverviewFiltersValue } from './overview-filters';
-import { overviewSummaryQueryOptions } from '../api/queries';
 import type {
   OverviewFilters as OverviewFiltersType,
   OverviewGroupBy,
@@ -87,37 +75,6 @@ export function OverviewDashboard() {
     });
   };
 
-  const { data: summary, isLoading, error } = useQuery(overviewSummaryQueryOptions(queryFilters));
-
-  const cards = [
-    {
-      label: 'Tổng doanh thu',
-      value: formatVnd(summary?.totalRevenue),
-      footer: 'Đơn đã thanh toán, không tính sản phẩm đã hoàn tiền',
-      icon: Icons.trendingUp
-    },
-    {
-      label: 'Tổng đơn hàng',
-      value: formatNumber(summary?.totalOrders),
-      footer: 'Số đơn hàng thành công trong kỳ',
-      icon: Icons.order
-    },
-    {
-      label: 'Plan đã bán',
-      value: formatNumber(summary?.totalPlansSold),
-      footer: 'Tổng order items completed',
-      icon: Icons.product
-    },
-    {
-      label: 'Người dùng',
-      value: formatNumber(summary?.totalUsers),
-      footer: `${formatNumber(summary?.activePlans)} active plans · ${formatNumber(
-        summary?.failedOrders
-      )} failed orders`,
-      icon: Icons.teams
-    }
-  ];
-
   return (
     <PageContainer>
       <div className='flex flex-1 flex-col space-y-4'>
@@ -137,39 +94,8 @@ export function OverviewDashboard() {
 
         <OverviewFilters value={filters} onChange={handleFiltersChange} />
 
-        {error ? (
-          <Alert variant='destructive'>
-            <Icons.alertCircle />
-            <AlertTitle>Không thể tải summary</AlertTitle>
-            <AlertDescription>{error.message}</AlertDescription>
-          </Alert>
-        ) : null}
-
-        <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
-          {cards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <Card key={card.label} className='@container/card'>
-                <CardHeader>
-                  <CardDescription>{card.label}</CardDescription>
-                  <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                    {isLoading ? '...' : card.value}
-                  </CardTitle>
-                  <CardAction>
-                    <Badge variant='outline'>
-                      <Icon />
-                      Live
-                    </Badge>
-                  </CardAction>
-                </CardHeader>
-                <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-                  <div className='line-clamp-1 flex gap-2 font-medium'>Backend overview API</div>
-                  <div className='text-muted-foreground'>{card.footer}</div>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
+        {/* The five KPI cards (vande #059). */}
+        <OverviewKpiCards filters={queryFilters} />
 
         {/* Row 1 pairs the two fixed-height charts, row 2 the two tall ones
             (#007). "Lợi nhuận theo provider" grows one block per supplier, so
@@ -193,9 +119,17 @@ export function OverviewDashboard() {
           <div className='col-span-4'>
             <ProfitBySourceGraph filters={queryFilters} />
           </div>
-          {/* Successful orders by device (doitac-1410 #083). */}
+          {/* Visits and orders by device, replacing orders-only (vande #059). */}
           <div className='col-span-4 md:col-span-3'>
-            <DeviceGraph filters={queryFilters} />
+            <AudienceDeviceGraph filters={queryFilters} />
+          </div>
+        </div>
+
+        {/* Who comes and who buys (vande #059). */}
+        <div className='grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3'>
+          <AudienceCustomerGraph filters={queryFilters} />
+          <div className='md:col-span-1 xl:col-span-2'>
+            <AudienceCountries filters={queryFilters} />
           </div>
         </div>
       </div>

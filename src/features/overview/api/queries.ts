@@ -1,6 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import {
   getFinancialComparison,
+  getOverviewAudience,
+  getOverviewKpis,
   getOrdersByDevice,
   getOverview,
   getOverviewSummary,
@@ -62,4 +64,16 @@ export const ordersByDeviceQueryOptions = (filters: OverviewFilters = {}) =>
   queryOptions({
     queryKey: overviewKeys.ordersByDevice(filters),
     queryFn: () => getOrdersByDevice(filters)
+  });
+
+export const overviewKpisQueryOptions = (filters: OverviewFilters = {}) =>
+  queryOptions({
+    queryKey: [...overviewKeys.all, 'kpis', filters] as const,
+    queryFn: () => getOverviewKpis(filters)
+  });
+
+export const overviewAudienceQueryOptions = (filters: OverviewFilters = {}) =>
+  queryOptions({
+    queryKey: [...overviewKeys.all, 'audience', filters] as const,
+    queryFn: () => getOverviewAudience(filters)
   });
