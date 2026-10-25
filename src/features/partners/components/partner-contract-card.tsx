@@ -40,6 +40,20 @@ function parsed(value: string): number | null {
 
 const EMPTY_LINE: Line = { label: '', value: '' };
 
+/** "Nạp tiền tự động" / "Nạp tiền thủ công" (vande #068). */
+const DEPOSIT_MODES: { value: 'auto' | 'manual'; label: string; hint: string }[] = [
+  {
+    value: 'auto',
+    label: 'Nạp tiền tự động',
+    hint: 'Đối tác chuyển khoản QR (SePay) hoặc trả bằng thẻ (OnePay) — số dư ký quỹ được cộng ngay, không cần duyệt. Thường dùng cho đối tác cá nhân.'
+  },
+  {
+    value: 'manual',
+    label: 'Nạp tiền thủ công',
+    hint: 'Đối tác chuyển khoản từ tài khoản công ty rồi gửi thông tin chuyển khoản kèm bằng chứng; admin duyệt trong trang Tài chính mới cộng tiền. Thường dùng cho đối tác công ty.'
+  }
+];
+
 /**
  * What the page's top "Lưu lại" drives (doitac-1410 #004): the brief keeps the
  * one save button at the head of the page, so this card has none of its own.
@@ -60,6 +74,7 @@ export function PartnerContractCard({
   const [lines, setLines] = useState<Line[]>([]);
   const [minVnd, setMinVnd] = useState('');
   const [maxVnd, setMaxVnd] = useState('');
+  const [depositMode, setDepositMode] = useState<'auto' | 'manual'>('auto');
 
   // Seeded from the partner and re-seeded whenever it reloads, so a save
   // elsewhere on the page does not leave this card showing stale text.
@@ -67,7 +82,8 @@ export function PartnerContractCard({
     setLines(partner.contractInfo?.length ? partner.contractInfo : [EMPTY_LINE]);
     setMinVnd(partner.depositMinVnd != null ? String(partner.depositMinVnd) : '');
     setMaxVnd(partner.depositMaxVnd != null ? String(partner.depositMaxVnd) : '');
-  }, [partner.contractInfo, partner.depositMinVnd, partner.depositMaxVnd]);
+    setDepositMode(partner.depositMode ?? 'auto');
+  }, [partner.contractInfo, partner.depositMinVnd, partner.depositMaxVnd, partner.depositMode]);
 
   const saveMutation = useMutation({
     ...updatePartnerByAdminMutation,
@@ -84,14 +100,17 @@ export function PartnerContractCard({
 
   const payload = {
     contractInfo: lines.filter((line) => line.label.trim()),
-    ...(showDepositLimits ? { depositMinVnd: parsed(minVnd), depositMaxVnd: parsed(maxVnd) } : {})
+    ...(showDepositLimits
+      ? { depositMinVnd: parsed(minVnd), depositMaxVnd: parsed(maxVnd), depositMode }
+      : {})
   };
   const saved = {
     contractInfo: (partner.contractInfo ?? []).filter((line) => line.label.trim()),
     ...(showDepositLimits
       ? {
           depositMinVnd: partner.depositMinVnd ?? null,
-          depositMaxVnd: partner.depositMaxVnd ?? null
+          depositMaxVnd: partner.depositMaxVnd ?? null,
+          depositMode: partner.depositMode ?? 'auto'
         }
       : {})
   };
@@ -158,6 +177,45 @@ export function PartnerContractCard({
             <Icons.add className='mr-2 size-4' /> Thêm dòng
           </Button>
         </div>
+
+        {showDepositLimits && (
+          <div className='space-y-2 border-t pt-4' data-testid='deposit-mode'>
+            <p className='text-sm font-medium'>Cách nạp ký quỹ</p>
+            <div
+              className='grid gap-2 sm:grid-cols-2'
+              role='radiogroup'
+              aria-label='Cách nạp ký quỹ'
+            >
+              {DEPOSIT_MODES.map((mode) => (
+                <button
+                  key={mode.value}
+                  type='button'
+                  role='radio'
+                  aria-checked={depositMode === mode.value}
+                  data-testid={`deposit-mode-${mode.value}`}
+                  onClick={() => setDepositMode(mode.value)}
+                  className={`flex gap-3 rounded-lg border p-3 text-left transition ${
+                    depositMode === mode.value ? 'border-primary bg-primary/5' : 'hover:bg-muted'
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border ${
+                      depositMode === mode.value ? 'border-primary' : 'border-muted-foreground/40'
+                    }`}
+                  >
+                    {depositMode === mode.value && (
+                      <span className='bg-primary size-2 rounded-full' />
+                    )}
+                  </span>
+                  <span>
+                    <span className='block text-sm font-medium'>{mode.label}</span>
+                    <span className='text-muted-foreground block text-xs'>{mode.hint}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {showDepositLimits && (
           <div className='space-y-2 border-t pt-4'>

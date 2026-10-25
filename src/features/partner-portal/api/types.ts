@@ -33,6 +33,11 @@ export type MyPartner = {
   bankAccountNumber: string | null;
   bankAccountHolder: string | null;
   bankBranch: string | null;
+  /**
+   * "Nạp tiền thủ công": top-ups are reported with proof and confirmed by
+   * esim.vn, instead of a QR or card that credits itself (vande #068/#069).
+   */
+  depositMode?: 'auto' | 'manual';
 };
 
 export type UpdateMyProfilePayload = {
@@ -141,7 +146,7 @@ export type MyLedgerFilters = {
   to?: string;
 };
 
-export type PartnerTopupMethod = 'bank_transfer' | 'card';
+export type PartnerTopupMethod = 'bank_transfer' | 'card' | 'manual_transfer';
 
 export type MyDepositRequest = {
   id: number;
@@ -164,6 +169,28 @@ export type MyDepositRequest = {
   /** Why esim.vn refused it (doitac-1410 #063). */
   rejectionReason?: string | null;
   createdAt: string;
+  confirmedAt?: string | null;
+  rejectedAt?: string | null;
+  /** A manual top-up as the partner reported it (vande #069). */
+  transferContent?: string | null;
+  partnerNote?: string | null;
+  proofFiles?: DepositProofFile[];
+};
+
+/** A proof file of a manual top-up (vande #069). */
+export type DepositProofFile = {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+};
+
+export type CreateManualDepositPayload = {
+  amountVnd: number;
+  transferContent: string;
+  note?: string;
+  files: File[];
 };
 
 export type CreateDepositRequestPayload = {

@@ -43,15 +43,16 @@ import { formatDateVn, formatVnd } from '@/lib/format';
 import { PortalLedgerCard, PortalPayoutHistoryCard } from './portal-ledger-card';
 import { DepositDialog, WithdrawDialog } from './portal-wallet-dialogs';
 import {
+  DEPOSIT_METHOD_LABEL,
+  DepositDetailDialog,
+  ManualDepositDialog
+} from './portal-manual-deposit';
+import {
   myDepositRequestsQueryOptions,
   myProfileQueryOptions,
   myWalletQueryOptions
 } from '../api/queries';
-
-const METHOD_LABEL: Record<string, string> = {
-  bank_transfer: 'Chuyển khoản',
-  card: 'Thẻ tín dụng'
-};
+import type { MyDepositRequest } from '../api/types';
 
 const DEPOSIT_STATUS: Record<string, { label: string; className: string }> = {
   pending: {
@@ -69,6 +70,12 @@ const DEPOSIT_STATUS: Record<string, { label: string; className: string }> = {
     className:
       'border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300'
   },
+  // A manual top-up waits on esim.vn, not on a payment (vande #069).
+  review: {
+    label: 'Chờ xử lý',
+    className:
+      'border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300'
+  },
   // Refused by esim.vn, with the reason under it (doitac-1410 #063).
   rejected: {
     label: 'Từ chối',
@@ -76,6 +83,10 @@ const DEPOSIT_STATUS: Record<string, { label: string; className: string }> = {
       'border-red-200 bg-red-100 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
   }
 };
+
+/** A manual top-up waiting on esim.vn reads "Chờ xử lý", not "Chờ thanh toán". */
+const statusKey = (req: MyDepositRequest) =>
+  req.status === 'pending' && req.method === 'manual_transfer' ? 'review' : req.status;
 
 export function PortalWalletView() {
   const { data: wallet, isLoading } = useQuery(myWalletQueryOptions());
@@ -86,6 +97,10 @@ export function PortalWalletView() {
   const { data: deposits = [] } = useQuery(myDepositRequestsQueryOptions());
 
   const [dialog, setDialog] = useState<'deposit' | 'withdraw' | null>(null);
+  const [detailOf, setDetailOf] = useState<MyDepositRequest | null>(null);
+  // "Nạp tiền thủ công" (vande #068/#069): a company reports its own bank
+  // transfer with proof instead of paying by QR or card.
+  const manual = me?.depositMode === 'manual';
 
   // Buying on credit (vande #056): the wallet is this month's limit, not a
   // deposit, and there is nothing to top up.
@@ -233,12 +248,13 @@ export function PortalWalletView() {
                     <TableHead className='text-right'>Cộng vào ví</TableHead>
                     <TableHead>Mã đối chiếu</TableHead>
                     <TableHead>Trạng thái</TableHead>
+                    <TableHead className='text-right'>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {deposits.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className='h-24 text-center'>
+                      <TableCell colSpan={7} className='h-24 text-center'>
                         <p className='text-muted-foreground text-sm'>Chưa có lần nạp nào.</p>
                         <p className='text-muted-foreground mt-1 text-xs'>
                           Bấm "Nạp tiền" ở ô số dư ký quỹ để nạp.
@@ -247,7 +263,7 @@ export function PortalWalletView() {
                     </TableRow>
                   )}
                   {deposits.map((req) => {
-                    const status = DEPOSIT_STATUS[req.status];
+                    const status = DEPOSIT_STATUS[statusKey(req)];
                     return (
                       <TableRow key={req.id}>
                         <TableCell className='whitespace-nowrap'>
@@ -255,12 +271,12 @@ export function PortalWalletView() {
                         </TableCell>
                         <TableCell>
                           <Badge variant='outline'>
-                            {METHOD_LABEL[req.method ?? 'bank_transfer'] ?? req.method}
+                            {DEPOSIT_METHOD_LABEL[req.method ?? 'bank_transfer'] ?? req.method}
                           </Badge>
                         </TableCell>
                         <TableCell className='text-right font-medium tabular-nums'>
                           {formatVnd(req.amountVnd)}
-                          {req.feeVnd ? (
+                          {Number(req.feeVnd) > 0 ? (
                             <div className='text-muted-foreground text-xs'>
                               phí {formatVnd(req.feeVnd)}
                             </div>
@@ -289,6 +305,16 @@ export function PortalWalletView() {
                             </div>
                           )}
                         </TableCell>
+                        <TableCell className='text-right'>
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            data-testid={`deposit-detail-${req.id}`}
+                            onClick={() => setDetailOf(req)}
+                          >
+                            Xem chi tiết
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -302,10 +328,24 @@ export function PortalWalletView() {
       {/* Under the transactions: the deposits and the withdrawals (doitac-1410 #031). */}
       {canWithdraw && <PortalPayoutHistoryCard />}
 
-      <DepositDialog
-        open={dialog === 'deposit'}
-        onOpenChange={(o) => setDialog(o ? 'deposit' : null)}
-      />
+      {manual ? (
+        <ManualDepositDialog
+          open={dialog === 'deposit'}
+          onOpenChange={(o) => setDialog(o ? 'deposit' : null)}
+        />
+      ) : (
+        <DepositDialog
+          open={dialog === 'deposit'}
+          onOpenChange={(o) => setDialog(o ? 'deposit' : null)}
+        />
+      )}
+      {detailOf && (
+        <DepositDetailDialog
+          request={detailOf}
+          statusLabel={DEPOSIT_STATUS[statusKey(detailOf)]?.label ?? detailOf.status}
+          onClose={() => setDetailOf(null)}
+        />
+      )}
       <WithdrawDialog
         open={dialog === 'withdraw'}
         onOpenChange={(o) => setDialog(o ? 'withdraw' : null)}

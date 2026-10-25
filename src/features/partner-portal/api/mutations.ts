@@ -3,6 +3,7 @@ import { getQueryClient } from '@/lib/query-client';
 import {
   updateMyPartnerProfile,
   createMyDepositRequest,
+  createMyManualDepositRequest,
   createMyLink,
   updateMyLink,
   deleteMyLink,
@@ -23,6 +24,7 @@ import { partnerPortalKeys } from './queries';
 import type {
   UpdateMyProfilePayload,
   CreateDepositRequestPayload,
+  CreateManualDepositPayload,
   CreateLinkPayload,
   UpdateLinkPayload,
   CreatePayoutPayload,
@@ -52,6 +54,12 @@ export const confirmBankAccountChangeMutation = mutationOptions({
 
 export const createDepositRequestMutation = mutationOptions({
   mutationFn: (data: CreateDepositRequestPayload) => createMyDepositRequest(data),
+  onSettled: invalidateAll
+});
+
+/** "Gửi yêu cầu ký quỹ" with the proof, for manual top-ups (vande #069). */
+export const createManualDepositRequestMutation = mutationOptions({
+  mutationFn: (data: CreateManualDepositPayload) => createMyManualDepositRequest(data),
   onSettled: invalidateAll
 });
 

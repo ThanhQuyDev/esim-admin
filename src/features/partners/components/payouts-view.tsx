@@ -45,6 +45,7 @@ import { bulkPayoutDecisionMutation, markPayoutPaidMutation } from '../api/mutat
 import { depositRequestsQueryOptions, partnerKeys, payoutsQueryOptions } from '../api/queries';
 import { confirmDepositRequest, rejectDepositRequest } from '../api/service';
 import type { AdminPayoutRow, PartnerDepositRequest } from '../api/types';
+import { ProofFiles } from '@/features/partner-portal/components/portal-manual-deposit';
 
 /** One status list for both kinds; each maps it onto its own. */
 const STATUS_LABEL: Record<string, string> = {
@@ -93,7 +94,9 @@ const DEPOSIT_FILTER: Record<string, string | null> = {
 
 const METHOD_LABEL: Record<string, string> = {
   bank_transfer: 'Chuyển khoản',
-  card: 'Thẻ tín dụng'
+  card: 'Thẻ tín dụng',
+  // Reported by the partner with proof, confirmed here (vande #069).
+  manual_transfer: 'Chuyển khoản thủ công'
 };
 
 const NOTE_LIMIT = 1000;
@@ -842,10 +845,42 @@ function DepositDetailDialog({
           ) : (
             <p className='text-muted-foreground'>Đối tác chưa khai báo tài khoản ngân hàng.</p>
           )}
-          <p className='text-muted-foreground pt-1 text-xs'>
-            Nội dung chuyển khoản cần có mã <span className='font-mono'>{row.code}</span>.
-          </p>
+          {deposit.method !== 'manual_transfer' && (
+            <p className='text-muted-foreground pt-1 text-xs'>
+              Nội dung chuyển khoản cần có mã <span className='font-mono'>{row.code}</span>.
+            </p>
+          )}
         </div>
+
+        {deposit.method === 'manual_transfer' && (
+          <div
+            className='space-y-2 rounded-lg border p-3 text-sm'
+            data-testid='manual-deposit-info'
+          >
+            <p className='text-muted-foreground text-xs'>Thông tin chuyển khoản đối tác gửi</p>
+            <p>
+              <span className='text-muted-foreground'>Nội dung chuyển tiền: </span>
+              <span className='break-words'>{deposit.transferContent ?? '—'}</span>
+            </p>
+            {deposit.partnerNote && (
+              <p className='break-words whitespace-pre-line'>
+                <span className='text-muted-foreground'>Ghi chú: </span>
+                {deposit.partnerNote}
+              </p>
+            )}
+            <p className='text-muted-foreground text-xs'>Bằng chứng chuyển tiền</p>
+            {deposit.proofFiles?.length ? (
+              <ProofFiles
+                files={deposit.proofFiles}
+                hrefFor={(file) =>
+                  `/api/partners/deposit-requests/${deposit.id}/proofs/${encodeURIComponent(file.id)}`
+                }
+              />
+            ) : (
+              <p className='text-muted-foreground'>Không có file.</p>
+            )}
+          </div>
+        )}
 
         {deposit.status === 'rejected' && deposit.rejectionReason && (
           <p className='text-sm'>

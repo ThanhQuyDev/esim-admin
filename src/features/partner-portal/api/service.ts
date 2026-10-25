@@ -13,6 +13,7 @@ import type {
   MyWalletTransaction,
   MyDepositRequest,
   CreateDepositRequestPayload,
+  CreateManualDepositPayload,
   MyLink,
   MyLinkDetail,
   MyChannelPerformance,
@@ -115,6 +116,30 @@ export async function getMyWalletTransactions(): Promise<MyWalletTransaction[]> 
 
 export async function getMyDepositRequests(): Promise<MyDepositRequest[]> {
   return apiClient<MyDepositRequest[]>('/partner-portal/wallet/deposit-requests');
+}
+
+/**
+ * "Gửi yêu cầu ký quỹ" with the proof (vande #069). Multipart, so it goes
+ * straight to its own route rather than through the JSON client.
+ */
+export async function createMyManualDepositRequest(
+  data: CreateManualDepositPayload
+): Promise<MyDepositRequest> {
+  const body = new FormData();
+  body.set('amountVnd', String(data.amountVnd));
+  body.set('transferContent', data.transferContent);
+  if (data.note) body.set('note', data.note);
+  for (const file of data.files) body.append('files', file);
+  const res = await fetch('/api/partner-portal/wallet/deposit-requests/manual', {
+    method: 'POST',
+    body
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message = Array.isArray(json.message) ? json.message[0] : json.message;
+    throw new Error(message || 'Gửi yêu cầu ký quỹ thất bại.');
+  }
+  return json as MyDepositRequest;
 }
 
 export async function createMyDepositRequest(

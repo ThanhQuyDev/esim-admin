@@ -56,6 +56,11 @@ export type Partner = {
   depositMinVnd?: number | null;
   depositMaxVnd?: number | null;
   /**
+   * "Nạp tiền tự động" (SePay / card credit by themselves) or "Nạp tiền thủ
+   * công" (reported with proof, confirmed by an admin) — vande #068.
+   */
+  depositMode?: 'auto' | 'manual';
+  /**
    * Ticked by an admin: this distribution partner may also run the affiliate
    * programme, which is what puts the four marketing menus in their portal
    * (#048). Always effectively true for a marketing partner.
@@ -278,6 +283,19 @@ export type PartnerDepositRequest = {
   bankAccountNumber?: string | null;
   bankAccountHolder?: string | null;
   bankAccountLast4?: string | null;
+  /** A manual top-up as the partner reported it (vande #069). */
+  transferContent?: string | null;
+  partnerNote?: string | null;
+  proofFiles?: DepositProofFile[];
+};
+
+/** A proof file of a manual top-up (vande #069). */
+export type DepositProofFile = {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
 };
 
 export type OrderPartnerCommission = {
