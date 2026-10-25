@@ -7,6 +7,11 @@
  * "Email nhận QR" become one order per email, the other rows one order whose
  * QR codes go to the email typed here (or none, then the Excel file on the
  * Orders page). Each order is paid through the cart checkout, as before.
+ *
+ * Two ways to take a travel group's list (vande #057): mail each traveller
+ * their QR codes, one email every few seconds so they are not sent back to
+ * back and marked as spam; or ONE order with nothing mailed, the eSIMs
+ * downloaded as a list from the Orders page.
  */
 
 import { useRef, useState } from 'react';
@@ -26,6 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 import { partnerPortalKeys } from '../api/queries';
 import { CART_FILE_TEMPLATE_URL, previewCartFile, purchaseCart } from '../api/service';
@@ -33,6 +39,14 @@ import type { CartFilePreview } from '../api/types';
 import { addToCart } from '../lib/partner-cart';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Seconds between two QR emails unless the partner sets otherwise (vande #057). */
+const DEFAULT_INTERVAL = 30;
+
+/** One id for every checkout of an upload, so their emails queue together. */
+function newBatchId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 function FilePreviewDialog({
   preview,
@@ -45,7 +59,10 @@ function FilePreviewDialog({
 }) {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
-  const emailValid = !email.trim() || EMAIL.test(email.trim());
+  const [mode, setMode] = useState<'email' | 'file'>('email');
+  const [intervalText, setIntervalText] = useState(String(DEFAULT_INTERVAL));
+  const interval = Math.min(600, Math.max(0, Number(intervalText || 0)));
+  const emailValid = mode === 'file' || !email.trim() || EMAIL.test(email.trim());
   const hasRowEmail = preview?.lines.some((l) => l.email) ?? false;
   const blocked = !preview || Boolean(preview.rejection);
 
@@ -54,6 +71,18 @@ function FilePreviewDialog({
   const pay = useMutation({
     mutationFn: async () => {
       const done: string[] = [];
+      // As a file: one order for every row, nothing mailed (vande #057).
+      if (mode === 'file') {
+        const result = await purchaseCart({
+          items: preview!.lines
+            .filter((l) => l.planId)
+            .map((l) => ({ planId: l.planId!, quantity: l.quantity })),
+          bulkMode: 'file',
+          bulkBatch: newBatchId()
+        });
+        return [result.orderNumber];
+      }
+      const batch = newBatchId();
       for (const order of preview!.orders) {
         const items = preview!.lines
           .filter((l) => (l.email ?? null) === order.email && l.planId)
@@ -62,7 +91,10 @@ function FilePreviewDialog({
         try {
           const result = await purchaseCart({
             items,
-            ...(recipientEmail ? { recipientEmail } : {})
+            ...(recipientEmail ? { recipientEmail } : {}),
+            bulkMode: 'email',
+            bulkBatch: batch,
+            emailIntervalSec: interval
           });
           done.push(result.orderNumber);
         } catch (e) {
@@ -78,7 +110,11 @@ function FilePreviewDialog({
       return done;
     },
     onSuccess: (orders) => {
-      toast.success(`Đã đặt ${orders.length} đơn: ${orders.join(', ')}.`);
+      toast.success(
+        mode === 'file'
+          ? `Đã đặt đơn ${orders[0]} — tải danh sách eSIM ở trang Đơn hàng.`
+          : `Đã đặt ${orders.length} đơn: ${orders.join(', ')}. Email mã QR đang được gửi lần lượt.`
+      );
       onClose();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -97,6 +133,56 @@ function FilePreviewDialog({
 
         {preview && (
           <div className='max-h-[60vh] space-y-4 overflow-y-auto'>
+            <div className='grid gap-2 sm:grid-cols-2'>
+              {(
+                [
+                  [
+                    'email',
+                    'Gửi email mã QR cho từng khách',
+                    'Mỗi email trong file một đơn; email gửi lần lượt, cách nhau số giây bên dưới.'
+                  ],
+                  [
+                    'file',
+                    'Xuất file danh sách eSIM',
+                    'Không gửi email. Gộp thành 1 đơn, tải file Excel có mã QR ở trang Đơn hàng.'
+                  ]
+                ] as const
+              ).map(([value, title, hint]) => (
+                <button
+                  key={value}
+                  type='button'
+                  onClick={() => setMode(value)}
+                  aria-pressed={mode === value}
+                  data-testid={`cart-file-mode-${value}`}
+                  className={cn(
+                    'rounded-lg border p-3 text-left text-sm transition-colors',
+                    mode === value ? 'border-primary bg-primary/5' : 'hover:bg-muted'
+                  )}
+                >
+                  <span className='font-medium'>{title}</span>
+                  <span className='text-muted-foreground mt-1 block text-xs'>{hint}</span>
+                </button>
+              ))}
+            </div>
+            {mode === 'email' && (
+              <div className='space-y-1'>
+                <Label htmlFor='cart-file-interval'>Số giây giữa hai email</Label>
+                <Input
+                  id='cart-file-interval'
+                  type='number'
+                  min={0}
+                  max={600}
+                  className='w-32'
+                  value={intervalText}
+                  onChange={(e) => setIntervalText(e.target.value)}
+                />
+                <p className='text-muted-foreground text-xs'>
+                  Mặc định 30 giây. Ít dòng có thể gửi nhanh hơn, nhiều dòng nên để lâu hơn để email
+                  không bị tính là spam.
+                </p>
+              </div>
+            )}
+
             <ul className='divide-y rounded-lg border' data-testid='cart-file-lines'>
               {preview.lines.map((line) => (
                 <li key={line.row} className='flex flex-wrap items-center gap-x-3 gap-y-1 p-3'>
@@ -119,17 +205,18 @@ function FilePreviewDialog({
 
             {preview.orders.length > 0 && (
               <div className='bg-muted/50 space-y-1 rounded-lg p-3 text-sm'>
-                {preview.orders.map((order) => (
-                  <div key={order.email ?? ''} className='flex justify-between gap-3'>
-                    <span className='text-muted-foreground min-w-0 break-words'>
-                      Đơn gửi QR tới {order.email ?? 'email bên dưới'} · {order.planCount} gói ·{' '}
-                      {order.esimCount} eSIM
-                    </span>
-                    <span className='shrink-0 tabular-nums'>{formatVnd(order.totalVnd)}</span>
-                  </div>
-                ))}
+                {mode === 'email' &&
+                  preview.orders.map((order) => (
+                    <div key={order.email ?? ''} className='flex justify-between gap-3'>
+                      <span className='text-muted-foreground min-w-0 break-words'>
+                        Đơn gửi QR tới {order.email ?? 'email bên dưới'} · {order.planCount} gói ·{' '}
+                        {order.esimCount} eSIM
+                      </span>
+                      <span className='shrink-0 tabular-nums'>{formatVnd(order.totalVnd)}</span>
+                    </div>
+                  ))}
                 <div className='flex justify-between font-semibold'>
-                  <span>Tổng trừ ví ({preview.orders.length} đơn)</span>
+                  <span>Tổng trừ ví ({mode === 'file' ? 1 : preview.orders.length} đơn)</span>
                   <span className='tabular-nums' data-testid='cart-file-total'>
                     {formatVnd(preview.totalVnd)}
                   </span>
@@ -143,7 +230,7 @@ function FilePreviewDialog({
               </div>
             )}
 
-            {preview.orders.some((o) => !o.email) && (
+            {mode === 'email' && preview.orders.some((o) => !o.email) && (
               <div className='space-y-2'>
                 <Label htmlFor='cart-file-email'>
                   Email nhận mã QR cho các dòng không ghi email
@@ -206,7 +293,7 @@ function FilePreviewDialog({
             onClick={() => pay.mutate()}
             data-testid='cart-file-pay'
           >
-            {`Xác nhận đặt ${preview?.orders.length ?? 0} đơn, trừ ${formatVnd(preview?.totalVnd ?? 0)}`}
+            {`Xác nhận đặt ${mode === 'file' ? 1 : (preview?.orders.length ?? 0)} đơn, trừ ${formatVnd(preview?.totalVnd ?? 0)}`}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -604,6 +604,10 @@ export async function quoteCart(
 export async function purchaseCart(payload: {
   items: { planId: number; quantity: number; periodNum?: number }[];
   recipientEmail?: string;
+  /** Part of a bulk upload from a file (vande #057). */
+  bulkMode?: 'email' | 'file';
+  bulkBatch?: string;
+  emailIntervalSec?: number;
 }): Promise<CartPurchaseResult> {
   return apiClient<CartPurchaseResult>('/partner-portal/purchases/cart', {
     method: 'POST',

@@ -12,7 +12,8 @@ import type {
   RefundOrderRequest,
   ResendEsimEmailResponse,
   SubmitManualOrderPayload,
-  ManualOrderFilePreview
+  ManualOrderFilePreview,
+  BulkOrderResult
 } from './types';
 
 export async function getOrders(filters: OrderFilters): Promise<OrdersResponse> {
@@ -75,6 +76,31 @@ export async function previewManualOrderFile(file: File): Promise<ManualOrderFil
 
 /** Where the browser downloads the order file template (doitac-1410 #084). */
 export const MANUAL_ORDER_TEMPLATE_URL = '/api/admin/orders/import-template';
+
+/** Reads a bulk file — up to 50 rows, with emails; places nothing (vande #057). */
+export async function previewBulkOrderFile(file: File): Promise<ManualOrderFilePreview> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch('/api/admin/orders/bulk/import-file', { method: 'POST', body: formData });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || `Không đọc được file: ${res.status}`);
+  return body as ManualOrderFilePreview;
+}
+
+/** "Đặt eSIM hàng loạt" (vande #057). */
+export async function submitBulkOrder(data: {
+  mode: 'email' | 'file';
+  emailIntervalSec?: number;
+  rows: { slug: string; quantity: number; email?: string | null }[];
+}): Promise<BulkOrderResult> {
+  return apiClient<BulkOrderResult>('/admin/orders/bulk', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+/** The bulk file template, with "Email nhận QR" (vande #057). */
+export const BULK_ORDER_TEMPLATE_URL = '/api/admin/orders/bulk/import-template';
 
 export async function updateInvoiceStatus(
   invoiceId: string,

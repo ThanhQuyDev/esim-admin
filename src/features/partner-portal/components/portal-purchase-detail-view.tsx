@@ -158,6 +158,18 @@ export function PortalPurchaseDetailView({
           </div>
         ) : (
           <div className='flex flex-wrap gap-2' data-testid='purchase-detail-actions'>
+            {/* Every eSIM with its plan, LPA and QR link — how a bulk "file"
+                order is delivered (vande #057). */}
+            {!isTopup && order.esimCount > 0 && (
+              <Button asChild size='sm' data-testid='purchase-esim-list'>
+                <a
+                  href={`/api/partner-portal/purchases/${encodeURIComponent(order.orderNumber)}/esim-list`}
+                >
+                  <Icons.download className='size-4' />
+                  Tải danh sách eSIM + mã QR
+                </a>
+              </Button>
+            )}
             <Button
               variant='outline'
               size='sm'

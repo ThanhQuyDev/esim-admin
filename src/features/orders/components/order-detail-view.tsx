@@ -15,6 +15,7 @@ import { orderQueryOptions } from '../api/queries';
 import { refundOrderMutation, retryOrderProvisioningMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Order, OrderItemEsim, OrderItemPlan } from '../api/types';
 import { Icons } from '@/components/icons';
@@ -510,6 +511,15 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className='flex flex-wrap gap-3'>
+          {/* A bulk "file" order is delivered as this list (vande #057). */}
+          {order.bulkMode === 'file' && (
+            <Button type='button' size='sm' asChild data-testid='bulk-esim-list'>
+              <a href={`/api/admin/orders/${order.id}/esim-list`}>
+                <Icons.download className='mr-2 h-4 w-4' />
+                Tải file danh sách eSIM
+              </a>
+            </Button>
+          )}
           <ResendEsimEmailButton
             orderId={order.id}
             orderStatus={canResendEmail ? 'paid' : order.status}
@@ -1012,8 +1022,25 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         </Card>
       )}
 
-      {/* Order Items */}
-      {order.items && order.items.length > 0 && (
+      {/* A bulk order is announced instead of its eSIMs listed (vande #057). */}
+      {order.bulkMode && (
+        <Alert data-testid='bulk-order-note'>
+          <Icons.info className='h-4 w-4' />
+          <AlertTitle>
+            {order.bulkMode === 'file'
+              ? 'Đơn đặt hàng loạt — xuất file danh sách eSIM'
+              : 'Đơn đặt hàng loạt — gửi email mã QR lần lượt'}
+          </AlertTitle>
+          <AlertDescription>
+            {order.bulkMode === 'file'
+              ? 'Không gửi email cho khách. Thông tin gói cước và mã QR của từng eSIM nằm trong file "Tải file danh sách eSIM" ở Thao tác quản trị.'
+              : `Email mã QR của đơn này được gửi lần lượt cùng các đơn khác trong cùng file, cách nhau ${order.bulkEmailIntervalSec ?? 30} giây.`}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Order Items — left out of a bulk "file" order, too many to show (vande #057). */}
+      {order.bulkMode !== 'file' && order.items && order.items.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Sản phẩm ({order.items.length})</CardTitle>

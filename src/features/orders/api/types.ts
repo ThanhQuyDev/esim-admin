@@ -38,6 +38,9 @@ export type OrderDevice = {
 export type Order = {
   id: number;
   userId: number;
+  /** Ordered in bulk from a file: mailed spaced out, or as a list (vande #057). */
+  bulkMode?: 'email' | 'file' | null;
+  bulkEmailIntervalSec?: number | null;
   user: OrderUser;
   userEmail?: string;
   orderNumber: string;
@@ -394,10 +397,19 @@ export type ManualOrderFilePreview = {
     row: number;
     slug: string;
     quantity: number;
+    /** "Email nhận QR" — only read for a bulk order (vande #057). */
+    email?: string | null;
     plan: { id: number; slug: string; packageCode: string; label: string } | null;
     error: string | null;
   }[];
   errorCount: number;
+};
+
+/** What "Đặt eSIM hàng loạt" placed (vande #057). */
+export type BulkOrderResult = {
+  batch: string;
+  mode: 'email' | 'file';
+  orders: { id: number; orderNumber: string; email: string; esims: number }[];
 };
 
 /** "Ghi chú" an admin keeps on an order (doitac-1410 #067). */
