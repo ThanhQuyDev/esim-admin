@@ -107,6 +107,8 @@ export type PartnerOverview = {
     pendingDeposits: number;
     pendingCommissionVnd: number;
     pendingCommissions: number;
+    /** Partner tickets waiting on support (vande #060). */
+    pendingTickets?: number;
   };
   money: {
     revenue30dVnd: number;
@@ -403,6 +405,13 @@ export type PartnerRevenueByType = {
     attributedGrossVnd: number;
     commissionVnd: number;
     purchasesVnd: number;
+    /** Settled / refunded orders, refund share, cost, profit, eSIMs (vande #060). */
+    orders?: number;
+    refundedOrders?: number;
+    refundRatePercent?: number;
+    costVnd?: number;
+    profitVnd?: number;
+    esimsSold?: number;
   }[];
   totalRevenueVnd: number;
   previousTotalRevenueVnd: number;

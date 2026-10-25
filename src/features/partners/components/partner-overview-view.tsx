@@ -85,7 +85,9 @@ function QueueRow({
 }
 
 const PARTNER_TYPE_LABEL: Record<string, string> = {
-  kol: 'KOL',
+  // "Affiliate" rather than "KOL" (vande #060): the programme, not one kind
+  // of member of it.
+  kol: 'Affiliate',
   distribution: 'Phân phối',
   api: 'API'
 };
@@ -259,16 +261,19 @@ export function PartnerOverviewView() {
     );
   }
 
-  const { partners, queue, money } = data;
+  const { partners, queue } = data;
 
   return (
-    <div className='space-y-6'>
+    // A grid of min-w-0 blocks: the page's scroll area otherwise grows to the
+    // widest table or caption, and on a phone every tile was cut off on the
+    // right (vande #060).
+    <div className='grid min-w-0 grid-cols-1 gap-6 *:min-w-0'>
       <PortalPeriodFilter value={period} onChange={setPeriod} />
 
       {/* What needs a human today */}
       <div>
         <p className='mb-3 text-sm font-medium'>Luồng công việc hôm nay</p>
-        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
           <QueueRow
             label='Hồ sơ chờ duyệt'
             count={queue.pendingApprovals}
@@ -291,13 +296,20 @@ export function PartnerOverviewView() {
             amount={queue.pendingCommissionVnd}
             href='/dashboard/partners/commissions'
           />
+          {/* Partner tickets waiting on support (vande #060). */}
+          <QueueRow
+            label='Tickets chờ hỗ trợ'
+            count={queue.pendingTickets ?? 0}
+            href='/dashboard/tickets'
+          />
         </div>
       </div>
 
       {/* Programme size, measured by what actually happened (#051) */}
       <div>
         <p className='mb-3 text-sm font-medium'>Quy mô chương trình · {rangeLabel}</p>
-        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+        {/* Five in one row, "Tạm giữ / Đã khóa" with the others (vande #060). */}
+        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
           <StatByType
             label='Tổng số đơn hàng'
             value={(activity?.orders.total ?? 0).toLocaleString('vi-VN')}
@@ -328,8 +340,6 @@ export function PartnerOverviewView() {
             value={formatVnd(activity?.commissionToReconcile.totalVnd ?? 0)}
             hint={`${activity?.commissionToReconcile.partners ?? 0} đối tác đang chờ đối soát`}
           />
-        </div>
-        <div className='mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
           <Stat label='Tạm giữ / Đã khóa' value={`${partners.hold} / ${partners.disabled}`} />
         </div>
       </div>
@@ -387,29 +397,46 @@ export function PartnerOverviewView() {
                   )}
                   {row.revenueVnd === 0 && <p>Chưa phát sinh trong kỳ.</p>}
                 </div>
+                {/* Orders, refunds, what esim.vn keeps, eSIMs (vande #060). */}
+                <dl
+                  className='mt-3 space-y-1 border-t pt-3 text-xs'
+                  data-testid={`type-figures-${row.partnerType}`}
+                >
+                  {(
+                    [
+                      ['Đơn thành công', (row.orders ?? 0).toLocaleString('vi-VN')],
+                      [
+                        'Đơn hoàn',
+                        `${(row.refundedOrders ?? 0).toLocaleString('vi-VN')} (${row.refundRatePercent ?? 0}%)`
+                      ],
+                      ['Giá vốn', formatVnd(row.costVnd ?? 0)],
+                      ['Lợi nhuận esim.vn', formatVnd(row.profitVnd ?? 0)],
+                      ['eSIM bán ra', (row.esimsSold ?? 0).toLocaleString('vi-VN')]
+                    ] as [string, string][]
+                  ).map(([label, value]) => (
+                    <div key={label} className='flex justify-between gap-2'>
+                      <dt className='text-muted-foreground'>{label}</dt>
+                      <dd
+                        className={`font-medium tabular-nums ${label === 'Lợi nhuận esim.vn' && (row.profitVnd ?? 0) < 0 ? 'text-destructive' : ''}`}
+                      >
+                        {value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className='text-muted-foreground mt-2 text-[11px]'>
+                  {row.partnerType === 'distribution'
+                    ? 'Lợi nhuận = giá đối tác mua vào − giá vốn.'
+                    : 'Lợi nhuận = doanh thu đơn − hoa hồng − giá vốn.'}
+                </p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Money moved through partners */}
-      <div>
-        <p className='mb-3 text-sm font-medium'>Doanh số & hoa hồng 30 ngày</p>
-        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-          <Stat label='Doanh số quy về đối tác' value={formatVnd(money.revenue30dVnd)} />
-          <Stat label='Số đơn' value={String(money.orders30d)} />
-          <Stat label='Hoa hồng 30 ngày' value={formatVnd(money.commission30dVnd)} />
-          <Stat
-            label='Hoa hồng lũy kế'
-            value={formatVnd(money.commissionTotalVnd)}
-            hint='Không tính khoản đã hoàn'
-          />
-        </div>
-      </div>
-
       {/* How it moved, and where it went (#052) */}
-      <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
+      <div className='grid grid-cols-1 gap-4 *:min-w-0 lg:grid-cols-7'>
         <div className='lg:col-span-4'>
           <Card>
             <CardHeader>

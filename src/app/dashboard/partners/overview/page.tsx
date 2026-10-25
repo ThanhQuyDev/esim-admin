@@ -10,7 +10,7 @@ export default function PartnerOverviewPage() {
     <PageContainer
       scrollable
       pageTitle='Tổng quan đối tác'
-      pageDescription='Việc cần xử lý, quy mô chương trình và hiệu quả 30 ngày.'
+      pageDescription='Việc cần xử lý, quy mô chương trình và doanh thu theo kỳ đã chọn.'
     >
       <PartnerOverviewView />
     </PageContainer>
