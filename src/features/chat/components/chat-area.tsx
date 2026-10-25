@@ -6,7 +6,6 @@ import { useChatStore } from '../utils/store';
 import { ChatRoomHeader } from './chat-room-header';
 import { ChatMessageBubble } from './chat-message-bubble';
 import { ChatComposer } from './chat-composer';
-import { ChatMobileTools } from './chat-mobile-tools';
 import { Spinner } from '@/components/ui/spinner';
 import type { ChatUploadResult } from '../api/upload';
 
@@ -164,7 +163,7 @@ export function ChatArea() {
             replyTo={replyTo}
             replyToAuthorName={replyTo ? senderLabel(replyTo.senderId) : undefined}
             onCancelReply={() => setReplyTo(null)}
-            extraActions={<ChatMobileTools />}
+            mobileTools
           />
         </motion.div>
       </AnimatePresence>

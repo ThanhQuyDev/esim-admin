@@ -16,6 +16,7 @@ import {
 } from '../api/upload';
 import type { ChatMessage } from '../api/types';
 import { ChatQuotePreview } from './chat-quote-preview';
+import { ChatToolSheet, type ChatToolSection } from './chat-mobile-tools';
 
 interface ChatComposerProps {
   draft: string;
@@ -25,8 +26,12 @@ interface ChatComposerProps {
   replyTo?: ChatMessage | null;
   replyToAuthorName?: string;
   onCancelReply?: () => void;
-  /** Extra buttons beside attach, e.g. the mobile chat tools (v3 #006). */
-  extraActions?: React.ReactNode;
+  /**
+   * Phones and tablets get a "+" that opens a row of tools under the box —
+   * destination links, the customer's orders, attach (vande #046); the
+   * desktop has the side columns and keeps its attach button.
+   */
+  mobileTools?: boolean;
 }
 
 function formatBytes(bytes: number): string {
@@ -42,8 +47,10 @@ export function ChatComposer({
   replyTo,
   replyToAuthorName,
   onCancelReply,
-  extraActions
+  mobileTools = false
 }: ChatComposerProps) {
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [toolSection, setToolSection] = useState<ChatToolSection | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -270,7 +277,24 @@ export function ChatComposer({
           />
         </div>
         <div className='flex shrink-0 flex-col items-end gap-1.5 sm:w-24 sm:gap-2'>
-          {extraActions}
+          {mobileTools && (
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon'
+              className='border-border/40 bg-background/70 text-muted-foreground hover:bg-muted/50 size-8 rounded-full border sm:size-10 lg:hidden'
+              aria-label={toolsOpen ? 'Đóng công cụ' : 'Mở công cụ: gửi link, đơn hàng, đính kèm'}
+              aria-expanded={toolsOpen}
+              data-testid='chat-mobile-tools'
+              onClick={() => setToolsOpen((open) => !open)}
+            >
+              {toolsOpen ? (
+                <Icons.close className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+              ) : (
+                <Icons.plusCircle className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+              )}
+            </Button>
+          )}
           <input
             ref={fileInputRef}
             type='file'
@@ -285,7 +309,9 @@ export function ChatComposer({
             size='icon'
             className={cn(
               'border-border/40 bg-background/70 text-muted-foreground hover:bg-muted/50 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10',
-              pendingFile && 'opacity-50'
+              pendingFile && 'opacity-50',
+              // On phones attach lives in the "+" row (vande #046).
+              mobileTools && 'hidden lg:inline-flex'
             )}
             aria-label='Đính kèm hình ảnh hoặc video'
             disabled={!!pendingFile || isUploading}
@@ -308,6 +334,40 @@ export function ChatComposer({
           </Button>
         </div>
       </div>
+
+      {/* The tools row under the box on phones (vande #046). */}
+      {mobileTools && toolsOpen && (
+        <div className='flex items-center gap-2 lg:hidden' data-testid='chat-tools-row'>
+          {[
+            { key: 'destinations', label: 'Gửi link', icon: Icons.worldMap },
+            { key: 'orders', label: 'Đơn hàng', icon: Icons.order }
+          ].map(({ key, label, icon: Icon }) => (
+            <Button
+              key={key}
+              type='button'
+              variant='outline'
+              size='sm'
+              className='h-9 flex-1 gap-1.5 rounded-full'
+              onClick={() => setToolSection(key as ChatToolSection)}
+            >
+              <Icon className='h-4 w-4' />
+              {label}
+            </Button>
+          ))}
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='h-9 flex-1 gap-1.5 rounded-full'
+            disabled={!!pendingFile || isUploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Icons.paperclip className='h-4 w-4' />
+            Đính kèm
+          </Button>
+        </div>
+      )}
+      {mobileTools && <ChatToolSheet section={toolSection} onClose={() => setToolSection(null)} />}
     </form>
   );
 }
