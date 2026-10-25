@@ -34,14 +34,16 @@ export const columns: ColumnDef<Ticket>[] = [
     id: 'id',
     accessorKey: 'id',
     header: ({ column }: { column: Column<Ticket, unknown> }) => (
-      <DataTableColumnHeader column={column} title='ID' />
+      <DataTableColumnHeader column={column} title='Mã phiếu' />
     ),
+    // The number the customer sees in every email subject (vande #047), so a
+    // reply in the support mailbox is found in the list at a glance.
     cell: ({ row }) => (
       <Link
         href={`/dashboard/tickets/${row.original.id}`}
-        className='font-medium tabular-nums hover:underline'
+        className='font-medium whitespace-nowrap tabular-nums hover:underline'
       >
-        #{row.original.id}
+        {row.original.ticketNumber ?? `#${row.original.id}`}
       </Link>
     ),
     enableColumnFilter: false
