@@ -8,7 +8,6 @@ import { Icons } from '@/components/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createBlogMutation, updateBlogMutation } from '../api/mutations';
 import { uploadToCloudinary } from '../api/service';
-import { createSeoConfig, updateSeoConfig } from '@/features/seo-configs/api/service';
 import type { Blog, CreateBlogPayload, UpdateBlogPayload } from '../api/types';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -226,6 +225,17 @@ interface BlogFormPageProps {
   blog?: Blog;
 }
 
+/** "Du lịch Nhật Bản" → "du-lich-nhat-ban", for a post saved with no slug. */
+function slugFromTitle(title: string): string {
+  return title
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export function BlogFormPage({ blog }: BlogFormPageProps) {
   const router = useRouter();
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -397,36 +407,18 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             faqEnabled: value.faqEnabled ?? false,
             faqIds: value.faqEnabled ? (value.faqIds ?? []) : []
           };
-          const updatedBlog = await updateMut.mutateAsync({ id: blog.id, values: payload });
-
-          // Sync SEO config record (update if exists, else create)
-          if (value.seoTitle || value.seoDescription || value.seoKeywords) {
-            const finalSlug = (updatedBlog.slug || blog.slug || '').replace(/^\/+|\/+$/g, '');
-            const seoUrl = `${value.language === 'en' ? '/en' : ''}/blog/${finalSlug}`;
-            const seoPayload = {
-              url: seoUrl,
-              metaTitle: value.seoTitle || value.title,
-              metaDescription: value.seoDescription || '',
-              metaKeywords: value.seoKeywords || '',
-              isActive: true
-            };
-            try {
-              if (existingSeo?.id) {
-                await updateSeoConfig(existingSeo.id, seoPayload);
-              } else {
-                await createSeoConfig(seoPayload);
-              }
-            } catch {
-              // SEO sync is non-blocking
-            }
-          }
+          // The blog API writes the SEO table itself (vande #040): the SEO API
+          // is admin-only, so an author's post never got its SEO row.
+          await updateMut.mutateAsync({ id: blog.id, values: payload });
         } else {
           const payload: CreateBlogPayload = {
             title: value.title,
             content: contentRef.current || value.content || '',
             language: value.language,
             ...(authorProfileId && { authorProfileId }),
-            ...(value.slug && { slug: value.slug }),
+            // The API needs a slug; an empty box used to fail with "slug must
+            // be a string" (vande #040), so it is made from the title.
+            slug: value.slug || slugFromTitle(value.title),
             ...(value.category && { category: value.category }),
             ...(value.parent && { parent: value.parent }),
             ...(value.excerpt && { excerpt: value.excerpt }),
@@ -441,25 +433,7 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
             faqEnabled: value.faqEnabled ?? false,
             faqIds: value.faqEnabled ? (value.faqIds ?? []) : []
           };
-          const createdBlog = await createMut.mutateAsync(payload);
-
-          // Sync SEO config record
-          if (value.seoTitle || value.seoDescription || value.seoKeywords) {
-            const finalSlug = (createdBlog.slug || value.slug || '').replace(/^\/+|\/+$/g, '');
-            const seoUrl = `${value.language === 'en' ? '/en' : ''}/blog/${finalSlug}`;
-            const seoPayload = {
-              url: seoUrl,
-              metaTitle: value.seoTitle || value.title,
-              metaDescription: value.seoDescription || '',
-              metaKeywords: value.seoKeywords || '',
-              isActive: true
-            };
-            try {
-              await createSeoConfig(seoPayload);
-            } catch {
-              // SEO config creation failed — non-blocking
-            }
-          }
+          await createMut.mutateAsync(payload);
         }
       } catch {
         // Already toasted by the mutation's onError.

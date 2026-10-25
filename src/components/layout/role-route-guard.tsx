@@ -3,12 +3,13 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { ADMIN_HOME_PATH, IS_PARTNER_PORTAL } from '@/config/app-mode';
 import { AUTHOR_HOME_PATH, ROLE_AUTHOR, canOpenPath } from '@/config/role-access';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
+import { useQuery } from '@tanstack/react-query';
+import { useRoleId } from './session-role';
 
 /**
  * Keeps an author inside the pages they may use (#011). Hiding the menu is not
@@ -18,8 +19,9 @@ import { authMeQueryOptions } from '@/features/auth/api/queries';
 export function RoleRouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: user, isPending, isError } = useQuery(authMeQueryOptions);
-  const roleId = user?.role?.id;
+  const { isError } = useQuery(authMeQueryOptions);
+  // The session cookie's role until /me answers (vande #040).
+  const { roleId, isPending } = useRoleId();
 
   // The console's landing page is the admin overview; an author has none.
   const landsOnAdminHome =

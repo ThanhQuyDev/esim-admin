@@ -20,6 +20,8 @@ import {
 } from '../../api/queries';
 import { blogListFilters, categoryOptions, parentOptions } from '../../utils/category-filter';
 import { columns } from './columns';
+import { useRoleId } from '@/components/layout/session-role';
+import { ROLE_AUTHOR } from '@/config/role-access';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
@@ -59,6 +61,8 @@ export function BlogsTable() {
   const categories = categoryOptions(categoryTree);
   const parents = parentOptions(categoryTree, params.category);
   const authors = authorOptions ?? [];
+  // An author only ever sees their own posts (vande #040).
+  const isAuthor = useRoleId().roleId === ROLE_AUTHOR;
 
   const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
   const { table } = useDataTable({
@@ -116,28 +120,31 @@ export function BlogsTable() {
           </SelectContent>
         </Select>
         {/* Author select (#046). Only authors that have articles are offered, so
-            the list can never be filtered down to nothing. */}
-        <Select
-          value={params.author ?? ALL}
-          onValueChange={(value) =>
-            startTransition(() => {
-              setParams({ author: value === ALL ? null : value, page: 1 });
-            })
-          }
-          disabled={authors.length === 0}
-        >
-          <SelectTrigger className='h-8 w-44' aria-label='Lọc theo tác giả'>
-            <SelectValue placeholder='Tác giả' />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Tất cả tác giả</SelectItem>
-            {authors.map((author) => (
-              <SelectItem key={author.slug} value={author.slug}>
-                {author.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            the list can never be filtered down to nothing. Not for an author,
+            who only sees their own posts (vande #040). */}
+        {!isAuthor && (
+          <Select
+            value={params.author ?? ALL}
+            onValueChange={(value) =>
+              startTransition(() => {
+                setParams({ author: value === ALL ? null : value, page: 1 });
+              })
+            }
+            disabled={authors.length === 0}
+          >
+            <SelectTrigger className='h-8 w-44' aria-label='Lọc theo tác giả'>
+              <SelectValue placeholder='Tác giả' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Tất cả tác giả</SelectItem>
+              {authors.map((author) => (
+                <SelectItem key={author.slug} value={author.slug}>
+                  {author.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select
           value={params.isPublished ?? ALL}
           onValueChange={(value) =>

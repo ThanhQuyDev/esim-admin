@@ -11,6 +11,8 @@ import { RoleRouteGuard } from '@/components/layout/role-route-guard';
 import { MustChangePasswordRedirect } from '@/features/partner-portal/components/must-change-password-gate';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { SessionRoleProvider } from '@/components/layout/session-role';
+import { roleIdFromToken } from '@/lib/session-role';
 
 export const metadata: Metadata = {
   title: IS_PARTNER_PORTAL ? 'Cổng đối tác esim.vn' : 'Quản trị esim.vn',
@@ -30,25 +32,29 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Persisting the sidebar state in the cookie.
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
+  // Who is signed in, from the first paint (vande #040).
+  const roleId = roleIdFromToken(cookieStore.get('token')?.value);
   return (
-    <KBar>
-      <BreadcrumbProvider>
-        <InfobarProvider>
-          <SidebarProvider defaultOpen={defaultOpen}>
-            <AppSidebar />
-            <SidebarInset className='overflow-x-hidden overflow-y-auto lg:overflow-hidden'>
-              <Header />
-              {/* A temporary password keeps a partner on the form (doitac-1410 #011). */}
-              {IS_PARTNER_PORTAL && <MustChangePasswordRedirect />}
-              {/* page main content */}
-              <RoleRouteGuard>{children}</RoleRouteGuard>
-              {/* page main content ends */}
-              <ScrollToTop />
-            </SidebarInset>
-          </SidebarProvider>
-          <ChatNotificationListener />
-        </InfobarProvider>
-      </BreadcrumbProvider>
-    </KBar>
+    <SessionRoleProvider roleId={roleId}>
+      <KBar>
+        <BreadcrumbProvider>
+          <InfobarProvider>
+            <SidebarProvider defaultOpen={defaultOpen}>
+              <AppSidebar />
+              <SidebarInset className='overflow-x-hidden overflow-y-auto lg:overflow-hidden'>
+                <Header />
+                {/* A temporary password keeps a partner on the form (doitac-1410 #011). */}
+                {IS_PARTNER_PORTAL && <MustChangePasswordRedirect />}
+                {/* page main content */}
+                <RoleRouteGuard>{children}</RoleRouteGuard>
+                {/* page main content ends */}
+                <ScrollToTop />
+              </SidebarInset>
+            </SidebarProvider>
+            <ChatNotificationListener />
+          </InfobarProvider>
+        </BreadcrumbProvider>
+      </KBar>
+    </SessionRoleProvider>
   );
 }
