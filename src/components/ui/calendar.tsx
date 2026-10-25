@@ -17,20 +17,24 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn('p-3', className)}
+      className={cn('relative p-3', className)}
       classNames={{
         months: 'flex flex-col sm:flex-row gap-2',
         month: 'flex flex-col gap-4',
-        month_caption: 'flex justify-center pt-1 relative items-center w-full',
+        month_caption: 'flex justify-center h-7 items-center w-full',
         caption_label: 'text-sm font-medium',
-        nav: 'flex items-center gap-1',
+        // react-day-picker 9 renders the arrows outside the caption, so they
+        // are pinned to the top row here. The old v8 classes left them
+        // floating over the day grid, where a click on "next month" picked a
+        // day and closed the picker (vande #038).
+        nav: 'pointer-events-none absolute inset-x-3 top-3 z-10 flex h-7 items-center justify-between',
         button_previous: cn(
           buttonVariants({ variant: 'outline' }),
-          'absolute left-1 size-7 bg-transparent p-0 opacity-50 hover:opacity-100'
+          'pointer-events-auto size-7 bg-transparent p-0 opacity-50 hover:opacity-100'
         ),
         button_next: cn(
           buttonVariants({ variant: 'outline' }),
-          'absolute right-1 size-7 bg-transparent p-0 opacity-50 hover:opacity-100'
+          'pointer-events-auto size-7 bg-transparent p-0 opacity-50 hover:opacity-100'
         ),
         month_grid: 'w-full border-collapse space-x-1',
         weekdays: 'flex',

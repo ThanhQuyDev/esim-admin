@@ -78,8 +78,12 @@ function OccurredAtPicker({
             </Button>
           </PopoverTrigger>
           <PopoverContent className='w-auto p-0' align='start'>
+            {/* Wider than the default, with roomier days (vande #038). */}
             <Calendar
               mode='single'
+              className='p-4'
+              classNames={{ weekday: 'text-muted-foreground w-10 font-normal text-[0.8rem]' }}
+              styles={{ day_button: { width: '2.5rem', height: '2.5rem' } }}
               selected={selected}
               defaultMonth={selected}
               onSelect={(day) => {
