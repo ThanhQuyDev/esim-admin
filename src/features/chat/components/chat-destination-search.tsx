@@ -112,7 +112,9 @@ export function ChatDestinationSearch() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder='Tìm quốc gia / khu vực...'
-            className='h-8 pr-8 pl-8 text-xs'
+            // 16px on phones: iOS zooms the whole page into any field typed
+            // in smaller text, which blew the chat up (vande #045).
+            className='h-9 pr-8 pl-8 text-base sm:h-8 sm:text-xs'
             aria-label='Tìm quốc gia hoặc khu vực'
             data-testid='chat-destination-input'
           />
