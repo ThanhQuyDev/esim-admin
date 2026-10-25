@@ -270,6 +270,14 @@ export type PartnerDepositRequest = {
   creditedVnd?: number;
   rejectionReason?: string | null;
   rejectedAt?: string | null;
+  // Listed beside withdrawals on "Tài chính" (vande #067):
+  /** The month it was asked in, as YYYY-MM. */
+  period?: string;
+  /** The account the partner has on file. */
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountHolder?: string | null;
+  bankAccountLast4?: string | null;
 };
 
 export type OrderPartnerCommission = {
@@ -615,11 +623,15 @@ export type PayoutSummary = {
   paidThisMonth: { totalVnd: number; partners: number };
   paidAllTime: { totalVnd: number; partners: number };
   distributionDeposit: { totalVnd: number; partners: number };
+  /** Deposits waiting on an admin to confirm them (vande #067). */
+  depositRequested?: { totalVnd: number; partners: number; requests: number };
 };
 
 /** A withdrawal request with the partner and the account behind it (#069). */
 export type AdminPayoutRow = {
   id: number;
+  /** "Mã yêu cầu", e.g. RT000123 (vande #067). */
+  code?: string;
   partnerId: number;
   contactName: string | null;
   /** A company by its own name (doitac-1410 #057). */

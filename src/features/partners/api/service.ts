@@ -222,13 +222,11 @@ export async function adjustPartnerWallet(
   });
 }
 
+/** Deposit requests, filtered like the withdrawals beside them (vande #067). */
 export async function getDepositRequests(
-  status?: string,
-  search?: string
+  filters: PayoutFilters = {}
 ): Promise<PartnerDepositRequest[]> {
-  return apiClient<PartnerDepositRequest[]>(
-    `/partners/deposit-requests${toQuery({ status, search })}`
-  );
+  return apiClient<PartnerDepositRequest[]>(`/partners/deposit-requests${toQuery(filters)}`);
 }
 
 /** "Từ chối", with the reason the partner reads (doitac-1410 #063). */

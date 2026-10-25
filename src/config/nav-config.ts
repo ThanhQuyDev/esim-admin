@@ -266,11 +266,6 @@ export const navGroups: NavGroup[] = [
             access: { role: [1] }
           },
           {
-            title: 'Yêu cầu nạp ký quỹ',
-            url: '/dashboard/partners/deposit-requests',
-            access: { role: [1] }
-          },
-          {
             // Renamed per #063: the page is where commission is reconciled,
             // not only listed.
             title: 'Hoa hồng & Đối soát',

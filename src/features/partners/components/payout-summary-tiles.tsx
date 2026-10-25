@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * The four figures at the head of "Tài chính" (#067).
+ * The figures at the head of "Tài chính" (#067).
  *
  * Two kinds of money point opposite ways here: what is owed out to marketing
  * partners, and what distribution partners have paid in and not yet spent.
@@ -46,7 +46,7 @@ export function PayoutSummaryTiles() {
   if (!data) return null;
 
   return (
-    <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4'>
+    <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5'>
       <Tile
         label='Đang yêu cầu thanh toán'
         amountVnd={data.payoutRequested.totalVnd}
@@ -71,6 +71,15 @@ export function PayoutSummaryTiles() {
         partners={data.distributionDeposit.partners}
         partnersLabel='đối tác phân phối / API'
         hint='Số dư đối tác đã nạp và chưa dùng đến'
+      />
+      {/* Deposits waiting on an admin — mostly companies paying by their own
+          bank transfer (vande #067). */}
+      <Tile
+        label='Đang yêu cầu ký quỹ'
+        amountVnd={data.depositRequested?.totalVnd ?? 0}
+        partners={data.depositRequested?.partners ?? 0}
+        partnersLabel={`đối tác · ${data.depositRequested?.requests ?? 0} yêu cầu`}
+        hint='Yêu cầu nạp ký quỹ đang chờ admin duyệt'
       />
     </div>
   );

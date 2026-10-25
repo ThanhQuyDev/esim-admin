@@ -288,7 +288,7 @@ export function PartnerOverviewView() {
           <QueueRow
             label='Ký quỹ chờ xác nhận'
             count={queue.pendingDeposits}
-            href='/dashboard/partners/deposit-requests'
+            href='/dashboard/partners/payouts?type=deposit'
           />
           <QueueRow
             label='Hoa hồng chờ ghi nhận'
