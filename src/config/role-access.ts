@@ -11,6 +11,24 @@ export const ROLE_AUTHOR = 3;
 /** Roles that may sign in to the admin console at all. */
 export const ADMIN_CONSOLE_ROLES = [ROLE_ADMIN, ROLE_AUTHOR];
 
+/**
+ * The role the console works as (vande #071). A user may hold several — an
+ * admin who also writes, a customer who was also made an author — and the
+ * console shows the most it may: admin if that is the main role, author if
+ * writing is among them, otherwise the main role (which cannot sign in).
+ */
+export function consoleRoleId(
+  mainRoleId: number | string | undefined | null,
+  extraRoleIds: readonly (number | string)[] | undefined | null = []
+): number | undefined {
+  const main = Number(mainRoleId);
+  if (main === ROLE_ADMIN) return ROLE_ADMIN;
+  if (main === ROLE_AUTHOR || (extraRoleIds ?? []).map(Number).includes(ROLE_AUTHOR)) {
+    return ROLE_AUTHOR;
+  }
+  return Number.isFinite(main) ? main : undefined;
+}
+
 /** Where an author lands, and the only pages they may open. */
 export const AUTHOR_HOME_PATH = '/dashboard/blogs';
 const AUTHOR_PATH_PREFIXES = ['/dashboard/blogs', '/dashboard/profile'];

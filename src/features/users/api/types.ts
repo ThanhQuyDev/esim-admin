@@ -51,6 +51,8 @@ export type User = {
     descriptionEn?: string | null;
   } | null;
   role: { id: number; name: string };
+  /** Roles ticked on top of the main one: 2 = user, 3 = author (vande #071). */
+  extraRoleIds?: number[];
   status: { id: number; name: string };
   createdAt: string;
   updatedAt: string;
@@ -87,6 +89,7 @@ export type CreateUserPayload = {
     descriptionEn?: string | null;
   };
   role?: { id: number };
+  extraRoleIds?: number[];
   status?: { id: number };
 };
 
@@ -108,5 +111,6 @@ export type UpdateUserPayload = {
     descriptionEn?: string | null;
   };
   role?: { id: number };
+  extraRoleIds?: number[];
   status?: { id: number };
 };

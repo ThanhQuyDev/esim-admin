@@ -3,6 +3,7 @@
 import { createContext, useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
+import { consoleRoleId } from '@/config/role-access';
 
 /**
  * The signed-in role as the server read it from the session cookie (vande
@@ -30,7 +31,8 @@ export function useRoleId(): { roleId: number | undefined; isPending: boolean } 
   const cookieRole = useContext(SessionRoleContext);
   const { data: user, isPending } = useQuery(authMeQueryOptions);
   return {
-    roleId: user?.role?.id ?? cookieRole,
+    // An author by an extra role works as an author here (vande #071).
+    roleId: user ? consoleRoleId(user.role?.id, user.extraRoleIds) : cookieRole,
     isPending: isPending && cookieRole === undefined
   };
 }

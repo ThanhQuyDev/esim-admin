@@ -10,6 +10,9 @@ import { formatDateVn, formatVnd } from '@/lib/format';
 import { TierBadge } from '@/features/membership-tiers/hooks/use-tier-labels';
 import { USER_STATUS_OPTIONS } from './options';
 
+/** Labels of the roles that may be ticked on top of the main one (vande #071). */
+const EXTRA_ROLE_LABEL: Record<number, string> = { 2: 'Người dùng', 3: 'Tác giả' };
+
 /** Customer code shown to staff: the user id, zero-padded (#056). */
 export function customerCode(id: number): string {
   return `KH-${String(id).padStart(6, '0')}`;
@@ -246,10 +249,19 @@ export const columns: ColumnDef<User>[] = [
       <DataTableColumnHeader column={column} title='Vai trò' />
     ),
     cell: ({ row }) => {
+      // The main role, then any ticked on top of it (vande #071).
+      const extra = (row.original.extraRoleIds ?? []).filter((id) => id !== row.original.role?.id);
       return (
-        <Badge variant='outline' className='capitalize'>
-          {row.original.role?.name}
-        </Badge>
+        <div className='flex flex-wrap gap-1' data-testid='user-roles'>
+          <Badge variant='outline' className='capitalize'>
+            {row.original.role?.name}
+          </Badge>
+          {extra.map((id) => (
+            <Badge key={id} variant='secondary'>
+              + {EXTRA_ROLE_LABEL[id] ?? `Vai trò ${id}`}
+            </Badge>
+          ))}
+        </div>
       );
     },
     enableColumnFilter: false

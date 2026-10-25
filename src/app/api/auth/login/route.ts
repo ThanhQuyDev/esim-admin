@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveAppMode } from '@/config/app-mode';
-import { ADMIN_CONSOLE_ROLES } from '@/config/role-access';
+import { ADMIN_CONSOLE_ROLES, consoleRoleId } from '@/config/role-access';
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 
@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
 
   // A storefront customer's password signs in to the same API, but the admin
   // console is for admins and authors only (#011) — no session is created.
-  const roleId = Number(data.user?.role?.id);
+  // An extra "Tác giả" role opens the console too (vande #071).
+  const roleId = Number(consoleRoleId(data.user?.role?.id, data.user?.extraRoleIds));
   if (
     resolveAppMode(req.headers.get('host')) === 'admin' &&
     !ADMIN_CONSOLE_ROLES.includes(roleId)

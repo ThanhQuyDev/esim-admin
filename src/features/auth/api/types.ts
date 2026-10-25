@@ -22,6 +22,8 @@ export interface AuthUser {
   lastName: string;
   photo: AuthPhoto | null;
   role: AuthRole;
+  /** Roles ticked on top of the main one (vande #071). */
+  extraRoleIds?: number[];
   status: AuthStatus;
   createdAt: string;
   updatedAt: string;

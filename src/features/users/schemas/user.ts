@@ -22,7 +22,24 @@ export const authorProfileSchema = z.object({
 /** Role id 3 = Tác giả. The backend refuses that role without a profile. */
 export const AUTHOR_ROLE_ID = '3';
 
-/** Author fields live on the same form; only required when the role is Tác giả. */
+/**
+ * Roles ticked on top of the main one (vande #071): 2 = Người dùng, 3 = Tác
+ * giả. Admin is only ever the main role.
+ */
+export const EXTRA_ROLE_OPTIONS = [
+  { value: '3', label: 'Tác giả', hint: 'Viết bài, có tên trong ô chọn tác giả' },
+  { value: '2', label: 'Người dùng', hint: 'Mua hàng ngoài web như khách' }
+];
+
+/** Whether this form's user writes articles — by main role or one on top. */
+export const writesArticles = (value: { roleId: string; extraRoleIds?: string[] }) =>
+  value.roleId === AUTHOR_ROLE_ID || (value.extraRoleIds ?? []).includes(AUTHOR_ROLE_ID);
+
+/** The extra roles to send: never the main role itself. */
+export const extraRoleIdsPayload = (value: { roleId: string; extraRoleIds?: string[] }) =>
+  (value.extraRoleIds ?? []).filter((id) => id !== value.roleId).map(Number);
+
+/** Author fields live on the same form; only required when the user writes. */
 const authorFormFields = {
   authorName: z.string().trim(),
   authorNameEn: z.string().trim(),
@@ -33,10 +50,10 @@ const authorFormFields = {
 };
 
 function requireAuthorProfile(
-  value: { roleId: string; authorName: string; authorSlug: string },
+  value: { roleId: string; extraRoleIds?: string[]; authorName: string; authorSlug: string },
   context: z.RefinementCtx
 ) {
-  if (value.roleId !== AUTHOR_ROLE_ID) return;
+  if (!writesArticles(value)) return;
   if (!value.authorName || value.authorName.length < 2) {
     context.addIssue({
       code: 'custom',
@@ -61,6 +78,7 @@ export const createUserSchema = z
     phoneNumber: phoneNumberSchema,
     password: z.string().min(6, 'Password must be at least 6 characters'),
     roleId: z.string().min(1, 'Please select a role'),
+    extraRoleIds: z.array(z.string()),
     statusId: z.string().min(1, 'Please select a status'),
     ...authorFormFields
   })
@@ -85,6 +103,7 @@ export const updateUserSchema = z
     email: z.string().email('Please enter a valid email'),
     phoneNumber: phoneNumberSchema,
     roleId: z.string().min(1, 'Please select a role'),
+    extraRoleIds: z.array(z.string()),
     statusId: z.string().min(1, 'Please select a status'),
     tierOverride: tierOverrideSchema,
     tierOverrideReason: z.string().trim(),

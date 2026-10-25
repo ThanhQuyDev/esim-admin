@@ -26,16 +26,70 @@ import {
   adminReferralCodeSchema,
   type CreateUserFormValues,
   type UpdateUserFormValues,
-  AUTHOR_ROLE_ID
+  EXTRA_ROLE_OPTIONS,
+  extraRoleIdsPayload,
+  writesArticles
 } from '../schemas/user';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const API_ROLE_OPTIONS = [
   { value: '1', label: 'Admin' },
   { value: '2', label: 'User' },
   // Role 3 exists in the backend and has its own tab in this list, but was
   // never selectable here — so no author could be created (#059).
-  { value: AUTHOR_ROLE_ID, label: 'Tác giả' }
+  { value: '3', label: 'Tác giả' }
 ];
+
+/** "Vai trò thêm" — roles on top of the main one (vande #071). */
+function ExtraRolesField({
+  mainRoleId,
+  value,
+  onChange
+}: {
+  mainRoleId: string;
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const options = EXTRA_ROLE_OPTIONS.filter((option) => option.value !== mainRoleId);
+  if (!mainRoleId || options.length === 0) return null;
+  return (
+    <div className='space-y-2' data-testid='extra-roles'>
+      <p className='text-sm font-medium'>Vai trò thêm</p>
+      <p className='text-muted-foreground text-xs'>
+        Tích thêm nếu người này cần làm nhiều việc — ví dụ admin cũng viết bài, hoặc dùng để mua thử
+        ngoài web.
+      </p>
+      <div className='flex flex-wrap gap-3'>
+        {options.map((option) => {
+          const checked = value.includes(option.value);
+          return (
+            <div
+              key={option.value}
+              className='hover:bg-muted flex items-start gap-2 rounded-md border px-3 py-2'
+            >
+              <Checkbox
+                id={`extra-role-${option.value}`}
+                checked={checked}
+                data-testid={`extra-role-${option.value}`}
+                onCheckedChange={(next) =>
+                  onChange(
+                    next
+                      ? [...value.filter((id) => id !== option.value), option.value]
+                      : value.filter((id) => id !== option.value)
+                  )
+                }
+              />
+              <label htmlFor={`extra-role-${option.value}`} className='cursor-pointer'>
+                <span className='block text-sm font-medium'>{option.label}</span>
+                <span className='text-muted-foreground block text-xs'>{option.hint}</span>
+              </label>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const API_STATUS_OPTIONS = [
   { value: '1', label: 'Hoạt động' },
@@ -83,6 +137,7 @@ function CreateUserDialog({
       phoneNumber: '',
       password: '',
       roleId: '',
+      extraRoleIds: [],
       statusId: '1',
       authorName: '',
       authorNameEn: '',
@@ -102,8 +157,9 @@ function CreateUserDialog({
         lastName: value.lastName,
         phoneNumber: value.phoneNumber.trim() || null,
         role: { id: Number(value.roleId) },
+        extraRoleIds: extraRoleIdsPayload(value),
         status: { id: Number(value.statusId) },
-        ...(value.roleId === AUTHOR_ROLE_ID ? { authorProfile: authorProfilePayload(value) } : {})
+        ...(writesArticles(value) ? { authorProfile: authorProfilePayload(value) } : {})
       };
       await createMutation.mutateAsync(payload);
     }
@@ -206,10 +262,27 @@ function CreateUserDialog({
             />
           </div>
 
-          {/* Author profile — required by the API for the Tác giả role (#059) */}
+          {/* "Vai trò thêm" (vande #071): an admin who also writes, an author
+              who also buys on the storefront. */}
           <form.Subscribe selector={(state) => state.values.roleId}>
-            {(roleId) =>
-              roleId === AUTHOR_ROLE_ID ? (
+            {(roleId) => (
+              <form.Field name='extraRoleIds'>
+                {(field) => (
+                  <ExtraRolesField
+                    mainRoleId={roleId}
+                    value={field.state.value}
+                    onChange={(next) => field.handleChange(next)}
+                  />
+                )}
+              </form.Field>
+            )}
+          </form.Subscribe>
+
+          {/* Author profile — required by the API for the Tác giả role (#059),
+              main or ticked on top (vande #071). */}
+          <form.Subscribe selector={(state) => writesArticles(state.values)}>
+            {(writes) =>
+              writes ? (
                 <div className='space-y-4 rounded-md border p-4'>
                   <p className='text-sm font-medium'>Thông tin tác giả</p>
                   <p className='text-muted-foreground text-xs'>
@@ -314,6 +387,7 @@ function EditUserDialog({
       phoneNumber: user.phoneNumber ?? '',
       referralCode: user.referralCode ?? '',
       roleId: String(user.role?.id ?? ''),
+      extraRoleIds: (user.extraRoleIds ?? []).map(String),
       statusId: String(user.status?.id ?? ''),
       tierOverride: user.tierOverride ?? 'auto',
       tierOverrideReason: user.tierOverrideReason ?? '',
@@ -348,8 +422,9 @@ function EditUserDialog({
         tierOverride: value.tierOverride === 'auto' ? null : value.tierOverride,
         tierOverrideReason: value.tierOverride === 'auto' ? null : value.tierOverrideReason.trim(),
         role: { id: Number(value.roleId) },
+        extraRoleIds: extraRoleIdsPayload(value),
         status: { id: Number(value.statusId) },
-        ...(value.roleId === AUTHOR_ROLE_ID ? { authorProfile: authorProfilePayload(value) } : {})
+        ...(writesArticles(value) ? { authorProfile: authorProfilePayload(value) } : {})
       };
       await updateMutation.mutateAsync({ id: user.id, values: payload });
     }
@@ -463,10 +538,27 @@ function EditUserDialog({
             }
           </form.Subscribe>
 
-          {/* Author profile — required by the API for the Tác giả role (#059) */}
+          {/* "Vai trò thêm" (vande #071): an admin who also writes, an author
+              who also buys on the storefront. */}
           <form.Subscribe selector={(state) => state.values.roleId}>
-            {(roleId) =>
-              roleId === AUTHOR_ROLE_ID ? (
+            {(roleId) => (
+              <form.Field name='extraRoleIds'>
+                {(field) => (
+                  <ExtraRolesField
+                    mainRoleId={roleId}
+                    value={field.state.value}
+                    onChange={(next) => field.handleChange(next)}
+                  />
+                )}
+              </form.Field>
+            )}
+          </form.Subscribe>
+
+          {/* Author profile — required by the API for the Tác giả role (#059),
+              main or ticked on top (vande #071). */}
+          <form.Subscribe selector={(state) => writesArticles(state.values)}>
+            {(writes) =>
+              writes ? (
                 <div className='space-y-4 rounded-md border p-4'>
                   <p className='text-sm font-medium'>Thông tin tác giả</p>
                   <p className='text-muted-foreground text-xs'>
