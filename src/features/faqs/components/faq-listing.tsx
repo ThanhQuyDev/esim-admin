@@ -14,7 +14,9 @@ export default function FaqListingPage() {
   const apiFilters = buildFaqApiFilters({
     name: searchParamsCache.get('name'),
     pageUrl: searchParamsCache.get('pageUrl'),
-    isActive: searchParamsCache.get('isActive')
+    isActive: searchParamsCache.get('isActive'),
+    createdFrom: searchParamsCache.get('createdFrom'),
+    createdTo: searchParamsCache.get('createdTo')
   });
   const filters = {
     page,

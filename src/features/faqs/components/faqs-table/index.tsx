@@ -14,6 +14,7 @@ import { bulkDeleteFaqsMutation, bulkSetFaqsActiveMutation } from '../../api/mut
 import { faqsQueryOptions } from '../../api/queries';
 import { buildFaqApiFilters } from '../../utils/faq-filters';
 import { columns } from './columns';
+import { CreatedDateRange } from '@/components/ui/table/created-date-range';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
@@ -25,6 +26,8 @@ export function FaqsTable() {
     pageUrl: parseAsString,
     // Status filter (#050), keyed by column id.
     isActive: parseAsArrayOf(parseAsString, ','),
+    createdFrom: parseAsString,
+    createdTo: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
   const apiFilters = buildFaqApiFilters(params);
@@ -92,6 +95,8 @@ export function FaqsTable() {
       />
       <DataTable table={table} totalRowCount={data.totalCount}>
         <DataTableToolbar table={table}>
+          {/* Thời gian tạo Từ – đến (vande #041). */}
+          <CreatedDateRange idPrefix='faq' />
           {/* Only shown with a selection, so the toolbar stays clean otherwise (#051). */}
           {selectedIds.length > 0 && (
             <div className='flex items-center gap-2'>

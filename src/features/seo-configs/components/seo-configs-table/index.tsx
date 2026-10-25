@@ -15,6 +15,7 @@ import { bulkDeleteSeoConfigsMutation, bulkSetSeoConfigsActiveMutation } from '.
 import { seoConfigsQueryOptions } from '../../api/queries';
 import { buildSeoConfigApiFilters } from '../../utils/seo-config-filters';
 import { columns } from './columns';
+import { CreatedDateRange } from '@/components/ui/table/created-date-range';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
@@ -28,6 +29,8 @@ export function SeoConfigsTable() {
     metaTitle: parseAsString,
     metaDescription: parseAsString,
     isActive: parseAsArrayOf(parseAsString, ','),
+    createdFrom: parseAsString,
+    createdTo: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
@@ -105,6 +108,8 @@ export function SeoConfigsTable() {
       />
       <DataTable table={table} totalRowCount={data.totalCount}>
         <DataTableToolbar table={table}>
+          {/* Thời gian tạo Từ – đến (vande #041). */}
+          <CreatedDateRange idPrefix='seo' />
           {/* Only shown with a selection, so the toolbar stays clean otherwise (#049). */}
           {selectedIds.length > 0 && (
             <div className='flex items-center gap-2'>

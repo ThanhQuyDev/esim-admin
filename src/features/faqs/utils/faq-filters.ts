@@ -13,6 +13,9 @@ export type FaqFilterParams = {
   pageUrl?: string | null;
   /** `['true']` / `['false']` from the select box. */
   isActive?: string[] | null;
+  /** Thời gian tạo Từ – đến, yyyy-mm-dd (vande #041). */
+  createdFrom?: string | null;
+  createdTo?: string | null;
 };
 
 export function buildFaqApiFilters(params: FaqFilterParams): Record<string, unknown> {
@@ -26,6 +29,8 @@ export function buildFaqApiFilters(params: FaqFilterParams): Record<string, unkn
   if (params.isActive?.length === 1) {
     filters.isActive = params.isActive[0] === 'true';
   }
+  if (params.createdFrom) filters.createdFrom = params.createdFrom;
+  if (params.createdTo) filters.createdTo = params.createdTo;
 
   return filters;
 }

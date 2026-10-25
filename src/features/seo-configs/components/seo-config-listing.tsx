@@ -16,7 +16,9 @@ export default function SeoConfigListingPage() {
     pageType: searchParamsCache.get('pageType'),
     metaTitle: searchParamsCache.get('metaTitle'),
     metaDescription: searchParamsCache.get('metaDescription'),
-    isActive: searchParamsCache.get('isActive')
+    isActive: searchParamsCache.get('isActive'),
+    createdFrom: searchParamsCache.get('createdFrom'),
+    createdTo: searchParamsCache.get('createdTo')
   });
 
   const sort = searchParamsCache.get('sort');

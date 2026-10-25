@@ -10,6 +10,7 @@ import {
 } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
+import { formatCreatedAt } from '@/components/ui/table/created-date-range';
 import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<SeoConfig>[] = [
@@ -105,6 +106,19 @@ export const columns: ColumnDef<SeoConfig>[] = [
       icon: Icons.text
     },
     enableColumnFilter: true
+  },
+  {
+    // When it was added (vande #041); the list is newest first.
+    id: 'createdAt',
+    accessorKey: 'createdAt',
+    header: ({ column }: { column: Column<SeoConfig, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Thời gian tạo' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-muted-foreground text-sm whitespace-nowrap'>
+        {formatCreatedAt(row.original.createdAt)}
+      </span>
+    )
   },
   {
     id: 'isActive',

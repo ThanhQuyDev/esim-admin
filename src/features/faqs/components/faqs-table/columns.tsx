@@ -6,6 +6,7 @@ import type { Faq } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { htmlToText } from '@/lib/html-text';
+import { formatCreatedAt } from '@/components/ui/table/created-date-range';
 import { CellAction } from './cell-action';
 
 export const columns: ColumnDef<Faq>[] = [
@@ -99,6 +100,18 @@ export const columns: ColumnDef<Faq>[] = [
     header: ({ column }: { column: Column<Faq, unknown> }) => (
       <DataTableColumnHeader column={column} title='Thứ tự' />
     )
+  },
+  {
+    // When it was added (vande #041); the list is newest first.
+    id: 'createdAt',
+    accessorKey: 'createdAt',
+    header: 'Thời gian tạo',
+    cell: ({ row }) => (
+      <span className='text-muted-foreground text-sm whitespace-nowrap'>
+        {formatCreatedAt(row.original.createdAt)}
+      </span>
+    ),
+    enableSorting: false
   },
   {
     id: 'isActive',
