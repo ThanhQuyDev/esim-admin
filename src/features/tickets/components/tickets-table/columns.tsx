@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { StatusTag } from '../status-tag';
+import { TicketDeadlineTag } from '../ticket-deadline-tag';
 import { CellAction } from './cell-action';
 import type { Ticket } from '../../api/types';
 
@@ -95,6 +96,14 @@ export const columns: ColumnDef<Ticket>[] = [
       <DataTableColumnHeader column={column} title='Trạng thái' />
     ),
     cell: ({ row }) => <StatusTag status={row.original.status} />,
+    enableSorting: false
+  },
+  {
+    // "Thời hạn xử lý" (vande #070): three hours from the ticket or the
+    // customer's latest message; red once it is late.
+    id: 'deadline',
+    header: 'Thời hạn xử lý',
+    cell: ({ row }) => <TicketDeadlineTag ticket={row.original} />,
     enableSorting: false
   },
   {

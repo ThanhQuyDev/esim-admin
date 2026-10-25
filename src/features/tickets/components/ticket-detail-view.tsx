@@ -16,6 +16,7 @@ import { ticketByIdQueryOptions } from '../api/queries';
 import { deleteTicketMutation } from '../api/mutations';
 import { ChangeStatusDropdown } from './change-status-dropdown';
 import { StatusTag } from './status-tag';
+import { TicketDeadlineTag } from './ticket-deadline-tag';
 import { SafeHtml } from './safe-html';
 import { AttachmentsGrid } from './attachments-grid';
 import { TicketConversation } from './ticket-conversation';
@@ -77,7 +78,7 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
             </Link>
           </Button>
           <div className='space-y-1'>
-            <div className='flex items-center gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
               {/* The ticket number, because that is what appears in the subject
                   line of every email about it and what the customer quotes
                   (#059). The raw id is no use to anyone outside the CMS. */}
@@ -85,6 +86,8 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
                 {ticket.ticketNumber ?? `#${ticket.id}`}
               </span>
               <StatusTag status={ticket.status} />
+              {/* "Thời hạn xử lý" — three hours to answer (vande #070). */}
+              <TicketDeadlineTag ticket={ticket} className='flex-row items-center gap-2' />
             </div>
             <h1 className='text-xl font-semibold leading-tight break-words'>{ticket.subject}</h1>
           </div>
