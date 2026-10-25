@@ -151,7 +151,9 @@ import {
   IconDeviceSim,
   IconWallet,
   IconHeadset,
-  IconTicket
+  IconTicket,
+  IconInfinity,
+  IconWifi
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -331,6 +333,8 @@ export const Icons = {
   forms: IconClipboardText,
   slash: IconSlash,
   calendar: IconCalendar,
+  wifi: IconWifi,
+  infinity: IconInfinity,
   galleryVerticalEnd: IconStack2,
   moreHorizontal: IconDots,
 

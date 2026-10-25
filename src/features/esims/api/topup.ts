@@ -3,11 +3,20 @@ import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { esimKeys } from './queries';
 
+/**
+ * One package as `GET /topup/:iccid/packages` returns it — the same list the
+ * storefront's top-up screen reads (vande #063: the dialog used to read
+ * `title` / `data` / `day`, fields the API never sends, so every package
+ * showed as its bare id).
+ */
 export type TopupPackage = {
   packageId: string;
-  title?: string;
-  data?: string;
-  day?: number;
+  /** "3 GB - 100 SMS - 100 Mins - 30 Days" */
+  name: string;
+  /** "3 GB" */
+  dataAmountText?: string;
+  durationDays?: number;
+  isUnlimited?: boolean;
   retailPrice: number;
   vndPrice?: number | null;
 };

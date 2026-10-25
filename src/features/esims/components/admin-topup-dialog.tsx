@@ -30,11 +30,76 @@ interface AdminTopupDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function packageLabel(pkg: TopupPackage): string {
-  const parts = [pkg.title || pkg.packageId];
-  if (pkg.data) parts.push(pkg.data);
-  if (pkg.day) parts.push(`${pkg.day} ngày`);
-  return parts.join(' · ');
+/**
+ * Calls and SMS a package includes, read off its name — the API has no field
+ * of its own for them, and a package with none says nothing about either:
+ * "3 GB - 100 SMS - 100 Mins - 30 Days" → "100 phút · 100 SMS".
+ */
+export function callSmsLabel(name: string): string | null {
+  const mins = /(\d+)\s*(?:mins?|minutes?|phút)\b/i.exec(name)?.[1];
+  const sms = /(\d+)\s*sms\b/i.exec(name)?.[1];
+  const parts = [mins && `${mins} phút`, sms && `${sms} SMS`].filter(Boolean);
+  return parts.length ? parts.join(' · ') : null;
+}
+
+/**
+ * A package the way the customer's own top-up screen shows it (vande #063):
+ * labels for data (or unlimited), calls & SMS and days, the name below.
+ */
+function PackageCard({
+  pkg,
+  active,
+  onSelect
+}: {
+  pkg: TopupPackage;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const callSms = callSmsLabel(pkg.name ?? '');
+  return (
+    <button
+      type='button'
+      onClick={onSelect}
+      data-testid={`admin-topup-package-${pkg.packageId}`}
+      className={`flex w-full items-start justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
+        active ? 'border-primary bg-primary/5 ring-primary/20 ring-2' : 'hover:bg-muted/50'
+      }`}
+    >
+      <div className='min-w-0 flex-1 space-y-1.5'>
+        <div className='flex flex-wrap items-center gap-1.5'>
+          {pkg.isUnlimited ? (
+            <span className='inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'>
+              <Icons.infinity className='size-3' />
+              Không giới hạn
+            </span>
+          ) : (
+            pkg.dataAmountText && (
+              <span className='inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300'>
+                <Icons.wifi className='size-3' />
+                {pkg.dataAmountText}
+              </span>
+            )
+          )}
+          {callSms && (
+            <span className='inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300'>
+              <Icons.phone className='size-3' />
+              {callSms}
+            </span>
+          )}
+          {!!pkg.durationDays && (
+            <span className='inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'>
+              <Icons.calendar className='size-3' />
+              {pkg.durationDays} ngày
+            </span>
+          )}
+        </div>
+        <p className='text-sm leading-snug'>{pkg.name || pkg.packageId}</p>
+      </div>
+      <span className='shrink-0 font-mono text-sm font-medium'>
+        {pkg.vndPrice ? formatVnd(pkg.vndPrice) : `$${pkg.retailPrice}`}
+      </span>
+    </button>
+  );
 }
 
 /**
@@ -109,24 +174,14 @@ export function AdminTopupDialog({ iccid, open, onOpenChange }: AdminTopupDialog
           </p>
         ) : (
           <div className='max-h-[40vh] space-y-2 overflow-auto'>
-            {packages.map((pkg) => {
-              const isActive = selected?.packageId === pkg.packageId;
-              return (
-                <button
-                  key={pkg.packageId}
-                  type='button'
-                  onClick={() => setSelected(pkg)}
-                  className={`flex w-full items-center justify-between rounded-md border p-3 text-left transition-colors ${
-                    isActive ? 'border-primary bg-muted' : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <span className='text-sm'>{packageLabel(pkg)}</span>
-                  <span className='font-mono text-sm'>
-                    {pkg.vndPrice ? formatVnd(pkg.vndPrice) : `$${pkg.retailPrice}`}
-                  </span>
-                </button>
-              );
-            })}
+            {packages.map((pkg) => (
+              <PackageCard
+                key={pkg.packageId}
+                pkg={pkg}
+                active={selected?.packageId === pkg.packageId}
+                onSelect={() => setSelected(pkg)}
+              />
+            ))}
           </div>
         )}
 
