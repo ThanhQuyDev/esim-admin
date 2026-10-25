@@ -288,11 +288,26 @@ export const navGroups: NavGroup[] = [
             title: 'Hạng đối tác',
             url: '/dashboard/partners/tiers',
             access: { role: [1] }
+          }
+        ]
+      },
+      {
+        // Its own menu (vande #072): email announcements to customers, and
+        // the partner announcements that used to sit under "Quản lý đối tác".
+        title: 'Thông báo',
+        url: '#',
+        icon: 'notification',
+        isActive: false,
+        access: { role: [1] },
+        items: [
+          {
+            title: 'Thông báo khách hàng',
+            url: '/dashboard/announcements?tab=customer',
+            access: { role: [1] }
           },
           {
-            // Announcements to partners, by group or to everybody (#079).
-            title: 'Thông báo',
-            url: '/dashboard/partners/notifications',
+            title: 'Thông báo đối tác',
+            url: '/dashboard/announcements?tab=partner',
             access: { role: [1] }
           }
         ]

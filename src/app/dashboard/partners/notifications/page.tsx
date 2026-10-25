@@ -1,18 +1,9 @@
-import PageContainer from '@/components/layout/page-container';
-import { PartnerNotificationsView } from '@/features/partners/components/partner-notifications-view';
+import { redirect } from 'next/navigation';
 
-export const metadata = {
-  title: 'Dashboard: Thông báo đối tác'
-};
-
+/**
+ * Partner announcements moved to the "Thông báo" menu, beside the customer
+ * ones (vande #072). Old links land on that tab.
+ */
 export default function PartnerNotificationsPage() {
-  return (
-    <PageContainer
-      scrollable
-      pageTitle='Thông báo'
-      pageDescription='Soạn và gửi thông báo tới từng nhóm hoặc toàn bộ đối tác.'
-    >
-      <PartnerNotificationsView />
-    </PageContainer>
-  );
+  redirect('/dashboard/announcements?tab=partner');
 }

@@ -214,16 +214,15 @@ function NotificationFields({
 
 const canSave = (v: FormValue) => v.title.trim().length > 0 && noticePreview(v.body).length > 0;
 
-export function PartnerNotificationsView() {
+/**
+ * "Soạn thông báo gửi đối tác" (vande #072): its own page now. The list of
+ * what was sent is the "Thông báo đối tác" tab, so it is not repeated here.
+ */
+export function PartnerNotificationComposer({ onSent }: { onSent?: () => void }) {
   const [form, setForm] = useState<FormValue>(EMPTY);
   // The editor takes its content once; a new key starts it empty again.
   const [formKey, setFormKey] = useState(0);
-  const [viewing, setViewing] = useState<PartnerNotification | null>(null);
-  const [editing, setEditing] = useState<PartnerNotification | null>(null);
-  const [deleting, setDeleting] = useState<PartnerNotification | null>(null);
-
   const queryClient = useQueryClient();
-  const { data: sent = [], isLoading } = useQuery(notificationsQueryOptions());
 
   const send = useMutation({
     ...createNotificationMutation,
@@ -234,9 +233,35 @@ export function PartnerNotificationsView() {
       setForm(EMPTY);
       setFormKey((k) => k + 1);
       void queryClient.invalidateQueries();
+      onSent?.();
     },
     onError: (e: Error) => toast.error(e.message || 'Gửi thông báo thất bại')
   });
+
+  return (
+    <div className='space-y-4 rounded-lg border p-4'>
+      <NotificationFields key={formKey} value={form} onChange={setForm} />
+      <div className='flex flex-wrap justify-end gap-2'>
+        <Button
+          disabled={!canSave(form) || send.isPending}
+          data-testid='partner-notification-send'
+          onClick={() => send.mutate(form)}
+        >
+          {send.isPending ? 'Đang gửi…' : 'Gửi thông báo'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** The partner announcements sent so far — view, edit, delete (#079). */
+export function PartnerNotificationsList() {
+  const [viewing, setViewing] = useState<PartnerNotification | null>(null);
+  const [editing, setEditing] = useState<PartnerNotification | null>(null);
+  const [deleting, setDeleting] = useState<PartnerNotification | null>(null);
+
+  const queryClient = useQueryClient();
+  const { data: sent = [], isLoading } = useQuery(notificationsQueryOptions());
 
   const remove = useMutation({
     mutationFn: (id: number) => deleteNotification(id),
@@ -250,18 +275,7 @@ export function PartnerNotificationsView() {
 
   return (
     <div className='grid min-w-0 grid-cols-1 gap-6'>
-      <div className='space-y-4 rounded-lg border p-4'>
-        <p className='text-sm font-medium'>Soạn thông báo</p>
-        <NotificationFields key={formKey} value={form} onChange={setForm} />
-        <div className='flex justify-end'>
-          <Button disabled={!canSave(form) || send.isPending} onClick={() => send.mutate(form)}>
-            {send.isPending ? 'Đang gửi…' : 'Gửi thông báo'}
-          </Button>
-        </div>
-      </div>
-
       <div>
-        <p className='mb-3 text-sm font-medium'>Đã gửi</p>
         {isLoading ? (
           <div className='flex justify-center py-12'>
             <Icons.spinner className='h-6 w-6 animate-spin' />
