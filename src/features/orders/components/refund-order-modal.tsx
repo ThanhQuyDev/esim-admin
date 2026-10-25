@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { useTierLabels } from '@/features/membership-tiers/hooks/use-tier-labels';
 import { useEffect, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -29,13 +30,6 @@ import {
   type AiraloRefundReason
 } from '../utils/airalo-refund';
 import type { OrderItem, RefundOrderRequest, RefundMode } from '../api/types';
-
-const TIER_LABEL: Record<string, string> = {
-  traveler: 'Du khách',
-  silver: 'Bạc',
-  gold: 'Vàng',
-  platinum: 'Bạch kim'
-};
 
 export type RefundBenefits = {
   tier: string | null;
@@ -62,7 +56,9 @@ function reversalVnd(
 /** "Cashback 3% (hạng Vàng lúc đặt) …" — the lines of "Tác động khi hoàn tiền". */
 export function benefitLines(
   benefits: RefundBenefits | undefined,
-  r: { totalOrderValue: number; alreadyRefunded: number; amountVnd: number }
+  r: { totalOrderValue: number; alreadyRefunded: number; amountVnd: number },
+  /** Tier code → name as the admin set it (vande #066). */
+  tierLabel: (code: string) => string = (code) => code
 ): string[] {
   if (!benefits) {
     return [
@@ -70,7 +66,7 @@ export function benefitLines(
       'Thưởng giới thiệu sẽ bị thu hồi (nếu có)'
     ];
   }
-  const tier = benefits.tier ? (TIER_LABEL[benefits.tier] ?? benefits.tier) : null;
+  const tier = benefits.tier ? tierLabel(benefits.tier) : null;
   const pct = benefits.cashbackPercent;
   const head = `Cashback${pct != null ? ` ${pct}%` : ''}${tier ? ` (hạng ${tier} lúc đặt)` : ''}`;
   const lines = [
@@ -83,7 +79,7 @@ export function benefitLines(
     lines.push('Thưởng giới thiệu: đơn không dùng mã giới thiệu, không thu hồi gì');
   } else {
     const refTier = ref.referrerTierSnapshot
-      ? ` (người giới thiệu hạng ${TIER_LABEL[ref.referrerTierSnapshot] ?? ref.referrerTierSnapshot} lúc đặt)`
+      ? ` (người giới thiệu hạng ${tierLabel(ref.referrerTierSnapshot)} lúc đặt)`
       : '';
     lines.push(
       ref.status === 'credited'
@@ -128,6 +124,7 @@ export function RefundOrderModal({
   onSubmit,
   isSubmitting
 }: RefundOrderModalProps) {
+  const tierLabels = useTierLabels();
   const [mode, setMode] = useState<RefundMode>('wallet');
   const totalOrderValue = Number(payableVndPrice ?? 0) + Number(walletSpentVndAmount ?? 0);
   const alreadyRefunded = Number(refundedAmountVnd ?? 0);
@@ -570,11 +567,15 @@ export function RefundOrderModal({
             <ul className='space-y-1 text-xs' data-testid='refund-impact'>
               {/* The real figures of this order, not a fixed 2% / 10.000đ
                   (vande #065). */}
-              {benefitLines(benefits, {
-                totalOrderValue,
-                alreadyRefunded,
-                amountVnd: amountVnd || 0
-              }).map((line) => (
+              {benefitLines(
+                benefits,
+                {
+                  totalOrderValue,
+                  alreadyRefunded,
+                  amountVnd: amountVnd || 0
+                },
+                tierLabels.label
+              ).map((line) => (
                 <li key={line} className='text-muted-foreground'>
                   • {line}
                 </li>

@@ -10,7 +10,7 @@ export default function MembershipTiersPage() {
     <PageContainer
       scrollable
       pageTitle='Hạng khách hàng'
-      pageDescription='Cấu hình ngưỡng chi tiêu, % hoàn tiền và thưởng giới thiệu của 4 hạng thành viên.'
+      pageDescription='Cấu hình ngưỡng chi tiêu, % hoàn tiền và thưởng giới thiệu của từng hạng thành viên; thêm, đổi tên hoặc xoá hạng.'
     >
       <MembershipTiersView />
     </PageContainer>

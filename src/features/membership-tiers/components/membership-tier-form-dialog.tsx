@@ -11,26 +11,38 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { MembershipTier, UpdateMembershipTierPayload } from '../api/types';
+import type {
+  CreateMembershipTierPayload,
+  MembershipTier,
+  UpdateMembershipTierPayload
+} from '../api/types';
 
 interface MembershipTierFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** The tier being edited, or null to add a new one (vande #066). */
   tier: MembershipTier | null;
-  label: string;
+  /** The whole ladder, so a new tier's threshold can be checked against it. */
+  allTiers: MembershipTier[];
   lowerTier: MembershipTier | null;
   higherTier: MembershipTier | null;
-  onSubmit: (data: UpdateMembershipTierPayload) => void;
+  onSubmit: (data: UpdateMembershipTierPayload | CreateMembershipTierPayload) => void;
   isSubmitting: boolean;
 }
 
-const EMPTY_FORM = { minimumSpendVnd: '0', cashbackPercent: '0', referralRewardVnd: '0' };
+const EMPTY_FORM = {
+  name: '',
+  nameEn: '',
+  minimumSpendVnd: '',
+  cashbackPercent: '0',
+  referralRewardVnd: '0'
+};
 
 export function MembershipTierFormDialog({
   open,
   onOpenChange,
   tier,
-  label,
+  allTiers,
   lowerTier,
   higherTier,
   onSubmit,
@@ -39,22 +51,40 @@ export function MembershipTierFormDialog({
   const [form, setForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
-    if (!open || !tier) return;
+    if (!open) return;
+    if (!tier) {
+      setForm(EMPTY_FORM);
+      return;
+    }
     setForm({
+      name: tier.name,
+      nameEn: tier.nameEn ?? '',
       minimumSpendVnd: String(tier.minimumSpendVnd),
       cashbackPercent: String(tier.cashbackPercent),
       referralRewardVnd: String(tier.referralRewardVnd)
     });
   }, [open, tier]);
 
-  const isLowest = lowerTier === null;
+  const isCreate = tier === null;
+  const isLowest = !isCreate && lowerTier === null;
   const minimumSpend = Number(form.minimumSpendVnd);
   const cashback = Number(form.cashbackPercent);
   const referral = Number(form.referralRewardVnd);
+  const sameThreshold = isCreate
+    ? allTiers.find((t) => t.minimumSpendVnd === minimumSpend)
+    : undefined;
 
   let problem = '';
-  if (!Number.isInteger(minimumSpend) || minimumSpend < 0) {
+  if (!form.name.trim()) {
+    problem = 'Vui lòng nhập tên hạng.';
+  } else if (form.minimumSpendVnd.trim() === '') {
+    problem = 'Vui lòng nhập ngưỡng chi tiêu.';
+  } else if (!Number.isInteger(minimumSpend) || minimumSpend < 0) {
     problem = 'Ngưỡng chi tiêu phải là số nguyên không âm.';
+  } else if (isCreate && minimumSpend === 0) {
+    problem = 'Chỉ hạng thấp nhất bắt đầu từ 0đ; hạng mới cần ngưỡng lớn hơn 0.';
+  } else if (sameThreshold) {
+    problem = `Hạng ${sameThreshold.name} đã dùng ngưỡng này. Mỗi hạng cần một ngưỡng riêng.`;
   } else if (lowerTier && minimumSpend <= lowerTier.minimumSpendVnd) {
     problem = `Ngưỡng phải lớn hơn ${lowerTier.minimumSpendVnd.toLocaleString('vi-VN')}đ của hạng thấp hơn.`;
   } else if (higherTier && minimumSpend >= higherTier.minimumSpendVnd) {
@@ -68,6 +98,8 @@ export function MembershipTierFormDialog({
   function handleSubmit() {
     if (problem) return;
     onSubmit({
+      name: form.name.trim(),
+      nameEn: form.nameEn.trim() || null,
       ...(isLowest ? {} : { minimumSpendVnd: minimumSpend }),
       cashbackPercent: Math.round(cashback * 100) / 100,
       referralRewardVnd: referral
@@ -78,13 +110,38 @@ export function MembershipTierFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-[450px]'>
         <DialogHeader>
-          <DialogTitle>Sửa hạng {label}</DialogTitle>
+          <DialogTitle>{isCreate ? 'Thêm hạng khách hàng' : `Sửa hạng ${tier.name}`}</DialogTitle>
           <DialogDescription>
-            Áp dụng cho đơn hàng và lượt giới thiệu phát sinh sau khi lưu.
+            {isCreate
+              ? 'Hạng mới tự xếp vào bậc thang theo ngưỡng chi tiêu.'
+              : 'Áp dụng cho đơn hàng và lượt giới thiệu phát sinh sau khi lưu.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className='space-y-4'>
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <div className='space-y-2'>
+              <Label htmlFor='tierName'>Tên hạng</Label>
+              <Input
+                id='tierName'
+                maxLength={60}
+                placeholder='VD: Kim cương'
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='tierNameEn'>Tên tiếng Anh</Label>
+              <Input
+                id='tierNameEn'
+                maxLength={60}
+                placeholder='VD: Diamond'
+                value={form.nameEn}
+                onChange={(e) => setForm((f) => ({ ...f, nameEn: e.target.value }))}
+              />
+            </div>
+          </div>
+
           <div className='space-y-2'>
             <Label htmlFor='minimumSpendVnd'>Ngưỡng tổng chi tiêu (VND)</Label>
             <Input
@@ -138,7 +195,7 @@ export function MembershipTierFormDialog({
             disabled={Boolean(problem) || isSubmitting}
             isLoading={isSubmitting}
           >
-            Lưu
+            {isCreate ? 'Thêm hạng' : 'Lưu'}
           </Button>
         </DialogFooter>
       </DialogContent>

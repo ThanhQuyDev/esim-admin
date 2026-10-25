@@ -9,6 +9,9 @@ import { getSortingStateParser } from '@/lib/parsers';
 import { walletsQueryOptions } from '../../api/queries';
 import { buildWalletApiFilters } from '../../utils/wallet-filters';
 import { columns } from './columns';
+import { useMemo } from 'react';
+import { useTierLabels } from '@/features/membership-tiers/hooks/use-tier-labels';
+import { withTierFilterOptions } from '@/features/users/components/users-table/options';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
@@ -38,9 +41,12 @@ export function WalletsTable() {
   const { data } = useSuspenseQuery(walletsQueryOptions(filters));
   const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
 
+  const { options: tierOptions } = useTierLabels();
+  const tableColumns = useMemo(() => withTierFilterOptions(columns, tierOptions), [tierOptions]);
+
   const { table } = useDataTable({
     data: data.data,
-    columns,
+    columns: tableColumns,
     pageCount,
     shallow: true,
     debounceMs: 500,

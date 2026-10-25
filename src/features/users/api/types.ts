@@ -1,6 +1,7 @@
 // --- API User types ---
 
-export type MembershipTier = 'traveler' | 'silver' | 'gold' | 'platinum';
+/** traveler, silver, gold, platinum or a tier an admin added (vande #066). */
+export type MembershipTier = string;
 export type TierSource = 'automatic' | 'override';
 
 export type TierBenefits = {

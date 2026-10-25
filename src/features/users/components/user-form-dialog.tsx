@@ -6,6 +6,7 @@ import { FormDialog } from '@/components/ui/form-dialog';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { useMutation } from '@tanstack/react-query';
+import { useTierLabels } from '@/features/membership-tiers/hooks/use-tier-labels';
 import { createUserMutation, updateUserMutation } from '../api/mutations';
 import type { User, CreateUserPayload, UpdateUserPayload } from '../api/types';
 import { toast } from 'sonner';
@@ -40,21 +41,6 @@ const API_STATUS_OPTIONS = [
   { value: '1', label: 'Hoạt động' },
   { value: '2', label: 'Không hoạt động' }
 ];
-
-const TIER_OPTIONS = [
-  { value: 'auto', label: 'Tự động theo chi tiêu' },
-  { value: 'traveler', label: 'Du khách' },
-  { value: 'silver', label: 'Du khách bạc' },
-  { value: 'gold', label: 'Du khách vàng' },
-  { value: 'platinum', label: 'Du khách bạch kim' }
-];
-
-const TIER_LABELS = {
-  traveler: 'Du khách',
-  silver: 'Du khách bạc',
-  gold: 'Du khách vàng',
-  platinum: 'Du khách bạch kim'
-} as const;
 
 interface UserFormDialogProps {
   user?: User;
@@ -308,6 +294,18 @@ function EditUserDialog({
     onError: (error) => toast.error(describeUserSaveError(error, 'Cập nhật người dùng thất bại'))
   });
 
+  // The ladder as the admin set it, so a tier added in "Hạng khách hàng" can
+  // be given by hand too (vande #066).
+  const tierLabels = useTierLabels();
+  const tierOptions = [
+    { value: 'auto', label: 'Tự động theo chi tiêu' },
+    ...tierLabels.options,
+    // A customer held on a tier that has since gone keeps it selectable.
+    ...(user.tierOverride && !tierLabels.options.some((o) => o.value === user.tierOverride)
+      ? [{ value: user.tierOverride, label: tierLabels.label(user.tierOverride) }]
+      : [])
+  ];
+
   const form = useAppForm({
     defaultValues: {
       firstName: user.firstName ?? '',
@@ -436,7 +434,9 @@ function EditUserDialog({
           </div>
 
           <div className='rounded-xl border bg-muted/40 p-4'>
-            <p className='text-sm font-medium'>Hạng tự động: {TIER_LABELS[user.automaticTier]}</p>
+            <p className='text-sm font-medium'>
+              Hạng tự động: {tierLabels.label(user.automaticTier)}
+            </p>
             <p className='text-muted-foreground mt-1 text-sm'>
               Tổng chi tiêu: {formatVnd(user.lifetimeSpendVnd)}
             </p>
@@ -445,7 +445,7 @@ function EditUserDialog({
           <FormSelectField
             name='tierOverride'
             label='Hạng thành viên'
-            options={TIER_OPTIONS}
+            options={tierOptions}
             description='Hạng thủ công thay thế toàn bộ quyền lợi tự động.'
           />
 

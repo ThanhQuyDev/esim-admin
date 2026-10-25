@@ -7,7 +7,8 @@ import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 import { formatDateVn, formatVnd } from '@/lib/format';
 
-import { TIER_LABELS, TIER_OPTIONS, TIER_STYLES, USER_STATUS_OPTIONS } from './options';
+import { TierBadge } from '@/features/membership-tiers/hooks/use-tier-labels';
+import { USER_STATUS_OPTIONS } from './options';
 
 /** Customer code shown to staff: the user id, zero-padded (#056). */
 export function customerCode(id: number): string {
@@ -122,9 +123,7 @@ export const columns: ColumnDef<User>[] = [
       const tier = row.original.membershipTier;
       return (
         <div className='flex flex-col items-start gap-1'>
-          <Badge variant='outline' className={TIER_STYLES[tier]}>
-            {TIER_LABELS[tier]}
-          </Badge>
+          <TierBadge tier={tier} />
           {row.original.tierSource === 'override' && (
             <span className='text-muted-foreground text-xs'>Đã điều chỉnh</span>
           )}
@@ -135,7 +134,8 @@ export const columns: ColumnDef<User>[] = [
     meta: {
       label: 'Hạng thành viên',
       variant: 'multiSelect' as const,
-      options: TIER_OPTIONS
+      // Filled in from the ladder by the table (vande #066).
+      options: [] as { value: string; label: string }[]
     }
   },
   {

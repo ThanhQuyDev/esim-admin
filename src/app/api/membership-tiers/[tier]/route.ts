@@ -9,3 +9,11 @@ export async function PATCH(
   const body = await request.text();
   return proxyAdminMembershipTiers(`/${encodeURIComponent(tier)}`, { method: 'PATCH', body });
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ tier: string }> }
+) {
+  const { tier } = await params;
+  return proxyAdminMembershipTiers(`/${encodeURIComponent(tier)}`, { method: 'DELETE' });
+}

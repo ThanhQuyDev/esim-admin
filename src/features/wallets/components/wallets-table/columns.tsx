@@ -9,11 +9,7 @@ import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 // Same helpers the customer list uses, so Mã KH and Hạng KH read identically on
 // both screens (#057).
 import { customerCode } from '@/features/users/components/users-table/columns';
-import {
-  TIER_LABELS,
-  TIER_OPTIONS,
-  TIER_STYLES
-} from '@/features/users/components/users-table/options';
+import { TierBadge } from '@/features/membership-tiers/hooks/use-tier-labels';
 
 export const columns: ColumnDef<WalletListItem>[] = [
   {
@@ -85,16 +81,13 @@ export const columns: ColumnDef<WalletListItem>[] = [
     cell: ({ row }) => {
       const tier = row.original.user?.membershipTier;
       if (!tier) return <span className='text-muted-foreground text-sm'>—</span>;
-      return (
-        <Badge variant='outline' className={TIER_STYLES[tier]}>
-          {TIER_LABELS[tier]}
-        </Badge>
-      );
+      return <TierBadge tier={tier} />;
     },
     meta: {
       label: 'Hạng KH',
       variant: 'multiSelect' as const,
-      options: TIER_OPTIONS
+      // Filled in from the ladder by the table (vande #066).
+      options: [] as { value: string; label: string }[]
     },
     enableColumnFilter: true,
     enableSorting: false

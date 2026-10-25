@@ -8,7 +8,8 @@ export const phoneNumberSchema = z
     message: 'Số điện thoại không hợp lệ'
   });
 
-export const tierOverrideSchema = z.enum(['auto', 'traveler', 'silver', 'gold', 'platinum']);
+/** 'auto', or a tier code — admins can add tiers, so not a fixed list (vande #066). */
+export const tierOverrideSchema = z.string().min(1).max(32);
 
 export const authorProfileSchema = z.object({
   name: z.string().min(2, 'Tên tác giả phải có ít nhất 2 ký tự'),
