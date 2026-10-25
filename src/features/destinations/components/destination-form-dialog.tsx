@@ -56,19 +56,29 @@ export function DestinationFormDialog({
   return <CreateDestinationDialog open={open} onOpenChange={onOpenChange} />;
 }
 
+/**
+ * What the website shows for a destination with no photo of its own (vande
+ * #074) — the same picture the storefront ships, so the admin sees it here.
+ */
+const DEFAULT_DESTINATION_IMAGE = '/images/destination-default.jpg';
+
 function ImageUploadField({
   label,
   currentUrl,
   onFileSelect,
-  file
+  file,
+  fallbackUrl
 }: {
   label: string;
   currentUrl?: string | null;
   onFileSelect: (file: File | null) => void;
   file: File | null;
+  /** Shown, and said to be in use, while there is no picture of its own. */
+  fallbackUrl?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previewUrl = file ? URL.createObjectURL(file) : currentUrl;
+  const showFallback = !previewUrl && Boolean(fallbackUrl);
 
   return (
     <div className='space-y-2'>
@@ -77,6 +87,15 @@ function ImageUploadField({
         {previewUrl && (
           <div className='relative h-16 w-20 overflow-hidden rounded-lg border-2 border-border/50 shadow-sm'>
             <img src={previewUrl} alt={label} className='h-full w-full object-cover' />
+          </div>
+        )}
+        {showFallback && (
+          <div
+            className='relative h-16 w-20 overflow-hidden rounded-lg border-2 border-dashed border-border shadow-sm'
+            data-testid='destination-default-preview'
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- a small static preview */}
+            <img src={fallbackUrl} alt='' className='h-full w-full object-cover opacity-80' />
           </div>
         )}
         <Button type='button' variant='outline' size='sm' onClick={() => inputRef.current?.click()}>
@@ -89,6 +108,11 @@ function ImageUploadField({
           </Button>
         )}
       </div>
+      {showFallback && (
+        <p className='text-muted-foreground text-xs'>
+          Chưa có ảnh riêng — trang điểm đến trên web đang dùng ảnh mặc định này.
+        </p>
+      )}
       <input
         ref={inputRef}
         type='file'
@@ -344,7 +368,12 @@ function CreateDestinationDialog({
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <ImageUploadField label='Ảnh cờ' onFileSelect={setFlagFile} file={flagFile} />
-            <ImageUploadField label='Ảnh đại diện' onFileSelect={setAvatarFile} file={avatarFile} />
+            <ImageUploadField
+              label='Ảnh đại diện'
+              onFileSelect={setAvatarFile}
+              file={avatarFile}
+              fallbackUrl={DEFAULT_DESTINATION_IMAGE}
+            />
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -544,6 +573,7 @@ function EditDestinationDialog({
               currentUrl={destination.avatarUrl}
               onFileSelect={setAvatarFile}
               file={avatarFile}
+              fallbackUrl={DEFAULT_DESTINATION_IMAGE}
             />
           </div>
 
