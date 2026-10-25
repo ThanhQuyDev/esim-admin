@@ -4,28 +4,63 @@ import { useEffect, useRef } from 'react';
 import { requestDesktopPermission, useChatStore } from '../utils/store';
 
 const TITLE_PREFIX = /^\(\d+\+?\) /;
+const ALERT_TITLE = 'Tin nhắn mới...';
+const FLASH_MS = 1500;
 
 /**
- * "(3) Quản trị esim.vn" in the browser tab while customers wait for a reply,
- * as the storefront already does (v3 #012) — visible from any other tab.
+ * The browser tab while customers wait for a reply: "(3) Quản trị esim.vn"
+ * (v3 #012), and — while the tab is in the background — alternating with
+ * "(3) Tin nhắn mới..." every 1.5 s, the way the storefront tab flashes for
+ * the customer (vande #044). Back on the tab, the plain count stays.
  *
- * Next.js rewrites the title on every navigation, so the prefix is re-applied
- * whenever the <title> changes rather than set once.
+ * Next.js rewrites the title on every navigation, so the page's own title is
+ * picked up whenever the <title> changes to something this hook did not write.
  */
 function useWaitingCountInTitle(waiting: number) {
+  const base = useRef('');
+  const written = useRef('');
+  const alertPhase = useRef(false);
+
   useEffect(() => {
+    const count = waiting > 99 ? '99+' : String(waiting);
     const apply = () => {
-      const base = document.title.replace(TITLE_PREFIX, '');
-      const next = waiting > 0 ? `(${waiting > 99 ? '99+' : waiting}) ${base}` : base;
+      if (document.title !== written.current) {
+        base.current = document.title.replace(TITLE_PREFIX, '');
+      }
+      const next =
+        waiting > 0
+          ? `(${count}) ${alertPhase.current ? ALERT_TITLE : base.current}`
+          : base.current;
+      written.current = next;
       if (document.title !== next) document.title = next;
     };
     apply();
 
     const observer = new MutationObserver(apply);
     observer.observe(document.head, { subtree: true, childList: true, characterData: true });
+
+    const timer = window.setInterval(() => {
+      // Flash only in the background, as on the storefront.
+      const flash = waiting > 0 && document.hidden;
+      if (!flash && !alertPhase.current) return;
+      alertPhase.current = flash ? !alertPhase.current : false;
+      apply();
+    }, FLASH_MS);
+    const onVisibility = () => {
+      if (!document.hidden && alertPhase.current) {
+        alertPhase.current = false;
+        apply();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     return () => {
       observer.disconnect();
-      document.title = document.title.replace(TITLE_PREFIX, '');
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+      alertPhase.current = false;
+      document.title = base.current || document.title.replace(TITLE_PREFIX, '');
+      written.current = document.title;
     };
   }, [waiting]);
 }
