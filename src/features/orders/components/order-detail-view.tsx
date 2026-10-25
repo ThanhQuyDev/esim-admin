@@ -404,6 +404,16 @@ function deviceLabel(device: Order['device']): string {
   return parts.length ? parts.join(' · ') : '—';
 }
 
+/**
+ * "Ho Chi Minh City, Vietnam - IP: 14.161.22.33" (vande #058). Orders placed
+ * before it was recorded, and orders placed by staff, have neither.
+ */
+function buyerLocationText(location?: string | null, ip?: string | null): string {
+  if (!location && !ip) return '—';
+  if (!ip) return location!;
+  return location ? `${location} - IP: ${ip}` : `IP: ${ip}`;
+}
+
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
   const [refundOpen, setRefundOpen] = useState(false);
@@ -465,7 +475,9 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
     (order.walletSpentVndAmount ?? 0) > 0 || (order.cashbackAmountVnd ?? 0) > 0;
 
   return (
-    <div className='grid gap-6'>
+    // `min-w-0` on every card: a long install link (an eSIM's LPA) used to
+    // stretch the whole page to 1300px on a phone (vande #058).
+    <div className='grid min-w-0 grid-cols-1 gap-6 *:min-w-0'>
       <RefundOrderModal
         orderId={order.id}
         orderNumber={order.orderNumber}
@@ -805,14 +817,25 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
       {(order.user || hasWalletPayment) && (
         <Card>
           <CardHeader>
-            <CardTitle>Khách hàng</CardTitle>
+            {/* The customer's ID sits beside the title, boxed, so the rows
+                below have room for "Vị trí & IP" (vande #058). */}
+            <CardTitle className='flex flex-wrap items-center justify-between gap-2'>
+              Khách hàng
+              {order.user && (
+                <span
+                  className='rounded-md border px-2 py-0.5 font-mono text-xs font-medium'
+                  data-testid='customer-id'
+                >
+                  ID: {order.user.id}
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent
             className={order.user && hasWalletPayment ? 'grid gap-6 md:grid-cols-2' : 'space-y-3'}
           >
             {order.user && (
               <div className='space-y-3'>
-                <InfoRow label='ID' value={order.user.id} />
                 <InfoRow label='Email' value={order.user.email} />
                 <InfoRow
                   label='Họ và tên'
@@ -821,6 +844,14 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   }
                 />
                 <InfoRow label='Số điện thoại' value={order.user.phoneNumber || '—'} />
+                <InfoRow
+                  label='Vị trí & IP'
+                  value={
+                    <span data-testid='customer-location'>
+                      {buyerLocationText(order.buyerLocation, order.buyerIp)}
+                    </span>
+                  }
+                />
               </div>
             )}
             {hasWalletPayment && (

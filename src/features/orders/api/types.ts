@@ -38,6 +38,9 @@ export type OrderDevice = {
 export type Order = {
   id: number;
   userId: number;
+  /** "Vị trí & IP" of the buyer (vande #058). */
+  buyerIp?: string | null;
+  buyerLocation?: string | null;
   /** Ordered in bulk from a file: mailed spaced out, or as a list (vande #057). */
   bulkMode?: 'email' | 'file' | null;
   bulkEmailIntervalSec?: number | null;
