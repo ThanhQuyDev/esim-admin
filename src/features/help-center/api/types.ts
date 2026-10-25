@@ -116,9 +116,10 @@ const PARENT_DATA: Record<HelpCenterParent, LocalizedEntry> = {
     en: { key: 'setting-up', label: 'Setting up' },
     vi: { key: 'cai-dat', label: 'Cài đặt' }
   },
+  // Renamed (vande #077); the old names are in PARENT_ALIASES.
   'using-esim': {
-    en: { key: 'using-esim', label: 'Using esim.vn eSIM' },
-    vi: { key: 'su-dung-esim', label: 'Sử dụng eSIM esim.vn' }
+    en: { key: 'using-your-esim', label: 'Using your eSIM' },
+    vi: { key: 'su-dung-esim', label: 'Sử dụng eSIM' }
   },
   'device-compatibility': {
     en: { key: 'device-compatibility', label: 'Device compatibility' },
@@ -137,17 +138,31 @@ const PARENT_DATA: Record<HelpCenterParent, LocalizedEntry> = {
     vi: { key: 'tim-cau-tra-loi', label: 'Tìm câu trả lời' }
   },
   'esim-functions': {
-    en: { key: 'esim-functions', label: 'eSIM functions' },
-    vi: { key: 'chuc-nang-esim', label: 'Chức năng eSIM' }
+    en: { key: 'esim-features', label: 'eSIM features' },
+    vi: { key: 'tinh-nang-esim', label: 'Tính năng eSIM' }
   },
   'esim-basics': {
     en: { key: 'esim-basics', label: 'eSIM basics' },
-    vi: { key: 'co-ban-ve-esim', label: 'Cơ bản về eSIM' }
+    vi: { key: 'kien-thuc-co-ban-ve-esim', label: 'Kiến thức cơ bản về eSIM' }
   },
   'about-esimvn': {
     en: { key: 'about-esimvn', label: 'About esim.vn' },
     vi: { key: 've-esim-vn', label: 'Về esim.vn' }
   }
+};
+
+/**
+ * Keys and labels sections had before they were renamed (vande #077), so an
+ * article saved under one still opens with its section selected.
+ */
+const PARENT_ALIASES: Record<string, HelpCenterParent> = {
+  'Using esim.vn eSIM': 'using-esim',
+  'Sử dụng eSIM esim.vn': 'using-esim',
+  'chuc-nang-esim': 'esim-functions',
+  'eSIM functions': 'esim-functions',
+  'Chức năng eSIM': 'esim-functions',
+  'co-ban-ve-esim': 'esim-basics',
+  'Cơ bản về eSIM': 'esim-basics'
 };
 
 const PARENT_CATEGORY_MAP: Record<HelpCenterParent, HelpCenterCategory> = {
@@ -185,6 +200,7 @@ const findCategoryId = (input: string): HelpCenterCategory | null => {
 };
 
 const findParentId = (input: string): HelpCenterParent | null => {
+  if (PARENT_ALIASES[input]) return PARENT_ALIASES[input];
   for (const id of Object.keys(PARENT_DATA) as HelpCenterParent[]) {
     const entry = PARENT_DATA[id];
     if (
