@@ -20,6 +20,7 @@ import {
 } from '../schemas/region';
 import { FormDialog } from '@/components/ui/form-dialog';
 import { DestinationSelector } from './destination-selector';
+import { ParentRegionSelect } from './parent-region-select';
 
 interface RegionFormDialogProps {
   region?: Region;
@@ -95,6 +96,7 @@ function CreateDialog({
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [selectedDestinationIds, setSelectedDestinationIds] = useState<number[]>([]);
+  const [parentId, setParentId] = useState<number | null>(null);
 
   const createMutation = useMutation({
     ...createRegionMutation,
@@ -105,6 +107,7 @@ function CreateDialog({
       setAvatarFile(null);
       setIconFile(null);
       setSelectedDestinationIds([]);
+      setParentId(null);
     },
     onError: (error) => toast.error(error.message || 'Tạo khu vực thất bại')
   });
@@ -152,6 +155,7 @@ function CreateDialog({
           ...(value.description && { description: value.description }),
           ...(value.descriptionVi && { descriptionVi: value.descriptionVi }),
           ...(value.providers && { providers: value.providers }),
+          ...(parentId && { parentId }),
           ...(selectedDestinationIds.length > 0 && { destinationIds: selectedDestinationIds })
         };
 
@@ -187,15 +191,19 @@ function CreateDialog({
     >
       <form.AppForm>
         <form.Form id='region-form-dialog' className='space-y-5'>
-          <FormTextField
-            name='name'
-            label='Tên'
-            required
-            placeholder='Liên minh Châu Âu'
-            validators={{
-              onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
-            }}
-          />
+          {/* "Khu vực cha" beside the name (vande #035). */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <FormTextField
+              name='name'
+              label='Tên'
+              required
+              placeholder='Liên minh Châu Âu'
+              validators={{
+                onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
+              }}
+            />
+            <ParentRegionSelect value={parentId} onChange={setParentId} />
+          </div>
 
           {/* The two slugs are what an editor compares against each other (#035). */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -302,6 +310,7 @@ function EditDialogForm({
   const [selectedDestinationIds, setSelectedDestinationIds] = useState<number[]>(
     region.destinations?.map((d) => d.id) ?? []
   );
+  const [parentId, setParentId] = useState<number | null>(region.parentId ?? null);
 
   const updateMutation = useMutation({
     ...updateRegionMutation,
@@ -347,19 +356,21 @@ function EditDialogForm({
         const payload: UpdateRegionPayload = {
           name: value.name,
           slug: value.slug || undefined,
-          slugVi: value.slugVi || undefined,
+          slugVi: value.slugVi || null,
           ...(avatarUrl && { avatarUrl }),
           ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular,
           isActive: value.isActive,
-          title: value.title || undefined,
-          titleVi: value.titleVi || undefined,
-          description: value.description || undefined,
-          descriptionVi: value.descriptionVi || undefined,
+          title: value.title || null,
+          titleVi: value.titleVi || null,
+          description: value.description || null,
+          descriptionVi: value.descriptionVi || null,
           // Always sent, so emptying the editor clears the note (#078).
           notice: value.notice ?? '',
           noticeVi: value.noticeVi ?? '',
-          providers: value.providers || undefined,
+          providers: value.providers || null,
+          // Always sent, so "Không có" takes the region off its parent (#035).
+          parentId,
           destinationIds: selectedDestinationIds
         };
 
@@ -398,15 +409,19 @@ function EditDialogForm({
     >
       <form.AppForm>
         <form.Form id='region-form-dialog' className='space-y-5'>
-          <FormTextField
-            name='name'
-            label='Tên'
-            required
-            placeholder='Liên minh Châu Âu'
-            validators={{
-              onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
-            }}
-          />
+          {/* "Khu vực cha" beside the name (vande #035). */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <FormTextField
+              name='name'
+              label='Tên'
+              required
+              placeholder='Liên minh Châu Âu'
+              validators={{
+                onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
+              }}
+            />
+            <ParentRegionSelect regionId={region.id} value={parentId} onChange={setParentId} />
+          </div>
 
           {/* The two slugs are what an editor compares against each other (#035). */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>

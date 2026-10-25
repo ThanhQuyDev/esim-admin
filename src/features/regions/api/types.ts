@@ -29,6 +29,8 @@ export type Region = {
   notice?: string | null;
   noticeVi?: string | null;
   providers: string | null;
+  /** "Khu vực cha" (vande #035): listed as another pack on that region's page. */
+  parentId?: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -62,6 +64,7 @@ export type CreateRegionPayload = {
   notice?: string | null;
   noticeVi?: string | null;
   providers?: string | null;
+  parentId?: number | null;
   destinationIds?: number[];
 };
 

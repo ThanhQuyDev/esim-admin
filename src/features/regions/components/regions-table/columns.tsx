@@ -6,6 +6,7 @@ import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
 import { ACTIVE_OPTIONS, PROVIDER_OPTIONS, YES_NO_OPTIONS } from '@/lib/catalog-filters';
+import { ParentRegionName } from '../parent-region-select';
 
 export const columns: ColumnDef<Region>[] = [
   {
@@ -42,6 +43,7 @@ export const columns: ColumnDef<Region>[] = [
       <div className='flex flex-col'>
         <span className='font-medium'>{row.original.name}</span>
         <span className='text-muted-foreground text-xs'>{row.original.slug}</span>
+        {row.original.parentId ? <ParentRegionName parentId={row.original.parentId} /> : null}
       </div>
     ),
     meta: {
