@@ -53,6 +53,7 @@ import {
   type PortalPeriod
 } from './portal-period-filter';
 import { internalTierNote } from './internal-tier-note';
+import { tierMonthHints } from './tier-threshold';
 
 /** A day per bar; a longer window is capped so the chart stays readable. */
 const DAYS_MAX = 120;
@@ -329,11 +330,11 @@ export function PortalOverviewView() {
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <p className='text-muted-foreground text-sm'>
-                  {tier?.next
-                    ? `Còn ${formatVnd(tier.toNextTierVnd)} doanh số để lên hạng ${tier.next.tierName}.`
-                    : 'Bạn đang ở hạng cao nhất của chương trình.'}
-                </p>
+                {tierMonthHints(tier).map((hint) => (
+                  <p key={hint} className='text-muted-foreground text-sm'>
+                    {hint}
+                  </p>
+                ))}
               </>
             )}
           </CardContent>

@@ -350,7 +350,13 @@ export type MySummary = {
      * backwards.
      */
     effectiveFrom?: string | null;
+    /** The month counted towards next month's tier, `YYYY-MM` (vande #053). */
+    period?: string;
+    /** Valid revenue so far this month — next month's tier rests on it. */
+    monthRevenueVnd?: number;
     toNextTierVnd: number;
+    /** Still missing this month to stay on the current tier next month. */
+    toKeepTierVnd?: number;
     progressPercent: number;
     /** A negotiated tier outside the revenue ladder (doitac-1410 #024). */
     isInternal?: boolean;
@@ -457,11 +463,13 @@ export type MyCoupon = {
 export type MyTierEvaluation = {
   id: number;
   evaluatedAt: string;
+  /** The month reviewed, `YYYY-MM`; null on a change by hand (vande #053). */
+  period?: string | null;
   revenueVnd: string | number;
   validOrders: number;
   tierBefore: string | null;
   tierAfter: string | null;
-  result: 'promoted' | 'unchanged';
+  result: 'promoted' | 'demoted' | 'unchanged' | 'manual';
 };
 
 /** Branding a partner sets for their own portal page. */

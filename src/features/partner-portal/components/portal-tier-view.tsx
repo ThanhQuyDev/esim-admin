@@ -38,8 +38,15 @@ import {
   myTiersQueryOptions,
   mySummaryQueryOptions
 } from '../api/queries';
-import { tierThresholdLabel } from './tier-threshold';
+import { tierMonthHints, tierMonthLabel, tierThresholdLabel } from './tier-threshold';
 import { internalTierNote } from './internal-tier-note';
+
+const RESULT_LABEL: Record<string, string> = {
+  promoted: 'Nâng hạng',
+  demoted: 'Xuống hạng',
+  unchanged: 'Duy trì hạng',
+  manual: 'Điều chỉnh bởi esim.vn'
+};
 
 export function PortalTierView() {
   // The same screen serves both programmes (#049). A marketing partner's tier
@@ -111,11 +118,11 @@ export function PortalTierView() {
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                {next && (
-                  <p className='text-muted-foreground text-xs'>
-                    Còn {formatVnd(summary?.tier.toNextTierVnd)} doanh số hợp lệ.
+                {tierMonthHints(summary?.tier).map((hint) => (
+                  <p key={hint} className='text-muted-foreground text-xs'>
+                    {hint}
                   </p>
-                )}
+                ))}
               </div>
             )}
             <div className='flex flex-wrap gap-2'>
@@ -138,13 +145,16 @@ export function PortalTierView() {
         <Card>
           <CardHeader>
             <CardTitle>Dữ liệu tính hạng</CardTitle>
-            <CardDescription>Tính từ các đơn hợp lệ đã qua thời gian xác minh.</CardDescription>
+            <CardDescription>
+              Doanh số hợp lệ của tháng này quyết định hạng của tháng sau.
+            </CardDescription>
           </CardHeader>
           <CardContent className='space-y-3'>
             {[
+              // Next month's tier rests on this month alone (vande #053).
               [
-                isDistribution ? 'Tiền đã chi tích luỹ' : 'Doanh số tích luỹ',
-                formatVnd(summary?.lifetime.revenueVnd)
+                `${isDistribution ? 'Tiền đã chi' : 'Doanh số'} ${tierMonthLabel(summary?.tier.period)}`,
+                formatVnd(summary?.tier.monthRevenueVnd)
               ],
               ['Đơn hợp lệ 30 ngày', (summary?.performance.orders ?? 0).toLocaleString('vi-VN')],
               ...(isDistribution
@@ -170,7 +180,7 @@ export function PortalTierView() {
         <CardHeader>
           <CardTitle>Quyền lợi theo hạng</CardTitle>
           <CardDescription>
-            Quyền lợi áp dụng từ kỳ kế tiếp sau khi kết quả đánh giá được khoá.
+            Hạng xét lại ngày 1 hằng tháng theo doanh số tháng trước — có thể lên hoặc xuống hạng.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -248,7 +258,7 @@ export function PortalTierView() {
             <Table>
               <TableHeader className='bg-muted'>
                 <TableRow>
-                  <TableHead>Kỳ đánh giá</TableHead>
+                  <TableHead>Tháng xét</TableHead>
                   <TableHead>Hạng trước</TableHead>
                   <TableHead>Hạng sau</TableHead>
                   <TableHead className='text-right'>Đơn hợp lệ</TableHead>
@@ -262,7 +272,7 @@ export function PortalTierView() {
                     <TableCell colSpan={6} className='h-24 text-center'>
                       <p className='text-muted-foreground text-sm'>Chưa có kỳ đánh giá nào.</p>
                       <p className='text-muted-foreground mt-1 text-xs'>
-                        Kỳ đầu tiên được chốt vào cuối tháng sau khi tài khoản được duyệt.
+                        Hạng được xét ngày 1 hằng tháng theo doanh số của tháng trước.
                       </p>
                     </TableCell>
                   </TableRow>
@@ -270,7 +280,16 @@ export function PortalTierView() {
                 {(evaluations ?? []).map((e) => (
                   <TableRow key={e.id}>
                     <TableCell className='whitespace-nowrap'>
-                      {formatDateVn(e.evaluatedAt)}
+                      {e.period ? (
+                        <>
+                          <span className='capitalize'>{tierMonthLabel(e.period)}</span>
+                          <span className='text-muted-foreground block text-xs'>
+                            Xét ngày {formatDateVn(e.evaluatedAt)}
+                          </span>
+                        </>
+                      ) : (
+                        formatDateVn(e.evaluatedAt)
+                      )}
                     </TableCell>
                     <TableCell>{e.tierBefore ?? '—'}</TableCell>
                     <TableCell className='font-medium'>{e.tierAfter ?? '—'}</TableCell>
@@ -282,7 +301,7 @@ export function PortalTierView() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={e.result === 'promoted' ? 'default' : 'secondary'}>
-                        {e.result === 'promoted' ? 'Nâng hạng' : 'Duy trì hạng'}
+                        {RESULT_LABEL[e.result] ?? 'Duy trì hạng'}
                       </Badge>
                     </TableCell>
                   </TableRow>

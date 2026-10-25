@@ -45,7 +45,7 @@ const PRINCIPLES = [
     icon: Icons.clock,
     title: 'Kỳ đánh giá',
     description:
-      'Dữ liệu khoá vào cuối tháng. Quyền lợi mới áp dụng từ kỳ kế tiếp sau khi kết quả được xác nhận.'
+      'Xét theo từng tháng: tổng doanh số hợp lệ của tháng này quyết định hạng của tháng sau. Hạng được cập nhật ngày 1 hằng tháng — có thể lên hoặc xuống hạng.'
   },
   {
     icon: Icons.badgeCheck,
@@ -56,10 +56,18 @@ const PRINCIPLES = [
 ];
 
 const STEPS = [
-  { step: 1, title: 'Khoá dữ liệu', description: 'Tổng hợp đơn đã xác nhận trong kỳ.' },
+  {
+    step: 1,
+    title: 'Khoá dữ liệu',
+    description: 'Cuối tháng, tổng hợp doanh số các đơn hợp lệ trong tháng.'
+  },
   { step: 2, title: 'Loại trừ rủi ro', description: 'Bỏ đơn hoàn tiền, gian lận hoặc sai nguồn.' },
   { step: 3, title: 'Xác định hạng', description: 'Đối chiếu ngưỡng và quyền lợi tương ứng.' },
-  { step: 4, title: 'Áp dụng kỳ mới', description: 'Cập nhật hạng và thông báo cho đối tác.' }
+  {
+    step: 4,
+    title: 'Áp dụng tháng mới',
+    description: 'Ngày 1 tháng sau, hạng mới có hiệu lực cho cả tháng đó.'
+  }
 ];
 
 export function PortalTierRulesView() {
@@ -97,7 +105,7 @@ export function PortalTierRulesView() {
             <Badge variant='outline'>{sorted.length} hạng</Badge>
           </CardTitle>
           <CardDescription>
-            Các ngưỡng dưới đây áp dụng trên dữ liệu đã xác nhận trong kỳ đánh giá.
+            Các ngưỡng dưới đây áp dụng trên doanh số hợp lệ của một tháng.
           </CardDescription>
           <CardAction>
             <Button asChild size='sm' variant='outline'>
