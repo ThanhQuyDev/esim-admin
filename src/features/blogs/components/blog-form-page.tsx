@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppForm, useFormFields, FormErrors } from '@/components/ui/tanstack-form';
+import { BlogCategoryFields } from './blog-category-fields';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -457,6 +458,8 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
 
   const { FormTextField, FormSelectField, FormSwitchField, FormTextareaField } =
     useFormFields<BlogFormValues>();
+  const setCategory = useCallback((value: string) => form.setFieldValue('category', value), [form]);
+  const setParent = useCallback((value: string) => form.setFieldValue('parent', value), [form]);
   const isPending = createMut.isPending || updateMut.isPending || uploading;
 
   return (
@@ -493,8 +496,22 @@ export function BlogFormPage({ blog }: BlogFormPageProps) {
               </div>
               <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
                 <FormTextField name='slug' label='Slug' placeholder='duong-dan-bai-viet' />
-                <FormTextField name='category' label='Danh mục' placeholder='danh mục bài viết' />
-                <FormTextField name='parent' label='Danh mục con' placeholder='danh mục con' />
+                {/* Picked from the categories made in advance (vande #076). */}
+                <form.Subscribe
+                  selector={(state) =>
+                    [state.values.language, state.values.category, state.values.parent] as const
+                  }
+                >
+                  {([language, category, parent]) => (
+                    <BlogCategoryFields
+                      language={language}
+                      category={category ?? ''}
+                      parent={parent ?? ''}
+                      onCategoryChange={setCategory}
+                      onParentChange={setParent}
+                    />
+                  )}
+                </form.Subscribe>
               </div>
               <form.AppField name='timeRead'>
                 {(field) => (

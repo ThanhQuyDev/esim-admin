@@ -3,6 +3,7 @@ import type {
   Blog,
   BlogAuthorOption,
   BlogAuthorProfile,
+  BlogCatalogueCategory,
   BlogFilters,
   BlogsResponse,
   CreateBlogPayload,
@@ -38,6 +39,16 @@ export async function getBlogCategoryTree(): Promise<Record<string, string[]>> {
     if (category && !tree[category]) tree[category] = [];
   }
   return tree;
+}
+
+/**
+ * The made-in-advance categories, parent → children (vande #076) — what the
+ * post form offers instead of free text. Empty on failure, as above.
+ */
+export async function getBlogCategoryCatalogue(): Promise<BlogCatalogueCategory[]> {
+  return apiClient<BlogCatalogueCategory[]>('/blogs/category-tree').catch(
+    () => [] as BlogCatalogueCategory[]
+  );
 }
 
 /**

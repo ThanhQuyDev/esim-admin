@@ -14,6 +14,16 @@ export type BlogPlan = { id: number; [key: string]: unknown };
 /** One option in the list filter's author select box (#046). */
 export type BlogAuthorOption = { slug: string; name: string };
 
+/** A made-in-advance blog category with its sub-categories (vande #076). */
+export type BlogCatalogueCategory = {
+  id: number;
+  nameEn: string;
+  nameVi: string;
+  slugEn: string;
+  slugVi: string;
+  children: Omit<BlogCatalogueCategory, 'children'>[];
+};
+
 export type BlogAuthor = {
   id: number;
   userId: number;

@@ -3,6 +3,7 @@ import {
   getBlogs,
   getBlog,
   getBlogCategoryTree,
+  getBlogCategoryCatalogue,
   getBlogAuthorOptions,
   getBlogAuthorProfiles
 } from './service';
@@ -15,6 +16,7 @@ export const blogKeys = {
   list: (filters: BlogFilters) => [...blogKeys.all, 'list', filters] as const,
   detail: (id: string) => [...blogKeys.all, 'detail', id] as const,
   categoryTree: () => [...blogKeys.all, 'category-tree'] as const,
+  categoryCatalogue: () => [...blogKeys.all, 'category-catalogue'] as const,
   authorOptions: () => [...blogKeys.all, 'author-options'] as const,
   authorProfiles: () => [...blogKeys.all, 'author-profiles'] as const
 };
@@ -24,6 +26,14 @@ export const blogCategoryTreeQueryOptions = () =>
   queryOptions({
     queryKey: blogKeys.categoryTree(),
     queryFn: () => getBlogCategoryTree(),
+    staleTime: 5 * 60 * 1000
+  });
+
+/** The made-in-advance categories for the post form (vande #076). */
+export const blogCategoryCatalogueQueryOptions = () =>
+  queryOptions({
+    queryKey: blogKeys.categoryCatalogue(),
+    queryFn: () => getBlogCategoryCatalogue(),
     staleTime: 5 * 60 * 1000
   });
 
