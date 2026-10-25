@@ -49,6 +49,7 @@ import {
 import type { CataloguePlan, CatalogueFilters } from '../api/types';
 import { EMPTY_CATALOGUE_FILTERS, PortalCatalogueFilters } from './portal-catalogue-filters';
 import { PortalCartBar } from './portal-cart-bar';
+import { PriceVndUsd } from './price-vnd-usd';
 import {
   AddToCartDialog,
   PLAN_TYPE_LABEL,
@@ -215,10 +216,21 @@ export function PortalCatalogueView() {
                         </span>
                       </TableCell>
                       <TableCell className='text-right font-medium whitespace-nowrap tabular-nums'>
-                        {plan.purchasable ? formatVnd(plan.unitPriceVnd) : '—'}
+                        {plan.purchasable ? (
+                          <PriceVndUsd vnd={plan.unitPriceVnd} usd={plan.unitPriceUsd} />
+                        ) : (
+                          '—'
+                        )}
                       </TableCell>
                       <TableCell className='text-right whitespace-nowrap tabular-nums'>
-                        {plan.purchasable ? formatVnd(plan.suggestedRetailVnd ?? 0) : '—'}
+                        {plan.purchasable ? (
+                          <PriceVndUsd
+                            vnd={plan.suggestedRetailVnd ?? 0}
+                            usd={plan.suggestedRetailUsd}
+                          />
+                        ) : (
+                          '—'
+                        )}
                       </TableCell>
                       <TableCell className='text-xs'>{yesNo(plan.isCheapest)}</TableCell>
                       <TableCell className='text-right'>

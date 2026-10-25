@@ -688,6 +688,9 @@ export type CataloguePlan = {
   isCheapest?: boolean;
   /** Giá đại lý × 5/3, làm tròn nghìn. */
   suggestedRetailVnd?: number;
+  /** Both prices in dollars at today's rate (vande #055). */
+  unitPriceUsd?: number;
+  suggestedRetailUsd?: number;
   apn?: string | null;
   ipExport?: string | null;
   isNonHkIp?: boolean;

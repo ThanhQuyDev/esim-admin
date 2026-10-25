@@ -23,6 +23,7 @@ import { formatDataSize, formatVnd } from '@/lib/format';
 
 import type { CataloguePlan } from '../api/types';
 import { addToCart } from '../lib/partner-cart';
+import { PriceVndUsd } from './price-vnd-usd';
 
 export const PLAN_TYPE_LABEL: Record<string, string> = {
   fixed: 'Cố định',
@@ -85,8 +86,11 @@ export function PlanDetailDialog({
     ['APN', plan.apn || '—'],
     ['IP thoát mạng', exitIpLabel(plan)],
     ['Reset dung lượng tốc độ cao', resetLabel(plan)],
-    ['Giá đại lý', formatVnd(plan.unitPriceVnd)],
-    ['Giá bán lẻ đề xuất', formatVnd(plan.suggestedRetailVnd ?? 0)]
+    ['Giá đại lý', <PriceVndUsd key='unit' vnd={plan.unitPriceVnd} usd={plan.unitPriceUsd} />],
+    [
+      'Giá bán lẻ đề xuất',
+      <PriceVndUsd key='retail' vnd={plan.suggestedRetailVnd ?? 0} usd={plan.suggestedRetailUsd} />
+    ]
   ];
   return (
     <Dialog open onOpenChange={onOpenChange}>
