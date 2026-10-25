@@ -50,7 +50,8 @@ import type {
   AdminLinkStats,
   AdminLinkFilters,
   AdminLinkList,
-  AdminLinkDetail
+  AdminLinkDetail,
+  PartnerCreditStatement
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -95,6 +96,37 @@ export async function assignPartnerTier(id: number, data: AssignTierPayload): Pr
   return apiClient<Partner>(`/partners/${id}/tier`, {
     method: 'PATCH',
     body: JSON.stringify(data)
+  });
+}
+
+/** "Không cần ký quỹ" + "Hạn mức giao dịch" (vande #056). */
+export async function setPartnerCreditLimit(
+  id: number,
+  data: { noDepositRequired: boolean; creditLimitVnd?: number }
+): Promise<Partner> {
+  return apiClient<Partner>(`/partners/${id}/credit-limit`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+/** A no-deposit partner's statement for `period` (YYYY-MM) (vande #056). */
+export async function getPartnerCreditStatement(
+  id: number,
+  period: string
+): Promise<PartnerCreditStatement> {
+  return apiClient<PartnerCreditStatement>(
+    `/partners/${id}/credit-statement?period=${encodeURIComponent(period)}`
+  );
+}
+
+/** Email the statement to the partner now (vande #056). */
+export async function sendPartnerCreditStatement(
+  id: number,
+  period: string
+): Promise<{ sent: number; partners: number }> {
+  return apiClient(`/partners/${id}/credit-statement/send?period=${encodeURIComponent(period)}`, {
+    method: 'POST'
   });
 }
 

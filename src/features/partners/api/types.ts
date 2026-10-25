@@ -61,6 +61,10 @@ export type Partner = {
    * (#048). Always effectively true for a marketing partner.
    */
   canAffiliate?: boolean;
+  /** "Không cần ký quỹ": buys on a monthly credit limit (vande #056). */
+  noDepositRequired?: boolean;
+  /** "Hạn mức giao dịch" — refilled at 0h on the 1st. */
+  creditLimitVnd?: string | number;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -817,4 +821,25 @@ export type DepositPromotionPayload = {
   startsAt: string;
   endsAt: string;
   isActive: boolean;
+};
+
+/** What a no-deposit partner owes for one month (vande #056). */
+export type PartnerCreditStatement = {
+  period: string;
+  periodLabel: string;
+  creditLimitVnd: number;
+  orderCount: number;
+  esimCount: number;
+  purchasedVnd: number;
+  refundedVnd: number;
+  amountDueVnd: number;
+  lines: {
+    orderNumber: string;
+    products: string;
+    amountVnd: number;
+    customer: string;
+    esims: number;
+    status: string;
+    createdAt: string;
+  }[];
 };

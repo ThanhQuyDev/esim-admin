@@ -60,6 +60,11 @@ export type BankAccountChangeRequested = {
 };
 
 export type MyWalletSummary = {
+  /**
+   * "Không cần ký quỹ" (vande #056): the balance is what is left of this
+   * month's credit limit, refilled at 0h on the 1st; null on a deposit.
+   */
+  creditLimit?: { limitVnd: number; usedVnd: number; remainingVnd: number } | null;
   balanceVnd: number;
   availableBalanceVnd: number;
   pendingPayoutVnd: number;

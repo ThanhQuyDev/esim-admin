@@ -23,6 +23,7 @@ import { PartnerContractCard, type PartnerContractCardHandle } from './partner-c
 import { PartnerStatsSection } from './partner-stats-section';
 import { PartnerWalletSheet } from './partner-wallet-sheet';
 import { RejectPartnerModal } from './reject-partner-modal';
+import { PartnerCreditLimitCard } from './partner-credit-limit-card';
 import {
   Select,
   SelectContent,
@@ -461,6 +462,9 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
                 />
               </div>
             )}
+
+            {/* Buying on credit instead of a deposit (vande #056). */}
+            {!isKol && <PartnerCreditLimitCard partner={partner} onSaved={refetch} />}
 
             {/* Only shown once the partner runs the programme (doitac-1410 #004). */}
             {runsProgramme && (

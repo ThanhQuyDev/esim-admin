@@ -26,11 +26,19 @@ export function PortalBalanceChip() {
     <Link
       href='/dashboard/portal/wallet'
       className='hover:bg-muted flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm'
-      title={frozen ? 'Ví ký quỹ đang bị tạm khóa' : 'Số dư ví ký quỹ — bấm để nạp thêm'}
+      title={
+        frozen
+          ? 'Ví ký quỹ đang bị tạm khóa'
+          : wallet?.creditLimit
+            ? 'Hạn mức giao dịch còn lại trong tháng'
+            : 'Số dư ví ký quỹ — bấm để nạp thêm'
+      }
       data-testid='portal-balance'
     >
       <Icons.wallet className='text-muted-foreground size-4' />
-      <span className='text-muted-foreground hidden lg:inline'>Số dư</span>
+      <span className='text-muted-foreground hidden lg:inline'>
+        {wallet?.creditLimit ? 'Hạn mức còn' : 'Số dư'}
+      </span>
       <span className={`font-semibold tabular-nums ${frozen ? 'text-destructive' : ''}`}>
         {wallet ? formatVnd(wallet.availableBalanceVnd) : '…'}
       </span>

@@ -87,39 +87,70 @@ export function PortalWalletView() {
 
   const [dialog, setDialog] = useState<'deposit' | 'withdraw' | null>(null);
 
-  const cards = [
-    {
-      label: 'Số dư ký quỹ',
-      value: formatVnd(wallet?.balanceVnd),
-      badge: wallet?.status === 'locked' ? 'Đang khoá' : 'Hoạt động',
-      icon: Icons.wallet,
-      footerStrong: 'Tổng số dư trên ví',
-      footer: 'Gồm cả phần đang chờ rút',
-      action: { label: 'Nạp tiền', open: 'deposit' as const }
-    },
-    {
-      label: 'Khả dụng',
-      value: formatVnd(wallet?.availableBalanceVnd),
-      badge: 'Dùng được',
-      icon: Icons.check,
-      footerStrong: 'Có thể tạo đơn hoặc rút',
-      footer: 'Trừ ngay khi đơn được tạo thành công',
-      action: canWithdraw ? { label: 'Rút tiền', open: 'withdraw' as const } : null
-    },
-    {
-      label: 'Đang chờ rút',
-      value: formatVnd(wallet?.pendingPayoutVnd),
-      badge: 'Đã gửi yêu cầu',
-      icon: Icons.clock,
-      footerStrong: 'Chờ duyệt',
-      footer: 'Khoản này tạm giữ cho tới khi xử lý xong'
-    }
-  ];
+  // Buying on credit (vande #056): the wallet is this month's limit, not a
+  // deposit, and there is nothing to top up.
+  const credit = wallet?.creditLimit ?? null;
+  const cards = credit
+    ? [
+        {
+          label: 'Hạn mức giao dịch / tháng',
+          value: formatVnd(credit.limitVnd),
+          badge: 'Không cần ký quỹ',
+          icon: Icons.wallet,
+          footerStrong: 'Tự đặt lại lúc 0h ngày 1 hằng tháng',
+          footer: 'Tiền hàng đối soát và thanh toán vào tháng sau'
+        },
+        {
+          label: 'Hạn mức còn lại',
+          value: formatVnd(credit.remainingVnd),
+          badge: 'Dùng được',
+          icon: Icons.check,
+          footerStrong: 'Có thể tạo đơn',
+          footer: 'Trừ ngay khi đơn được tạo thành công'
+        },
+        {
+          label: 'Đã dùng tháng này',
+          value: formatVnd(credit.usedVnd),
+          badge: 'Cần thanh toán',
+          icon: Icons.clock,
+          footerStrong: 'Gửi đối soát qua email tháng sau',
+          footer: 'Kèm file chi tiết từng giao dịch'
+        }
+      ]
+    : [
+        {
+          label: 'Số dư ký quỹ',
+          value: formatVnd(wallet?.balanceVnd),
+          badge: wallet?.status === 'locked' ? 'Đang khoá' : 'Hoạt động',
+          icon: Icons.wallet,
+          footerStrong: 'Tổng số dư trên ví',
+          footer: 'Gồm cả phần đang chờ rút',
+          action: { label: 'Nạp tiền', open: 'deposit' as const }
+        },
+        {
+          label: 'Khả dụng',
+          value: formatVnd(wallet?.availableBalanceVnd),
+          badge: 'Dùng được',
+          icon: Icons.check,
+          footerStrong: 'Có thể tạo đơn hoặc rút',
+          footer: 'Trừ ngay khi đơn được tạo thành công',
+          action: canWithdraw ? { label: 'Rút tiền', open: 'withdraw' as const } : null
+        },
+        {
+          label: 'Đang chờ rút',
+          value: formatVnd(wallet?.pendingPayoutVnd),
+          badge: 'Đã gửi yêu cầu',
+          icon: Icons.clock,
+          footerStrong: 'Chờ duyệt',
+          footer: 'Khoản này tạm giữ cho tới khi xử lý xong'
+        }
+      ];
 
   // A nudge, not a block: stopping the partner early would cause exactly the
   // thing this is meant to prevent, an order failing halfway (#077).
   const warnVnd = wallet?.lowDepositWarningVnd ?? 0;
-  const lowBalance = !isLoading && warnVnd > 0 && (wallet?.availableBalanceVnd ?? 0) < warnVnd;
+  const lowBalance =
+    !isLoading && !credit && warnVnd > 0 && (wallet?.availableBalanceVnd ?? 0) < warnVnd;
 
   return (
     <div className='flex flex-1 flex-col space-y-4'>
@@ -178,92 +209,95 @@ export function PortalWalletView() {
       {/* "Lịch sử giao dịch" with filters and the one-file export (doitac-1410 #031). */}
       <PortalLedgerCard />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex flex-wrap items-center gap-2'>
-            Lịch sử nạp tiền
-            <Badge variant='outline'>{deposits.length} lần</Badge>
-          </CardTitle>
-          <CardDescription>
-            Mỗi lần nạp có mã đối chiếu riêng. Với thẻ tín dụng, cột "Cộng vào ví" đã trừ phí cổng
-            thanh toán.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className='rounded-lg border'>
-            <Table>
-              <TableHeader className='bg-muted'>
-                <TableRow>
-                  <TableHead>Ngày tạo</TableHead>
-                  <TableHead>Hình thức</TableHead>
-                  <TableHead className='text-right'>Số tiền</TableHead>
-                  <TableHead className='text-right'>Cộng vào ví</TableHead>
-                  <TableHead>Mã đối chiếu</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deposits.length === 0 && (
+      {/* Nothing to top up on credit (vande #056); older top-ups stay listed. */}
+      {(!credit || deposits.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex flex-wrap items-center gap-2'>
+              Lịch sử nạp tiền
+              <Badge variant='outline'>{deposits.length} lần</Badge>
+            </CardTitle>
+            <CardDescription>
+              Mỗi lần nạp có mã đối chiếu riêng. Với thẻ tín dụng, cột "Cộng vào ví" đã trừ phí cổng
+              thanh toán.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className='rounded-lg border'>
+              <Table>
+                <TableHeader className='bg-muted'>
                   <TableRow>
-                    <TableCell colSpan={6} className='h-24 text-center'>
-                      <p className='text-muted-foreground text-sm'>Chưa có lần nạp nào.</p>
-                      <p className='text-muted-foreground mt-1 text-xs'>
-                        Bấm "Nạp tiền" ở ô số dư ký quỹ để nạp.
-                      </p>
-                    </TableCell>
+                    <TableHead>Ngày tạo</TableHead>
+                    <TableHead>Hình thức</TableHead>
+                    <TableHead className='text-right'>Số tiền</TableHead>
+                    <TableHead className='text-right'>Cộng vào ví</TableHead>
+                    <TableHead>Mã đối chiếu</TableHead>
+                    <TableHead>Trạng thái</TableHead>
                   </TableRow>
-                )}
-                {deposits.map((req) => {
-                  const status = DEPOSIT_STATUS[req.status];
-                  return (
-                    <TableRow key={req.id}>
-                      <TableCell className='whitespace-nowrap'>
-                        {formatDateVn(req.createdAt)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant='outline'>
-                          {METHOD_LABEL[req.method ?? 'bank_transfer'] ?? req.method}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className='text-right font-medium tabular-nums'>
-                        {formatVnd(req.amountVnd)}
-                        {req.feeVnd ? (
-                          <div className='text-muted-foreground text-xs'>
-                            phí {formatVnd(req.feeVnd)}
-                          </div>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className='text-right font-medium tabular-nums'>
-                        {formatVnd(req.creditedVnd ?? req.amountVnd)}
-                      </TableCell>
-                      <TableCell className='font-mono text-xs break-all'>
-                        {req.bankTransferCode}
-                      </TableCell>
-                      <TableCell>
-                        {status ? (
-                          <Badge variant='outline' className={status.className}>
-                            {status.label}
-                          </Badge>
-                        ) : (
-                          <Badge variant='outline'>{req.status}</Badge>
-                        )}
-                        {req.status === 'rejected' && req.rejectionReason && (
-                          <div
-                            className='text-muted-foreground mt-1 max-w-[240px] text-xs'
-                            data-testid='deposit-rejection'
-                          >
-                            Lý do: {req.rejectionReason}
-                          </div>
-                        )}
+                </TableHeader>
+                <TableBody>
+                  {deposits.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className='h-24 text-center'>
+                        <p className='text-muted-foreground text-sm'>Chưa có lần nạp nào.</p>
+                        <p className='text-muted-foreground mt-1 text-xs'>
+                          Bấm "Nạp tiền" ở ô số dư ký quỹ để nạp.
+                        </p>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  )}
+                  {deposits.map((req) => {
+                    const status = DEPOSIT_STATUS[req.status];
+                    return (
+                      <TableRow key={req.id}>
+                        <TableCell className='whitespace-nowrap'>
+                          {formatDateVn(req.createdAt)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant='outline'>
+                            {METHOD_LABEL[req.method ?? 'bank_transfer'] ?? req.method}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className='text-right font-medium tabular-nums'>
+                          {formatVnd(req.amountVnd)}
+                          {req.feeVnd ? (
+                            <div className='text-muted-foreground text-xs'>
+                              phí {formatVnd(req.feeVnd)}
+                            </div>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className='text-right font-medium tabular-nums'>
+                          {formatVnd(req.creditedVnd ?? req.amountVnd)}
+                        </TableCell>
+                        <TableCell className='font-mono text-xs break-all'>
+                          {req.bankTransferCode}
+                        </TableCell>
+                        <TableCell>
+                          {status ? (
+                            <Badge variant='outline' className={status.className}>
+                              {status.label}
+                            </Badge>
+                          ) : (
+                            <Badge variant='outline'>{req.status}</Badge>
+                          )}
+                          {req.status === 'rejected' && req.rejectionReason && (
+                            <div
+                              className='text-muted-foreground mt-1 max-w-[240px] text-xs'
+                              data-testid='deposit-rejection'
+                            >
+                              Lý do: {req.rejectionReason}
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Under the transactions: the deposits and the withdrawals (doitac-1410 #031). */}
       {canWithdraw && <PortalPayoutHistoryCard />}
