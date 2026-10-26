@@ -441,7 +441,8 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
     ...refundOrderMutation,
     onSuccess: (result) => {
       toast.success(`Đã hoàn tiền cho đơn hàng ${order.orderNumber}`);
-      // Refund requests sent to Airalo, with their request number (#079).
+      // Refund requests sent to Airalo (#079) and Billion (vande #004), with
+      // their request number.
       if (result.supplierRequests?.length) {
         toast.info('Đã gửi yêu cầu hoàn tiền tới nhà cung cấp', {
           description: result.supplierRequests.join(' · '),

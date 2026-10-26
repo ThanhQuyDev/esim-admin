@@ -223,6 +223,17 @@ export function RefundOrderModal({
     .map((e) => e.iccid)
     .filter(Boolean);
 
+  /** Billion eSIMs this refund gives back: they go to Billion as an after-sale request (vande #004). */
+  const billionIccids = items
+    .filter((item) => item.plan?.provider === 'billion' && !isRefunded(item.status))
+    .flatMap((item) => {
+      const live = liveEsimsOf(item);
+      if (!isPartial || selection.orderItemIds.includes(item.id)) return live;
+      return live.filter((e) => selection.esimIds.includes(e.id));
+    })
+    .map((e) => e.iccid)
+    .filter(Boolean);
+
   // A per-item refund can never exceed what those lines were worth.
   const cap = isPartial ? Math.min(selectedValue, maxRefundable) : maxRefundable;
 
@@ -546,6 +557,25 @@ export function RefundOrderModal({
                   </p>
                 </>
               )}
+            </div>
+          )}
+
+          {/* Billion after-sale request (vande #004) */}
+          {billionIccids.length > 0 && (
+            <div
+              className='space-y-1 rounded-lg border p-3 text-sm'
+              data-testid='billion-refund-request'
+            >
+              <p className='font-medium'>
+                Sẽ gửi yêu cầu hoàn tiền tới Billion ({billionIccids.length} eSIM)
+              </p>
+              <p className='text-muted-foreground text-xs break-all'>
+                ICCID: {billionIccids.join(', ')}
+              </p>
+              <p className='text-muted-foreground text-xs'>
+                Billion xét duyệt rồi tự hoàn tiền. Mã yêu cầu và kết quả duyệt / hoàn tiền được ghi
+                vào ghi chú đơn hàng.
+              </p>
             </div>
           )}
 
