@@ -13,6 +13,7 @@
  * accounts nobody can use would overstate the programme.
  */
 
+import { useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,8 +66,20 @@ function Tile({
 
 const count = (value: number | undefined) => (value ?? 0).toLocaleString('vi-VN');
 
+const noSubscribe = () => () => {};
+
 export function PartnerListStats() {
-  const { data } = useQuery(partnerListStatsQueryOptions());
+  const { data: loaded } = useQuery(partnerListStatsQueryOptions());
+  // The figures are drawn in the browser only: the server rendered them before
+  // its prefetch answered ("0") while the browser already had them ("2"), and
+  // the page ended in a hydration error (React #418) since #040 made the
+  // console render on the server.
+  const inBrowser = useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false
+  );
+  const data = inBrowser ? loaded : undefined;
 
   return (
     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4'>

@@ -37,6 +37,7 @@ function PerDevice({ ios, android }: { ios: boolean; android: boolean }) {
 function formatDateTime(value?: string) {
   if (!value) return '—';
   return new Date(value).toLocaleString('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

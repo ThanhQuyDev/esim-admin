@@ -167,7 +167,9 @@ export function ChatOrderWidget() {
                     format={formatVnd}
                   />
                   <span className='text-muted-foreground'>
-                    {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                    {new Date(order.createdAt).toLocaleDateString('vi-VN', {
+                      timeZone: 'Asia/Ho_Chi_Minh'
+                    })}
                   </span>
                 </div>
               </Link>

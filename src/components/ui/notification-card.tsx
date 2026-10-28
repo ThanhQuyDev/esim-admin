@@ -1,7 +1,7 @@
 'use client';
 
 import { VN_TIME_ZONE } from '@/lib/format';
-import type { FC } from 'react';
+import { useSyncExternalStore, type FC } from 'react';
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +28,22 @@ export interface NotificationCardProps {
   onAction?: (notificationId: string, actionId: string, actionType: ActionType) => void;
   loadingActionId?: string;
   className?: string;
+}
+
+const noSubscribe = () => () => {};
+
+/**
+ * "5m ago" depends on the clock, so the server and the browser wrote different
+ * values and the page ended in a hydration error (React #418). It is written
+ * in the browser only.
+ */
+function RelativeTime({ date }: { date: string | Date }) {
+  const inBrowser = useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false
+  );
+  return <>{inBrowser ? formatDate(date) : ''}</>;
 }
 
 const formatDate = (date: string | Date): string => {
@@ -179,7 +195,7 @@ export const NotificationCard: FC<NotificationCardProps> = ({
           {/* Timestamp */}
           {createdAt && (
             <span className='text-muted-foreground/60 inline-block text-[11px]'>
-              {formatDate(createdAt)}
+              <RelativeTime date={createdAt} />
             </span>
           )}
         </div>

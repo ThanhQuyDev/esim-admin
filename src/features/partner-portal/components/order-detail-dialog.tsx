@@ -30,6 +30,7 @@ import { COMMISSION_STATUS, ProductLine, refundedQtyOf } from './orders-table/co
 function formatMoment(value: string | null): string {
   if (!value) return '—';
   return new Date(value).toLocaleString('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
