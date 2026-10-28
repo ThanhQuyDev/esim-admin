@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useSyncExternalStore, useTransition } from 'react';
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
@@ -35,7 +35,25 @@ const ORDER_KIND_OPTIONS = [
   { value: 'topup', label: 'Đơn Topup' }
 ] as const;
 
+const noSubscribe = () => () => {};
+
+/**
+ * The orders list is drawn in the browser only, the server sends its skeleton.
+ * Since the console renders pages on the first paint (vande #040) the server
+ * drew this table's Suspense fallback while the browser drew the table, and
+ * every load ended in a hydration error (React #418). Before #040 the page was
+ * never server-rendered, so this keeps what the list always did.
+ */
 export function OrdersTable() {
+  const inBrowser = useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false
+  );
+  return inBrowser ? <OrdersTableContent /> : <OrdersTableSkeleton />;
+}
+
+function OrdersTableContent() {
   const [, startTransition] = useTransition();
 
   const [params, setParams] = useQueryStates({
