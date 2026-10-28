@@ -19,11 +19,17 @@ export default async function BlogsPage(props: PageProps) {
       pageTitle='Bài viết'
       pageDescription='Quản lý các bài viết của bạn.'
       pageHeaderAction={
-        <Button asChild>
-          <Link href='/dashboard/blogs/new'>
-            <Icons.add className='mr-2 h-4 w-4' /> Tạo bài viết
-          </Link>
-        </Button>
+        <div className='flex gap-2'>
+          {/* Blog categories (vande #076). */}
+          <Button asChild variant='outline'>
+            <Link href='/dashboard/blogs/categories'>Danh mục</Link>
+          </Button>
+          <Button asChild>
+            <Link href='/dashboard/blogs/new'>
+              <Icons.add className='mr-2 h-4 w-4' /> Tạo bài viết
+            </Link>
+          </Button>
+        </div>
       }
     >
       <BlogListingPage />

@@ -4,6 +4,7 @@ import type {
   BlogAuthorOption,
   BlogAuthorProfile,
   BlogCatalogueCategory,
+  BlogCategoryNamesPayload,
   BlogFilters,
   BlogsResponse,
   CreateBlogPayload,
@@ -49,6 +50,32 @@ export async function getBlogCategoryCatalogue(): Promise<BlogCatalogueCategory[
   return apiClient<BlogCatalogueCategory[]>('/blogs/category-tree').catch(
     () => [] as BlogCatalogueCategory[]
   );
+}
+
+/** Add a category, or a sub-category of `parentId` (vande #076). */
+export async function createBlogCategory(
+  data: BlogCategoryNamesPayload & { parentId?: number | null }
+): Promise<{ id: number }> {
+  return apiClient<{ id: number }>('/blogs/category-tree', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+/** Rename a category; the backend renames it on its posts too. */
+export async function renameBlogCategory(
+  id: number,
+  data: BlogCategoryNamesPayload
+): Promise<{ postsUpdated: number }> {
+  return apiClient<{ postsUpdated: number }>(`/blogs/category-tree/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+/** Delete a category no post is filed under. */
+export async function deleteBlogCategory(id: number): Promise<void> {
+  await apiClient<void>(`/blogs/category-tree/${id}`, { method: 'DELETE' });
 }
 
 /**

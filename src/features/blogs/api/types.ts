@@ -21,8 +21,13 @@ export type BlogCatalogueCategory = {
   nameVi: string;
   slugEn: string;
   slugVi: string;
+  /** Posts filed under it; a parent counts its children's too. */
+  postCount?: number;
   children: Omit<BlogCatalogueCategory, 'children'>[];
 };
+
+/** A category's two names, to add or rename one (vande #076). */
+export type BlogCategoryNamesPayload = { nameVi: string; nameEn: string };
 
 export type BlogAuthor = {
   id: number;
