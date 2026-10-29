@@ -8,6 +8,8 @@ export const MENU_KEY_OPTIONS = [
   { value: 'product', label: 'Sản phẩm (Product)' },
   { value: 'resources', label: 'Tài nguyên (Resources)' },
   { value: 'offers', label: 'Ưu đãi (Offers)' },
+  // The "Đối tác" menu added for partners (vande #082).
+  { value: 'partners', label: 'Đối tác (Partners)' },
   { value: 'help', label: 'Trợ giúp (Help)' }
 ] as const;
 
