@@ -86,6 +86,19 @@ function PackageCard({
               {callSms}
             </span>
           )}
+          {pkg.kind === 'addon' && (
+            <span
+              className='inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-800 dark:bg-orange-950 dark:text-orange-300'
+              data-testid='topup-addon-badge'
+            >
+              Add-on ·{' '}
+              {pkg.addonKind === 'boost'
+                ? 'Tăng tốc 1 ngày'
+                : pkg.addonKind === 'upgrade'
+                  ? 'Nâng cấp gói'
+                  : 'Thêm dung lượng'}
+            </span>
+          )}
           {!!pkg.durationDays && (
             <span className='inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'>
               <Icons.calendar className='size-3' />

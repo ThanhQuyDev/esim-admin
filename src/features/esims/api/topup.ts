@@ -19,6 +19,9 @@ export type TopupPackage = {
   isUnlimited?: boolean;
   retailPrice: number;
   vndPrice?: number | null;
+  /** "addon": data on top of the current plan (Billion, vande #081). */
+  kind?: 'topup' | 'addon';
+  addonKind?: 'boost' | 'upgrade' | 'extra';
 };
 
 export type TopupPackagesResponse = {
