@@ -17,7 +17,76 @@ import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn } from '@/lib/format';
 
-import { getFullSyncStatus, startFullSync } from '../api/service';
+import {
+  getFullSyncHistory,
+  getFullSyncStatus,
+  startFullSync,
+  type FullSyncRun
+} from '../api/service';
+
+/** "25 phút 30 giây" — how long a run took. */
+export function formatSyncDuration(seconds: number | null): string {
+  if (seconds === null) return 'Đang chạy…';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [h ? `${h} giờ` : '', m ? `${m} phút` : '', `${s} giây`].filter(Boolean).join(' ');
+}
+
+/** "15:23 29/10/2026" */
+const at = (date: string | null) =>
+  date
+    ? formatDateTimeVn(date, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+    : '—';
+
+/**
+ * The latest runs of the full sync (vande #078), so the admin can check how
+ * long each took and who started it.
+ */
+function FullSyncHistory({ runs }: { runs: FullSyncRun[] }) {
+  return (
+    <div className='w-full overflow-x-auto' data-testid='full-sync-history'>
+      <p className='mb-2 text-sm font-medium'>Lịch sử cập nhật (5 lần gần nhất)</p>
+      {runs.length === 0 ? (
+        <p className='text-muted-foreground text-xs'>Chưa có lượt cập nhật nào được ghi lại.</p>
+      ) : (
+        <table className='w-full min-w-[640px] text-xs'>
+          <thead>
+            <tr className='text-muted-foreground border-b text-left'>
+              <th className='py-1.5 pr-3 font-medium'>Bắt đầu cập nhật</th>
+              <th className='py-1.5 pr-3 font-medium'>Hoàn thành cập nhật</th>
+              <th className='py-1.5 pr-3 font-medium'>Tổng thời gian</th>
+              <th className='py-1.5 pr-3 font-medium'>Thực hiện bởi</th>
+              <th className='py-1.5 font-medium'>Lỗi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {runs.map((run) => (
+              <tr key={run.id} className='border-b last:border-0'>
+                <td className='py-1.5 pr-3 whitespace-nowrap'>{at(run.startedAt)}</td>
+                <td className='py-1.5 pr-3 whitespace-nowrap'>{at(run.finishedAt)}</td>
+                <td className='py-1.5 pr-3 whitespace-nowrap'>
+                  {formatSyncDuration(run.durationSeconds)}
+                </td>
+                <td className='py-1.5 pr-3'>{run.startedBy}</td>
+                <td className='text-muted-foreground py-1.5'>
+                  {run.errors.length ? run.errors.join('; ') : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
 
 export function FullSyncButton() {
   const queryClient = useQueryClient();
@@ -26,6 +95,12 @@ export function FullSyncButton() {
     queryFn: getFullSyncStatus,
     // While a run is going, check back every few seconds.
     refetchInterval: (query) => (query.state.data?.running ? 5000 : false)
+  });
+  const { data: history = [] } = useQuery({
+    // A run that just finished changes `finishedAt`, which reloads the list.
+    queryKey: ['providers', 'full-sync', 'history', status?.finishedAt ?? null],
+    queryFn: getFullSyncHistory,
+    refetchInterval: status?.running ? 5000 : false
   });
   const start = useMutation({
     mutationFn: startFullSync,
@@ -36,6 +111,7 @@ export function FullSyncButton() {
           : 'Đang có một lượt cập nhật chạy, vui lòng chờ lượt đó xong.'
       );
       queryClient.setQueryData(['providers', 'full-sync'], result.status);
+      queryClient.invalidateQueries({ queryKey: ['providers', 'full-sync', 'history'] });
     },
     onError: (e: Error) => toast.error(e.message || 'Không bắt đầu được')
   });
@@ -71,6 +147,7 @@ export function FullSyncButton() {
         )}
         {running ? 'Đang cập nhật…' : 'Cập nhật lại toàn bộ sản phẩm'}
       </Button>
+      <FullSyncHistory runs={history} />
     </div>
   );
 }

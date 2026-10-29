@@ -34,6 +34,21 @@ export async function getFullSyncStatus(): Promise<FullSyncStatus> {
   return apiClient<FullSyncStatus>(`${BASE}/full-sync`);
 }
 
+/** One past run of the full sync (vande #078). */
+export type FullSyncRun = {
+  id: number;
+  startedAt: string;
+  finishedAt: string | null;
+  durationSeconds: number | null;
+  startedBy: string;
+  errors: string[];
+};
+
+/** The latest runs, newest first (vande #078). */
+export async function getFullSyncHistory(): Promise<FullSyncRun[]> {
+  return apiClient<FullSyncRun[]>(`${BASE}/full-sync/history`);
+}
+
 /** "Cập nhật lại toàn bộ sản phẩm": the 6-hourly sync, now. */
 export async function startFullSync(): Promise<{ started: boolean; status: FullSyncStatus }> {
   return apiClient(`${BASE}/full-sync`, { method: 'POST' });
