@@ -121,6 +121,19 @@ export const columns: ColumnDef<SeoConfig>[] = [
     )
   },
   {
+    // When it was last changed (vande #083).
+    id: 'updatedAt',
+    accessorKey: 'updatedAt',
+    header: ({ column }: { column: Column<SeoConfig, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Thời gian cập nhật' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-muted-foreground text-sm whitespace-nowrap'>
+        {formatCreatedAt(row.original.updatedAt)}
+      </span>
+    )
+  },
+  {
     id: 'isActive',
     accessorKey: 'isActive',
     header: 'Trạng thái',

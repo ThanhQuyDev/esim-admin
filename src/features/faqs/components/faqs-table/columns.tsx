@@ -114,6 +114,18 @@ export const columns: ColumnDef<Faq>[] = [
     enableSorting: false
   },
   {
+    // When it was last changed (vande #083).
+    id: 'updatedAt',
+    accessorKey: 'updatedAt',
+    header: 'Thời gian cập nhật',
+    cell: ({ row }) => (
+      <span className='text-muted-foreground text-sm whitespace-nowrap'>
+        {formatCreatedAt(row.original.updatedAt)}
+      </span>
+    ),
+    enableSorting: false
+  },
+  {
     id: 'isActive',
     accessorKey: 'isActive',
     header: 'Hoạt động',
