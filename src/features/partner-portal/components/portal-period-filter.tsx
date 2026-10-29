@@ -24,8 +24,15 @@ import {
 } from '@/features/overview/components/period-range-picker';
 import type { OverviewGroupBy, OverviewPreset } from '@/features/overview/api/types';
 
+/**
+ * The admin overview's presets plus "Tuần trước" / "Tháng trước" (vande #085):
+ * the calendar week (Monday–Sunday) and month before this one. Resolved to
+ * dates here, so the server never sees them.
+ */
+export type PortalPreset = OverviewPreset | 'lastWeek' | 'lastMonth';
+
 export interface PortalPeriod {
-  preset?: OverviewPreset;
+  preset?: PortalPreset;
   groupBy: OverviewGroupBy;
   from?: string;
   to?: string;
@@ -36,11 +43,13 @@ export const DEFAULT_PORTAL_PERIOD: PortalPeriod = {
   groupBy: 'day'
 };
 
-const presetOptions: { value: OverviewPreset; label: string }[] = [
+const presetOptions: { value: PortalPreset; label: string }[] = [
   { value: 'today', label: 'Hôm nay' },
   { value: 'yesterday', label: 'Hôm qua' },
   { value: 'last7days', label: '7 ngày qua' },
-  { value: 'last30days', label: '30 ngày qua' }
+  { value: 'last30days', label: '30 ngày qua' },
+  { value: 'lastWeek', label: 'Tuần trước' },
+  { value: 'lastMonth', label: 'Tháng trước' }
 ];
 
 const groupByOptions: { value: OverviewGroupBy; label: string }[] = [
@@ -77,6 +86,19 @@ export function resolvePeriod(period: PortalPeriod): { from: string; to: string 
     case 'last7days':
       start.setDate(today.getDate() - 6);
       break;
+    case 'lastWeek': {
+      // Monday to Sunday of the week before this one.
+      const sinceMonday = (today.getDay() + 6) % 7;
+      start.setDate(today.getDate() - sinceMonday - 7);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      return { from: iso(start), to: iso(end) };
+    }
+    case 'lastMonth': {
+      const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const last = new Date(today.getFullYear(), today.getMonth(), 0);
+      return { from: iso(first), to: iso(last) };
+    }
     default:
       start.setDate(today.getDate() - 29);
   }
@@ -106,15 +128,17 @@ export function PortalPeriodFilter({ value, onChange }: PortalPeriodFilterProps)
         onValueChange={(preset) =>
           onChange({
             ...value,
-            preset: preset as OverviewPreset,
+            preset: preset as PortalPreset,
             from: undefined,
             to: undefined
           })
         }
       >
-        <TabsList className='h-auto flex-wrap'>
+        {/* Six presets (vande #085): a 3-column grid on a phone, where one
+            wrapping row spilled over the controls below it. */}
+        <TabsList className='grid h-auto w-full grid-cols-3 gap-1 sm:flex sm:w-auto sm:flex-wrap'>
           {presetOptions.map((opt) => (
-            <TabsTrigger key={opt.value} value={opt.value}>
+            <TabsTrigger key={opt.value} value={opt.value} className='px-2 sm:px-3'>
               {opt.label}
             </TabsTrigger>
           ))}

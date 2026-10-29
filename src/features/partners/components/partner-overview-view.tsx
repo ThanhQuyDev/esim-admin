@@ -185,7 +185,12 @@ export function PartnerOverviewView() {
   // #053: the whole screen answers for one period, so the filter sits above it
   // and every figure below follows it — a header that says "30 ngày" over
   // numbers from another window is worse than no header.
-  const [period, setPeriod] = useState<PortalPeriod>(DEFAULT_PORTAL_PERIOD);
+  // Today first (vande #085): the page is opened to see how today is going;
+  // other periods are one click away ("Tuần trước", "Tháng trước"…).
+  const [period, setPeriod] = useState<PortalPeriod>({
+    ...DEFAULT_PORTAL_PERIOD,
+    preset: 'today'
+  });
   const range = useMemo(() => resolvePeriod(period), [period]);
   const rangeLabel = periodLabel(period);
 
