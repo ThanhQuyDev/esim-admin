@@ -26,6 +26,8 @@ interface FormDialogProps {
   metaInfo?: React.ReactNode;
   extraActions?: React.ReactNode;
   className?: string;
+  /** Keep the submit button greyed out, e.g. while the input clashes (vande #084). */
+  submitDisabled?: boolean;
 }
 
 export function FormDialog({
@@ -38,6 +40,7 @@ export function FormDialog({
   isLoading = false,
   onCancel,
   submitLabel = 'Lưu',
+  submitDisabled = false,
   metaInfo,
   extraActions,
   className
@@ -109,7 +112,13 @@ export function FormDialog({
             >
               Hủy
             </Button>
-            <Button type='submit' form={formId} isLoading={isLoading} className='min-w-[140px]'>
+            <Button
+              type='submit'
+              form={formId}
+              isLoading={isLoading}
+              disabled={submitDisabled}
+              className='min-w-[140px]'
+            >
               <Icons.check className='mr-2 h-4 w-4' /> {submitLabel}
             </Button>
           </div>

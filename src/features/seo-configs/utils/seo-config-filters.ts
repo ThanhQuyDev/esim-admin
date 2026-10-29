@@ -22,7 +22,8 @@ export type SeoConfigFilterParams = {
 export function buildSeoConfigApiFilters(params: SeoConfigFilterParams): Record<string, unknown> {
   const filters: Record<string, unknown> = {};
 
-  if (params.name) filters.search = params.name;
+  // The one search box (vande #084): URL, Meta Title or Meta Description.
+  if (params.name?.trim()) filters.q = params.name.trim();
   // The API matches a single page type per request, so only the first
   // selection is sent.
   if (params.pageType?.[0]) filters.pageType = params.pageType[0];

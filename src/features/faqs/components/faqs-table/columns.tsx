@@ -44,9 +44,11 @@ export const columns: ColumnDef<Faq>[] = [
     ),
     meta: {
       label: 'Câu hỏi',
-      placeholder: 'Tìm câu hỏi / câu trả lời...',
+      // The one search box (vande #084); a path like /home finds a page's FAQs.
+      placeholder: 'Tìm câu hỏi, câu trả lời, hoặc gõ trang (vd: /home)...',
       variant: 'text' as const,
-      icon: Icons.text
+      icon: Icons.search,
+      inputClassName: 'h-9 w-full sm:w-[420px]'
     },
     enableColumnFilter: true
   },
@@ -91,7 +93,8 @@ export const columns: ColumnDef<Faq>[] = [
       variant: 'text' as const,
       icon: Icons.link
     },
-    enableColumnFilter: true,
+    // Folded into the one search box: type the page, e.g. /home (vande #084).
+    enableColumnFilter: false,
     enableSorting: false
   },
   {

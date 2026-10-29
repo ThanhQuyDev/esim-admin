@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { SeoTemplateVarsHint } from './seo-template-vars-hint';
+import { SeoUrlTakenNotice, useSeoUrlTaken } from './seo-url-taken-notice';
+import { useStore } from '@tanstack/react-form';
 
 interface SeoConfigFormDialogProps {
   seoConfig?: SeoConfig;
@@ -220,6 +222,8 @@ function CreateSeoConfigDialog({
   const [urlSource, setUrlSource] = useState<'manual' | 'destination' | 'region'>('manual');
   /** Which language page was picked, for the select's label (v3 #008). */
   const [pickedLang, setPickedLang] = useState<SeoPageLang>('vi');
+  /** The existing config opened from the "URL đã tồn tại" warning (vande #084). */
+  const [editing, setEditing] = useState<SeoConfig | null>(null);
 
   const { data: destinationsData } = useQuery({
     queryKey: ['destinations', 'all-pages-for-seo'],
@@ -281,6 +285,10 @@ function CreateSeoConfigDialog({
     }
   });
 
+  // One config per URL (vande #084): say so before the admin fills the form in.
+  const url = useStore(form.store, (s) => s.values.url);
+  const taken = useSeoUrlTaken(url);
+
   const handleDestinationSelect = (option: string) => {
     const { id, lang } = decodePageOption(option);
     const dest = destinations.find((d: Destination) => d.id === id);
@@ -304,177 +312,198 @@ function CreateSeoConfigDialog({
   };
 
   return (
-    <FormDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title='Tạo cấu hình SEO'
-      description='Thêm cấu hình SEO mới cho một trang.'
-      formId={FORM_ID}
-      isLoading={mutation.isPending}
-      submitLabel='Tạo mới'
-      className='!max-w-3xl'
-    >
-      <form.AppForm>
-        <form.Form id={FORM_ID} className='space-y-4'>
-          {/* URL Source Selector */}
-          <div className='space-y-2'>
-            <Label>Nguồn URL</Label>
-            <div className='flex gap-2'>
-              <Button
-                type='button'
-                size='sm'
-                variant={urlSource === 'manual' ? 'default' : 'outline'}
-                onClick={() => setUrlSource('manual')}
-              >
-                Nhập thủ công
-              </Button>
-              <Button
-                type='button'
-                size='sm'
-                variant={urlSource === 'destination' ? 'default' : 'outline'}
-                onClick={() => setUrlSource('destination')}
-              >
-                Chọn Destination
-              </Button>
-              <Button
-                type='button'
-                size='sm'
-                variant={urlSource === 'region' ? 'default' : 'outline'}
-                onClick={() => setUrlSource('region')}
-              >
-                Chọn Region
-              </Button>
-            </div>
-          </div>
-
-          {/* Destination Selector with Search */}
-          {urlSource === 'destination' && (
-            <SearchableSelect
-              label='Điểm đến'
-              items={destinations}
-              value={form.getFieldValue('destinationId')}
-              lang={pickedLang}
-              onSelect={handleDestinationSelect}
-              placeholder='Chọn điểm đến...'
-            />
-          )}
-
-          {/* Region Selector with Search */}
-          {urlSource === 'region' && (
-            <SearchableSelect
-              label='Khu vực'
-              items={regions}
-              value={form.getFieldValue('regionId')}
-              lang={pickedLang}
-              onSelect={handleRegionSelect}
-              placeholder='Chọn khu vực...'
-            />
-          )}
-
-          <form.AppField name='url'>
-            {(field) => <field.TextField label='URL' placeholder='/destinations/japan' />}
-          </form.AppField>
-
-          <SeoTemplateVarsHint />
-
-          <form.AppField name='metaTitle'>
-            {(field) => (
-              <field.TextField
-                label='Meta Title'
-                placeholder='Buy Japan eSIM - Best Plans'
-                recommendedLength={60}
-                description='Google thường cắt tiêu đề sau khoảng 60 ký tự.'
-              />
-            )}
-          </form.AppField>
-
-          <form.AppField name='metaDescription'>
-            {(field) => (
-              <field.TextareaField
-                label='Meta Description'
-                placeholder='Mô tả SEO...'
-                recommendedLength={160}
-                description='Google thường cắt mô tả sau khoảng 160 ký tự.'
-              />
-            )}
-          </form.AppField>
-
-          <form.AppField name='metaKeywords'>
-            {(field) => (
-              <field.TextField label='Meta Keywords' placeholder='esim, japan, travel...' />
-            )}
-          </form.AppField>
-
-          {/* Open Graph — what Facebook / Zalo / X show when the link is shared.
-              Stored on the record all along, but the form never exposed them (#048). */}
-          <div className='space-y-4 rounded-md border p-3'>
-            <div className='space-y-1'>
-              <p className='text-sm font-medium'>Thẻ Open Graph (chia sẻ link)</p>
-              <p className='text-muted-foreground text-xs'>
-                Để trống thì hệ thống tự dùng Meta Title / Meta Description ở trên.
-              </p>
+    <>
+      <FormDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title='Tạo cấu hình SEO'
+        description='Thêm cấu hình SEO mới cho một trang.'
+        formId={FORM_ID}
+        isLoading={mutation.isPending}
+        submitLabel='Tạo mới'
+        submitDisabled={!!taken}
+        className='!max-w-3xl'
+      >
+        <form.AppForm>
+          <form.Form id={FORM_ID} className='space-y-4'>
+            {/* URL Source Selector */}
+            <div className='space-y-2'>
+              <Label>Nguồn URL</Label>
+              <div className='flex gap-2'>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant={urlSource === 'manual' ? 'default' : 'outline'}
+                  onClick={() => setUrlSource('manual')}
+                >
+                  Nhập thủ công
+                </Button>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant={urlSource === 'destination' ? 'default' : 'outline'}
+                  onClick={() => setUrlSource('destination')}
+                >
+                  Chọn Destination
+                </Button>
+                <Button
+                  type='button'
+                  size='sm'
+                  variant={urlSource === 'region' ? 'default' : 'outline'}
+                  onClick={() => setUrlSource('region')}
+                >
+                  Chọn Region
+                </Button>
+              </div>
             </div>
 
-            <form.AppField name='ogTitle'>
+            {/* Destination Selector with Search */}
+            {urlSource === 'destination' && (
+              <SearchableSelect
+                label='Điểm đến'
+                items={destinations}
+                value={form.getFieldValue('destinationId')}
+                lang={pickedLang}
+                onSelect={handleDestinationSelect}
+                placeholder='Chọn điểm đến...'
+              />
+            )}
+
+            {/* Region Selector with Search */}
+            {urlSource === 'region' && (
+              <SearchableSelect
+                label='Khu vực'
+                items={regions}
+                value={form.getFieldValue('regionId')}
+                lang={pickedLang}
+                onSelect={handleRegionSelect}
+                placeholder='Chọn khu vực...'
+              />
+            )}
+
+            <form.AppField name='url'>
+              {(field) => <field.TextField label='URL' placeholder='/destinations/japan' />}
+            </form.AppField>
+
+            {taken && (
+              <SeoUrlTakenNotice
+                taken={taken}
+                onEdit={(config) => {
+                  setEditing(config);
+                  onOpenChange(false);
+                }}
+              />
+            )}
+
+            <SeoTemplateVarsHint />
+
+            <form.AppField name='metaTitle'>
               {(field) => (
                 <field.TextField
-                  label='OG Title'
-                  placeholder='eSIM Nhật Bản - Nhận mã QR ngay'
+                  label='Meta Title'
+                  placeholder='Buy Japan eSIM - Best Plans'
                   recommendedLength={60}
+                  description='Google thường cắt tiêu đề sau khoảng 60 ký tự.'
                 />
               )}
             </form.AppField>
 
-            <form.AppField name='ogDescription'>
+            <form.AppField name='metaDescription'>
               {(field) => (
                 <field.TextareaField
-                  label='OG Description'
-                  placeholder='Mô tả hiện khi chia sẻ link...'
+                  label='Meta Description'
+                  placeholder='Mô tả SEO...'
                   recommendedLength={160}
-                  rows={3}
+                  description='Google thường cắt mô tả sau khoảng 160 ký tự.'
                 />
               )}
             </form.AppField>
 
-            <form.AppField name='ogImage'>
+            <form.AppField name='metaKeywords'>
               {(field) => (
-                <div className='space-y-2'>
-                  <field.TextField
-                    label='OG Image (URL)'
-                    placeholder='https://cdn.esim.vn/og/japan.jpg'
-                    type='url'
-                    description='Ảnh hiện kèm link khi chia sẻ. Nên dùng ảnh tỉ lệ 1200×630.'
-                  />
-                  {field.state.value ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={field.state.value as string}
-                      alt='Xem trước ảnh OG'
-                      className='h-32 w-auto rounded border object-cover'
-                    />
-                  ) : null}
-                </div>
+                <field.TextField label='Meta Keywords' placeholder='esim, japan, travel...' />
               )}
             </form.AppField>
-          </div>
 
-          <form.AppField name='structuredData'>
-            {(field) => (
-              <field.TextareaField
-                label='Schema / Script (JSON-LD, gtag, Google Ads...)'
-                placeholder='<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXX"></script>'
-                rows={12}
-                description='Dán được nhiều loại: schema JSON-LD, mã đo lường Google Analytics (gtag.js), mã Google Ads/chuyển đổi. Giữ nguyên thứ tự dán; dòng chú thích <!-- ... --> được bỏ qua. Không cần tự thêm type: chỉ khối JSON mới được gắn application/ld+json, script thường vẫn chạy như script.'
-              />
-            )}
-          </form.AppField>
+            {/* Open Graph — what Facebook / Zalo / X show when the link is shared.
+              Stored on the record all along, but the form never exposed them (#048). */}
+            <div className='space-y-4 rounded-md border p-3'>
+              <div className='space-y-1'>
+                <p className='text-sm font-medium'>Thẻ Open Graph (chia sẻ link)</p>
+                <p className='text-muted-foreground text-xs'>
+                  Để trống thì hệ thống tự dùng Meta Title / Meta Description ở trên.
+                </p>
+              </div>
 
-          <form.AppField name='isActive'>
-            {(field) => <field.SwitchField label='Hoạt động' />}
-          </form.AppField>
-        </form.Form>
-      </form.AppForm>
-    </FormDialog>
+              <form.AppField name='ogTitle'>
+                {(field) => (
+                  <field.TextField
+                    label='OG Title'
+                    placeholder='eSIM Nhật Bản - Nhận mã QR ngay'
+                    recommendedLength={60}
+                  />
+                )}
+              </form.AppField>
+
+              <form.AppField name='ogDescription'>
+                {(field) => (
+                  <field.TextareaField
+                    label='OG Description'
+                    placeholder='Mô tả hiện khi chia sẻ link...'
+                    recommendedLength={160}
+                    rows={3}
+                  />
+                )}
+              </form.AppField>
+
+              <form.AppField name='ogImage'>
+                {(field) => (
+                  <div className='space-y-2'>
+                    <field.TextField
+                      label='OG Image (URL)'
+                      placeholder='https://cdn.esim.vn/og/japan.jpg'
+                      type='url'
+                      description='Ảnh hiện kèm link khi chia sẻ. Nên dùng ảnh tỉ lệ 1200×630.'
+                    />
+                    {field.state.value ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={field.state.value as string}
+                        alt='Xem trước ảnh OG'
+                        className='h-32 w-auto rounded border object-cover'
+                      />
+                    ) : null}
+                  </div>
+                )}
+              </form.AppField>
+            </div>
+
+            <form.AppField name='structuredData'>
+              {(field) => (
+                <field.TextareaField
+                  label='Schema / Script (JSON-LD, gtag, Google Ads...)'
+                  placeholder='<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXX"></script>'
+                  rows={12}
+                  description='Dán được nhiều loại: schema JSON-LD, mã đo lường Google Analytics (gtag.js), mã Google Ads/chuyển đổi. Giữ nguyên thứ tự dán; dòng chú thích <!-- ... --> được bỏ qua. Không cần tự thêm type: chỉ khối JSON mới được gắn application/ld+json, script thường vẫn chạy như script.'
+                />
+              )}
+            </form.AppField>
+
+            <form.AppField name='isActive'>
+              {(field) => <field.SwitchField label='Hoạt động' />}
+            </form.AppField>
+          </form.Form>
+        </form.AppForm>
+      </FormDialog>
+      {editing && (
+        <EditSeoConfigDialog
+          key={editing.id}
+          seoConfig={editing}
+          open={!!editing}
+          onOpenChange={(next) => !next && setEditing(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -553,6 +582,10 @@ function EditSeoConfigDialog({
     }
   });
 
+  // Moving this config onto a URL another one has would make two (vande #084).
+  const url = useStore(form.store, (s) => s.values.url);
+  const taken = useSeoUrlTaken(url, seoConfig.id);
+
   const handleDestinationSelect = (option: string) => {
     const { id, lang } = decodePageOption(option);
     const dest = destinations.find((d: Destination) => d.id === id);
@@ -584,6 +617,7 @@ function EditSeoConfigDialog({
       formId={FORM_ID}
       isLoading={mutation.isPending}
       submitLabel='Cập nhật'
+      submitDisabled={!!taken}
       className='!max-w-3xl'
     >
       <form.AppForm>
@@ -646,6 +680,8 @@ function EditSeoConfigDialog({
           <form.AppField name='url'>
             {(field) => <field.TextField label='URL' placeholder='/destinations/japan' />}
           </form.AppField>
+
+          {taken && <SeoUrlTakenNotice taken={taken} />}
 
           <SeoTemplateVarsHint />
 

@@ -1,11 +1,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useStore } from '@tanstack/react-form';
+import { SimilarItemsHint } from '@/components/similar-items-hint';
+import { getFaqs } from '../api/service';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { FormDialog } from '@/components/ui/form-dialog';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFaqMutation, updateFaqMutation } from '../api/mutations';
 import type { Faq, CreateFaqPayload, UpdateFaqPayload } from '../api/types';
 import { toast } from 'sonner';
@@ -74,6 +77,29 @@ function CreateDialog({
 
   const { FormTextField, FormSelectField, FormSwitchField } = useFormFields<FaqFormValues>();
 
+  // Questions already on the system, to warn about a near-copy (vande #084).
+  const question = useStore(form.store, (s) => s.values.question ?? '');
+  const { data: existing = [] } = useQuery({
+    queryKey: ['faqs', 'all-for-similar'],
+    queryFn: async () => {
+      const all = [];
+      for (let page = 1; page <= 20; page++) {
+        const res = await getFaqs({ page, limit: 100 });
+        all.push(...res.data);
+        if (!res.hasNextPage) break;
+      }
+      return all.map((f) => ({
+        id: f.id,
+        title: f.question,
+        body: f.answer,
+        language: f.language,
+        isActive: f.isActive
+      }));
+    },
+    enabled: open,
+    staleTime: 60_000
+  });
+
   return (
     <FormDialog
       open={open}
@@ -99,6 +125,7 @@ function CreateDialog({
             placeholder='Làm thế nào để...?'
             validators={{ onBlur: z.string().min(2) }}
           />
+          <SimilarItemsHint text={question} items={existing} noun='câu hỏi' />
           <div className='space-y-2'>
             <label className='text-sm font-medium'>
               Câu trả lời <span className='text-destructive'>*</span>

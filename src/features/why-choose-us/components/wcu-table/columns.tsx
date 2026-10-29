@@ -44,7 +44,9 @@ export const columns: ColumnDef<WhyChooseUs>[] = [
       label: 'Tiêu đề',
       placeholder: 'Tìm tiêu đề, nội dung hoặc trang...',
       variant: 'text' as const,
-      icon: Icons.text
+      icon: Icons.search,
+      // One wide search box, like SEO and FAQ (vande #084).
+      inputClassName: 'h-9 w-full sm:w-[420px]'
     },
     enableColumnFilter: true
   },

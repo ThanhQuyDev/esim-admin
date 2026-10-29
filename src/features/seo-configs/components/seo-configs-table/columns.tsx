@@ -46,9 +46,11 @@ export const columns: ColumnDef<SeoConfig>[] = [
     cell: ({ row }) => <span className='font-mono text-xs'>{row.original.url}</span>,
     meta: {
       label: 'URL',
-      placeholder: 'Tìm theo URL trang (vd: /home)...',
+      // The one search box (vande #084): URL, Meta Title or Meta Description.
+      placeholder: 'Tìm theo URL, Meta Title hoặc Meta Description...',
       variant: 'text' as const,
-      icon: Icons.search
+      icon: Icons.search,
+      inputClassName: 'h-9 w-full sm:w-[420px]'
     },
     enableColumnFilter: true
   },
@@ -87,7 +89,8 @@ export const columns: ColumnDef<SeoConfig>[] = [
       variant: 'text' as const,
       icon: Icons.text
     },
-    enableColumnFilter: true
+    // Searched from the one box at the top now (vande #084).
+    enableColumnFilter: false
   },
   {
     id: 'metaDescription',
@@ -105,7 +108,8 @@ export const columns: ColumnDef<SeoConfig>[] = [
       variant: 'text' as const,
       icon: Icons.text
     },
-    enableColumnFilter: true
+    // Searched from the one box at the top now (vande #084).
+    enableColumnFilter: false
   },
   {
     // When it was added (vande #041); the list is newest first.

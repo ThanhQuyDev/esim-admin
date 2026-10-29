@@ -5,7 +5,10 @@ import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { FormDialog } from '@/components/ui/form-dialog';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useStore } from '@tanstack/react-form';
+import { SimilarItemsHint } from '@/components/similar-items-hint';
+import { getWhyChooseUs } from '../api/service';
 import { createWcuMutation, updateWcuMutation } from '../api/mutations';
 import type { WhyChooseUs, CreateWhyChooseUsPayload, UpdateWhyChooseUsPayload } from '../api/types';
 import { toast } from 'sonner';
@@ -182,6 +185,29 @@ function CreateDialog({
 
   const { FormTextField, FormSelectField, FormSwitchField } = useFormFields<WcuFormValues>();
 
+  // Entries already on the system, to warn about a near-copy (vande #084).
+  const title = useStore(form.store, (s) => s.values.title ?? '');
+  const { data: existing = [] } = useQuery({
+    queryKey: ['why-choose-us', 'all-for-similar'],
+    queryFn: async () => {
+      const all = [];
+      for (let page = 1; page <= 20; page++) {
+        const res = await getWhyChooseUs({ page, limit: 100 });
+        all.push(...res.data);
+        if (!res.hasNextPage) break;
+      }
+      return all.map((w) => ({
+        id: w.id,
+        title: w.title,
+        body: w.description,
+        language: w.language,
+        isActive: w.isActive
+      }));
+    },
+    enabled: open,
+    staleTime: 60_000
+  });
+
   return (
     <FormDialog
       open={open}
@@ -207,6 +233,7 @@ function CreateDialog({
             placeholder='Tiêu đề'
             validators={{ onBlur: z.string().min(2) }}
           />
+          <SimilarItemsHint text={title} items={existing} noun='nội dung' />
           <div className='space-y-2'>
             <label className='text-sm font-medium'>
               Mô tả <span className='text-destructive'>*</span>
