@@ -20,11 +20,16 @@ export type AnnouncementPeriod =
 
 export type CustomerAnnouncementStatus = 'scheduled' | 'sending' | 'sent' | 'cancelled';
 
+/** A customer group, or `emails` — addresses typed in by the admin (vande #087). */
+export type AnnouncementTarget = AnnouncementAudience | 'emails';
+
 export type CustomerAnnouncement = {
   id: number;
   subject: string;
   body: string;
-  audience: AnnouncementAudience;
+  audience: AnnouncementTarget;
+  /** audience `emails`: the addresses typed in. */
+  emails?: string[] | null;
   period: AnnouncementPeriod;
   intervalSec: number;
   scheduledAt: string;
@@ -41,7 +46,9 @@ export type CustomerAnnouncement = {
 export type CreateCustomerAnnouncementPayload = {
   subject: string;
   body: string;
-  audience: AnnouncementAudience;
+  audience: AnnouncementTarget;
+  /** audience `emails` only. */
+  emails?: string[];
   period: AnnouncementPeriod;
   intervalSec: number;
   /** ISO; omitted to send now. */

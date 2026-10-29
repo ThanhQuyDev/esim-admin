@@ -145,8 +145,17 @@ export function CustomerAnnouncementsList() {
             )}
           </div>
           <div className='mt-2 flex flex-wrap gap-2'>
-            <Badge variant='outline'>{AUDIENCE_LABEL[item.audience] ?? item.audience}</Badge>
-            <Badge variant='outline'>{PERIOD_LABEL[item.period] ?? item.period}</Badge>
+            {item.audience === 'emails' ? (
+              // Typed-in addresses (vande #087): the list, not a group.
+              <Badge variant='outline' title={(item.emails ?? []).join(', ')}>
+                {(item.emails ?? []).length} email cụ thể
+              </Badge>
+            ) : (
+              <>
+                <Badge variant='outline'>{AUDIENCE_LABEL[item.audience] ?? item.audience}</Badge>
+                <Badge variant='outline'>{PERIOD_LABEL[item.period] ?? item.period}</Badge>
+              </>
+            )}
             <Badge variant='outline'>Cách nhau {item.intervalSec} giây</Badge>
           </div>
           <p className='text-muted-foreground mt-2 text-xs'>

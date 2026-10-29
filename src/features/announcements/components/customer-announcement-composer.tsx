@@ -40,6 +40,7 @@ import { announcementKeys, audienceCountQueryOptions } from '../api/queries';
 import { createCustomerAnnouncement, previewCustomerAnnouncement } from '../api/service';
 import type { AnnouncementAudience, AnnouncementPeriod } from '../api/types';
 import { AUDIENCE_OPTIONS, PERIOD_OPTIONS } from '../constants';
+import { EmailChipsInput } from './email-chips-input';
 
 const SENDER = 'service@esim.com.vn';
 const SUBJECT_LIMIT = 200;
@@ -76,6 +77,10 @@ export function CustomerAnnouncementComposer() {
   const queryClient = useQueryClient();
 
   const [audience, setAudience] = useState<AnnouncementAudience>('purchased');
+  /** A customer group, or the addresses typed in (vande #087). */
+  const [target, setTarget] = useState<'group' | 'emails'>('group');
+  const [emails, setEmails] = useState<string[]>([]);
+  const toEmails = target === 'emails';
   const [period, setPeriod] = useState<AnnouncementPeriod>('last_30_days');
   const [intervalSec, setIntervalSec] = useState('10');
   const [subject, setSubject] = useState('');
@@ -85,10 +90,11 @@ export function CustomerAnnouncementComposer() {
   const [draftSchedule, setDraftSchedule] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const { data: count, isFetching: counting } = useQuery(
-    audienceCountQueryOptions(audience, period)
-  );
-  const recipients = count?.recipients ?? 0;
+  const { data: count, isFetching: counting } = useQuery({
+    ...audienceCountQueryOptions(audience, period),
+    enabled: !toEmails
+  });
+  const recipients = toEmails ? emails.length : (count?.recipients ?? 0);
 
   // The preview follows the text once typing pauses.
   const previewInput = useDebounced({ subject, body }, 500);
@@ -111,7 +117,9 @@ export function CustomerAnnouncementComposer() {
         : !intervalOk
           ? 'Số giây giữa 2 email phải từ 0 đến 3600.'
           : recipients === 0
-            ? 'Nhóm khách hàng và khoảng thời gian này chưa có ai để gửi.'
+            ? toEmails
+              ? 'Nhập ít nhất 1 email người nhận.'
+              : 'Nhóm khách hàng và khoảng thời gian này chưa có ai để gửi.'
             : null;
 
   const send = useMutation({
@@ -119,8 +127,9 @@ export function CustomerAnnouncementComposer() {
       createCustomerAnnouncement({
         subject: subject.trim(),
         body,
-        audience,
-        period,
+        ...(toEmails
+          ? { audience: 'emails' as const, period: 'all_time' as const, emails }
+          : { audience, period }),
         intervalSec: interval,
         ...(scheduledAt ? { scheduledAt: new Date(scheduledAt).toISOString() } : {})
       }),
@@ -148,59 +157,96 @@ export function CustomerAnnouncementComposer() {
     <div className='grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2'>
       {/* Left: what the admin writes */}
       <div className='min-w-0 space-y-5 rounded-lg border p-4' data-testid='announcement-form'>
-        <div className='grid gap-4 sm:grid-cols-2'>
-          <div className='space-y-1.5'>
-            <Label htmlFor='announcement-audience'>Nhóm khách hàng</Label>
-            <Select value={audience} onValueChange={(v) => setAudience(v as AnnouncementAudience)}>
-              <SelectTrigger id='announcement-audience' className='w-full'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {AUDIENCE_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className='text-muted-foreground text-xs'>
-              {AUDIENCE_OPTIONS.find((o) => o.value === audience)?.hint}
-            </p>
-          </div>
-          <div className='space-y-1.5'>
-            <Label htmlFor='announcement-period'>Khoảng thời gian</Label>
-            <Select value={period} onValueChange={(v) => setPeriod(v as AnnouncementPeriod)}>
-              <SelectTrigger id='announcement-period' className='w-full'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PERIOD_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className='text-muted-foreground text-xs'>
-              {audience === 'new'
-                ? 'Tính theo ngày khách tạo tài khoản.'
-                : audience === 'purchased'
-                  ? 'Tính theo ngày đặt đơn thành công.'
-                  : 'Tính theo ngày phát sinh đơn lỗi.'}
-            </p>
-          </div>
+        {/* Who it goes to (vande #087): a group, or the addresses typed in. */}
+        <div className='flex flex-wrap gap-2' role='radiogroup' aria-label='Người nhận'>
+          <Button
+            type='button'
+            size='sm'
+            role='radio'
+            aria-checked={!toEmails}
+            variant={toEmails ? 'outline' : 'default'}
+            data-testid='target-group'
+            onClick={() => setTarget('group')}
+          >
+            <Icons.user className='mr-1 h-4 w-4' /> Theo nhóm khách hàng
+          </Button>
+          <Button
+            type='button'
+            size='sm'
+            role='radio'
+            aria-checked={toEmails}
+            variant={toEmails ? 'default' : 'outline'}
+            data-testid='target-emails'
+            onClick={() => setTarget('emails')}
+          >
+            <Icons.mail className='mr-1 h-4 w-4' /> Gửi đến email cụ thể
+          </Button>
         </div>
+
+        {toEmails ? (
+          <div className='space-y-1.5'>
+            <Label>Email người nhận</Label>
+            <EmailChipsInput value={emails} onChange={setEmails} />
+          </div>
+        ) : (
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <div className='space-y-1.5'>
+              <Label htmlFor='announcement-audience'>Nhóm khách hàng</Label>
+              <Select
+                value={audience}
+                onValueChange={(v) => setAudience(v as AnnouncementAudience)}
+              >
+                <SelectTrigger id='announcement-audience' className='w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {AUDIENCE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className='text-muted-foreground text-xs'>
+                {AUDIENCE_OPTIONS.find((o) => o.value === audience)?.hint}
+              </p>
+            </div>
+            <div className='space-y-1.5'>
+              <Label htmlFor='announcement-period'>Khoảng thời gian</Label>
+              <Select value={period} onValueChange={(v) => setPeriod(v as AnnouncementPeriod)}>
+                <SelectTrigger id='announcement-period' className='w-full'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERIOD_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className='text-muted-foreground text-xs'>
+                {audience === 'new'
+                  ? 'Tính theo ngày khách tạo tài khoản.'
+                  : audience === 'purchased'
+                    ? 'Tính theo ngày đặt đơn thành công.'
+                    : 'Tính theo ngày phát sinh đơn lỗi.'}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div
           className='bg-muted/40 flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm'
           data-testid='announcement-recipients'
         >
           <Icons.user className='h-4 w-4' />
-          {counting && !count ? (
+          {!toEmails && counting && !count ? (
             'Đang đếm khách hàng…'
           ) : (
             <span>
-              Dự kiến <strong>{recipients.toLocaleString('vi-VN')}</strong> khách hàng nhận
+              Dự kiến <strong>{recipients.toLocaleString('vi-VN')}</strong>{' '}
+              {toEmails ? 'email nhận' : 'khách hàng nhận'}
               {recipients > 1 && intervalOk && interval > 0 && (
                 <span className='text-muted-foreground'>
                   {' '}
@@ -391,14 +437,22 @@ export function CustomerAnnouncementComposer() {
           <DialogHeader>
             <DialogTitle>{scheduledAt ? 'Đặt lịch gửi thông báo?' : 'Gửi thông báo?'}</DialogTitle>
             <DialogDescription>
-              “{subject.trim()}” tới khoảng {recipients.toLocaleString('vi-VN')} khách hàng (
-              {AUDIENCE_OPTIONS.find((o) => o.value === audience)?.label.toLowerCase()},{' '}
-              {PERIOD_OPTIONS.find((o) => o.value === period)?.label.toLowerCase()}), mỗi email cách
-              nhau {interval} giây
+              {toEmails ? (
+                <>
+                  “{subject.trim()}” tới {recipients.toLocaleString('vi-VN')} email bạn đã nhập
+                </>
+              ) : (
+                <>
+                  “{subject.trim()}” tới khoảng {recipients.toLocaleString('vi-VN')} khách hàng (
+                  {AUDIENCE_OPTIONS.find((o) => o.value === audience)?.label.toLowerCase()},{' '}
+                  {PERIOD_OPTIONS.find((o) => o.value === period)?.label.toLowerCase()})
+                </>
+              )}
+              , mỗi email cách nhau {interval} giây
               {scheduledAt
                 ? `, bắt đầu lúc ${formatDateTimeVn(new Date(scheduledAt).toISOString())}.`
                 : ', bắt đầu ngay.'}{' '}
-              Danh sách khách hàng được chốt lúc bắt đầu gửi.
+              {!toEmails && 'Danh sách khách hàng được chốt lúc bắt đầu gửi.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
