@@ -2,8 +2,9 @@
 //
 // The backend is what actually refuses a request — every CMS write needs the
 // admin role there. This decides what the console *shows*: an author signs in
-// to write blog posts, so they get the Blog menu and their profile, and any
-// other page they reach by typing its URL says they have no access.
+// to write blog posts, so they get the Blog menu, Mini Tags, Câu hỏi thường gặp
+// (vande #086) and their profile; any other page they reach by typing its URL
+// says they have no access.
 
 export const ROLE_ADMIN = 1;
 export const ROLE_AUTHOR = 3;
@@ -31,7 +32,13 @@ export function consoleRoleId(
 
 /** Where an author lands, and the only pages they may open. */
 export const AUTHOR_HOME_PATH = '/dashboard/blogs';
-const AUTHOR_PATH_PREFIXES = ['/dashboard/blogs', '/dashboard/profile'];
+const AUTHOR_PATH_PREFIXES = [
+  '/dashboard/blogs',
+  '/dashboard/profile',
+  // The tags and FAQs a post leans on (vande #086).
+  '/dashboard/mini-tags',
+  '/dashboard/faqs'
+];
 
 const matches = (pathname: string, prefix: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`);
