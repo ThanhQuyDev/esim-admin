@@ -129,7 +129,11 @@ export function ProductLine({ item, wrap = false }: { item: MyOrderItem; wrap?: 
   );
 }
 
-function OrderProducts({ items, createdAt }: { items: MyOrderItem[]; createdAt: string }) {
+/**
+ * The products of an order. No date under them: the list has its own "Ngày
+ * đặt hàng" column (doitac-3010 #011).
+ */
+function OrderProducts({ items }: { items: MyOrderItem[] }) {
   // One product per row keeps the list compact; the "+" opens the whole order
   // (#058, test round 4 — two names per row made the rows too tall).
   const shown = items.slice(0, 1);
@@ -157,7 +161,6 @@ function OrderProducts({ items, createdAt }: { items: MyOrderItem[]; createdAt: 
           </PopoverContent>
         </Popover>
       )}
-      <p className='text-muted-foreground text-xs'>{formatDateVn(createdAt)}</p>
     </div>
   );
 }
@@ -198,9 +201,7 @@ export const columns: ColumnDef<MyOrder>[] = [
       placeholder: 'Tên gói...',
       variant: 'text' as const
     },
-    cell: ({ row }) => (
-      <OrderProducts items={row.original.items} createdAt={row.original.createdAt} />
-    ),
+    cell: ({ row }) => <OrderProducts items={row.original.items} />,
     enableSorting: false
   },
   {
