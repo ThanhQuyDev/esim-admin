@@ -89,6 +89,7 @@ const ORDER_TYPES = [
 
 const COMMISSION_STATUS_LABEL: Record<string, string> = {
   pending: 'Chờ xác nhận',
+  unpaid: 'Đơn chưa thanh toán',
   credited: 'Đã cộng ví',
   reversed: 'Đã hoàn',
   rejected: 'Bị loại'

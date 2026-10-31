@@ -160,7 +160,9 @@ export function OrderDetailBody({
             <div>
               <dt className='text-muted-foreground'>Hoa hồng</dt>
               <dd className='font-medium tabular-nums'>
-                {data.commissionVnd == null ? '—' : formatVnd(data.commissionVnd)}
+                {data.commissionVnd == null || data.commissionStatus === 'unpaid'
+                  ? '—'
+                  : formatVnd(data.commissionVnd)}
                 {data.commissionPercent != null && (
                   <span className='text-muted-foreground font-normal'>
                     {' '}

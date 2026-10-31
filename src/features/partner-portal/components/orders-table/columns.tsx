@@ -20,6 +20,12 @@ import type { MyOrder, MyOrderItem } from '../../api/types';
  * carries the meaning alone — the label does.
  */
 export const COMMISSION_STATUS: Record<string, { label: string; className: string }> = {
+  // Not paid yet, or the payment failed (doitac-3010 #002): earns nothing yet.
+  unpaid: {
+    label: 'Chưa thanh toán',
+    className:
+      'border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300'
+  },
   credited: {
     label: 'Đã duyệt',
     className:
@@ -306,8 +312,13 @@ export const columns: ColumnDef<MyOrder>[] = [
     id: 'commissionVnd',
     accessorKey: 'commissionVnd',
     header: 'Hoa hồng',
+    // An unpaid order earns nothing yet (doitac-3010 #002).
     cell: ({ row }) => (
-      <span className='font-medium tabular-nums'>{formatVnd(row.original.commissionVnd ?? 0)}</span>
+      <span className='font-medium tabular-nums'>
+        {row.original.commissionStatus === 'unpaid'
+          ? '—'
+          : formatVnd(row.original.commissionVnd ?? 0)}
+      </span>
     ),
     enableSorting: false
   },

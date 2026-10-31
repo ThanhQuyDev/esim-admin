@@ -22,11 +22,16 @@ import { myOrdersQueryOptions } from '../api/queries';
 import { exportMyOrders } from '../api/service';
 import { PortalOrdersTable } from './orders-table';
 
+/** Orders the money arrived for — refunded later or not. */
+const PAID_ORDER_STATUSES = new Set(['paid', 'completed', 'refunded', 'partially_refunded']);
+
 export function PortalOrdersView() {
   const { data: orders } = useQuery(myOrdersQueryOptions());
 
   const stats = useMemo(() => {
-    const rows = orders ?? [];
+    // Only orders the customer actually paid count (doitac-3010 #002): a
+    // failed or unpaid order stays in the list, marked, but not in the totals.
+    const rows = (orders ?? []).filter((o) => PAID_ORDER_STATUSES.has(o.status));
     const credited = rows.filter((o) => o.commissionStatus === 'credited');
     const pending = rows.filter((o) => o.commissionStatus === 'pending');
     return {

@@ -37,7 +37,8 @@ import { commissionsQueryOptions } from '../api/queries';
 import type { OrderPartnerCommission } from '../api/types';
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: 'Chờ đơn thanh toán',
+  pending: 'Chờ xác nhận (24h)',
+  unpaid: 'Đơn chưa thanh toán',
   credited: 'Đã cộng vào ví',
   reversed: 'Đã hoàn',
   rejected: 'Bị loại hoa hồng'
