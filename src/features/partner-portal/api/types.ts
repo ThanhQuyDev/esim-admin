@@ -683,6 +683,11 @@ export type MyPurchaseDetail = {
     operatorName: string | null;
     speed: string | null;
     type: string | null;
+    /** doitac-3010 #005 — "Mã gói cước", KYC, topup, speed after the data. */
+    planCode?: string | null;
+    kycRequired?: boolean;
+    topUp?: boolean;
+    throttleSpeed?: string | null;
     refundable: boolean;
     esims: {
       iccid: string;

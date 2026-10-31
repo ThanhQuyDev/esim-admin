@@ -12,7 +12,8 @@ import type { VariantProps } from 'class-variance-authority';
 const skipReasonMessage: Record<ResendEsimEmailSkipReason, string> = {
   'buyer-has-no-email': 'Người mua chưa có email trong hệ thống',
   'no-order-items': 'Đơn hàng không có sản phẩm nào',
-  'no-esims-provisioned-yet': 'Chưa có eSIM nào được cấp cho đơn này'
+  'no-esims-provisioned-yet': 'Chưa có eSIM nào được cấp cho đơn này',
+  'all-esims-refunded': 'Mọi eSIM của đơn đã hoàn tiền, không gửi lại email'
 };
 
 interface ResendEsimEmailButtonProps extends VariantProps<typeof buttonVariants> {

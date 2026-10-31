@@ -359,7 +359,9 @@ export type OrderRefundResponse = {
 export type ResendEsimEmailSkipReason =
   | 'buyer-has-no-email'
   | 'no-order-items'
-  | 'no-esims-provisioned-yet';
+  | 'no-esims-provisioned-yet'
+  // Every eSIM of the order was refunded (doitac-3010 #005).
+  | 'all-esims-refunded';
 
 export type ResendEsimEmailResponse = {
   sent: number;

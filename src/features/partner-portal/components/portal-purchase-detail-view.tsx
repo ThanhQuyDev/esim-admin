@@ -251,7 +251,10 @@ export function PortalPurchaseDetailView({
             </>
           )}
           <InfoRow label='Ngày mua' value={dateOrDash(order.createdAt)} />
-          <InfoRow label='Cập nhật' value={dateOrDash(order.updatedAt)} />
+          {/* The line under the last row too, to close the block (doitac-3010 #005). */}
+          <div className='border-b'>
+            <InfoRow label='Cập nhật' value={dateOrDash(order.updatedAt)} />
+          </div>
         </CardContent>
       </Card>
 
@@ -320,7 +323,17 @@ export function PortalPurchaseDetailView({
                 label='Loại gói'
                 value={PLAN_TYPE_LABEL[product.type ?? ''] ?? product.type ?? '—'}
               />
-              <InfoRow label='Hỗ trợ hoàn tiền' value={product.refundable ? 'Có' : 'Không'} />
+              <InfoRow label='Yêu cầu KYC' value={product.kycRequired ? 'Có' : 'Không'} />
+              <InfoRow label='Hỗ trợ Topup' value={product.topUp ? 'Có' : 'Không'} />
+              <InfoRow label='Tốc độ sau khi hết data' value={product.throttleSpeed || '—'} />
+              <InfoRow
+                label='Mã gói cước'
+                value={<span className='font-mono text-xs'>{product.planCode || '—'}</span>}
+              />
+              {/* Closed by a line, like the rows above it (doitac-3010 #005). */}
+              <div className='border-b'>
+                <InfoRow label='Hỗ trợ hoàn tiền' value={product.refundable ? 'Có' : 'Không'} />
+              </div>
             </div>
 
             <div className='overflow-x-auto'>
@@ -350,16 +363,22 @@ export function PortalPurchaseDetailView({
                       };
                       return (
                         <TableRow key={esim.iccid}>
-                          <TableCell className='font-mono text-xs'>{esim.iccid}</TableCell>
-                          <TableCell>
-                            <Badge variant={s.variant}>{s.label}</Badge>
+                          <TableCell className='text-xs'>
+                            <span className='font-mono'>{esim.iccid}</span>
+                            {/* Under the ICCID it is about (doitac-3010 #005). */}
                             {esim.openReport && (
-                              <div className='text-muted-foreground mt-1 text-[11px]'>
+                              <div
+                                className='mt-1 text-[11px] text-red-600 dark:text-red-400'
+                                data-testid='esim-open-report'
+                              >
                                 {esim.openReport === 'refund'
-                                  ? 'Đang chờ hoàn tiền'
+                                  ? 'Đang xem xét hoàn tiền'
                                   : 'Đang chờ xử lý lỗi'}
                               </div>
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={s.variant}>{s.label}</Badge>
                           </TableCell>
                           <TableCell className='text-xs whitespace-nowrap'>
                             {formatData(esim.dataUsed)} / {formatData(esim.dataTotal)}
