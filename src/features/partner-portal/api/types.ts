@@ -453,6 +453,8 @@ export type MyTicket = {
   description: string;
   orderId: string | null;
   status: string;
+  /** Files sent with the request itself (doitac-3010 #006). */
+  attachments?: string[] | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -870,6 +872,16 @@ export type MyEsimDetail = {
   updatedAt: string | null;
   dataUsed: number | null;
   dataTotal: number | null;
+  /** doitac-3010 #006, as on the admin's eSIM page. */
+  throttleSpeed?: string | null;
+  kycRequired?: boolean;
+  hotspot?: boolean | null;
+  hotspotAllow?: string | null;
+  roaming?: boolean | null;
+  phoneNumber?: string | null;
+  eid?: string | null;
+  deviceModel?: string | null;
+  tiktokAi?: boolean | null;
   smdpAddress: string | null;
   activationCode: string | null;
   lpa: string | null;

@@ -1,5 +1,6 @@
 'use client';
 
+import { AttachmentsGrid } from './attachments-grid';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -100,6 +101,11 @@ export function TicketConversation({
                   </span>
                 </div>
                 <p className='text-sm whitespace-pre-wrap break-words'>{message.body}</p>
+                {/* Files the partner or customer sent with a reply, which the
+                    admin could not open before (doitac-3010 #006). */}
+                {(message.attachments?.length ?? 0) > 0 && (
+                  <AttachmentsGrid attachments={message.attachments} className='mt-2' />
+                )}
               </div>
             ))}
           </div>

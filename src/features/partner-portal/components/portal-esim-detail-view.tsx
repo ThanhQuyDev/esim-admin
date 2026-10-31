@@ -172,7 +172,9 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
           <Button
             variant='outline'
             size='sm'
-            disabled={resend.isPending}
+            // A refunded eSIM's QR code is not sent again (doitac-3010 #006).
+            disabled={closed || resend.isPending}
+            title={closed ? 'eSIM đã được hoàn tiền' : undefined}
             onClick={() => resend.mutate()}
           >
             <Icons.mail className='size-4' />
@@ -221,7 +223,10 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
         </div>
       </div>
       {pending && (
-        <p className='text-muted-foreground text-sm'>
+        <p
+          className='text-sm font-medium text-red-600 dark:text-red-400'
+          data-testid='esim-open-report'
+        >
           {esim.openReport === 'refund'
             ? 'eSIM này đang có yêu cầu hoàn tiền chờ esim.vn xử lý.'
             : 'eSIM này đang có báo lỗi chờ esim.vn xử lý.'}
@@ -231,32 +236,73 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
       <div className='grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2'>
         <Card className='min-w-0'>
           <CardHeader>
-            <CardTitle>Thông tin eSIM</CardTitle>
+            {/* The plan and the status in the title, so the status row below
+                is gone (doitac-3010 #006). */}
+            <CardTitle className='flex flex-wrap items-center gap-2' data-testid='esim-info-title'>
+              <span>Thông tin eSIM: {plan.name || esim.iccid}</span>
+              <Badge variant={badge.variant}>{badge.label}</Badge>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <InfoRow
-              label='Trạng thái'
-              value={<Badge variant={badge.variant}>{badge.label}</Badge>}
-            />
             <InfoRow
               label='Mã đơn hàng'
               value={<span className='font-mono'>{esim.orderNumber}</span>}
             />
             <InfoRow label='ICCID' value={<span className='font-mono'>{esim.iccid}</span>} />
-            <InfoRow label='APN' value={esim.apn || '—'} />
             <InfoRow
               label='Mã gói cước'
               value={<span className='font-mono'>{esim.planCode || '—'}</span>}
             />
-            <InfoRow label='IP thoát mạng' value={esim.ipExport || '—'} />
+            <InfoRow label='Email nhận eSIM' value={esim.deliveryEmail || '—'} />
+            <InfoRow label='Số điện thoại' value={esim.phoneNumber || '—'} />
+            <InfoRow
+              label='EID thiết bị'
+              value={
+                esim.eid ? (
+                  <span>
+                    <span className='font-mono text-xs break-all'>{esim.eid}</span>
+                    {esim.deviceModel && (
+                      <span className='text-muted-foreground block text-xs'>
+                        {esim.deviceModel}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  esim.deviceModel || '—'
+                )
+              }
+            />
+            <InfoRow label='Hỗ trợ Topup' value={yesNo(plan.topUp)} />
+            <InfoRow
+              label='Tiktok & AI'
+              value={esim.tiktokAi == null ? 'Không rõ' : yesNo(esim.tiktokAi)}
+            />
+            <InfoRow label='eKYC' value={yesNo(esim.kycRequired)} />
+            <InfoRow
+              label='Chia sẻ kết nối / Hotspot'
+              value={
+                esim.hotspot == null
+                  ? '—'
+                  : esim.hotspot
+                    ? esim.hotspotAllow
+                      ? `Có (${esim.hotspotAllow})`
+                      : 'Có'
+                    : 'Không'
+              }
+            />
+            <InfoRow label='Roaming' value={esim.roaming == null ? '—' : yesNo(esim.roaming)} />
             <InfoRow label='Hỗ trợ hoàn tiền' value={yesNo(esim.refundable)} />
-            <InfoRow label='Reset dung lượng tốc độ cao' value={resetLabel(esim)} />
             <InfoRow label='Giá đại lý' value={formatVnd(esim.agentPriceVnd)} />
             <InfoRow label='Giá bán lẻ đề xuất' value={formatVnd(esim.suggestedRetailVnd)} />
             <InfoRow
               label='Dữ liệu đã dùng'
-              value={`${formatData(esim.dataUsed)} / ${formatData(esim.dataTotal)}`}
+              value={
+                <span data-testid='esim-data-used'>
+                  {formatData(esim.dataUsed)} / {formatData(esim.dataTotal)}
+                </span>
+              }
             />
+            <InfoRow label='Tốc độ sau khi hết data' value={esim.throttleSpeed || '—'} />
             <InfoRow label='Thời gian tạo' value={dateOrDash(esim.createdAt)} />
             <InfoRow label='Kích hoạt' value={dateOrDash(esim.activatedAt)} />
             <InfoRow label='Hết hạn' value={dateOrDash(esim.expiresAt)} />
@@ -293,6 +339,11 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
               <CopyRow label='SM-DP+ Address' value={esim.smdpAddress} />
               <CopyRow label='Activation Code' value={esim.activationCode} />
               <CopyRow label='LPA' value={esim.lpa} />
+              {/* Moved here from "Thông tin eSIM" to balance the two columns
+                  (doitac-3010 #006). */}
+              <InfoRow label='APN' value={esim.apn || '—'} />
+              <InfoRow label='IP thoát mạng' value={esim.ipExport || '—'} />
+              <InfoRow label='Giờ làm mới dung lượng tốc độ cao' value={resetLabel(esim)} />
             </CardContent>
           </Card>
         </div>

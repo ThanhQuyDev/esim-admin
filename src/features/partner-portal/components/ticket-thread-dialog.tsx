@@ -91,6 +91,9 @@ export function TicketThreadDialog({ ticket, onOpenChange }: TicketThreadDialogP
               </span>
             </div>
             <p className='text-sm whitespace-pre-wrap'>{ticket?.description}</p>
+            {/* The files sent with the request, which the admin already saw
+                and the partner could not (doitac-3010 #006). */}
+            <AttachmentLinks urls={ticket?.attachments} />
           </div>
 
           {isLoading && (
@@ -119,17 +122,7 @@ export function TicketThreadDialog({ ticket, onOpenChange }: TicketThreadDialogP
                   </span>
                 </div>
                 <p className='text-sm whitespace-pre-wrap'>{message.body}</p>
-                {message.attachments?.map((url) => (
-                  <a
-                    key={url}
-                    href={url}
-                    target='_blank'
-                    rel='noreferrer'
-                    className='mt-2 block text-xs underline underline-offset-4'
-                  >
-                    Tài liệu đính kèm
-                  </a>
-                ))}
+                <AttachmentLinks urls={message.attachments} />
               </div>
             );
           })}
@@ -205,5 +198,25 @@ export function TicketThreadDialog({ ticket, onOpenChange }: TicketThreadDialogP
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** "Tài liệu đính kèm 1, 2…", each opening the file in a new tab. */
+function AttachmentLinks({ urls }: { urls?: string[] | null }) {
+  if (!urls?.length) return null;
+  return (
+    <div className='mt-2 flex flex-wrap gap-x-4 gap-y-1' data-testid='ticket-attachments'>
+      {urls.map((url, index) => (
+        <a
+          key={url}
+          href={url}
+          target='_blank'
+          rel='noreferrer'
+          className='text-xs underline underline-offset-4'
+        >
+          Tài liệu đính kèm{urls.length > 1 ? ` ${index + 1}` : ''}
+        </a>
+      ))}
+    </div>
   );
 }

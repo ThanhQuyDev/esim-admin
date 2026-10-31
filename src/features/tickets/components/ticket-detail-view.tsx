@@ -20,6 +20,7 @@ import { TicketDeadlineTag } from './ticket-deadline-tag';
 import { SafeHtml } from './safe-html';
 import { AttachmentsGrid } from './attachments-grid';
 import { TicketConversation } from './ticket-conversation';
+import { RelatedTickets } from './related-tickets';
 import { TICKET_AUTO_CLOSE_HOURS } from '../constants/status';
 import { formatDateTimeVn } from '@/lib/format';
 import type { Ticket } from '../api/types';
@@ -178,6 +179,8 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
           <AttachmentsGrid attachments={ticket.attachments} />
         </CardContent>
       </Card>
+
+      <RelatedTickets ticketId={ticket.id} />
 
       {/* The thread and the reply box (#059) — replying from here emails the
           customer instead of support composing it by hand. */}

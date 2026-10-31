@@ -24,6 +24,21 @@ export async function getTicketById(id: number): Promise<Ticket> {
   return apiClient<Ticket>(`${BASE}/${id}`);
 }
 
+/** Tickets about the same eSIM or order (doitac-3010 #006). */
+export type RelatedTicket = {
+  id: number;
+  ticketNumber: string;
+  subject: string;
+  status: Ticket['status'];
+  iccid: string | null;
+  orderId: string | null;
+  createdAt: string;
+};
+
+export async function getRelatedTickets(id: number): Promise<RelatedTicket[]> {
+  return apiClient<RelatedTicket[]>(`${BASE}/${id}/related`);
+}
+
 export async function updateTicketStatus(
   id: number,
   data: UpdateTicketStatusPayload

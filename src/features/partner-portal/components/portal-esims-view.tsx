@@ -57,10 +57,13 @@ import {
 
 const statusFilters = [
   { value: 'all', label: 'Tất cả trạng thái' },
-  { value: 'available', label: 'Chưa kích hoạt' },
+  // Worked out like the admin's (doitac-3010 #006): an eSIM on an order not
+  // switched on yet is "sold".
+  { value: 'sold', label: 'Chưa kích hoạt' },
   { value: 'active', label: 'Đang dùng' },
   { value: 'expired', label: 'Đã hết hạn' },
-  { value: 'deactivated', label: 'Đã ngừng' }
+  { value: 'deactivated', label: 'Đã ngừng' },
+  { value: 'refunded', label: 'Đã hoàn tiền' }
 ];
 
 /** "Loại gói eSIM" (doitac-1410 #037). */
@@ -298,7 +301,21 @@ export function PortalEsimsView() {
                     };
                     return (
                       <TableRow key={`${esim.iccid}-${esim.orderNumber}`}>
-                        <TableCell className='font-mono text-xs'>{esim.iccid ?? '—'}</TableCell>
+                        <TableCell className='text-xs'>
+                          <span className='font-mono'>{esim.iccid ?? '—'}</span>
+                          {/* Under the ICCID it is about, until the ticket is
+                              resolved (doitac-3010 #006). */}
+                          {esim.openReport && (
+                            <div
+                              className='mt-1 text-[11px] text-red-600 dark:text-red-400'
+                              data-testid='esim-open-report'
+                            >
+                              {esim.openReport === 'refund'
+                                ? 'Đang xem xét hoàn tiền'
+                                : 'Đang chờ xử lý lỗi'}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>{esim.planName ?? '—'}</TableCell>
                         <TableCell>{esim.destination ?? '—'}</TableCell>
                         <TableCell className='font-mono text-xs'>
@@ -400,11 +417,6 @@ function EsimActions({ esim, onRequest }: { esim: MyEsim; onRequest: (kind: Faul
       >
         Yêu cầu hoàn tiền
       </Button>
-      {pending && (
-        <span className='text-muted-foreground text-[11px]'>
-          {esim.openReport === 'refund' ? 'Đang chờ hoàn tiền' : 'Đang chờ xử lý lỗi'}
-        </span>
-      )}
     </div>
   );
 }
