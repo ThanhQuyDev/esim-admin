@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
   if (!res.ok) {
     return NextResponse.json(
-      { message: data.message || 'Failed to submit manual order', errors: data.errors },
+      { message: data.message || 'Đặt đơn hộ thất bại, vui lòng thử lại.', errors: data.errors },
       { status: res.status }
     );
   }
