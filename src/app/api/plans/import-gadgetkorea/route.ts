@@ -15,7 +15,9 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${API_URL}/api/v1/plans/import-gadgetkorea`, {
+  // `?async=1` runs the import in the background (doitac-3010 #008).
+  const query = request.nextUrl.search;
+  const res = await fetch(`${API_URL}/api/v1/plans/import-gadgetkorea${query}`, {
     method: 'POST',
     headers,
     body: formData
@@ -25,7 +27,10 @@ export async function POST(request: NextRequest) {
 
   if (!res.ok) {
     return NextResponse.json(
-      { message: data.message || 'Failed to import Gadget Korea plans', errors: data.errors },
+      {
+        message: data.message || 'Nhập file Gadget thất bại, vui lòng thử lại.',
+        errors: data.errors
+      },
       { status: res.status }
     );
   }

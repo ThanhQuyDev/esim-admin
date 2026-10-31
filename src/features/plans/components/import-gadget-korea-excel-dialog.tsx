@@ -25,6 +25,8 @@ export function ImportGadgetKoreaExcelDialog() {
   const [file, setFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportGadgetKoreaResponse | null>(null);
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  // How far the background import has got (doitac-3010 #008).
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleReset = useCallback(() => {
@@ -56,7 +58,8 @@ export function ImportGadgetKoreaExcelDialog() {
       return;
     }
 
-    importMut.mutate({ file });
+    setProgress(null);
+    importMut.mutate({ file, onProgress: (done, total) => setProgress({ done, total }) });
   }, [file, importMut]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,6 +157,14 @@ export function ImportGadgetKoreaExcelDialog() {
               />
             </div>
           </div>
+
+          {importMut.isPending && (
+            <p className='text-muted-foreground text-sm' data-testid='gadget-import-progress'>
+              {progress && progress.total > 0
+                ? `Đang nhập… đã xử lý ${progress.done.toLocaleString('vi-VN')} / ${progress.total.toLocaleString('vi-VN')} dòng. Có thể mất khoảng 1 phút, vui lòng không đóng trang.`
+                : 'Đang tải file lên và bắt đầu nhập…'}
+            </p>
+          )}
 
           <DialogFooter>
             <Button variant='outline' onClick={() => setOpen(false)} disabled={importMut.isPending}>

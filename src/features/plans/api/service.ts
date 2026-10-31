@@ -78,23 +78,45 @@ export async function importPlansExcel(
   return res.json();
 }
 
+/**
+ * Import a Gadget price file (doitac-3010 #008): the file goes up, the
+ * backend imports it in the background, and this asks how far it has got
+ * every two seconds until it is done. A full file takes about a minute —
+ * longer than the proxy in front of the API waits — so waiting on one long
+ * request ended in an error while the import carried on unseen.
+ */
 export async function importGadgetKoreaExcel(
   payload: ImportGadgetKoreaExcelPayload
 ): Promise<ImportGadgetKoreaResponse> {
   const formData = new FormData();
   formData.append('file', payload.file);
 
-  const res = await fetch('/api/plans/import-gadgetkorea', {
+  const res = await fetch('/api/plans/import-gadgetkorea?async=1', {
     method: 'POST',
     body: formData
   });
-
+  const started = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `Import failed: ${res.status}`);
+    throw new Error(started.message || `Nhập file thất bại (${res.status}).`);
   }
+  if (!started.jobId) return started as ImportGadgetKoreaResponse;
 
-  return res.json();
+  const deadline = Date.now() + 30 * 60_000;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const poll = await fetch(
+      `/api/plans/import-gadgetkorea/jobs/${encodeURIComponent(started.jobId)}`,
+      { cache: 'no-store' }
+    );
+    const job = await poll.json().catch(() => ({}));
+    if (!poll.ok) {
+      throw new Error(job.message || 'Không đọc được tiến độ nhập file.');
+    }
+    payload.onProgress?.(Number(job.done) || 0, Number(job.total) || 0);
+    if (job.status === 'done') return job.result as ImportGadgetKoreaResponse;
+    if (job.status === 'failed') throw new Error(job.error || 'Nhập file thất bại.');
+  }
+  throw new Error('Nhập file chạy quá lâu, vui lòng tải lại trang để xem kết quả.');
 }
 
 /** Delete the plans ticked in the list (vande #019). */

@@ -160,6 +160,8 @@ export type ImportPlansExcelPayload = {
 
 export type ImportGadgetKoreaExcelPayload = {
   file: File;
+  /** Rows read so far, of all (doitac-3010 #008). */
+  onProgress?: (done: number, total: number) => void;
 };
 
 export type ImportPlansExcelResponse = {
