@@ -24,6 +24,7 @@ import { PartnerStatsSection } from './partner-stats-section';
 import { PartnerWalletSheet } from './partner-wallet-sheet';
 import { RejectPartnerModal } from './reject-partner-modal';
 import { PartnerCreditLimitCard } from './partner-credit-limit-card';
+import { PartnerStatusHistoryCard } from './partner-status-history-card';
 import {
   Select,
   SelectContent,
@@ -526,6 +527,8 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
           )}
         </CardContent>
       </Card>
+
+      {decided && <PartnerStatusHistoryCard partnerId={partner.id} />}
     </div>
   );
 }

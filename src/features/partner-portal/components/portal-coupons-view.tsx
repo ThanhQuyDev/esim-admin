@@ -9,6 +9,7 @@
  * as the partner types, and the API caps the discount at their own rate.
  */
 
+import { partnerLockMessage } from '../utils/partner-lock';
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -120,6 +121,7 @@ function couponTerms(coupon: MyCoupon): [string, string][] {
 export function PortalCouponsView() {
   const { data: coupons, isLoading } = useQuery(myCouponsQueryOptions());
   const { data: me } = useQuery(myProfileQueryOptions());
+  const lockNote = partnerLockMessage(me?.status, 'coupon');
 
   const { data: summary } = useQuery(mySummaryQueryOptions());
   const commissionPercent = summary?.tier.current
@@ -222,13 +224,25 @@ export function PortalCouponsView() {
           </CardTitle>
           <CardDescription>Theo dõi lượt sử dụng và doanh số từ từng mã.</CardDescription>
           <CardAction>
-            <Button size='sm' onClick={() => setOpen(true)}>
+            <Button
+              size='sm'
+              onClick={() => setOpen(true)}
+              disabled={Boolean(lockNote)}
+              title={lockNote ?? undefined}
+            >
               <Icons.add />
               Tạo mã giảm giá
             </Button>
           </CardAction>
         </CardHeader>
         <CardContent>
+          {/* Locked: the codes are suspended and no new one can be made
+              (doitac-3010 #009). */}
+          {lockNote && (
+            <p className='text-destructive mb-4 text-sm' data-testid='lock-note'>
+              {lockNote}
+            </p>
+          )}
           {isLoading && <p className='text-muted-foreground py-8 text-center text-sm'>Đang tải…</p>}
 
           {!isLoading && list.length === 0 && (
@@ -238,7 +252,12 @@ export function PortalCouponsView() {
                 Tạo mã của riêng bạn để khách nhập khi thanh toán. Phần bạn nhường khách được trừ
                 vào hoa hồng của chính bạn.
               </p>
-              <Button size='sm' className='mt-4' onClick={() => setOpen(true)}>
+              <Button
+                size='sm'
+                className='mt-4'
+                onClick={() => setOpen(true)}
+                disabled={Boolean(lockNote)}
+              >
                 <Icons.add />
                 Tạo mã giảm giá
               </Button>

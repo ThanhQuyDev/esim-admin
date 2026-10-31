@@ -9,6 +9,7 @@
  * appearing as a detached toast.
  */
 
+import { partnerLockMessage } from '../utils/partner-lock';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -93,6 +94,7 @@ function maskAccount(accountNumber: string | null | undefined): string {
 export function PortalPayoutsView() {
   const { data: summary } = useQuery(mySummaryQueryOptions());
   const { data: me } = useQuery(myProfileQueryOptions());
+  const payoutLock = partnerLockMessage(me?.status, 'payout');
   const { data: payouts } = useQuery(myPayoutsQueryOptions());
   const router = useRouter();
   // A distribution partner withdraws from "Thanh toán" (doitac-1410 #032);
@@ -210,9 +212,19 @@ export function PortalPayoutsView() {
             </div>
           </CardContent>
           <CardFooter className='flex-wrap gap-2'>
-            <Button onClick={submit} disabled={!hasBank || createPayout.isPending}>
+            <Button
+              onClick={submit}
+              disabled={!hasBank || createPayout.isPending || Boolean(payoutLock)}
+              title={payoutLock ?? undefined}
+            >
               Yêu cầu rút tiền
             </Button>
+            {/* Said before the partner fills in the form (doitac-3010 #009). */}
+            {payoutLock && (
+              <p className='text-destructive w-full text-sm' data-testid='lock-note'>
+                {payoutLock}
+              </p>
+            )}
             {!hasBank && (
               <p className='text-muted-foreground text-xs'>
                 Cần có tài khoản ngân hàng trong hồ sơ trước khi rút.

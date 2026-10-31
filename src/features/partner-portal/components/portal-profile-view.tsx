@@ -9,6 +9,7 @@
  * editing bank details cannot overwrite the channels saved from another tab.
  */
 
+import { partnerStatusLabel } from '../utils/partner-lock';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
@@ -572,10 +573,18 @@ export function PortalProfileView() {
               {summary?.tier.current ? ` · Hạng ${summary.tier.current.tierName}` : ''}
             </CardDescription>
             <Badge
-              variant={me?.status === 'active' ? 'default' : 'secondary'}
+              variant={
+                me?.status === 'active'
+                  ? 'default'
+                  : me?.status === 'hold' || me?.status === 'disabled'
+                    ? 'destructive'
+                    : 'secondary'
+              }
               className='mx-auto mt-2'
+              data-testid='profile-status'
             >
-              {me?.status === 'active' ? 'Đã xác minh' : 'Đang chờ duyệt'}
+              {/* "Tạm khóa tài khoản" read "Đang chờ duyệt" (doitac-3010 #009). */}
+              {partnerStatusLabel(me?.status)}
             </Badge>
           </CardHeader>
         </Card>

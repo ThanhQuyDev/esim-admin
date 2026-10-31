@@ -1,4 +1,5 @@
 'use client';
+import { partnerLockMessage } from '../utils/partner-lock';
 import { downloadFilename } from '@/lib/download-filename';
 
 /**
@@ -352,14 +353,24 @@ export function PortalLinksView() {
               </p>
             </div>
           </CardContent>
-          <CardFooter className='gap-2'>
-            <Button onClick={submit} isLoading={createLink.isPending}>
+          <CardFooter className='flex-wrap gap-2'>
+            <Button
+              onClick={submit}
+              isLoading={createLink.isPending}
+              disabled={Boolean(partnerLockMessage(me?.status, 'link'))}
+              title={partnerLockMessage(me?.status, 'link') ?? undefined}
+            >
               <Icons.add />
               Tạo liên kết
             </Button>
             <Button variant='outline' onClick={() => setForm(EMPTY_FORM)}>
               Đặt lại
             </Button>
+            {partnerLockMessage(me?.status, 'link') && (
+              <p className='text-destructive w-full text-sm' data-testid='lock-note'>
+                {partnerLockMessage(me?.status, 'link')}
+              </p>
+            )}
           </CardFooter>
         </Card>
 

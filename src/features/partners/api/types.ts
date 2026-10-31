@@ -542,6 +542,8 @@ export type PartnerStatusChange = {
   toStatus: string;
   reason: string | null;
   changedByAdminId: number | null;
+  /** The admin's name or email (doitac-3010 #009). */
+  changedByName?: string | null;
   createdAt: string;
 };
 
