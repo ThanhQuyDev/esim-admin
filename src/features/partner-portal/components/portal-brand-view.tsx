@@ -8,15 +8,16 @@
  * its stylesheet scoped in `portal-brand-port.css`. On the left the brand
  * (logo and its position, name, slogan, website, support email, main colour,
  * and whether the email shows "Kiểm tra dung lượng & ưu đãi của eSIM" and
- * "Hướng dẫn cài đặt eSIM"); on the right a live preview of the eSIM email the
- * partner's customers receive. The email itself is rendered by the backend
- * from the same settings.
+ * "Hướng dẫn cài đặt eSIM"); on the right the eSIM email the partner's
+ * customers receive — the real one, built by the backend from the stock
+ * template and the form as it stands, not a drawing of it (doitac-3010 #004).
  */
 
 import './portal-brand-port.css';
 
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/use-debounce';
 import { toast } from 'sonner';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +25,7 @@ import { Icons } from '@/components/icons';
 
 import { updateMyProfileMutation } from '../api/mutations';
 import { myProfileQueryOptions } from '../api/queries';
-import { uploadAttachment } from '../api/service';
+import { previewBrandEmail, uploadAttachment } from '../api/service';
 import type { PartnerBrandInfo } from '../api/types';
 
 /** esim.vn's own logo — what the email shows when the partner has none. */
@@ -76,6 +77,21 @@ function readBrand(info: Record<string, unknown> | null | undefined): BrandForm 
   };
 }
 
+/** What is saved, and what the preview is built from. */
+function toBrandInfo(form: BrandForm): PartnerBrandInfo {
+  return {
+    displayName: form.displayName.trim() || undefined,
+    logoUrl: form.logoUrl || undefined,
+    logoPosition: form.logoPosition,
+    tagline: form.tagline.trim() || undefined,
+    website: form.website.trim() || undefined,
+    supportEmail: form.supportEmail.trim() || undefined,
+    primaryColor: form.primaryColor,
+    showUsageCheck: form.showUsageCheck,
+    showInstallGuide: form.showInstallGuide
+  };
+}
+
 export function PortalBrandView() {
   const { data: partner, isLoading } = useQuery(myProfileQueryOptions());
   const [form, setForm] = useState<BrandForm>(EMPTY);
@@ -90,6 +106,15 @@ export function PortalBrandView() {
     seededFor.current = partner.id;
     setForm(readBrand(partner.brandInfo));
   }, [partner]);
+
+  // Rebuilt a moment after the partner stops typing.
+  const previewBrand = useDebounce(JSON.stringify(toBrandInfo(form)), 400);
+  const preview = useQuery({
+    queryKey: ['partner-portal', 'brand-email-preview', previewBrand],
+    queryFn: () => previewBrandEmail(JSON.parse(previewBrand) as PartnerBrandInfo),
+    enabled: Boolean(partner),
+    placeholderData: (previous) => previous
+  });
 
   const update = useMutation({
     ...updateMyProfileMutation,
@@ -122,26 +147,9 @@ export function PortalBrandView() {
     }
   };
 
-  const save = () => {
-    const brandInfo: PartnerBrandInfo = {
-      displayName: form.displayName.trim() || undefined,
-      logoUrl: form.logoUrl || undefined,
-      logoPosition: form.logoPosition,
-      tagline: form.tagline.trim() || undefined,
-      website: form.website.trim() || undefined,
-      supportEmail: form.supportEmail.trim() || undefined,
-      primaryColor: form.primaryColor,
-      showUsageCheck: form.showUsageCheck,
-      showInstallGuide: form.showInstallGuide
-    };
-    update.mutate({ brandInfo });
-  };
+  const save = () => update.mutate({ brandInfo: toBrandInfo(form) });
 
   const logo = form.logoUrl || DEFAULT_LOGO;
-  const name = form.displayName.trim() || 'ESIM.VN';
-  const website = form.website.trim() || 'https://esim.vn';
-  const support = form.supportEmail.trim() || 'support@esim.vn';
-  const color = form.primaryColor;
 
   return (
     <div className='brand-port brand-settings-page' data-testid='brand-settings'>
@@ -278,7 +286,7 @@ export function PortalBrandView() {
                   className='brand-color-picker'
                   id='brandPrimaryColor'
                   type='color'
-                  value={color}
+                  value={form.primaryColor}
                   onChange={(e) => set('primaryColor', e.target.value)}
                 />
               </div>
@@ -337,113 +345,27 @@ export function PortalBrandView() {
               </button>
             </div>
             <div className='brand-preview-pane active' data-testid='brand-email-preview'>
-              <div className='brand-email-preview'>
-                <div className={`brand-preview-logo-line ${form.logoPosition}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className='brand-preview-logo' src={logo} alt='Logo thương hiệu' />
-                </div>
-                <p>Kính gửi quý khách,</p>
-                <p style={{ marginTop: '.5rem' }}>
-                  Cảm ơn quý khách đã đặt hàng! Dưới đây là thông tin eSIM. Quý khách có thể quét mã
-                  QR để kích hoạt gói trên thiết bị.
-                </p>
-                <p className='brand-preview-link' style={{ marginTop: '.75rem', color }}>
-                  Quét mã QR:
-                </p>
-                <div className='brand-preview-spacer' />
-                <div className='brand-preview-box'>
-                  <div className='brand-preview-kv'>
-                    <strong>Mã đơn hàng (Batch ID):</strong>
-                    <span>XXXXXXXXXXXXXX</span>
-                  </div>
-                  <div className='brand-preview-kv'>
-                    <strong>Mã giao dịch eSIM:</strong>
-                    <span>XXXXXXXXXXXXXX</span>
-                  </div>
-                  <div className='brand-preview-kv'>
-                    <strong>Tên gói dữ liệu:</strong>
-                    <span>XXXXXXXXXXXXXX</span>
-                  </div>
-                  <div className='brand-preview-kv'>
-                    <strong>Kích hoạt trước:</strong>
-                    <span>YYYY-MM-DD hh:mm:ss UTC</span>
-                  </div>
-                </div>
-                <div className='brand-preview-box'>
-                  <div className='brand-preview-kv'>
-                    <strong>Chuỗi mã kích hoạt:</strong>
-                    <span>XXXXXXXXXXXXXX</span>
-                  </div>
-                  <div className='brand-preview-kv'>
-                    <strong>Địa chỉ SM-DP+:</strong>
-                    <span>XXXXXXXXXXXXXX</span>
-                  </div>
-                  <div className='brand-preview-kv'>
-                    <strong>Mã kích hoạt:</strong>
-                    <span>XXXXXXXXXXXXXX</span>
-                  </div>
-                  <div className='brand-preview-kv'>
-                    <strong>APN:</strong>
-                    <span>XXXXXXXXXXXXXX</span>
-                  </div>
-                </div>
-                <div className='brand-preview-box'>
-                  <strong style={{ color: '#929bb6', fontSize: '.75rem' }}>
-                    Cài đặt nhanh bằng điện thoại:
-                  </strong>
-                  <div className='brand-preview-install' style={{ marginTop: '.5rem' }}>
-                    <span className='brand-preview-pill' style={{ backgroundColor: color }}>
-                      iOS (17.4+)
-                    </span>
-                    <span className='brand-preview-pill' style={{ backgroundColor: color }}>
-                      Android (10+)
-                    </span>
-                  </div>
-                </div>
-                {form.showUsageCheck && (
-                  <div className='brand-preview-box' data-testid='preview-usage'>
-                    <strong style={{ color: '#35416f', fontSize: '.8125rem' }}>
-                      Kiểm tra dung lượng &amp; ưu đãi của eSIM
-                    </strong>
-                    <span style={{ fontSize: '.75rem' }}>
-                      Theo dõi dung lượng còn lại và ngày hết hạn bất cứ lúc nào — không cần đăng
-                      nhập.
-                    </span>
-                    <span className='brand-preview-link' style={{ color }}>
-                      XXXXXXXXXXXXXX
-                    </span>
-                  </div>
-                )}
-                {form.showInstallGuide && (
-                  <div className='brand-preview-box' data-testid='preview-guide'>
-                    <strong style={{ color: '#35416f', fontSize: '.8125rem' }}>
-                      Hướng dẫn cài đặt eSIM
-                    </strong>
-                    <span style={{ fontSize: '.75rem' }}>
-                      Các bước cài đặt và kích hoạt eSIM trên iPhone và Android.
-                    </span>
-                    <span className='brand-preview-link' style={{ color }}>
-                      Xem hướng dẫn
-                    </span>
-                  </div>
-                )}
-                <div className='brand-preview-signature' data-testid='preview-signature'>
-                  <span>Trân trọng,</span>
-                  <span>{name}</span>
-                  <span className='brand-preview-signature-line'>
-                    <Icons.link className='icon' />
-                    <span>{website}</span>
-                  </span>
-                  <span className='brand-preview-signature-line'>
-                    <Icons.help className='icon' />
-                    <span>{support}</span>
-                  </span>
-                  {form.tagline.trim() && <span>{form.tagline.trim()}</span>}
-                </div>
-                <div className='brand-system-note'>
-                  *** Đây là thư được hệ thống tạo tự động, vui lòng không trả lời địa chỉ này. ***
-                </div>
-              </div>
+              {preview.data?.html ? (
+                <>
+                  <p className='brand-preview-subject' data-testid='brand-email-subject'>
+                    <strong>Tiêu đề:</strong> {preview.data.subject}
+                    <br />
+                    <strong>Người gửi:</strong> {form.displayName.trim() || 'esim.vn'}{' '}
+                    &lt;order@esim.com.vn&gt;
+                  </p>
+                  <iframe
+                    className='brand-preview-frame'
+                    title='Xem trước email eSIM'
+                    srcDoc={preview.data.html}
+                    sandbox=''
+                    data-testid='brand-email-frame'
+                  />
+                </>
+              ) : preview.isError ? (
+                <p className='brand-preview-subject'>Chưa tải được bản xem trước email.</p>
+              ) : (
+                <Skeleton className='h-[40rem] w-full' />
+              )}
             </div>
           </div>
         </div>

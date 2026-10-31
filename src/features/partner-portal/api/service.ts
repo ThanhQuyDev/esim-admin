@@ -1,6 +1,7 @@
 import { downloadFilename } from '@/lib/download-filename';
 import { apiClient } from '@/lib/api-client';
 import type {
+  PartnerBrandInfo,
   CartFilePreview,
   CartPurchaseResult,
   CartQuote,
@@ -501,6 +502,16 @@ export async function getMyTiers(): Promise<PartnerTier[]> {
 }
 
 /** Upload one attachment and get back the URL to store on the ticket (#032). */
+/** The eSIM email as the partner's customer will get it (doitac-3010 #004). */
+export async function previewBrandEmail(
+  brandInfo: PartnerBrandInfo
+): Promise<{ subject: string; html: string }> {
+  return apiClient('/partner-portal/brand-email-preview', {
+    method: 'POST',
+    body: JSON.stringify({ brandInfo })
+  });
+}
+
 export async function uploadAttachment(file: File): Promise<string> {
   const form = new FormData();
   form.append('file', file);
