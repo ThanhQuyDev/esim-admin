@@ -46,39 +46,44 @@ export function PortalNotificationsView() {
         </div>
       );
     }
+    // One grey card per notice, as on the admin's notifications page, with a
+    // "Xem chi tiết" a partner can find — the whole row being clickable was
+    // not obvious enough (doitac-3010 #013).
     return (
-      <div className='flex flex-col gap-2'>
+      <div className='flex flex-col gap-3'>
         {items.map((item) => (
-          <button
+          <div
             key={item.id}
-            type='button'
-            onClick={() => show(item)}
             className={cn(
-              'hover:bg-muted/50 flex w-full items-start gap-3 rounded-lg border p-4 text-left transition-colors',
-              !item.isRead && 'border-primary/30 bg-primary/5'
+              'rounded-2xl px-4 py-3.5 transition-colors',
+              item.isRead ? 'bg-muted/50' : 'bg-muted'
             )}
             data-testid='portal-notification'
           >
-            <span
-              className={cn(
-                'mt-1.5 h-2 w-2 shrink-0 rounded-full',
-                item.isRead ? 'bg-transparent' : 'bg-destructive'
+            <div className='flex items-center gap-2'>
+              <h3 className='text-[15px] leading-tight font-semibold'>{item.title}</h3>
+              {!item.isRead && (
+                <span className='h-2 w-2 shrink-0 rounded-full bg-sky-500' aria-label='Chưa đọc' />
               )}
-              aria-hidden='true'
-            />
-            <div className='min-w-0 flex-1'>
-              <div className='flex flex-wrap items-center gap-2'>
-                <p className={cn('text-sm', !item.isRead && 'font-semibold')}>{item.title}</p>
-                {!item.isRead && <Badge variant='destructive'>Mới</Badge>}
-              </div>
-              <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>
-                {noticePreview(item.body)}
-              </p>
-              <p className='text-muted-foreground mt-1 text-xs'>
-                {formatDateTimeVn(item.createdAt)}
-              </p>
+              {!item.isRead && <Badge variant='destructive'>Mới</Badge>}
             </div>
-          </button>
+            <p className='text-muted-foreground mt-1.5 line-clamp-2 text-[13px]'>
+              {noticePreview(item.body)}
+            </p>
+            <div className='mt-3 flex flex-wrap items-center justify-between gap-2'>
+              <span className='text-muted-foreground text-xs'>
+                {formatDateTimeVn(item.createdAt)}
+              </span>
+              <Button
+                size='sm'
+                variant={item.isRead ? 'outline' : 'default'}
+                onClick={() => show(item)}
+                data-testid='notification-detail'
+              >
+                Xem chi tiết
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
     );
