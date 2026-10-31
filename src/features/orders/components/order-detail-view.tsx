@@ -414,6 +414,9 @@ function buyerLocationText(location?: string | null, ip?: string | null): string
   return location ? `${location} - IP: ${ip}` : `IP: ${ip}`;
 }
 
+/** Commission that is being paid: in the 24h queue or in the wallet. */
+const COUNTED_COMMISSION = new Set(['pending', 'credited']);
+
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
   const [refundOpen, setRefundOpen] = useState(false);
@@ -934,11 +937,16 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               </CardDescription>
             )}
             {order.attributionWarning && (
-              <CardDescription>
+              <CardDescription data-testid='attribution-warning-note'>
                 {parseAttributionWarnings(order.attributionWarning)
                   .map((warning) => warning.note)
                   .join(' ')}{' '}
-                Hoa hồng vẫn được ghi nhận — nên xem thêm các giao dịch khác của đối tác này.
+                {/* Only while the commission actually counts: next to "Không
+                    ghi nhận hoa hồng" it contradicted it (doitac-3010 #010). */}
+                {COUNTED_COMMISSION.has(order.partnerCommission.status) &&
+                !order.partnerCommission.rejectionReason
+                  ? 'Hoa hồng vẫn được ghi nhận — nên xem thêm các giao dịch khác của đối tác này.'
+                  : 'Nên xem thêm các giao dịch khác của đối tác này.'}
               </CardDescription>
             )}
           </CardHeader>
