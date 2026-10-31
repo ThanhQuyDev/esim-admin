@@ -10,6 +10,7 @@
  * partner writes, not after they submit something unusable.
  */
 
+import { hasNewUpdate } from '../utils/ticket-updates';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -399,8 +400,9 @@ export function PortalSupportView() {
               {open > 0 && <Badge variant='secondary'>{open} đang mở</Badge>}
             </CardTitle>
             <CardDescription className='col-start-1'>
-              Theo dõi trạng thái và phản hồi từ đội vận hành. Email hỗ trợ: partner@esim.vn · phản
-              hồi trong 8 giờ làm việc (08:00–18:00, thứ Hai đến thứ Bảy).
+              Theo dõi trạng thái và phản hồi từ đội vận hành. Email hỗ trợ: support@esim.com.vn —
+              phản hồi trong 3 giờ làm việc. Khi cần gấp vui lòng liên hệ qua Zalo / WhatsApp /
+              Call: +84 976 898989.
             </CardDescription>
             {/* Top right on a wide screen; under the title on a phone. */}
             <CardAction className='col-start-1 row-start-3 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end'>
@@ -453,7 +455,19 @@ export function PortalSupportView() {
                           {t.ticketNumber ?? `#${t.id}`}
                         </TableCell>
                         <TableCell>
-                          <p className='text-sm font-medium'>{t.subject}</p>
+                          <p className='flex flex-wrap items-center gap-2 text-sm font-medium'>
+                            {t.subject}
+                            {/* Something from support the partner has not
+                                opened yet (doitac-3010 #012). */}
+                            {hasNewUpdate(t) && (
+                              <Badge
+                                className='bg-red-600 text-white hover:bg-red-600'
+                                data-testid='ticket-new-reply'
+                              >
+                                Phản hồi mới
+                              </Badge>
+                            )}
+                          </p>
                           <p className='text-muted-foreground line-clamp-1 text-xs'>
                             {t.description}
                           </p>

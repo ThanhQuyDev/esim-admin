@@ -455,6 +455,10 @@ export type MyTicket = {
   status: string;
   /** Files sent with the request itself (doitac-3010 #006). */
   attachments?: string[] | null;
+  /** Who wrote last, and when the partner last opened it (doitac-3010 #012). */
+  lastReplyRole?: 'customer' | 'admin' | null;
+  lastReplyAt?: string | null;
+  customerSeenAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };

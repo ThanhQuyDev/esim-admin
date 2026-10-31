@@ -8,7 +8,7 @@
  * exchange happened in somebody's inbox and never made it back to the ticket.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -31,10 +31,13 @@ import type { MyTicket } from '../api/types';
 function formatMoment(value: string): string {
   return new Date(value).toLocaleString('vi-VN', {
     timeZone: 'Asia/Ho_Chi_Minh',
+    // Seconds and the year too, so a thread reads as a record (doitac-3010 #012).
     day: '2-digit',
     month: '2-digit',
+    year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    second: '2-digit'
   });
 }
 
@@ -50,6 +53,14 @@ export function TicketThreadDialog({ ticket, onOpenChange }: TicketThreadDialogP
   const [uploading, setUploading] = useState(false);
 
   const { data: messages, isLoading } = useQuery(ticketMessagesQueryOptions(ticket?.id ?? null));
+  // Opening the thread marks it read on the server; the list then drops its
+  // "Phản hồi mới" badge (doitac-3010 #012).
+  const loadedFor = messages ? ticket?.id : undefined;
+  useEffect(() => {
+    if (loadedFor) {
+      void queryClient.invalidateQueries({ queryKey: partnerPortalKeys.tickets() });
+    }
+  }, [loadedFor, queryClient]);
 
   const reply = useMutation({
     mutationFn: () => replyToTicket(ticket!.id, body.trim(), attachments),
@@ -107,7 +118,9 @@ export function TicketThreadDialog({ ticket, onOpenChange }: TicketThreadDialogP
                 key={message.id}
                 className={cn(
                   'rounded-lg border p-3',
-                  fromSupport && 'bg-muted/50 border-transparent'
+                  // Darker than before, so support's replies stand apart from
+                  // the partner's at a glance (doitac-3010 #012).
+                  fromSupport && 'border-sky-200 bg-sky-100 dark:border-sky-900 dark:bg-sky-950/60'
                 )}
               >
                 <div className='mb-1 flex flex-wrap items-center gap-2'>
