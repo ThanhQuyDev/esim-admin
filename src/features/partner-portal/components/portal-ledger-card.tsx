@@ -42,10 +42,13 @@ import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 import { myLedgerQueryOptions, myPayoutsQueryOptions } from '../api/queries';
 import { myLedgerExportUrl } from '../api/service';
 import type { MyLedgerFilters } from '../api/types';
+import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
 
 const KINDS = [
   { value: 'all', label: 'Tất cả loại' },
   { value: 'purchase', label: 'Mua eSIM' },
+  // A top-up order is not a purchase (doitac-3010 #024).
+  { value: 'topup', label: 'Topup' },
   { value: 'refund', label: 'Hoàn tiền' },
   { value: 'deposit', label: 'Nạp tiền' },
   { value: 'payout', label: 'Rút tiền' },
@@ -66,6 +69,8 @@ export function PortalLedgerCard() {
   };
   const { data: rows = [], isLoading } = useQuery(myLedgerQueryOptions(filters));
   const filtered = Object.keys(filters).length > 0;
+  // Paged like the admin's tables, 10–100 rows (doitac-3010 #024).
+  const { pageRows, pagination } = usePortalPagination(rows);
 
   return (
     <Card data-testid='ledger-card'>
@@ -176,7 +181,7 @@ export function PortalLedgerCard() {
                   </TableCell>
                 </TableRow>
               )}
-              {rows.map((row) => {
+              {pageRows.map((row) => {
                 const credit = row.amountVnd > 0;
                 return (
                   <TableRow key={row.id}>
@@ -211,6 +216,13 @@ export function PortalLedgerCard() {
             </TableBody>
           </Table>
         </div>
+        {rows.length > 0 && (
+          <PortalListPagination
+            pagination={pagination}
+            unit='giao dịch'
+            testId='ledger-pagination'
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -242,6 +254,7 @@ const PAYOUT_STATUS: Record<string, { label: string; className: string }> = {
 /** "Lịch sử rút tiền" under the deposits (doitac-1410 #031). */
 export function PortalPayoutHistoryCard() {
   const { data: payouts = [] } = useQuery(myPayoutsQueryOptions());
+  const { pageRows, pagination } = usePortalPagination(payouts);
   return (
     <Card data-testid='payout-history'>
       <CardHeader>
@@ -271,7 +284,7 @@ export function PortalPayoutHistoryCard() {
                   </TableCell>
                 </TableRow>
               )}
-              {payouts.map((p) => {
+              {pageRows.map((p) => {
                 const status = PAYOUT_STATUS[p.status];
                 return (
                   <TableRow key={p.id}>
@@ -299,6 +312,9 @@ export function PortalPayoutHistoryCard() {
             </TableBody>
           </Table>
         </div>
+        {payouts.length > 0 && (
+          <PortalListPagination pagination={pagination} unit='yêu cầu' testId='payout-pagination' />
+        )}
       </CardContent>
     </Card>
   );

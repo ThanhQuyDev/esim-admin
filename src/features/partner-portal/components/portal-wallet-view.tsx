@@ -42,6 +42,7 @@ import { formatDateVn, formatVnd } from '@/lib/format';
 
 import { PortalLedgerCard, PortalPayoutHistoryCard } from './portal-ledger-card';
 import { DepositDialog, WithdrawDialog } from './portal-wallet-dialogs';
+import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
 import {
   DEPOSIT_METHOD_LABEL,
   DepositDetailDialog,
@@ -95,6 +96,8 @@ export function PortalWalletView() {
   // payouts live here rather than on a menu of their own (doitac-1410 #032).
   const canWithdraw = Boolean(me?.canAffiliate);
   const { data: deposits = [] } = useQuery(myDepositRequestsQueryOptions());
+  // Paged like the admin's tables, 10–100 rows (doitac-3010 #024).
+  const { pageRows: depositPage, pagination: depositPagination } = usePortalPagination(deposits);
 
   const [dialog, setDialog] = useState<'deposit' | 'withdraw' | null>(null);
   const [detailOf, setDetailOf] = useState<MyDepositRequest | null>(null);
@@ -262,7 +265,7 @@ export function PortalWalletView() {
                       </TableCell>
                     </TableRow>
                   )}
-                  {deposits.map((req) => {
+                  {depositPage.map((req) => {
                     const status = DEPOSIT_STATUS[statusKey(req)];
                     return (
                       <TableRow key={req.id}>
@@ -321,6 +324,13 @@ export function PortalWalletView() {
                 </TableBody>
               </Table>
             </div>
+            {deposits.length > 0 && (
+              <PortalListPagination
+                pagination={depositPagination}
+                unit='lần nạp'
+                testId='deposit-pagination'
+              />
+            )}
           </CardContent>
         </Card>
       )}
