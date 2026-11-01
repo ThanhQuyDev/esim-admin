@@ -76,6 +76,11 @@ export const attributionWarningLabels: Record<string, { badge: string; note: str
   inhuman_speed: {
     badge: 'Xem gói quá nhanh',
     note: 'Phiên mua này xem hàng chục gói chỉ trong vài giây, không phải tốc độ của người thật.'
+  },
+  // doitac-3010 #020
+  bot_click: {
+    badge: 'Click nghi bot',
+    note: 'Lượt nhấp link dẫn tới đơn này có dấu hiệu bot giả trình duyệt: thiếu các header trình duyệt thật gửi, đến từ IP máy chủ/đám mây, hoặc cùng một mạng nhấp link dồn dập.'
   }
 };
 
