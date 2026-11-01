@@ -66,7 +66,10 @@ import type { AdminLinkFilters, AdminLinkState } from '../api/types';
 /** The six states the admin works with (doitac-1410 #052). */
 export const LINK_STATE_LABEL: Record<
   AdminLinkState,
-  { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'outline' | 'destructive';
+  }
 > = {
   active: { label: 'Hoạt động', variant: 'default' },
   inactive: { label: 'Tạm tắt', variant: 'secondary' },
@@ -169,9 +172,10 @@ export function PartnerLinksAdminView() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   // One row's own action, and the detail popup (doitac-1410 #054).
-  const [rowAction, setRowAction] = useState<{ link: AdminLinkRow; action: BulkLinkAction } | null>(
-    null
-  );
+  const [rowAction, setRowAction] = useState<{
+    link: AdminLinkRow;
+    action: BulkLinkAction;
+  } | null>(null);
   const [detail, setDetail] = useState<AdminLinkRow | null>(null);
   const allTicked = links.length > 0 && links.every((l) => selected.includes(l.id));
   const toggle = (id: number, on: boolean) =>
@@ -219,7 +223,8 @@ export function PartnerLinksAdminView() {
               onClick={() => setBulkOpen(true)}
               data-testid='links-bulk-status'
             >
-              Thay đổi trạng thái{selected.length ? ` (${selected.length})` : ''}
+              Thay đổi trạng thái
+              {selected.length ? ` (${selected.length})` : ''}
             </Button>
             <Button asChild size='sm' variant='outline'>
               <a
@@ -452,6 +457,15 @@ export function PartnerLinksAdminView() {
                       <TableCell className='text-right tabular-nums'>{link.editCount}</TableCell>
                       <TableCell className='text-right tabular-nums'>
                         {link.clicks.toLocaleString('vi-VN')}
+                        {/* doitac-3010 #018 */}
+                        {link.validClicks !== undefined && (
+                          <div className='text-muted-foreground text-xs whitespace-nowrap'>
+                            {link.validClicks.toLocaleString('vi-VN')} hợp lệ
+                            {link.landingDropRate
+                              ? ` · rớt ${link.landingDropRate.toLocaleString('vi-VN')}%`
+                              : ''}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className='text-right tabular-nums'>
                         {link.orders.toLocaleString('vi-VN')}

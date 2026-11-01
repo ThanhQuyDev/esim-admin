@@ -69,7 +69,11 @@ export type MyWalletSummary = {
    * "Không cần ký quỹ" (vande #056): the balance is what is left of this
    * month's credit limit, refilled at 0h on the 1st; null on a deposit.
    */
-  creditLimit?: { limitVnd: number; usedVnd: number; remainingVnd: number } | null;
+  creditLimit?: {
+    limitVnd: number;
+    usedVnd: number;
+    remainingVnd: number;
+  } | null;
   balanceVnd: number;
   availableBalanceVnd: number;
   pendingPayoutVnd: number;
@@ -214,6 +218,12 @@ export type MyLink = {
   // doitac-1410 #018:
   /** Clicks, orders and commission over the window the list asked for. */
   periodClicks?: number;
+  /**
+   * Of those, the clicks whose landing page really showed, and the share that
+   * never got there — bots, prefetches, closed tabs (doitac-3010 #018).
+   */
+  periodValidClicks?: number;
+  periodLandingDropRate?: number | null;
   periodOrders?: number;
   periodCommissionVnd?: number;
   /** Renames and destination changes. */
@@ -801,7 +811,12 @@ export type CartFilePreview = {
     totalVnd: number;
     error: string | null;
   }[];
-  orders: { email: string | null; planCount: number; esimCount: number; totalVnd: number }[];
+  orders: {
+    email: string | null;
+    planCount: number;
+    esimCount: number;
+    totalVnd: number;
+  }[];
   totalVnd: number;
   balanceVnd: number;
   errorCount: number;

@@ -74,6 +74,8 @@ import {
   type LinkPeriod,
   buildTargetPath,
   channelOf,
+  formatPercent,
+  landingDropRate,
   landingOf,
   linkState,
   periodRange,
@@ -81,7 +83,13 @@ import {
   subidOf
 } from './portal-link-utils';
 
-const EMPTY_FORM = { landing: '', label: '', channel: 'youtube', subid: '', code: '' };
+const EMPTY_FORM = {
+  landing: '',
+  label: '',
+  channel: 'youtube',
+  subid: '',
+  code: ''
+};
 
 /** Bounds the API enforces for a code the partner names themselves (#014). */
 const CODE_MIN = 8;
@@ -251,11 +259,14 @@ export function PortalLinksView() {
   const totals = rows.reduce(
     (acc, r) => ({
       clicks: acc.clicks + Number(r.periodClicks ?? r.clickCount ?? 0),
+      validClicks:
+        acc.validClicks + Number(r.periodValidClicks ?? r.periodClicks ?? r.clickCount ?? 0),
       conversions: acc.conversions + Number(r.periodOrders ?? r.conversionCount ?? 0),
       commission: acc.commission + Number(r.periodCommissionVnd ?? r.totalCommissionVnd ?? 0)
     }),
-    { clicks: 0, conversions: 0, commission: 0 }
+    { clicks: 0, validClicks: 0, conversions: 0, commission: 0 }
   );
+  const totalDropRate = landingDropRate(totals.clicks, totals.validClicks);
 
   return (
     <div className='flex flex-1 flex-col space-y-4'>
@@ -484,9 +495,13 @@ export function PortalLinksView() {
             </Badge>
           </CardTitle>
           <CardDescription data-testid='links-totals'>
-            {totals.clicks.toLocaleString('vi-VN')} lượt nhấp ·{' '}
-            {totals.conversions.toLocaleString('vi-VN')} đơn · {formatVnd(totals.commission)} hoa
-            hồng · {LINK_PERIODS.find((p) => p.value === period)?.label.toLowerCase()}
+            {totals.clicks.toLocaleString('vi-VN')} lượt nhấp (
+            {totals.validClicks.toLocaleString('vi-VN')} hợp lệ
+            {totalDropRate !== null
+              ? ` · rớt trước trang đích ${formatPercent(totalDropRate)}`
+              : ''}
+            ) · {totals.conversions.toLocaleString('vi-VN')} đơn · {formatVnd(totals.commission)}{' '}
+            hoa hồng · {LINK_PERIODS.find((p) => p.value === period)?.label.toLowerCase()}
           </CardDescription>
           <CardAction className='flex items-center gap-2'>
             <Badge variant='secondary'>
@@ -714,6 +729,18 @@ export function PortalLinksView() {
                           </TableCell>
                           <TableCell className='text-right tabular-nums'>
                             {Number(r.periodClicks ?? r.clickCount ?? 0).toLocaleString('vi-VN')}
+                            {/* doitac-3010 #018 */}
+                            {r.periodValidClicks !== undefined && (
+                              <span
+                                className='text-muted-foreground block text-xs whitespace-nowrap'
+                                data-testid='link-valid-clicks'
+                              >
+                                {r.periodValidClicks.toLocaleString('vi-VN')} hợp lệ
+                                {r.periodLandingDropRate
+                                  ? ` · rớt ${formatPercent(r.periodLandingDropRate)}`
+                                  : ''}
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className='text-right tabular-nums'>
                             {Number(r.periodOrders ?? r.conversionCount ?? 0).toLocaleString(
@@ -784,7 +811,10 @@ export function PortalLinksView() {
                                       <DropdownMenuItem
                                         disabled={toggleLink.isPending}
                                         onClick={() =>
-                                          toggleLink.mutate({ id: r.id, data: { isActive: true } })
+                                          toggleLink.mutate({
+                                            id: r.id,
+                                            data: { isActive: true }
+                                          })
                                         }
                                       >
                                         Bật lại

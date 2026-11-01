@@ -180,6 +180,10 @@ export type AdminLinkRow = {
   updatedBy: string;
   editCount: number;
   clicks: number;
+  /** Clicks whose landing page really showed (doitac-3010 #018). */
+  validClicks?: number;
+  /** Share of raw clicks that never reached the landing page, in %. */
+  landingDropRate?: number | null;
   orders: number;
   commissionVnd: number;
 };
@@ -218,13 +222,23 @@ export type AdminLinkDetail = {
   }[];
 };
 
-export type AdminLinkList = { total: number; page: number; limit: number; data: AdminLinkRow[] };
+export type AdminLinkList = {
+  total: number;
+  page: number;
+  limit: number;
+  data: AdminLinkRow[];
+};
 
 /** The figures on top of "Tiếp thị liên kết" (doitac-1410 #051). */
 export type AdminLinkStats = {
   range: { from: string; to: string };
   days: number;
-  total: { links: number; active: number; orders: number; commissionVnd: number };
+  total: {
+    links: number;
+    active: number;
+    orders: number;
+    commissionVnd: number;
+  };
   retargeted: number;
   suspended: { links: number; appealing: number };
   restorePending: { links: number; deleted: number; paused: number };
@@ -508,7 +522,10 @@ export type PartnerListStats = {
     percentOfTotal: number;
     byType: { partnerType: string; count: number }[];
   };
-  newThisMonth: { count: number; byType: { partnerType: string; count: number }[] };
+  newThisMonth: {
+    count: number;
+    byType: { partnerType: string; count: number }[];
+  };
   onHold: { count: number; byType: { partnerType: string; count: number }[] };
 };
 

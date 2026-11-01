@@ -86,7 +86,10 @@ export function linkState(link: { status: string; deletedAt?: string | null }): 
 
 export const LINK_STATE: Record<
   LinkState,
-  { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'outline' | 'destructive';
+  }
 > = {
   active: { label: 'Hoạt động', variant: 'default' },
   inactive: { label: 'Tạm tắt', variant: 'secondary' },
@@ -109,7 +112,10 @@ export const LINK_PERIODS: { value: LinkPeriod; label: string }[] = [
 ];
 
 /** Day bounds for a quick period, on the partner's own clock; `all` has none. */
-export function periodRange(period: LinkPeriod): { from?: string; to?: string } {
+export function periodRange(period: LinkPeriod): {
+  from?: string;
+  to?: string;
+} {
   const today = new Date();
   const start = new Date(today);
   switch (period) {
@@ -130,4 +136,19 @@ export function periodRange(period: LinkPeriod): { from?: string; to?: string } 
     default:
       return {};
   }
+}
+
+/**
+ * The share of raw clicks whose landing page never showed (doitac-3010 #018),
+ * the same sum the API does. Null when there is no click to divide by.
+ */
+export function landingDropRate(rawClicks: number, validClicks: number): number | null {
+  if (!rawClicks) return null;
+  const dropped = Math.max(0, rawClicks - validClicks);
+  return Math.round((dropped / rawClicks) * 1000) / 10;
+}
+
+/** "25%", "66,7%". */
+export function formatPercent(value: number): string {
+  return `${value.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`;
 }
