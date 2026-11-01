@@ -169,6 +169,10 @@ export type MyDepositRequest = {
   /** Where to send the partner to pay by card (#047). */
   paymentUrl?: string;
   paymentRef?: string;
+  /** The promotion bonus this top-up earns once paid (doitac-3010 #023). */
+  expectedBonusVnd?: number;
+  promotionName?: string | null;
+  promotionBonusPercent?: number | null;
   status: 'pending' | 'confirmed' | 'cancelled' | 'rejected';
   /** Why esim.vn refused it (doitac-1410 #063). */
   rejectionReason?: string | null;

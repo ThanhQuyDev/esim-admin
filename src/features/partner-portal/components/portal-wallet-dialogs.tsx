@@ -31,7 +31,7 @@ import { Label } from '@/components/ui/label';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { createDepositRequestMutation, createPayoutRequestMutation } from '../api/mutations';
-import type { MyDepositRequest, PartnerTopupMethod } from '../api/types';
+import type { MyDepositRequest, MyWalletSummary, PartnerTopupMethod } from '../api/types';
 import { myProfileQueryOptions, myWalletQueryOptions } from '../api/queries';
 
 /** Fallbacks only: the server sends the real policy in the wallet summary. */
@@ -57,6 +57,14 @@ interface DialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+type DepositPromotion = NonNullable<MyWalletSummary['depositPromotions']>[number];
+
+/** What a promotion adds to a top-up of this size — the server's rule (doitac-1410 #015). */
+function promotionBonus(p: DepositPromotion, amountVnd: number): number {
+  const raw = Math.floor((amountVnd * p.bonusPercent) / 100);
+  return p.maxBonusVnd != null ? Math.min(raw, p.maxBonusVnd) : raw;
+}
+
 /** "Nạp tiền ký quỹ" (doitac-1410 #030). */
 export function DepositDialog({ open, onOpenChange }: DialogProps) {
   const { data: wallet } = useQuery(myWalletQueryOptions());
@@ -80,11 +88,26 @@ export function DepositDialog({ open, onOpenChange }: DialogProps) {
   // Running deposit promotions, and what this amount would earn under the
   // best of them (doitac-1410 #015) — the server applies the same rule.
   const promotions = wallet?.depositPromotions ?? [];
-  const expectedBonus = promotions.reduce((best, p) => {
+  // The promotion this amount earns, named, so the partner sees before paying
+  // exactly what is added and why (doitac-3010 #023).
+  const bestPromotion = promotions.reduce<{
+    promotion: DepositPromotion;
+    bonusVnd: number;
+  } | null>((best, p) => {
     if (!(value >= p.minDepositVnd)) return best;
-    const raw = Math.floor((value * p.bonusPercent) / 100);
-    return Math.max(best, p.maxBonusVnd != null ? Math.min(raw, p.maxBonusVnd) : raw);
-  }, 0);
+    const bonusVnd = promotionBonus(p, value);
+    return bonusVnd > 0 && (!best || bonusVnd > best.bonusVnd) ? { promotion: p, bonusVnd } : best;
+  }, null);
+  // Short of every minimum: how much more reaches the nearest one.
+  const nextPromotion =
+    value > 0 && !bestPromotion
+      ? promotions
+          .filter((p) => p.minDepositVnd > value && p.minDepositVnd <= maxVnd)
+          .reduce<DepositPromotion | undefined>(
+            (nearest, p) => (!nearest || p.minDepositVnd < nearest.minDepositVnd ? p : nearest),
+            undefined
+          )
+      : undefined;
 
   const createDeposit = useMutation({
     ...createDepositRequestMutation,
@@ -154,6 +177,19 @@ export function DepositDialog({ open, onOpenChange }: DialogProps) {
                 Nội dung chuyển khoản:{' '}
                 <span className='font-mono font-medium'>{pending.bankTransferCode}</span>
               </p>
+              {(pending.expectedBonusVnd ?? 0) > 0 && (
+                <p
+                  className='font-medium text-emerald-700 dark:text-emerald-400'
+                  data-testid='pending-bonus'
+                >
+                  🎁 Tiền vào là ví được cộng {formatVnd(pending.creditedVnd ?? pending.amountVnd)}{' '}
+                  + tặng thêm {formatVnd(pending.expectedBonusVnd ?? 0)}
+                  {pending.promotionBonusPercent != null
+                    ? ` (${pending.promotionBonusPercent}%, `
+                    : ' ('}
+                  khuyến mãi &quot;{pending.promotionName}&quot;).
+                </p>
+              )}
               <p className='text-muted-foreground text-xs'>
                 Giữ đúng nội dung chuyển khoản để hệ thống đối chiếu tự động. Số dư được cộng ngay
                 khi tiền vào, không cần chờ duyệt.
@@ -177,9 +213,20 @@ export function DepositDialog({ open, onOpenChange }: DialogProps) {
                     </li>
                   ))}
                 </ul>
-                {expectedBonus > 0 && (
-                  <p className='mt-2 text-xs font-medium' data-testid='expected-bonus'>
-                    Lần nạp này được tặng thêm {formatVnd(expectedBonus)} vào ví.
+                {bestPromotion && (
+                  <p className='mt-2 text-sm font-semibold' data-testid='expected-bonus'>
+                    🎁 Lần nạp {formatVnd(value)} này được tặng thêm{' '}
+                    {formatVnd(bestPromotion.bonusVnd)} ({bestPromotion.promotion.bonusPercent}%,
+                    khuyến mãi &quot;{bestPromotion.promotion.name}&quot;) — cộng vào ví ngay khi
+                    tiền vào.
+                  </p>
+                )}
+                {nextPromotion && (
+                  <p className='mt-2 text-xs' data-testid='next-promotion-hint'>
+                    Nạp thêm {formatVnd(nextPromotion.minDepositVnd - value)} (tổng{' '}
+                    {formatVnd(nextPromotion.minDepositVnd)}) để được tặng{' '}
+                    {formatVnd(promotionBonus(nextPromotion, nextPromotion.minDepositVnd))} (
+                    {nextPromotion.bonusPercent}%).
                   </p>
                 )}
               </div>
@@ -291,6 +338,29 @@ export function DepositDialog({ open, onOpenChange }: DialogProps) {
                   <span className='font-medium'>Được cộng vào ví</span>
                   <span className='font-semibold tabular-nums'>{formatVnd(creditedVnd)}</span>
                 </div>
+                {/* doitac-3010 #023 */}
+                {bestPromotion && (
+                  <>
+                    <div
+                      className='flex justify-between text-emerald-700 dark:text-emerald-400'
+                      data-testid='summary-bonus'
+                    >
+                      <span>
+                        Tặng thêm ({bestPromotion.promotion.bonusPercent}% — &quot;
+                        {bestPromotion.promotion.name}&quot;)
+                      </span>
+                      <span className='font-medium tabular-nums'>
+                        +{formatVnd(bestPromotion.bonusVnd)}
+                      </span>
+                    </div>
+                    <div className='flex justify-between border-t pt-1'>
+                      <span className='font-medium'>Tổng cộng vào ví</span>
+                      <span className='font-semibold tabular-nums' data-testid='summary-total'>
+                        {formatVnd(creditedVnd + bestPromotion.bonusVnd)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
