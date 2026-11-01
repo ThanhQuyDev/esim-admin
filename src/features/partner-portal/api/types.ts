@@ -838,6 +838,7 @@ export type CatalogueFilters = {
   hasCallSms?: string;
   tiktokAi?: string;
   isCheapest?: string;
+  page?: number;
   limit?: number;
 };
 

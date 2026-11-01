@@ -373,9 +373,12 @@ export async function getPartnerCatalogue(
 }
 
 /** The price list's "Điểm đến" options (doitac-1410 #033). */
-export async function getCatalogueLocations(): Promise<{ value: string; label: string }[]> {
-  return apiClient<{ value: string; label: string }[]>('/partner-portal/catalogue/locations');
+export async function getCatalogueLocations(): Promise<CatalogueLocationOption[]> {
+  return apiClient<CatalogueLocationOption[]>('/partner-portal/catalogue/locations');
 }
+
+/** Vietnamese and English names to search by (doitac-3010 #025). */
+export type CatalogueLocationOption = { value: string; label: string; keywords?: string[] };
 
 /** Số tiền sẽ bị trừ, tính trước khi bấm mua (#046). */
 export async function getPurchaseQuote(planId: number, quantity: number): Promise<PurchaseQuote> {

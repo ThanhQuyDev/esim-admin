@@ -49,6 +49,7 @@ import {
 import type { CataloguePlan, CatalogueFilters } from '../api/types';
 import { EMPTY_CATALOGUE_FILTERS, PortalCatalogueFilters } from './portal-catalogue-filters';
 import { PortalCartBar } from './portal-cart-bar';
+import { PortalListPagination, type PortalPagination } from './portal-list-pagination';
 import { PriceVndUsd } from './price-vnd-usd';
 import {
   AddToCartDialog,
@@ -61,7 +62,9 @@ export function PortalCatalogueView() {
   // The admin's filters (doitac-1410 #033); typing is deferred so each key
   // press does not fire its own request.
   const [filters, setFilters] = useState<CatalogueFilters>(EMPTY_CATALOGUE_FILTERS);
-  const [limit, setLimit] = useState(100);
+  // Paged like the admin's plan list, 10–100 rows (doitac-3010 #025).
+  const [pageSize, setPageSize] = useState(10);
+  const [pageIndex, setPageIndex] = useState(0);
   const deferredFilters = useDeferredValue(filters);
   const [selected, setSelected] = useState<CataloguePlan | null>(null);
   const [quantity, setQuantity] = useState('1');
@@ -74,9 +77,21 @@ export function PortalCatalogueView() {
     !recipientEmail.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim());
 
   const { data: catalogue, isLoading } = useQuery(
-    partnerCatalogueQueryOptions({ ...deferredFilters, limit })
+    partnerCatalogueQueryOptions({ ...deferredFilters, page: pageIndex + 1, limit: pageSize })
   );
   const totalCount = catalogue?.totalCount ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const pagination: PortalPagination = {
+    total: totalCount,
+    pageIndex: Math.min(pageIndex, pageCount - 1),
+    pageCount,
+    pageSize,
+    setPageIndex,
+    setPageSize: (size: number) => {
+      setPageSize(size);
+      setPageIndex(0);
+    }
+  };
   const { data: wallet } = useQuery(myWalletQueryOptions());
 
   const plans = catalogue?.plans ?? [];
@@ -125,31 +140,41 @@ export function PortalCatalogueView() {
         bar, and the % added to cost price is a trade secret never shown to a
         partner.
       */}
-      <Card className='min-w-0'>
+      {/* Three boxes (doitac-3010 #025): the filters, then the balance, cart,
+          checkout and bulk order, then the price list on its own. */}
+      <Card className='min-w-0 gap-3 py-4' data-testid='catalogue-filter-card'>
+        <CardContent className='px-4'>
+          <PortalCatalogueFilters
+            value={filters}
+            onChange={(next) => {
+              setFilters(next);
+              setPageIndex(0);
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Balance, cart and checkout between filters and list (doitac-1410 #035). */}
+      <Card className='min-w-0 gap-3 py-3' data-testid='catalogue-cart-card'>
+        <CardContent className='px-4'>
+          <PortalCartBar filters={deferredFilters} />
+        </CardContent>
+      </Card>
+
+      <Card className='min-w-0' data-testid='catalogue-list-card'>
         <CardHeader>
           <CardTitle>Bảng giá phân phối</CardTitle>
           <CardDescription>
             Giá đại lý theo hạng hiện tại của bạn. Mua xong, toàn bộ mã eSIM của đơn được xuất ra
             một file Excel tải về ở trang Đơn hàng.
+            {!isLoading && (
+              <span className='ml-1' data-testid='catalogue-count'>
+                {totalCount.toLocaleString('vi-VN')} gói đang bán phù hợp.
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <PortalCatalogueFilters
-            value={filters}
-            onChange={(next) => {
-              setFilters(next);
-              setLimit(100);
-            }}
-          />
-          {/* Balance, cart and checkout between filters and list (doitac-1410 #035). */}
-          <PortalCartBar filters={deferredFilters} />
-          {!isLoading && (
-            <p className='text-muted-foreground text-xs' data-testid='catalogue-count'>
-              {totalCount.toLocaleString('vi-VN')} gói đang bán phù hợp
-              {plans.length < totalCount ? ` · đang hiện ${plans.length}` : ''}
-            </p>
-          )}
-
           {isLoading ? (
             <div className='flex justify-center py-12'>
               <Icons.spinner className='size-6 animate-spin' />
@@ -264,14 +289,14 @@ export function PortalCatalogueView() {
                   ))}
                 </TableBody>
               </Table>
-              {plans.length < totalCount && (
-                <div className='flex justify-center pt-3'>
-                  <Button variant='outline' size='sm' onClick={() => setLimit((l) => l + 100)}>
-                    Xem thêm gói
-                  </Button>
-                </div>
-              )}
             </div>
+          )}
+          {totalCount > 0 && (
+            <PortalListPagination
+              pagination={pagination}
+              unit='gói'
+              testId='catalogue-pagination'
+            />
           )}
         </CardContent>
       </Card>

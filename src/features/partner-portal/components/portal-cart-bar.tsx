@@ -219,10 +219,7 @@ export function PortalCartBar({ filters }: { filters: CatalogueFilters }) {
 
   return (
     <>
-      <div
-        className='bg-muted/40 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'
-        data-testid='cart-bar'
-      >
+      <div className='flex flex-wrap items-center justify-between gap-3' data-testid='cart-bar'>
         <div className='flex flex-wrap items-center gap-x-5 gap-y-2 text-sm'>
           <span>
             <span className='text-muted-foreground'>Số dư khả dụng: </span>
@@ -238,12 +235,22 @@ export function PortalCartBar({ filters }: { filters: CatalogueFilters }) {
               {formatVnd(total)}
             </strong>
           </span>
-          <span className='text-primary inline-flex items-center gap-1 font-semibold'>
+          {/* Most people press the cart to see what is in it and pay
+              (doitac-3010 #025), so it opens "Thanh toán giỏ hàng" too. */}
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='text-primary gap-1 font-semibold'
+            aria-label='Xem giỏ hàng và thanh toán'
+            data-testid='cart-icon'
+            onClick={() => setCheckout(true)}
+          >
             <Icons.shoppingCart className='size-4' />
             <Badge variant='secondary' data-testid='cart-esim-count'>
               {esims}
             </Badge>
-          </span>
+          </Button>
           <Button size='sm' disabled={cart.length === 0} onClick={() => setCheckout(true)}>
             Thanh toán
           </Button>
