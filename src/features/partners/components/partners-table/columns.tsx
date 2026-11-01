@@ -157,7 +157,10 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
       meta: {
         label: 'Trạng thái',
         variant: 'select' as const,
-        options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }))
+        // The states of an approved partner only (doitac-3010 #034).
+        options: Object.entries(STATUS_LABEL)
+          .filter(([value]) => value !== 'pending' && value !== 'rejected')
+          .map(([value, label]) => ({ value, label }))
       },
       enableColumnFilter: true,
       enableSorting: false

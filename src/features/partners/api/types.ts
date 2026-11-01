@@ -254,6 +254,8 @@ export type PartnerFilters = {
   tierCode?: string;
   /** `newest` = by registration date only (doitac-1410 #049); default revenue. */
   sort?: 'revenue' | 'newest';
+  /** No pending or rejected application (doitac-3010 #034). */
+  approvedOnly?: boolean;
 };
 
 export type PartnerWalletTransaction = {

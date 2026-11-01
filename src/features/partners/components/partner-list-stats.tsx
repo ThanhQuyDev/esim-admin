@@ -16,7 +16,7 @@
 import { useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 import { partnerListStatsQueryOptions } from '../api/queries';
 
@@ -26,43 +26,9 @@ const PARTNER_TYPE_LABEL: Record<string, string> = {
   api: 'API'
 };
 
-function Tile({
-  label,
-  value,
-  hint,
-  rows
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  rows: { partnerType: string; count: number }[];
-}) {
-  return (
-    <Card>
-      <CardHeader className='pb-2'>
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className='text-2xl font-semibold tabular-nums'>{value}</CardTitle>
-        {hint && <p className='text-muted-foreground text-xs'>{hint}</p>}
-      </CardHeader>
-      <CardContent>
-        {rows.length === 0 ? (
-          <p className='text-muted-foreground text-xs'>Chưa có đối tác nào.</p>
-        ) : (
-          <div className='space-y-1'>
-            {rows.map((row) => (
-              <div key={row.partnerType} className='flex justify-between gap-2 text-xs'>
-                <span className='text-muted-foreground'>
-                  {PARTNER_TYPE_LABEL[row.partnerType] ?? row.partnerType}
-                </span>
-                <span className='tabular-nums'>{row.count.toLocaleString('vi-VN')}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+/** One partner type's figure out of a split. */
+const of = (rows: { partnerType: string; count: number }[] | undefined, type: string) =>
+  rows?.find((row) => row.partnerType === type)?.count ?? 0;
 
 const count = (value: number | undefined) => (value ?? 0).toLocaleString('vi-VN');
 
@@ -81,32 +47,52 @@ export function PartnerListStats() {
   );
   const data = inBrowser ? loaded : undefined;
 
+  // The partner types that have anybody, in a steady order.
+  const types = ['distribution', 'kol', 'api'].filter((type) =>
+    (data?.total.byType ?? []).some((row) => row.partnerType === type && row.count > 0)
+  );
+
+  // Two lines rather than four tall cards, so the list below keeps its room
+  // (doitac-3010 #034): the totals, then the same figures by partner type.
   return (
-    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-      <Tile
-        label='Tổng số đối tác'
-        value={count(data?.total.count)}
-        hint='Không tính tài khoản đã khoá'
-        rows={data?.total.byType ?? []}
-      />
-      <Tile
-        label='Đang hoạt động'
-        value={count(data?.active.count)}
-        hint={`${data?.active.percentOfTotal ?? 0}% trên tổng hệ thống`}
-        rows={data?.active.byType ?? []}
-      />
-      <Tile
-        label='Mới trong tháng'
-        value={count(data?.newThisMonth.count)}
-        hint='Tính từ đầu tháng này'
-        rows={data?.newThisMonth.byType ?? []}
-      />
-      <Tile
-        label='Đang tạm khoá'
-        value={count(data?.onHold.count)}
-        hint='Tạm giữ, chưa khoá hẳn'
-        rows={data?.onHold.byType ?? []}
-      />
-    </div>
+    <Card className='gap-0 py-3' data-testid='partner-list-stats'>
+      <CardContent className='space-y-1.5 px-4 text-sm'>
+        <div className='flex flex-wrap items-baseline gap-x-6 gap-y-1'>
+          <span>
+            Tổng số đối tác: <strong className='tabular-nums'>{count(data?.total.count)}</strong>{' '}
+            <span className='text-muted-foreground text-xs'>(không tính tài khoản đã khoá)</span>
+          </span>
+          <span>
+            Đang hoạt động: <strong className='tabular-nums'>{count(data?.active.count)}</strong>
+            <span className='text-muted-foreground'>
+              {' '}
+              – {data?.active.percentOfTotal ?? 0}% trên tổng hệ thống
+            </span>
+          </span>
+          <span>
+            Mới trong tháng:{' '}
+            <strong className='tabular-nums'>{count(data?.newThisMonth.count)}</strong>
+          </span>
+          <span>
+            Đang tạm khoá: <strong className='tabular-nums'>{count(data?.onHold.count)}</strong>
+          </span>
+        </div>
+        <div className='text-muted-foreground flex flex-wrap items-baseline gap-x-6 gap-y-1 text-xs'>
+          {types.length === 0 ? (
+            <span>Chưa có đối tác nào.</span>
+          ) : (
+            types.map((type) => (
+              <span key={type} data-testid={`partner-list-stats-${type}`}>
+                <span className='text-foreground font-medium'>{PARTNER_TYPE_LABEL[type]}</span>:{' '}
+                {count(of(data?.total.byType, type))} đối tác · hoạt động{' '}
+                {count(of(data?.active.byType, type))} · mới{' '}
+                {count(of(data?.newThisMonth.byType, type))} · tạm khoá{' '}
+                {count(of(data?.onHold.byType, type))}
+              </span>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

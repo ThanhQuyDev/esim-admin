@@ -38,6 +38,9 @@ export function PartnersTable() {
   const filters = {
     page: params.page,
     limit: params.perPage,
+    // Approved partners only; applications live on "Duyệt đăng ký đối tác"
+    // (doitac-3010 #034).
+    approvedOnly: true,
     ...(params.name && { search: params.name }),
     ...(params.partnerType && { partnerType: params.partnerType as PartnerType }),
     ...(params.status && { status: params.status as PartnerStatus }),
@@ -78,21 +81,30 @@ export function PartnersTable() {
         onDone={() => table.resetRowSelection()}
       />
 
-      <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
-        <div className='text-muted-foreground text-sm'>
-          {selectedIds.length > 0
-            ? `Đã chọn ${selectedIds.length} đối tác`
-            : 'Tích chọn các dòng để đổi trạng thái hàng loạt'}
-        </div>
-        <div className='flex flex-wrap gap-2'>
+      <DataTable
+        table={table}
+        totalRowCount={data.totalCount}
+        // A disabled account is dimmed (#095): still findable, but its figures
+        // must not read like those of a partner who is selling.
+        rowClassName={(row) => (row.original.status === 'disabled' ? 'opacity-50' : undefined)}
+      >
+        {/* Search, filters and the buttons on one row, "Hiển thị" last
+            (doitac-3010 #034). */}
+        <DataTableToolbar table={table}>
           <Button
             size='sm'
             variant='outline'
             disabled={selectedIds.length === 0}
             onClick={() => setBulkOpen(true)}
+            title={
+              selectedIds.length === 0
+                ? 'Tích chọn các dòng để đổi trạng thái hàng loạt'
+                : undefined
+            }
           >
             <Icons.settings className='mr-2 size-4' />
             Thay đổi trạng thái
+            {selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
           </Button>
           <Button
             size='sm'
@@ -101,7 +113,7 @@ export function PartnersTable() {
               // The file follows the filters on screen (#062): exporting the
               // whole programme when the admin is looking at one tier would be
               // a trap.
-              const query = new URLSearchParams();
+              const query = new URLSearchParams({ approvedOnly: 'true' });
               if (params.name) query.set('search', params.name);
               if (params.partnerType) query.set('partnerType', params.partnerType);
               if (params.status) query.set('status', params.status);
@@ -116,23 +128,7 @@ export function PartnersTable() {
             <Icons.add className='mr-2 size-4' />
             Thêm đối tác
           </Button>
-        </div>
-      </div>
-
-      <DataTable
-        table={table}
-        totalRowCount={data.totalCount}
-        // "nếu từ chối thì ẩn/làm mờ" (#095). Dimmed rather than hidden: an admin
-        // still needs to find a rejected application — to see why it was turned
-        // down, or when that person applies again — but its revenue and profit
-        // figures must not read like those of a partner who is actually selling.
-        rowClassName={(row) =>
-          row.original.status === 'rejected' || row.original.status === 'disabled'
-            ? 'opacity-50'
-            : undefined
-        }
-      >
-        <DataTableToolbar table={table} />
+        </DataTableToolbar>
       </DataTable>
     </>
   );
