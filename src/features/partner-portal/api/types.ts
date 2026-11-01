@@ -81,6 +81,8 @@ export type MyWalletSummary = {
   pendingCommissionVnd?: number;
   /** Smallest withdrawal, from "Cấu hình chung" (doitac-1410 #010). */
   payoutMinVnd?: number;
+  /** Largest withdrawal, null = none, from "Cấu hình chung" (doitac-3010 #041). */
+  payoutMaxVnd?: number | null;
   /** Deposit promotions running now (doitac-1410 #015). */
   depositPromotions?: {
     name: string;

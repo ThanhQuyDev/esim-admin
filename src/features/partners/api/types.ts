@@ -814,6 +814,12 @@ export type PartnerProgramSettings = {
   payoutMinDistributionVnd: number;
   depositMinKolVnd: number;
   depositMinDistributionVnd: number;
+  /** Withdrawal ceilings, 0 = none (doitac-3010 #041). */
+  payoutMaxKolVnd: number;
+  payoutMaxDistributionVnd: number;
+  /** Largest single top-up (doitac-3010 #041). */
+  depositMaxKolVnd: number;
+  depositMaxDistributionVnd: number;
   /** Below this, a distribution partner is nudged to top up (#077). */
   lowDepositWarningVnd: number;
   reconciliationEmailEnabled: boolean;

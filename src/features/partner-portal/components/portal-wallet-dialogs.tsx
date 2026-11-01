@@ -394,6 +394,8 @@ export function WithdrawDialog({ open, onOpenChange }: DialogProps) {
 
   const available = wallet?.availableBalanceVnd ?? 0;
   const minPayout = wallet?.payoutMinVnd ?? FALLBACK_MIN_PAYOUT_VND;
+  // The admin's ceiling, null = none (doitac-3010 #041).
+  const maxPayout = wallet?.payoutMaxVnd ?? null;
   const awaiting = (wallet?.pendingCommissionVnd ?? 0) + (wallet?.pendingPayoutVnd ?? 0);
   const hasBank = Boolean(me?.bankAccountNumber);
 
@@ -433,6 +435,8 @@ export function WithdrawDialog({ open, onOpenChange }: DialogProps) {
     if (!amount.trim()) return 'Nhập số tiền muốn rút.';
     if (Number.isNaN(requested)) return 'Số tiền không hợp lệ.';
     if (requested < minPayout) return `Số tiền tối thiểu là ${formatVnd(minPayout)}.`;
+    if (maxPayout != null && requested > maxPayout)
+      return `Số tiền tối đa mỗi lần là ${formatVnd(maxPayout)}.`;
     if (requested > available) return `Số dư khả dụng chỉ còn ${formatVnd(available)}.`;
     return null;
   };
@@ -508,8 +512,9 @@ export function WithdrawDialog({ open, onOpenChange }: DialogProps) {
                 </p>
               ) : (
                 <p className='text-muted-foreground text-xs'>
-                  Tối thiểu {formatVnd(minPayout)} · Phí rút {PAYOUT_FEE_LABEL} · Nhận tiền trong{' '}
-                  {PAYOUT_ETA_LABEL.toLowerCase()}.
+                  Tối thiểu {formatVnd(minPayout)}
+                  {maxPayout != null && ` · Tối đa ${formatVnd(maxPayout)} mỗi lần`} · Phí rút{' '}
+                  {PAYOUT_FEE_LABEL} · Nhận tiền trong {PAYOUT_ETA_LABEL.toLowerCase()}.
                 </p>
               )}
               {available >= minPayout && (

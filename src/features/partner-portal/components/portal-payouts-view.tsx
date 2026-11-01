@@ -106,6 +106,8 @@ export function PortalPayoutsView() {
   const available = summary?.wallet.availableBalanceVnd ?? 0;
   // The admin's own minimum (doitac-1410 #010), not a number fixed in here.
   const MIN_PAYOUT_VND = summary?.wallet.payoutMinVnd ?? FALLBACK_MIN_PAYOUT_VND;
+  // The admin's ceiling, null = none (doitac-3010 #041).
+  const maxPayout = summary?.wallet.payoutMaxVnd ?? null;
   // Commission taken back after it was already paid out: the next periods pay
   // it off before anything is withdrawable again (#007).
   const carriedDebt = summary?.wallet.carriedDebtVnd ?? 0;
@@ -135,6 +137,8 @@ export function PortalPayoutsView() {
     if (!amount.trim()) return 'Nhập số tiền muốn rút.';
     if (Number.isNaN(requested)) return 'Số tiền không hợp lệ.';
     if (requested < MIN_PAYOUT_VND) return `Số tiền tối thiểu là ${formatVnd(MIN_PAYOUT_VND)}.`;
+    if (maxPayout != null && requested > maxPayout)
+      return `Số tiền tối đa mỗi lần là ${formatVnd(maxPayout)}.`;
     if (requested > available) return `Số dư khả dụng chỉ còn ${formatVnd(available)}.`;
     return null;
   };
@@ -200,8 +204,9 @@ export function PortalPayoutsView() {
                 </p>
               ) : (
                 <p id='payoutAmount-help' className='text-muted-foreground text-xs'>
-                  Tối thiểu {formatVnd(MIN_PAYOUT_VND)} · Phí rút {PAYOUT_FEE_LABEL} · Nhận tiền
-                  trong {PAYOUT_ETA_LABEL.toLowerCase()}.
+                  Tối thiểu {formatVnd(MIN_PAYOUT_VND)}
+                  {maxPayout != null && ` · Tối đa ${formatVnd(maxPayout)} mỗi lần`} · Phí rút{' '}
+                  {PAYOUT_FEE_LABEL} · Nhận tiền trong {PAYOUT_ETA_LABEL.toLowerCase()}.
                 </p>
               )}
             </div>

@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useImperativeHandle, useState, type Ref } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 
 import { updatePartnerByAdminMutation } from '../api/mutations';
+import { programSettingsQueryOptions } from '../api/queries';
 import type { Partner } from '../api/types';
 
 type Line = { label: string; value: string };
@@ -97,6 +98,17 @@ export function PartnerContractCard({
   // Only a distribution or API partner tops up a deposit; a marketing partner
   // has no balance to put money into (#013).
   const showDepositLimits = partner.partnerType !== 'kol';
+  // An empty box falls back to "Cấu hình chung" — say its figures, not ones
+  // fixed in here (doitac-3010 #041).
+  const { data: program } = useQuery(programSettingsQueryOptions());
+  const kol = partner.partnerType === 'kol';
+  const programMin = program
+    ? Number(kol ? program.depositMinKolVnd : program.depositMinDistributionVnd)
+    : null;
+  const programMax = program
+    ? Number(kol ? program.depositMaxKolVnd : program.depositMaxDistributionVnd)
+    : null;
+  const vndText = (n: number | null) => (n == null ? '…' : formatVnd(n));
 
   const payload = {
     contractInfo: lines.filter((line) => line.label.trim()),
@@ -234,7 +246,7 @@ export function PartnerContractCard({
                   type='number'
                   min={0}
                   className='w-[200px]'
-                  placeholder='Mặc định 100.000'
+                  placeholder={`Mức chung ${vndText(programMin)}`}
                   value={minVnd}
                   onChange={(e) => setMinVnd(e.target.value)}
                 />
@@ -248,18 +260,17 @@ export function PartnerContractCard({
                   type='number'
                   min={0}
                   className='w-[200px]'
-                  placeholder='Mặc định 10.000.000'
+                  placeholder={`Mức chung ${vndText(programMax)}`}
                   value={maxVnd}
                   onChange={(e) => setMaxVnd(e.target.value)}
                 />
               </div>
             </div>
-            {(minVnd || maxVnd) && (
-              <p className='text-muted-foreground text-xs'>
-                Đối tác này sẽ nạp được từ {minVnd ? formatVnd(Number(minVnd)) : '100.000đ'} đến{' '}
-                {maxVnd ? formatVnd(Number(maxVnd)) : '10.000.000đ'} mỗi lần.
-              </p>
-            )}
+            <p className='text-muted-foreground text-xs' data-testid='deposit-limits-effective'>
+              Đối tác này sẽ nạp được từ {minVnd ? formatVnd(Number(minVnd)) : vndText(programMin)}{' '}
+              đến {maxVnd ? formatVnd(Number(maxVnd)) : vndText(programMax)} mỗi lần
+              {!minVnd && !maxVnd ? ' (theo Cấu hình chung)' : ''}.
+            </p>
           </div>
         )}
 

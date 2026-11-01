@@ -31,6 +31,10 @@ const toForm = (s: PartnerProgramSettings): FormState => ({
   payoutMinDistributionVnd: String(s.payoutMinDistributionVnd),
   depositMinKolVnd: String(s.depositMinKolVnd),
   depositMinDistributionVnd: String(s.depositMinDistributionVnd),
+  payoutMaxKolVnd: String(s.payoutMaxKolVnd ?? 0),
+  payoutMaxDistributionVnd: String(s.payoutMaxDistributionVnd ?? 0),
+  depositMaxKolVnd: String(s.depositMaxKolVnd ?? 10_000_000),
+  depositMaxDistributionVnd: String(s.depositMaxDistributionVnd ?? 10_000_000),
   lowDepositWarningVnd: String(s.lowDepositWarningVnd),
   reconciliationEmailEnabled: s.reconciliationEmailEnabled,
   reconciliationEmailDayOfMonth: String(s.reconciliationEmailDayOfMonth)
@@ -102,45 +106,71 @@ export function ProgramSettingsForm() {
   return (
     <div className='space-y-6'>
       <div className='rounded-lg border p-4'>
-        <p className='text-sm font-medium'>Ngưỡng rút tiền hoa hồng tối thiểu</p>
+        <p className='text-sm font-medium'>Ngưỡng rút tiền hoa hồng</p>
         <p className='text-muted-foreground mt-1 mb-3 text-xs'>
-          Đối tác không tạo được yêu cầu rút dưới mức này. Backend kiểm tra lại khi nhận yêu cầu nên
-          số ở đây luôn là quy tắc đang chạy.
+          Đối tác không tạo được yêu cầu rút dưới mức tối thiểu hoặc trên mức tối đa mỗi lần. Để tối
+          đa là 0 nếu không giới hạn. Backend kiểm tra lại khi nhận yêu cầu nên số ở đây luôn là quy
+          tắc đang chạy.
         </p>
+        {/* Tối thiểu and tối đa per partner type (doitac-3010 #041). */}
         <div className='grid gap-4 sm:grid-cols-2'>
           <MoneyField
             id='payoutMinKolVnd'
-            label='Đối tác tiếp thị'
+            label='Đối tác tiếp thị — tối thiểu'
             value={String(form.payoutMinKolVnd)}
             onChange={set('payoutMinKolVnd')}
           />
           <MoneyField
+            id='payoutMaxKolVnd'
+            label='Đối tác tiếp thị — tối đa mỗi lần'
+            value={String(form.payoutMaxKolVnd)}
+            onChange={set('payoutMaxKolVnd')}
+          />
+          <MoneyField
             id='payoutMinDistributionVnd'
-            label='Đối tác phân phối'
+            label='Đối tác phân phối — tối thiểu'
             value={String(form.payoutMinDistributionVnd)}
             onChange={set('payoutMinDistributionVnd')}
+          />
+          <MoneyField
+            id='payoutMaxDistributionVnd'
+            label='Đối tác phân phối — tối đa mỗi lần'
+            value={String(form.payoutMaxDistributionVnd)}
+            onChange={set('payoutMaxDistributionVnd')}
           />
         </div>
       </div>
 
       <div className='rounded-lg border p-4'>
-        <p className='text-sm font-medium'>Ngưỡng nạp ký quỹ tối thiểu</p>
+        <p className='text-sm font-medium'>Ngưỡng nạp ký quỹ</p>
         <p className='text-muted-foreground mt-1 mb-3 text-xs'>
-          Áp dụng khi đối tác chưa được gán mức riêng trong trang chi tiết đối tác — mức riêng của
-          từng đối tác luôn được ưu tiên.
+          Số tiền tối thiểu và tối đa mỗi lần nạp. Áp dụng khi đối tác chưa được gán mức riêng trong
+          trang chi tiết đối tác — mức riêng của từng đối tác luôn được ưu tiên.
         </p>
         <div className='grid gap-4 sm:grid-cols-2'>
           <MoneyField
             id='depositMinKolVnd'
-            label='Đối tác tiếp thị'
+            label='Đối tác tiếp thị — tối thiểu'
             value={String(form.depositMinKolVnd)}
             onChange={set('depositMinKolVnd')}
           />
           <MoneyField
+            id='depositMaxKolVnd'
+            label='Đối tác tiếp thị — tối đa mỗi lần'
+            value={String(form.depositMaxKolVnd)}
+            onChange={set('depositMaxKolVnd')}
+          />
+          <MoneyField
             id='depositMinDistributionVnd'
-            label='Đối tác phân phối'
+            label='Đối tác phân phối — tối thiểu'
             value={String(form.depositMinDistributionVnd)}
             onChange={set('depositMinDistributionVnd')}
+          />
+          <MoneyField
+            id='depositMaxDistributionVnd'
+            label='Đối tác phân phối — tối đa mỗi lần'
+            value={String(form.depositMaxDistributionVnd)}
+            onChange={set('depositMaxDistributionVnd')}
           />
         </div>
       </div>
@@ -208,6 +238,10 @@ export function ProgramSettingsForm() {
               payoutMinDistributionVnd: num('payoutMinDistributionVnd'),
               depositMinKolVnd: num('depositMinKolVnd'),
               depositMinDistributionVnd: num('depositMinDistributionVnd'),
+              payoutMaxKolVnd: num('payoutMaxKolVnd'),
+              payoutMaxDistributionVnd: num('payoutMaxDistributionVnd'),
+              depositMaxKolVnd: num('depositMaxKolVnd'),
+              depositMaxDistributionVnd: num('depositMaxDistributionVnd'),
               lowDepositWarningVnd: num('lowDepositWarningVnd'),
               reconciliationEmailEnabled: Boolean(form.reconciliationEmailEnabled),
               reconciliationEmailDayOfMonth: num('reconciliationEmailDayOfMonth') || 5
