@@ -38,7 +38,10 @@ export function AttachmentsGrid({ attachments, className }: AttachmentsGridProps
   }
 
   return (
-    <div className={cn('grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4', className)}>
+    // Small thumbnails, just enough to tell the files apart (doitac-3010 #045):
+    // every file is opened to be read anyway, and big tiles pushed the
+    // ticket's important content off the screen.
+    <div className={cn('flex flex-wrap gap-2', className)} data-testid='ticket-attachments'>
       {attachments.map((url, idx) => (
         <AttachmentItem key={`${url}-${idx}`} url={url} />
       ))}
@@ -59,7 +62,7 @@ function AttachmentItem({ url }: { url: string }) {
   // the icon-and-name tile and opens in a new tab (#076).
   if (showVideo) {
     return (
-      <div className='group bg-muted/30 relative flex flex-col overflow-hidden rounded-md border'>
+      <div className='group bg-muted/30 relative flex w-28 flex-col overflow-hidden rounded-md border'>
         {/* No caption track exists for a file the customer recorded on their
             phone, so the a11y rule cannot be satisfied here; the file name and
             download link below carry the same information. */}
@@ -79,7 +82,7 @@ function AttachmentItem({ url }: { url: string }) {
   }
 
   return (
-    <div className='group bg-muted/30 hover:bg-muted/60 relative flex flex-col overflow-hidden rounded-md border transition'>
+    <div className='group bg-muted/30 hover:bg-muted/60 relative flex w-28 flex-col overflow-hidden rounded-md border transition'>
       <a
         href={url}
         target='_blank'
@@ -97,8 +100,8 @@ function AttachmentItem({ url }: { url: string }) {
             className='h-full w-full object-cover transition group-hover:scale-105'
           />
         ) : (
-          <div className='text-muted-foreground flex flex-col items-center gap-2 p-4 text-center text-xs'>
-            <Icons.page className='h-10 w-10' />
+          <div className='text-muted-foreground flex flex-col items-center gap-1 p-2 text-center text-[10px]'>
+            <Icons.page className='h-6 w-6' />
             {isPdf && (
               <span className='bg-muted rounded px-1.5 py-0.5 font-medium tracking-wide uppercase'>
                 PDF
@@ -115,7 +118,7 @@ function AttachmentItem({ url }: { url: string }) {
 
 function AttachmentFooter({ url, name }: { url: string; name: string }) {
   return (
-    <div className='bg-background/80 flex items-center justify-between gap-2 border-t px-2 py-1 text-xs'>
+    <div className='bg-background/80 flex items-center justify-between gap-1 border-t px-1.5 py-0.5 text-[10px]'>
       <span className='truncate' title={name}>
         {name}
       </span>

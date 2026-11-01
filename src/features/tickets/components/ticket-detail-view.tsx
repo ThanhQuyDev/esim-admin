@@ -164,7 +164,12 @@ function TicketDetailContent({ ticket }: { ticket: Ticket }) {
         </CardHeader>
         <CardContent>
           {ticket.description ? (
-            <SafeHtml html={ticket.description} />
+            // .875rem like the rest of the page (doitac-3010 #045) — a pasted
+            // email brings its own font sizes, which this overrides.
+            <SafeHtml
+              html={ticket.description}
+              className='text-sm [&_*]:text-sm! [&_*]:leading-relaxed'
+            />
           ) : (
             <p className='text-muted-foreground text-sm'>Không có mô tả.</p>
           )}

@@ -61,7 +61,7 @@ export function TicketsFilterBar() {
         <Input
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder='Tìm theo email khách hàng hoặc tiêu đề...'
+          placeholder='Tìm theo email, tiêu đề, mã đơn hàng hoặc ICCID...'
           className='h-9 pl-8'
           aria-label='Tìm kiếm tickets'
         />
