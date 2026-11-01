@@ -273,6 +273,10 @@ export type AdminOrderInvoice = {
   address: string;
   invoicePhone: string;
   invoiceEmail: string;
+  /** "Số hóa đơn VAT" (doitac-3010 #044). */
+  invoiceNumber?: string | null;
+  /** `company` — with company details; `consumer` — to the buyer (#044). */
+  buyerType?: 'company' | 'consumer';
   createdAt: string;
   updatedAt: string;
 };

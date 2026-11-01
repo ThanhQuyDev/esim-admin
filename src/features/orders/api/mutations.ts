@@ -6,7 +6,8 @@ import {
   resendEsimEmail,
   retryOrderProvisioning,
   submitManualOrder,
-  updateInvoiceStatus
+  updateInvoiceStatus,
+  issueConsumerInvoice
 } from './service';
 import { orderKeys } from './queries';
 import type {
@@ -41,8 +42,22 @@ export const submitManualOrderMutation = mutationOptions({
 });
 
 export const updateInvoiceStatusMutation = mutationOptions({
-  mutationFn: ({ invoiceId, status }: { invoiceId: string; status: InvoiceStatus }) =>
-    updateInvoiceStatus(invoiceId, status),
+  mutationFn: ({
+    invoiceId,
+    status,
+    invoiceNumber
+  }: {
+    invoiceId: string;
+    status: InvoiceStatus;
+    invoiceNumber?: string;
+  }) => updateInvoiceStatus(invoiceId, status, invoiceNumber),
+  onSettled: invalidateOrders
+});
+
+/** "Số hóa đơn VAT" for an order without an invoice (doitac-3010 #044). */
+export const issueConsumerInvoiceMutation = mutationOptions({
+  mutationFn: ({ orderId, invoiceNumber }: { orderId: number; invoiceNumber: string }) =>
+    issueConsumerInvoice(orderId, invoiceNumber),
   onSettled: invalidateOrders
 });
 

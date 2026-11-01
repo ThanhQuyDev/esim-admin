@@ -104,11 +104,28 @@ export const BULK_ORDER_TEMPLATE_URL = '/api/admin/orders/bulk/import-template';
 
 export async function updateInvoiceStatus(
   invoiceId: string,
-  status: 'PENDING' | 'ISSUED' | 'FAILED'
+  status: 'PENDING' | 'ISSUED' | 'FAILED',
+  /** "Số hóa đơn VAT", required to issue (doitac-3010 #044). */
+  invoiceNumber?: string
 ): Promise<Invoice> {
+  // The proxy forwards as PATCH either way; say so here too.
   return apiClient<Invoice>(`/invoices/${invoiceId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ status })
+    method: 'PATCH',
+    body: JSON.stringify({ status, ...(invoiceNumber && { invoiceNumber }) })
+  });
+}
+
+/**
+ * A VAT invoice issued to the buyer as a consumer, with only its number
+ * (doitac-3010 #044).
+ */
+export async function issueConsumerInvoice(
+  orderId: number,
+  invoiceNumber: string
+): Promise<Invoice> {
+  return apiClient<Invoice>(`/admin/orders/${orderId}/invoices/consumer`, {
+    method: 'POST',
+    body: JSON.stringify({ invoiceNumber })
   });
 }
 

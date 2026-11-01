@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { formatDateTimeVn } from '@/lib/format';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -14,6 +15,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { updateInvoiceStatusMutation } from '../api/mutations';
 import type { AdminOrderInvoice, InvoiceStatus } from '../api/types';
 
@@ -68,6 +71,12 @@ export function InvoiceViewDialog({
   });
 
   const canIssue = invoice.status === 'PENDING';
+  // "Số hóa đơn VAT" typed before issuing (doitac-3010 #044).
+  const [invoiceNumber, setInvoiceNumber] = useState(invoice.invoiceNumber ?? '');
+  useEffect(() => {
+    if (open) setInvoiceNumber(invoice.invoiceNumber ?? '');
+  }, [open, invoice.invoiceNumber]);
+  const consumer = invoice.buyerType === 'consumer';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,16 +102,54 @@ export function InvoiceViewDialog({
             label='Mã hóa đơn'
             value={<span className='font-mono text-xs break-all'>{invoice.id}</span>}
           />
-          <InvoiceField label='Tên công ty' value={invoice.companyName} />
+          {!canIssue && (
+            <InvoiceField
+              label='Số hóa đơn VAT'
+              value={
+                invoice.invoiceNumber ? (
+                  <span className='font-mono font-semibold' data-testid='invoice-number'>
+                    {invoice.invoiceNumber}
+                  </span>
+                ) : null
+              }
+            />
+          )}
           <InvoiceField
-            label='Mã số thuế'
-            value={<span className='font-mono'>{invoice.taxCode}</span>}
+            label='Xuất cho'
+            value={consumer ? 'Người tiêu dùng (không cần thông tin xuất hóa đơn)' : 'Công ty'}
           />
-          <InvoiceField label='Email nhận' value={invoice.invoiceEmail} />
-          <InvoiceField label='Số điện thoại' value={invoice.invoicePhone} />
-          <InvoiceField label='Địa chỉ' value={invoice.address} />
+          {!consumer && (
+            <>
+              <InvoiceField label='Tên công ty' value={invoice.companyName} />
+              <InvoiceField
+                label='Mã số thuế'
+                value={<span className='font-mono'>{invoice.taxCode}</span>}
+              />
+              <InvoiceField label='Email nhận' value={invoice.invoiceEmail} />
+              <InvoiceField label='Số điện thoại' value={invoice.invoicePhone} />
+              <InvoiceField label='Địa chỉ' value={invoice.address} />
+            </>
+          )}
           <InvoiceField label='Tạo lúc' value={formatDate(invoice.createdAt)} />
           <InvoiceField label='Cập nhật' value={formatDate(invoice.updatedAt)} />
+          {canIssue && (
+            <div className='space-y-1.5 border-t pt-3'>
+              <Label htmlFor='invoiceNumber'>
+                Số hóa đơn VAT <span className='text-destructive'>*</span>
+              </Label>
+              <Input
+                id='invoiceNumber'
+                placeholder='VD: 0001234'
+                maxLength={50}
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                data-testid='invoice-number-input'
+              />
+              <p className='text-muted-foreground text-xs'>
+                Nhập số hóa đơn đã xuất để theo dõi đơn này phát hành hóa đơn số bao nhiêu.
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter className='gap-2 sm:gap-2'>
@@ -112,7 +159,14 @@ export function InvoiceViewDialog({
           {canIssue && (
             <Button
               type='button'
-              onClick={() => issueMutation.mutate({ invoiceId: invoice.id, status: 'ISSUED' })}
+              onClick={() =>
+                issueMutation.mutate({
+                  invoiceId: invoice.id,
+                  status: 'ISSUED',
+                  invoiceNumber: invoiceNumber.trim()
+                })
+              }
+              disabled={!invoiceNumber.trim()}
               isLoading={issueMutation.isPending}
             >
               <Icons.check className='mr-2 h-4 w-4' />

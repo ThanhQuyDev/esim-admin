@@ -36,6 +36,7 @@ import { ValueAfterRefund } from '../utils/refund-values';
 import { commissionRejectionText } from '@/lib/commission-rejection';
 import { providerLabel } from '@/features/overview/api/constants';
 import { PaymentUsdBadge } from './payment-usd-badge';
+import { ConsumerInvoiceDialog } from './consumer-invoice-dialog';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -430,6 +431,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [retryOpen, setRetryOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceViewOpen, setInvoiceViewOpen] = useState(false);
+  const [consumerInvoiceOpen, setConsumerInvoiceOpen] = useState(false);
 
   const retryMutation = useMutation({
     ...retryOrderProvisioningMutation,
@@ -515,6 +517,12 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         onSubmit={(itemIds) => retryMutation.mutate({ orderId: order.id, itemIds })}
         isSubmitting={retryMutation.isPending}
       />
+      <ConsumerInvoiceDialog
+        orderId={order.id}
+        orderNumber={order.orderNumber}
+        open={consumerInvoiceOpen}
+        onOpenChange={setConsumerInvoiceOpen}
+      />
       <CreateInvoiceDialog
         orderId={order.id}
         orderNumber={order.orderNumber}
@@ -584,6 +592,12 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             >
               <Icons.eye className='mr-2 h-4 w-4' />
               Xem hóa đơn
+              {/* The number it was issued under (doitac-3010 #044). */}
+              {order.invoice.invoiceNumber && (
+                <span className='ml-1 font-mono' data-testid='order-invoice-number'>
+                  · Số {order.invoice.invoiceNumber}
+                </span>
+              )}
               <Badge
                 variant={order.invoice.status === 'ISSUED' ? 'default' : 'outline'}
                 className='ml-2 px-1.5 py-0 text-[10px]'
@@ -592,10 +606,28 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               </Badge>
             </Button>
           ) : canIssueInvoice(order.status) ? (
-            <Button type='button' size='sm' variant='outline' onClick={() => setInvoiceOpen(true)}>
-              <Icons.fileTypePdf className='mr-2 h-4 w-4' />
-              Xuất hóa đơn
-            </Button>
+            <>
+              <Button
+                type='button'
+                size='sm'
+                variant='outline'
+                onClick={() => setInvoiceOpen(true)}
+              >
+                <Icons.fileTypePdf className='mr-2 h-4 w-4' />
+                Xuất hóa đơn
+              </Button>
+              {/* Any order: the number of a consumer invoice (doitac-3010 #044). */}
+              <Button
+                type='button'
+                size='sm'
+                variant='outline'
+                onClick={() => setConsumerInvoiceOpen(true)}
+                data-testid='consumer-invoice-open'
+              >
+                <Icons.edit className='mr-2 h-4 w-4' />
+                Nhập số hóa đơn VAT
+              </Button>
+            </>
           ) : null}
           {/* Refund sits with the other admin actions instead of in a card of its
               own further down the page (#012). */}
