@@ -9,6 +9,7 @@
  * as the partner types, and the API caps the discount at their own rate.
  */
 
+import { DateTimeField } from '@/features/coupons/components/date-time-field';
 import { partnerLockMessage } from '../utils/partner-lock';
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -403,12 +404,13 @@ export function PortalCouponsView() {
               />
             </div>
             <div className='space-y-2'>
-              <Label htmlFor='couponExpires'>Hiệu lực đến</Label>
-              <Input
+              {/* Date plus hour and minute, as in the admin's coupon form
+                  (doitac-3010 #016). */}
+              <DateTimeField
                 id='couponExpires'
-                type='date'
+                label='Hiệu lực đến'
                 value={form.expiresAt}
-                onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
+                onChange={(expiresAt) => setForm({ ...form, expiresAt })}
               />
             </div>
 

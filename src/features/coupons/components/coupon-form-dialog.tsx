@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import { FormDialog } from '@/components/ui/form-dialog';
-import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
 import { useMutation } from '@tanstack/react-query';
 import { createCouponMutation, updateCouponMutation } from '../api/mutations';
@@ -20,7 +19,7 @@ import {
 import { partnersQueryOptions } from '@/features/partners/api/queries';
 import { Badge } from '@/components/ui/badge';
 import { couponUsage } from '../utils/usage';
-import { HOURS, MINUTES, joinDateTime, splitDateTime } from '../utils/datetime';
+import { DateTimeField } from './date-time-field';
 
 /** Radix Select has no empty-string value, so "no owner" needs a sentinel. */
 const NO_PARTNER = 'none';
@@ -87,71 +86,6 @@ function CouponFormDialogWrapper({
   );
 }
 
-function DateTimeField({
-  label,
-  value,
-  onChange,
-  required
-}: {
-  label: string;
-  value: string;
-  onChange: (val: string) => void;
-  required?: boolean;
-}) {
-  // A date plus 24-hour hour/minute pickers instead of `datetime-local`, whose
-  // time follows the browser locale and showed "SA/CH" to admins (#039).
-  const parts = splitDateTime(value);
-  const update = (patch: Partial<typeof parts>) => onChange(joinDateTime({ ...parts, ...patch }));
-
-  return (
-    <div className='space-y-2'>
-      <label htmlFor='coupon-expiry-date' className='text-sm font-medium'>
-        {label}
-        {required && <span className='text-destructive'> *</span>}
-      </label>
-      <div className='flex flex-wrap items-center gap-2'>
-        <Input
-          id='coupon-expiry-date'
-          type='date'
-          className='w-auto min-w-[160px] flex-1'
-          value={parts.date}
-          onChange={(e) => update({ date: e.target.value })}
-        />
-        <Select value={parts.hour} onValueChange={(hour) => update({ hour })}>
-          <SelectTrigger
-            className='w-[76px]'
-            aria-label='Giờ (24h)'
-            data-testid='coupon-expiry-hour'
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className='max-h-64'>
-            {HOURS.map((h) => (
-              <SelectItem key={h} value={h}>
-                {h}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className='text-muted-foreground'>:</span>
-        <Select value={parts.minute} onValueChange={(minute) => update({ minute })}>
-          <SelectTrigger className='w-[76px]' aria-label='Phút' data-testid='coupon-expiry-minute'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className='max-h-64'>
-            {MINUTES.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <p className='text-muted-foreground text-xs'>Giờ theo định dạng 24h (00:00 – 23:59).</p>
-    </div>
-  );
-}
-
 /**
  * Owner picker. A coupon with no partner is a house-wide code; picking a
  * partner makes it that KOL's code and surfaces its performance in their
@@ -176,7 +110,7 @@ function PartnerField({
         value={value == null ? NO_PARTNER : String(value)}
         onValueChange={(v) => onChange(v === NO_PARTNER ? null : Number(v))}
       >
-        <SelectTrigger id='coupon-partner'>
+        <SelectTrigger id='coupon-partner' className='w-full'>
           <SelectValue placeholder='Không gắn đối tác' />
         </SelectTrigger>
         <SelectContent>
@@ -357,22 +291,31 @@ function CreateCouponDialog({
             />
           </div>
 
-          <form.Field name='expiresAt'>
-            {(field) => (
-              <DateTimeField
-                label='Ngày hết hạn'
-                required
-                value={field.state.value ?? ''}
-                onChange={(val) => field.handleChange(val)}
-              />
-            )}
-          </form.Field>
+          {/* The expiry and the owner on one row, so the date picker is not
 
-          <form.Field name='partnerId'>
-            {(field) => (
-              <PartnerField value={field.state.value} onChange={(val) => field.handleChange(val)} />
-            )}
-          </form.Field>
+              stretched across the dialog (doitac-3010 #016). */}
+
+          <div className='grid grid-cols-1 items-start gap-6 md:grid-cols-2'>
+            <form.Field name='expiresAt'>
+              {(field) => (
+                <DateTimeField
+                  label='Ngày hết hạn'
+                  required
+                  value={field.state.value ?? ''}
+                  onChange={(val) => field.handleChange(val)}
+                />
+              )}
+            </form.Field>
+
+            <form.Field name='partnerId'>
+              {(field) => (
+                <PartnerField
+                  value={field.state.value}
+                  onChange={(val) => field.handleChange(val)}
+                />
+              )}
+            </form.Field>
+          </div>
 
           <FormSwitchField name='isActive' label='Hoạt động' />
           <FormSwitchField
@@ -571,22 +514,31 @@ function EditCouponDialog({
             />
           </div>
 
-          <form.Field name='expiresAt'>
-            {(field) => (
-              <DateTimeField
-                label='Ngày hết hạn'
-                required
-                value={field.state.value ?? ''}
-                onChange={(val) => field.handleChange(val)}
-              />
-            )}
-          </form.Field>
+          {/* The expiry and the owner on one row, so the date picker is not
 
-          <form.Field name='partnerId'>
-            {(field) => (
-              <PartnerField value={field.state.value} onChange={(val) => field.handleChange(val)} />
-            )}
-          </form.Field>
+              stretched across the dialog (doitac-3010 #016). */}
+
+          <div className='grid grid-cols-1 items-start gap-6 md:grid-cols-2'>
+            <form.Field name='expiresAt'>
+              {(field) => (
+                <DateTimeField
+                  label='Ngày hết hạn'
+                  required
+                  value={field.state.value ?? ''}
+                  onChange={(val) => field.handleChange(val)}
+                />
+              )}
+            </form.Field>
+
+            <form.Field name='partnerId'>
+              {(field) => (
+                <PartnerField
+                  value={field.state.value}
+                  onChange={(val) => field.handleChange(val)}
+                />
+              )}
+            </form.Field>
+          </div>
 
           <FormSwitchField name='isActive' label='Hoạt động' />
           <FormSwitchField

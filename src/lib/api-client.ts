@@ -70,8 +70,14 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
     if (res.status === 401 && errors?.session && typeof window !== 'undefined') {
       window.location.replace(`/auth/sign-in?reason=${encodeURIComponent(errors.session)}`);
     }
+    // A 422 that names only a field still says why (doitac-3010 #016).
+    const firstError = errors
+      ? Object.values(errors).find((v) => typeof v === 'string' && v.includes(' '))
+      : undefined;
     throw new ApiError(
-      body.message || `API error: ${res.status} ${res.statusText}`,
+      (typeof body.message === 'string' ? body.message : '') ||
+        firstError ||
+        `Thao tác không thành công (mã lỗi ${res.status}).`,
       res.status,
       errors
     );
