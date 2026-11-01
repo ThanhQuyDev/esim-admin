@@ -40,6 +40,10 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 import { DateRangeFilter } from '@/components/date-range-filter';
+import {
+  PortalListPagination,
+  usePortalPagination
+} from '@/features/partner-portal/components/portal-list-pagination';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { bulkPayoutDecisionMutation, markPayoutPaidMutation } from '../api/mutations';
@@ -225,12 +229,12 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
     [search, dateFrom, dateTo, period]
   );
   const payoutFilters = useMemo(
-    () => ({ limit: 200, ...common, ...(status !== 'all' && { status }) }),
+    () => ({ limit: 1000, ...common, ...(status !== 'all' && { status }) }),
     [common, status]
   );
   const depositStatus = status === 'all' ? undefined : DEPOSIT_FILTER[status];
   const depositFilters = useMemo(
-    () => ({ limit: 200, ...common, ...(depositStatus && { status: depositStatus }) }),
+    () => ({ limit: 1000, ...common, ...(depositStatus && { status: depositStatus }) }),
     [common, depositStatus]
   );
 
@@ -251,15 +255,26 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
       ...(wantWithdraw ? (payoutsQuery.data?.data ?? []).map(fromPayout) : []),
       ...(wantDeposit ? (depositsQuery.data ?? []).map(fromDeposit) : [])
     ];
-    // Waiting first, then newest — the order the finance team works in.
+    // The latest request on top (doitac-3010 #038); "Chờ duyệt" is a filter.
     return list.toSorted(
-      (a, b) =>
-        Number(b.status === 'pending') - Number(a.status === 'pending') ||
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [wantWithdraw, wantDeposit, payoutsQuery.data, depositsQuery.data]);
 
   const payoutRows = rows.filter((r) => r.kind === 'withdraw');
+  // Paged like the admin's tables (doitac-3010 #038).
+  const { pageRows, pagination } = usePortalPagination(rows, 20);
+  const filtered = Boolean(
+    search.trim() || kind !== 'all' || status !== 'all' || dateFrom || dateTo || period !== 'all'
+  );
+  const resetFilters = () => {
+    setSearch('');
+    setKind('all');
+    setStatus('all');
+    setDateFrom('');
+    setDateTo('');
+    setPeriod('all');
+  };
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: partnerKeys.all });
 
@@ -381,6 +396,18 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
             ))}
           </SelectContent>
         </Select>
+        {filtered && (
+          <Button
+            variant='outline'
+            size='sm'
+            className='h-9'
+            onClick={resetFilters}
+            data-testid='finance-clear-filters'
+          >
+            <Icons.close className='size-4' />
+            Xoá bộ lọc
+          </Button>
+        )}
         <Button
           variant='outline'
           className='ml-auto'
@@ -447,9 +474,10 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
           Không có yêu cầu nạp/rút tiền nào khớp bộ lọc.
         </p>
       ) : (
-        <div className='overflow-x-auto rounded-lg border' data-testid='finance-rows'>
+        // Header pinned while the list scrolls (doitac-3010 #038).
+        <div className='max-h-[70vh] overflow-auto rounded-lg border' data-testid='finance-rows'>
           <Table>
-            <TableHeader>
+            <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
               <TableRow>
                 <TableHead className='w-10'>
                   <Checkbox
@@ -475,7 +503,7 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((row) => (
+              {pageRows.map((row) => (
                 <TableRow key={row.key} data-testid={`finance-row-${row.key}`}>
                   <TableCell>
                     {row.payout && (
@@ -577,6 +605,14 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
             </TableBody>
           </Table>
         </div>
+      )}
+      {rows.length > 0 && (
+        <PortalListPagination
+          pagination={pagination}
+          unit='yêu cầu'
+          testId='finance-pagination'
+          pageSizes={[10, 20, 30, 40, 50, 100, 200]}
+        />
       )}
 
       {detailOf?.payout && (
