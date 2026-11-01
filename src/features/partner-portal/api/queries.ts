@@ -23,6 +23,7 @@ import {
   getMyDistributionSummary,
   getMyDistributionSeries,
   getMyEsims,
+  getMyEsimSummary,
   getMyPurchases,
   getPartnerCatalogue,
   getPurchaseQuote,
@@ -181,6 +182,13 @@ export const myEsimsQueryOptions = (filters?: {
   queryOptions({
     queryKey: [...partnerPortalKeys.all, 'esims', filters ?? {}],
     queryFn: () => getMyEsims(filters)
+  });
+
+/** "Quản lý eSIM": this month against last (doitac-3010 #028). */
+export const myEsimSummaryQueryOptions = () =>
+  queryOptions({
+    queryKey: [...partnerPortalKeys.all, 'esims', 'summary'],
+    queryFn: getMyEsimSummary
   });
 
 /** Orders a distribution partner placed themselves (#046). */

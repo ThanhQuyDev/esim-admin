@@ -627,6 +627,8 @@ export type MyEsim = {
   activatedAt: string | null;
   expiresAt: string | null;
   createdAt: string | null;
+  /** When the eSIM was issued and its QR made — "Thời gian tạo" (doitac-3010 #028). */
+  esimCreatedAt?: string | null;
   /** doitac-1410 #037 */
   planType?: string | null;
   topUp?: boolean;
@@ -1008,3 +1010,8 @@ export type MyNotificationList = {
   /** "Nổi bật" ones for the top of the page, read or not (#062). */
   featured?: MyNotification[];
 };
+
+/** One month on "Quản lý eSIM" (doitac-3010 #028). */
+export type EsimMonthFigures = { count: number; activated: number; idle: number; costVnd: number };
+
+export type MyEsimSummary = { thisMonth: EsimMonthFigures; lastMonth: EsimMonthFigures };

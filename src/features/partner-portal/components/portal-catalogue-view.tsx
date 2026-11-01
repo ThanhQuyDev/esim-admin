@@ -27,14 +27,6 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -65,6 +57,7 @@ import {
 import type { CataloguePlan, CatalogueFilters } from '../api/types';
 import { EMPTY_CATALOGUE_FILTERS, PortalCatalogueFilters } from './portal-catalogue-filters';
 import { PortalCartBar } from './portal-cart-bar';
+import { ColumnVisibilityMenu, useHiddenColumns } from './portal-column-visibility';
 import { PortalListPagination, type PortalPagination } from './portal-list-pagination';
 import { PriceVndUsd } from './price-vnd-usd';
 import {
@@ -206,63 +199,6 @@ const CATALOGUE_COLUMNS: CatalogueColumn[] = [
 
 const HIDDEN_COLUMNS_KEY = 'portal-catalogue-hidden-columns';
 
-/** The columns the partner switched off, remembered in this browser. */
-function useHiddenColumns() {
-  const [hidden, setHidden] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      return JSON.parse(window.localStorage.getItem(HIDDEN_COLUMNS_KEY) ?? '[]');
-    } catch {
-      return [];
-    }
-  });
-  const toggle = (key: string) =>
-    setHidden((current) => {
-      const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
-      try {
-        window.localStorage.setItem(HIDDEN_COLUMNS_KEY, JSON.stringify(next));
-      } catch {
-        // Private mode: the choice lasts until the page is closed.
-      }
-      return next;
-    });
-  return { hidden, toggle };
-}
-
-/** "Hiển thị" at the top right of the list, as on the admin's tables. */
-function ColumnVisibilityMenu({
-  hidden,
-  onToggle
-}: {
-  hidden: string[];
-  onToggle: (key: string) => void;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant='outline' size='sm' className='h-8' data-testid='catalogue-columns'>
-          <Icons.settings className='size-4' />
-          Hiển thị
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-48'>
-        <DropdownMenuLabel>Các cột hiển thị</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {CATALOGUE_COLUMNS.map((column) => (
-          <DropdownMenuCheckboxItem
-            key={column.key}
-            checked={!hidden.includes(column.key)}
-            onCheckedChange={() => onToggle(column.key)}
-            onSelect={(e) => e.preventDefault()}
-          >
-            {column.label}
-          </DropdownMenuCheckboxItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 export function PortalCatalogueView() {
   // The admin's filters (doitac-1410 #033); typing is deferred so each key
   // press does not fire its own request.
@@ -273,7 +209,7 @@ export function PortalCatalogueView() {
   const deferredFilters = useDeferredValue(filters);
   const [selected, setSelected] = useState<CataloguePlan | null>(null);
   const [quantity, setQuantity] = useState('1');
-  const { hidden: hiddenColumns, toggle: toggleColumn } = useHiddenColumns();
+  const { hidden: hiddenColumns, toggle: toggleColumn } = useHiddenColumns(HIDDEN_COLUMNS_KEY);
   const visibleColumns = CATALOGUE_COLUMNS.filter((c) => !hiddenColumns.includes(c.key));
   // "Xem chi tiết" and "Thêm giỏ hàng" (doitac-1410 #034).
   const [detail, setDetail] = useState<CataloguePlan | null>(null);
@@ -376,7 +312,12 @@ export function PortalCatalogueView() {
             một file Excel tải về ở trang Đơn hàng.
           </CardDescription>
           <CardAction>
-            <ColumnVisibilityMenu hidden={hiddenColumns} onToggle={toggleColumn} />
+            <ColumnVisibilityMenu
+              columns={CATALOGUE_COLUMNS}
+              hidden={hiddenColumns}
+              onToggle={toggleColumn}
+              testId='catalogue-columns'
+            />
           </CardAction>
         </CardHeader>
         <CardContent className='space-y-4'>

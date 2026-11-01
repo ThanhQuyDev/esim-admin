@@ -41,6 +41,7 @@ import type {
   MyDistributionSummary,
   MyDistributionSeriesPoint,
   MyEsim,
+  MyEsimSummary,
   MyPurchase,
   PartnerCatalogue,
   PurchaseQuote,
@@ -335,6 +336,11 @@ export async function getMyEsims(filters?: {
   }
   const query = params.toString();
   return apiClient<MyEsim[]>(`/partner-portal/esims${query ? `?${query}` : ''}`);
+}
+
+/** This month against last month on Quản lý eSIM (doitac-3010 #028). */
+export async function getMyEsimSummary(): Promise<MyEsimSummary> {
+  return apiClient<MyEsimSummary>('/partner-portal/esims/summary');
 }
 
 /** The "Đơn hàng" filters of a distribution partner (doitac-1410 #041). */
