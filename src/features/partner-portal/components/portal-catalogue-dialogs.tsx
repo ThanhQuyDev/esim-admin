@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Icons } from '@/components/icons';
 import { formatDataSize, formatVnd } from '@/lib/format';
 
 import type { CataloguePlan } from '../api/types';
@@ -33,6 +35,122 @@ export const PLAN_TYPE_LABEL: Record<string, string> = {
 };
 
 export const yesNo = (value: boolean | undefined) => (value ? 'Có' : 'Không');
+
+/**
+ * "Tiktok & AI" (doitac-3010 #026): "Không rõ" when neither the APN table nor
+ * the exit IP tells — only China blocks them, so "Không" would mislead.
+ */
+export function tiktokAiLabel(plan: CataloguePlan): string {
+  if (plan.tiktokAi) return 'Có';
+  return plan.tiktokAiKnown === false ? 'Không rõ' : 'Không';
+}
+
+/** "Chia sẻ kết nối / Hotspot": with its daily allowance when there is one. */
+function hotspotLabel(plan: CataloguePlan): string {
+  if (plan.hotSpot == null) return 'Không rõ';
+  if (!plan.hotSpot) return 'Không';
+  const allow = plan.hotSpotAllow?.trim();
+  if (!allow) return 'Có';
+  // Stored as "1" (GB) or already with its unit, "500MB".
+  return `Có (tối đa ${/^\d+(\.\d+)?$/.test(allow) ? `${allow} GB` : allow})`;
+}
+
+/** The refundable eSIMs are the roaming ones; the others are local SIMs. */
+function roamingLabel(plan: CataloguePlan): string {
+  return plan.refundable ? 'Có (eSIM roaming)' : 'Không (SIM nội địa của nước đến)';
+}
+
+/** Lower case, without Vietnamese marks, so "nhat ban" finds "Nhật Bản". */
+function plain(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase();
+}
+
+/**
+ * A region's countries behind an eye and their count, with a search box —
+ * as on the admin's plan list (doitac-3010 #026).
+ */
+export function RegionCountries({ plan }: { plan: CataloguePlan }) {
+  const [query, setQuery] = useState('');
+  const countries = plan.region?.countries ?? [];
+  if (!countries.length) return null;
+  const shown = query.trim()
+    ? countries.filter((c) => plain(c.name).includes(plain(query.trim())))
+    : countries;
+  return (
+    <Popover onOpenChange={(open) => !open && setQuery('')}>
+      <PopoverTrigger asChild>
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-6 px-1.5 text-xs'
+          data-testid={`region-countries-${plan.id}`}
+        >
+          <Icons.eye className='mr-1 size-3' />
+          {countries.length} nước
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className='w-64 p-0' align='start'>
+        <div className='space-y-2 border-b px-3 py-2'>
+          <p className='text-sm font-medium'>{plan.region?.name}</p>
+          <p className='text-muted-foreground text-xs'>{countries.length} điểm đến</p>
+          <Input
+            placeholder='Tìm quốc gia…'
+            className='h-8'
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            data-testid='region-countries-search'
+          />
+        </div>
+        <div className='max-h-60 overflow-y-auto p-2'>
+          {shown.length === 0 ? (
+            <p className='text-muted-foreground px-2 py-1 text-xs'>Không có quốc gia này.</p>
+          ) : (
+            <div className='grid gap-1'>
+              {shown.map((c) => (
+                <div key={c.name} className='flex items-center gap-2 rounded px-2 py-1'>
+                  {c.flagUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={c.flagUrl}
+                      alt={c.name}
+                      className='h-4 w-5 shrink-0 rounded object-cover'
+                    />
+                  )}
+                  <span className='text-sm'>{c.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** A country's flag, or a region's picture, before its name (doitac-3010 #026). */
+export function DestinationLabel({ plan, compact }: { plan: CataloguePlan; compact?: boolean }) {
+  const picture = plan.region ? plan.region.avatarUrl : plan.destinationFlagUrl;
+  return (
+    <span className='inline-flex flex-wrap items-center gap-1.5'>
+      {picture ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={picture}
+          alt=''
+          className={compact ? 'h-4 w-5 rounded object-cover' : 'h-5 w-7 rounded object-cover'}
+        />
+      ) : plan.region ? (
+        <Icons.global className='size-4 opacity-70' />
+      ) : null}
+      <span>{plan.destinationName ?? '—'}</span>
+      <RegionCountries plan={plan} />
+    </span>
+  );
+}
 
 /** "Calendar day, UTC+8" / "24h from install" — when high-speed data comes back. */
 export function resetLabel(plan: CataloguePlan): string {
@@ -68,11 +186,11 @@ export function PlanDetailDialog({
         {plan.slug}
       </span>
     ],
-    ['Điểm đến', plan.destinationName ?? '—'],
-    ['Dữ liệu', formatDataSize(plan.dataMb)],
+    ['Điểm đến', <DestinationLabel key='dest' plan={plan} />],
     ['Thời hạn', `${plan.durationDays} ngày`],
+    ['Dữ liệu', formatDataSize(plan.dataMb)],
     ['Loại gói', PLAN_TYPE_LABEL[plan.type ?? ''] ?? plan.type ?? '—'],
-    ['Tốc độ sau giảm tốc', plan.throttleSpeed || '—'],
+    ['Sau giảm tốc', plan.throttleSpeed || '—'],
     ['Tốc độ mạng', plan.speed || '—'],
     ['Nhà mạng', plan.operatorName || '—'],
     [
@@ -80,7 +198,11 @@ export function PlanDetailDialog({
       plan.hasCallSms ? `Có · Gọi: ${plan.call ?? 0} phút · SMS: ${plan.sms ?? 0}` : 'Không'
     ],
     ['Topup (nạp thêm)', yesNo(plan.topUp)],
-    ['Tiktok & AI', yesNo(plan.tiktokAi)],
+    ['Tiktok & AI', tiktokAiLabel(plan)],
+    // doitac-3010 #026
+    ['eKYC', yesNo(plan.isKyc)],
+    ['Chia sẻ kết nối / Hotspot', hotspotLabel(plan)],
+    ['Roaming', roamingLabel(plan)],
     ['Hoàn tiền', yesNo(plan.refundable)],
     ['Rẻ nhất', yesNo(plan.isCheapest)],
     ['APN', plan.apn || '—'],
@@ -88,7 +210,7 @@ export function PlanDetailDialog({
     ['Reset dung lượng tốc độ cao', resetLabel(plan)],
     ['Giá đại lý', <PriceVndUsd key='unit' vnd={plan.unitPriceVnd} usd={plan.unitPriceUsd} />],
     [
-      'Giá bán lẻ đề xuất',
+      'Giá bán lẻ',
       <PriceVndUsd key='retail' vnd={plan.suggestedRetailVnd ?? 0} usd={plan.suggestedRetailUsd} />
     ]
   ];

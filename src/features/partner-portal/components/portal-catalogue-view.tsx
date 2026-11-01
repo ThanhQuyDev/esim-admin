@@ -18,7 +18,22 @@ import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +54,7 @@ import {
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
 import { formatDataSize, formatVnd } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 import { createPurchaseMutation } from '../api/mutations';
 import {
@@ -53,10 +69,199 @@ import { PortalListPagination, type PortalPagination } from './portal-list-pagin
 import { PriceVndUsd } from './price-vnd-usd';
 import {
   AddToCartDialog,
+  DestinationLabel,
   PLAN_TYPE_LABEL,
   PlanDetailDialog,
+  tiktokAiLabel,
   yesNo
 } from './portal-catalogue-dialogs';
+
+type CatalogueColumn = {
+  key: string;
+  label: string;
+  headClassName?: string;
+  cellClassName?: string;
+  cell: (plan: CataloguePlan) => React.ReactNode;
+};
+
+/**
+ * The price list's columns, in the order of doitac-3010 #026 ("Thời hạn"
+ * before "Dữ liệu", shorter headers), each one hideable from "Hiển thị".
+ */
+const CATALOGUE_COLUMNS: CatalogueColumn[] = [
+  {
+    key: 'name',
+    label: 'Tên gói',
+    cellClassName: 'max-w-[260px]',
+    // Too long for the column: "…", the whole name on hover (doitac-3010 #026).
+    cell: (plan) => (
+      <span className='block truncate' title={plan.name} data-testid='plan-name'>
+        {plan.name}
+      </span>
+    )
+  },
+  {
+    key: 'destination',
+    label: 'Điểm đến',
+    cellClassName: 'text-xs',
+    cell: (plan) => <DestinationLabel plan={plan} compact />
+  },
+  {
+    key: 'duration',
+    label: 'Thời hạn',
+    cellClassName: 'text-xs whitespace-nowrap tabular-nums',
+    cell: (plan) => `${plan.durationDays} ngày`
+  },
+  {
+    key: 'data',
+    label: 'Dữ liệu',
+    cellClassName: 'text-xs whitespace-nowrap tabular-nums',
+    cell: (plan) => formatDataSize(plan.dataMb)
+  },
+  {
+    key: 'throttle',
+    label: 'Sau giảm tốc',
+    cellClassName: 'text-xs',
+    cell: (plan) => plan.throttleSpeed || '—'
+  },
+  {
+    key: 'callSms',
+    label: 'Gọi / SMS',
+    cellClassName: 'text-xs whitespace-nowrap',
+    // One cell for the three, calls and SMS beneath (#034).
+    cell: (plan) => (
+      <>
+        <span className='block'>{yesNo(plan.hasCallSms)}</span>
+        {plan.hasCallSms && (
+          <>
+            <span className='text-muted-foreground block'>Gọi: {plan.call ?? 0} phút</span>
+            <span className='text-muted-foreground block'>SMS: {plan.sms ?? 0}</span>
+          </>
+        )}
+      </>
+    )
+  },
+  {
+    key: 'type',
+    label: 'Loại gói',
+    cellClassName: 'text-xs whitespace-nowrap',
+    cell: (plan) => PLAN_TYPE_LABEL[plan.type ?? ''] ?? plan.type ?? '—'
+  },
+  {
+    key: 'topUp',
+    label: 'Topup',
+    cellClassName: 'text-xs',
+    cell: (plan) => yesNo(plan.topUp)
+  },
+  {
+    key: 'tiktokAi',
+    label: 'Tiktok & AI',
+    cellClassName: 'text-xs whitespace-nowrap',
+    cell: (plan) => (
+      <span className={plan.tiktokAiKnown === false ? 'text-muted-foreground' : ''}>
+        {tiktokAiLabel(plan)}
+      </span>
+    )
+  },
+  {
+    key: 'refundable',
+    label: 'Hoàn tiền',
+    cellClassName: 'text-xs',
+    cell: (plan) => (
+      <span className={plan.refundable ? '' : 'text-destructive'}>{yesNo(plan.refundable)}</span>
+    )
+  },
+  {
+    key: 'unitPrice',
+    label: 'Giá đại lý',
+    headClassName: 'text-right',
+    cellClassName: 'text-right font-medium whitespace-nowrap tabular-nums',
+    cell: (plan) =>
+      plan.purchasable ? <PriceVndUsd vnd={plan.unitPriceVnd} usd={plan.unitPriceUsd} /> : '—'
+  },
+  {
+    key: 'retail',
+    label: 'Giá bán lẻ',
+    headClassName: 'text-right',
+    cellClassName: 'text-right whitespace-nowrap tabular-nums',
+    cell: (plan) =>
+      plan.purchasable ? (
+        <PriceVndUsd vnd={plan.suggestedRetailVnd ?? 0} usd={plan.suggestedRetailUsd} />
+      ) : (
+        '—'
+      )
+  },
+  {
+    key: 'cheapest',
+    label: 'Rẻ nhất',
+    cellClassName: 'text-xs',
+    // Coloured as on the admin's list: the column partners scan first.
+    cell: (plan) => (
+      <Badge variant={plan.isCheapest ? 'default' : 'secondary'} data-testid='plan-cheapest'>
+        {yesNo(plan.isCheapest)}
+      </Badge>
+    )
+  }
+];
+
+const HIDDEN_COLUMNS_KEY = 'portal-catalogue-hidden-columns';
+
+/** The columns the partner switched off, remembered in this browser. */
+function useHiddenColumns() {
+  const [hidden, setHidden] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(window.localStorage.getItem(HIDDEN_COLUMNS_KEY) ?? '[]');
+    } catch {
+      return [];
+    }
+  });
+  const toggle = (key: string) =>
+    setHidden((current) => {
+      const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
+      try {
+        window.localStorage.setItem(HIDDEN_COLUMNS_KEY, JSON.stringify(next));
+      } catch {
+        // Private mode: the choice lasts until the page is closed.
+      }
+      return next;
+    });
+  return { hidden, toggle };
+}
+
+/** "Hiển thị" at the top right of the list, as on the admin's tables. */
+function ColumnVisibilityMenu({
+  hidden,
+  onToggle
+}: {
+  hidden: string[];
+  onToggle: (key: string) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant='outline' size='sm' className='h-8' data-testid='catalogue-columns'>
+          <Icons.settings className='size-4' />
+          Hiển thị
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' className='w-48'>
+        <DropdownMenuLabel>Các cột hiển thị</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {CATALOGUE_COLUMNS.map((column) => (
+          <DropdownMenuCheckboxItem
+            key={column.key}
+            checked={!hidden.includes(column.key)}
+            onCheckedChange={() => onToggle(column.key)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            {column.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function PortalCatalogueView() {
   // The admin's filters (doitac-1410 #033); typing is deferred so each key
@@ -68,6 +273,8 @@ export function PortalCatalogueView() {
   const deferredFilters = useDeferredValue(filters);
   const [selected, setSelected] = useState<CataloguePlan | null>(null);
   const [quantity, setQuantity] = useState('1');
+  const { hidden: hiddenColumns, toggle: toggleColumn } = useHiddenColumns();
+  const visibleColumns = CATALOGUE_COLUMNS.filter((c) => !hiddenColumns.includes(c.key));
   // "Xem chi tiết" and "Thêm giỏ hàng" (doitac-1410 #034).
   const [detail, setDetail] = useState<CataloguePlan | null>(null);
   const [carting, setCarting] = useState<CataloguePlan | null>(null);
@@ -167,12 +374,10 @@ export function PortalCatalogueView() {
           <CardDescription>
             Giá đại lý theo hạng hiện tại của bạn. Mua xong, toàn bộ mã eSIM của đơn được xuất ra
             một file Excel tải về ở trang Đơn hàng.
-            {!isLoading && (
-              <span className='ml-1' data-testid='catalogue-count'>
-                {totalCount.toLocaleString('vi-VN')} gói đang bán phù hợp.
-              </span>
-            )}
           </CardDescription>
+          <CardAction>
+            <ColumnVisibilityMenu hidden={hiddenColumns} onToggle={toggleColumn} />
+          </CardAction>
         </CardHeader>
         <CardContent className='space-y-4'>
           {isLoading ? (
@@ -184,95 +389,51 @@ export function PortalCatalogueView() {
               Không có gói nào khớp với bộ lọc này.
             </p>
           ) : (
-            <div className='overflow-x-auto'>
+            // Header pinned while the list scrolls (doitac-3010 #026).
+            <div
+              className='max-h-[70vh] overflow-auto rounded-md border'
+              data-testid='catalogue-table-scroll'
+            >
               <Table>
-                <TableHeader>
+                <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)]'>
                   <TableRow>
-                    <TableHead>Tên gói</TableHead>
-                    <TableHead>Điểm đến</TableHead>
-                    <TableHead>Dữ liệu</TableHead>
-                    <TableHead>Thời hạn</TableHead>
-                    <TableHead>Tốc độ sau giảm tốc</TableHead>
-                    <TableHead>Gọi / SMS</TableHead>
-                    <TableHead>Loại gói</TableHead>
-                    <TableHead>Topup</TableHead>
-                    <TableHead>Tiktok & AI</TableHead>
-                    <TableHead>Hoàn tiền</TableHead>
-                    <TableHead className='text-right'>Giá đại lý</TableHead>
-                    <TableHead className='text-right'>Giá bán lẻ đề xuất</TableHead>
-                    <TableHead>Rẻ nhất</TableHead>
-                    <TableHead className='text-right'>Thao tác</TableHead>
+                    {visibleColumns.map((column) => (
+                      <TableHead
+                        key={column.key}
+                        className={cn('bg-muted whitespace-nowrap', column.headClassName)}
+                      >
+                        {column.label}
+                      </TableHead>
+                    ))}
+                    <TableHead className='bg-muted text-right'>Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {plans.map((plan) => (
                     <TableRow key={plan.id} data-testid={`plan-row-${plan.id}`}>
-                      <TableCell className='max-w-[240px] min-w-[180px]'>{plan.name}</TableCell>
-                      <TableCell className='text-xs'>{plan.destinationName ?? '—'}</TableCell>
-                      <TableCell className='text-xs whitespace-nowrap tabular-nums'>
-                        {formatDataSize(plan.dataMb)}
-                      </TableCell>
-                      <TableCell className='text-xs whitespace-nowrap tabular-nums'>
-                        {plan.durationDays} ngày
-                      </TableCell>
-                      <TableCell className='text-xs'>{plan.throttleSpeed || '—'}</TableCell>
-                      <TableCell className='text-xs whitespace-nowrap'>
-                        {/* One cell for the three, calls and SMS beneath (#034). */}
-                        <span className='block'>{yesNo(plan.hasCallSms)}</span>
-                        {plan.hasCallSms && (
-                          <>
-                            <span className='text-muted-foreground block'>
-                              Gọi: {plan.call ?? 0} phút
-                            </span>
-                            <span className='text-muted-foreground block'>
-                              SMS: {plan.sms ?? 0}
-                            </span>
-                          </>
-                        )}
-                      </TableCell>
-                      <TableCell className='text-xs'>
-                        {PLAN_TYPE_LABEL[plan.type ?? ''] ?? plan.type ?? '—'}
-                      </TableCell>
-                      <TableCell className='text-xs'>{yesNo(plan.topUp)}</TableCell>
-                      <TableCell className='text-xs'>{yesNo(plan.tiktokAi)}</TableCell>
-                      <TableCell className='text-xs'>
-                        <span className={plan.refundable ? '' : 'text-destructive'}>
-                          {yesNo(plan.refundable)}
-                        </span>
-                      </TableCell>
-                      <TableCell className='text-right font-medium whitespace-nowrap tabular-nums'>
-                        {plan.purchasable ? (
-                          <PriceVndUsd vnd={plan.unitPriceVnd} usd={plan.unitPriceUsd} />
-                        ) : (
-                          '—'
-                        )}
-                      </TableCell>
-                      <TableCell className='text-right whitespace-nowrap tabular-nums'>
-                        {plan.purchasable ? (
-                          <PriceVndUsd
-                            vnd={plan.suggestedRetailVnd ?? 0}
-                            usd={plan.suggestedRetailUsd}
-                          />
-                        ) : (
-                          '—'
-                        )}
-                      </TableCell>
-                      <TableCell className='text-xs'>{yesNo(plan.isCheapest)}</TableCell>
+                      {visibleColumns.map((column) => (
+                        <TableCell key={column.key} className={column.cellClassName}>
+                          {column.cell(plan)}
+                        </TableCell>
+                      ))}
                       <TableCell className='text-right'>
                         <div className='flex justify-end gap-1'>
-                          <Button size='sm' variant='ghost' onClick={() => setDetail(plan)}>
+                          <Button size='sm' variant='outline' onClick={() => setDetail(plan)}>
                             Xem chi tiết
                           </Button>
                           {plan.purchasable ? (
                             <>
+                              {/* An icon with a plus, "add to cart" (doitac-3010 #026). */}
                               <Button
                                 size='sm'
                                 variant='outline'
                                 onClick={() => setCarting(plan)}
                                 aria-label='Thêm giỏ hàng'
+                                title='Thêm vào giỏ hàng'
+                                data-testid={`add-to-cart-${plan.id}`}
                               >
+                                <Icons.add className='size-3.5' />
                                 <Icons.shoppingCart className='size-4' />
-                                Thêm giỏ hàng
                               </Button>
                               <Button size='sm' onClick={() => setSelected(plan)}>
                                 Đặt mua
@@ -352,14 +513,16 @@ export function PortalCatalogueView() {
                 value={quoting ? '…' : formatVnd(quote?.totalVnd ?? 0)}
                 strong
               />
+              {/* The retail price the list shows the partner, not the
+                  storefront's own price (doitac-3010 #026). */}
               <Row
-                label='Doanh thu bán ra (giá niêm yết)'
-                value={formatVnd(quote?.listTotalVnd ?? 0)}
+                label='Doanh thu bán ra (giá bán lẻ đề xuất)'
+                value={formatVnd(quote?.suggestedRetailTotalVnd ?? 0)}
               />
               <Row
-                label='Chênh lệch nếu bán đúng giá niêm yết'
-                value={`${(quote?.marginVnd ?? 0) < 0 ? '−' : '+'}${formatVnd(
-                  Math.abs(quote?.marginVnd ?? 0)
+                label='Chênh lệch nếu bán đúng giá bán lẻ đề xuất'
+                value={`${(quote?.suggestedMarginVnd ?? 0) < 0 ? '−' : '+'}${formatVnd(
+                  Math.abs(quote?.suggestedMarginVnd ?? 0)
                 )}`}
               />
               <Row

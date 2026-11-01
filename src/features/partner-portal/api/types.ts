@@ -724,9 +724,23 @@ export type MyPurchaseDetail = {
 /** Một dòng trong bảng giá đối tác phân phối (#046). */
 export type CataloguePlan = {
   id: number;
+  /** The standard name, as the admin shows it (doitac-3010 #026). */
   name: string;
+  supplierName?: string;
   slug: string;
   destinationName: string | null;
+  destinationFlagUrl?: string | null;
+  /** A region and its countries (doitac-3010 #026). */
+  region?: {
+    name: string | null;
+    avatarUrl: string | null;
+    countries: { name: string; flagUrl: string | null }[];
+  } | null;
+  /** False when nobody knows whether TikTok & AI work (doitac-3010 #026). */
+  tiktokAiKnown?: boolean;
+  isKyc?: boolean;
+  hotSpot?: boolean | null;
+  hotSpotAllow?: string | null;
   durationDays: number;
   dataMb: number;
   /** fixed / daily / unlimited / unlimited-reduce (doitac-1410 #033). */
@@ -851,6 +865,10 @@ export type PurchaseQuote = {
   listTotalVnd: number;
   marginVnd: number;
   marginPercent: number;
+  /** The suggested retail price the list shows, × quantity (doitac-3010 #026). */
+  suggestedRetailUnitVnd?: number;
+  suggestedRetailTotalVnd?: number;
+  suggestedMarginVnd?: number;
   /** Câu tiếng Việt vì sao chưa mua được, hoặc null khi mua được. */
   rejection: string | null;
 };
