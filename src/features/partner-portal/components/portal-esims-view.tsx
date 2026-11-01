@@ -175,15 +175,18 @@ export function PortalEsimsView() {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'>
+          {/* One wrapping row, each control as wide as what it shows, with
+              "Xoá bộ lọc" beside them (doitac-3010 #027). */}
+          <div className='flex flex-wrap items-center gap-2' data-testid='esim-filters'>
             <Input
               placeholder='Tìm ICCID, mã đơn hoặc tên gói'
+              className='w-full sm:w-52'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               data-testid='esim-search'
             />
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className='w-full' aria-label='Trạng thái'>
+              <SelectTrigger className='w-auto gap-2' aria-label='Trạng thái'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -196,7 +199,7 @@ export function PortalEsimsView() {
             </Select>
             <Select value={planType} onValueChange={setPlanType}>
               <SelectTrigger
-                className='w-full'
+                className='w-auto gap-2'
                 aria-label='Loại gói eSIM'
                 data-testid='esim-plan-type'
               >
@@ -211,7 +214,11 @@ export function PortalEsimsView() {
               </SelectContent>
             </Select>
             <Select value={topUp} onValueChange={setTopUp}>
-              <SelectTrigger className='w-full' aria-label='Hỗ trợ topup' data-testid='esim-topup'>
+              <SelectTrigger
+                className='w-auto gap-2'
+                aria-label='Hỗ trợ topup'
+                data-testid='esim-topup'
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -220,7 +227,7 @@ export function PortalEsimsView() {
                 <SelectItem value='false'>Hỗ trợ topup: Không</SelectItem>
               </SelectContent>
             </Select>
-            <div className='flex min-w-0 items-center gap-2'>
+            <div className='flex items-center gap-2'>
               <span className='text-muted-foreground shrink-0 text-xs'>Tạo từ</span>
               <Input
                 type='date'
@@ -228,11 +235,9 @@ export function PortalEsimsView() {
                 max={to || undefined}
                 onChange={(e) => setFrom(e.target.value)}
                 aria-label='Thời gian tạo từ'
-                className='min-w-0 flex-1'
+                className='w-[140px]'
                 data-testid='esim-from'
               />
-            </div>
-            <div className='flex min-w-0 items-center gap-2'>
               <span className='text-muted-foreground shrink-0 text-xs'>đến</span>
               <Input
                 type='date'
@@ -240,27 +245,30 @@ export function PortalEsimsView() {
                 min={from || undefined}
                 onChange={(e) => setTo(e.target.value)}
                 aria-label='Thời gian tạo đến'
-                className='min-w-0 flex-1'
+                className='w-[140px]'
                 data-testid='esim-to'
               />
             </div>
+            {filtered && (
+              <Button
+                variant='outline'
+                size='sm'
+                className='h-9'
+                data-testid='esim-clear-filters'
+                onClick={() => {
+                  setSearch('');
+                  setStatus('all');
+                  setPlanType('all');
+                  setTopUp('all');
+                  setFrom('');
+                  setTo('');
+                }}
+              >
+                <Icons.close className='size-4' />
+                Xoá bộ lọc
+              </Button>
+            )}
           </div>
-          {filtered && (
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={() => {
-                setSearch('');
-                setStatus('all');
-                setPlanType('all');
-                setTopUp('all');
-                setFrom('');
-                setTo('');
-              }}
-            >
-              Xoá bộ lọc
-            </Button>
-          )}
 
           {isLoading ? (
             <div className='flex justify-center py-12'>
