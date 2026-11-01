@@ -128,7 +128,10 @@ export function OverviewDashboard() {
         {/* Who comes and who buys (vande #059). */}
         <div className='grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3'>
           <AudienceCustomerGraph filters={queryFilters} />
-          <div className='md:col-span-1 xl:col-span-2'>
+          {/* As tall as "Khách mới & khách quay lại" beside it, the list
+              scrolling inside (doitac-3010 #051): `absolute` keeps the long
+              list from setting the row's height. One column on a phone. */}
+          <div className='relative min-h-[420px] md:col-span-1 md:min-h-0 xl:col-span-2'>
             <AudienceCountries filters={queryFilters} />
           </div>
         </div>

@@ -200,7 +200,10 @@ export function AudienceCountries({ filters }: { filters: OverviewFilters }) {
   const countries = data?.countries ?? [];
 
   return (
-    <Card className='h-full' data-testid='audience-countries'>
+    <Card
+      className='absolute inset-0 flex flex-col overflow-hidden'
+      data-testid='audience-countries'
+    >
       <CardHeader>
         <CardTitle>Người dùng theo quốc gia / thành phố</CardTitle>
         <CardDescription>
@@ -208,7 +211,11 @@ export function AudienceCountries({ filters }: { filters: OverviewFilters }) {
           {data ? ` ${formatNumber(data.totalVisitors)} người` : ''}. Bấm quốc gia để xem thành phố.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      {/* The list scrolls inside the card (doitac-3010 #051). */}
+      <CardContent
+        className='min-h-0 flex-1 overflow-y-auto'
+        data-testid='audience-countries-scroll'
+      >
         {isLoading ? (
           <div className='bg-muted h-40 animate-pulse rounded-lg' />
         ) : countries.length === 0 ? (
