@@ -35,6 +35,10 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
+import {
+  PortalListPagination,
+  type PortalPagination
+} from '@/features/partner-portal/components/portal-list-pagination';
 import { formatDateVn } from '@/lib/format';
 
 import { approvePartnerMutation, rejectPartnerMutation } from '../api/mutations';
@@ -89,6 +93,17 @@ export function PartnerApprovalsView() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<PartnerStatus | 'all'>('pending');
   const [partnerType, setPartnerType] = useState<PartnerType | 'all'>('all');
+  // Paged like the admin's tables (doitac-3010 #033), by the server.
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  // "Xoá bộ lọc" puts back the default view: applications waiting (#033).
+  const filtered = Boolean(search.trim()) || status !== 'pending' || partnerType !== 'all';
+  const resetFilters = () => {
+    setSearch('');
+    setStatus('pending');
+    setPartnerType('all');
+    setPageIndex(0);
+  };
 
   const { data, refetch, isLoading } = useQuery(
     partnersQueryOptions({
@@ -97,9 +112,23 @@ export function PartnerApprovalsView() {
       ...(search.trim() ? { search: search.trim() } : {}),
       // The latest application on top (doitac-1410 #049).
       sort: 'newest',
-      limit: 50
+      page: pageIndex + 1,
+      limit: pageSize
     })
   );
+  const totalCount = data?.totalCount ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const pagination: PortalPagination = {
+    total: totalCount,
+    pageIndex: Math.min(pageIndex, pageCount - 1),
+    pageCount,
+    pageSize,
+    setPageIndex,
+    setPageSize: (size: number) => {
+      setPageSize(size);
+      setPageIndex(0);
+    }
+  };
 
   /**
    * Approved partners who still have no tier (#095).
@@ -175,25 +204,26 @@ export function PartnerApprovalsView() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Hồ sơ đăng ký đối tác</CardTitle>
-          <CardDescription>
-            Tìm theo tên, email hoặc số điện thoại. Hồ sơ bị từ chối vẫn có thể duyệt lại bằng tay
-            khi đối tác bổ sung giấy tờ.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className='space-y-4'>
+      {/* The filters on their own, as on the admin's other pages (doitac-3010 #033). */}
+      <Card className='gap-0 py-4' data-testid='approvals-filter-card'>
+        <CardContent className='px-4'>
           <div className='flex flex-wrap items-center gap-2'>
             <Input
               placeholder='Tìm tên, email hoặc số điện thoại'
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className='max-w-[280px]'
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPageIndex(0);
+              }}
+              className='w-full sm:w-[280px]'
+              data-testid='approvals-search'
             />
             <Select
               value={partnerType}
-              onValueChange={(value) => setPartnerType(value as PartnerType | 'all')}
+              onValueChange={(value) => {
+                setPartnerType(value as PartnerType | 'all');
+                setPageIndex(0);
+              }}
             >
               <SelectTrigger className='w-[200px]'>
                 <SelectValue />
@@ -208,7 +238,10 @@ export function PartnerApprovalsView() {
             </Select>
             <Select
               value={status}
-              onValueChange={(value) => setStatus(value as PartnerStatus | 'all')}
+              onValueChange={(value) => {
+                setStatus(value as PartnerStatus | 'all');
+                setPageIndex(0);
+              }}
             >
               <SelectTrigger className='w-[190px]'>
                 <SelectValue />
@@ -221,8 +254,31 @@ export function PartnerApprovalsView() {
                 ))}
               </SelectContent>
             </Select>
+            {filtered && (
+              <Button
+                variant='outline'
+                size='sm'
+                className='h-9'
+                onClick={resetFilters}
+                data-testid='approvals-clear-filters'
+              >
+                <Icons.close className='size-4' />
+                Xoá bộ lọc
+              </Button>
+            )}
           </div>
+        </CardContent>
+      </Card>
 
+      <Card data-testid='approvals-list-card'>
+        <CardHeader>
+          <CardTitle>Hồ sơ đăng ký đối tác</CardTitle>
+          <CardDescription>
+            Tìm theo tên, email hoặc số điện thoại. Hồ sơ bị từ chối vẫn có thể duyệt lại bằng tay
+            khi đối tác bổ sung giấy tờ.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
           {isLoading ? (
             <div className='flex justify-center py-12'>
               <Icons.spinner className='h-6 w-6 animate-spin' />
@@ -232,9 +288,13 @@ export function PartnerApprovalsView() {
               Không có hồ sơ nào khớp với bộ lọc này.
             </p>
           ) : (
-            <div className='overflow-x-auto rounded-lg border'>
+            // Header pinned while the list scrolls (doitac-3010 #033).
+            <div
+              className='max-h-[70vh] overflow-auto rounded-lg border'
+              data-testid='approvals-table-scroll'
+            >
               <Table>
-                <TableHeader className='bg-muted'>
+                <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
                   <TableRow>
                     <TableHead>Tên</TableHead>
                     <TableHead>Email</TableHead>
@@ -317,6 +377,14 @@ export function PartnerApprovalsView() {
                 </TableBody>
               </Table>
             </div>
+          )}
+          {totalCount > 0 && (
+            <PortalListPagination
+              pagination={pagination}
+              unit='hồ sơ'
+              testId='approvals-pagination'
+              pageSizes={[10, 20, 30, 40, 50, 100, 200]}
+            />
           )}
         </CardContent>
       </Card>

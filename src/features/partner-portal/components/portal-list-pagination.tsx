@@ -58,11 +58,14 @@ export type PortalPagination = ReturnType<typeof usePortalPagination>['paginatio
 export function PortalListPagination({
   pagination,
   unit = 'dòng',
-  testId
+  testId,
+  pageSizes = PORTAL_PAGE_SIZES
 }: {
   pagination: PortalPagination;
   unit?: string;
   testId?: string;
+  /** The admin's tables also offer 200 (doitac-3010 #033). */
+  pageSizes?: number[];
 }) {
   const { total, pageIndex, pageCount, pageSize, setPageIndex, setPageSize } = pagination;
   const canPrev = pageIndex > 0;
@@ -87,7 +90,7 @@ export function PortalListPagination({
               <SelectValue placeholder={pageSize} />
             </SelectTrigger>
             <SelectContent side='top'>
-              {PORTAL_PAGE_SIZES.map((size) => (
+              {pageSizes.map((size) => (
                 <SelectItem key={size} value={`${size}`}>
                   {size}
                 </SelectItem>
