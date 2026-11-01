@@ -10,6 +10,8 @@ export const searchParams = {
   page: parseAsInteger.withDefault(1),
   perPage: parseAsInteger.withDefault(10),
   name: parseAsString,
+  /** Plans: the supplier's own package name (doitac-3010 #048). */
+  providerName: parseAsString,
   /** FAQ list: page URL filter (v3 #004). */
   pageUrl: parseAsString,
   planName: parseAsString,

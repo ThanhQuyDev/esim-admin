@@ -13,6 +13,7 @@ const OPTIONS_LIMIT = 500;
 export default function PlanListingPage() {
   const apiFilters = buildPlanApiFilters({
     name: searchParamsCache.get('name'),
+    providerName: searchParamsCache.get('providerName'),
     provider: searchParamsCache.get('provider'),
     isCheapest: searchParamsCache.get('isCheapest'),
     isActive: searchParamsCache.get('isActive'),

@@ -8,6 +8,8 @@
  */
 export type PlanFilterParams = {
   name?: string | null;
+  /** The supplier's original package name or code (doitac-3010 #048). */
+  providerName?: string | null;
   provider?: string[] | null;
   isCheapest?: string[] | null;
   isActive?: string[] | null;
@@ -32,6 +34,7 @@ export function buildPlanApiFilters(params: PlanFilterParams): Record<string, un
   const filters: Record<string, unknown> = {};
 
   if (params.name) filters.search = params.name;
+  if (params.providerName?.trim()) filters.providerSearch = params.providerName.trim();
   if (params.provider?.length) filters.provider = params.provider;
 
   const isCheapest = boolOf(params.isCheapest);

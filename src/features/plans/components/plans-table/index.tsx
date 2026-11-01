@@ -30,6 +30,7 @@ export function PlansTable() {
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
     name: parseAsString,
+    providerName: parseAsString,
     provider: parseAsArrayOf(parseAsString, ','),
     isCheapest: parseAsArrayOf(parseAsString, ','),
     isActive: parseAsArrayOf(parseAsString, ','),
@@ -104,7 +105,9 @@ export function PlansTable() {
     shallow: true,
     debounceMs: 500,
     initialState: {
-      columnPinning: { right: ['actions'] }
+      columnPinning: { right: ['actions'] },
+      // Only its search box shows; the name is already in the "Tên" column.
+      columnVisibility: { providerName: false }
     }
   });
 

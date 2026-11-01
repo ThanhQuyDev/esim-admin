@@ -262,6 +262,24 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       enableColumnFilter: true
     },
     {
+      // "Tìm gói nhà cung cấp" (doitac-3010 #048): the supplier's original
+      // package name or code, beside the search on our own names. A filter
+      // only — the column stays hidden.
+      id: 'providerName',
+      accessorKey: 'name',
+      header: 'Tên gói nhà cung cấp',
+      cell: ({ row }) => row.original.name,
+      enableSorting: false,
+      enableHiding: false,
+      enableColumnFilter: true,
+      meta: {
+        label: 'Gói nhà cung cấp',
+        placeholder: 'Tìm gói nhà cung cấp...',
+        variant: 'text' as const,
+        inputClassName: 'h-8 w-44 lg:w-56'
+      }
+    },
+    {
       id: 'duration',
       accessorKey: 'durationDays',
       header: ({ column }: { column: Column<Plan, unknown> }) => (
@@ -271,9 +289,11 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       enableColumnFilter: true,
       meta: {
         label: 'Thời hạn',
-        placeholder: 'Số ngày...',
+        placeholder: 'Số ngày',
         variant: 'number' as const,
-        unit: 'ngày'
+        unit: 'ngày',
+        // Narrower, to make room for the supplier search (doitac-3010 #048).
+        inputClassName: 'h-8 w-[92px]'
       }
     },
     {
@@ -287,8 +307,9 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       enableColumnFilter: true,
       meta: {
         label: 'Dữ liệu',
-        placeholder: 'VD: 1GB, 50GB...',
-        variant: 'text' as const
+        placeholder: 'VD: 1GB',
+        variant: 'text' as const,
+        inputClassName: 'h-8 w-24'
       }
     },
     {
@@ -328,7 +349,7 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       enableSorting: false,
       enableColumnFilter: true,
       meta: {
-        label: 'Chức năng gọi / SMS',
+        label: 'Gọi / SMS',
         variant: 'multiSelect' as const,
         options: [
           { value: 'true', label: 'Có' },
