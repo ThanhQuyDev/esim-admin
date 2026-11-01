@@ -69,6 +69,8 @@ export type Order = {
   partnerCommission?: OrderPartnerCommission | null;
   /** Same device or network as another order for this partner (#036). */
   attributionWarning?: string | null;
+  /** Every click and code weighed for the partner (doitac-3010 #022). */
+  attributionTrace?: AttributionTrace | null;
   referralDiscountVndAmount?: number | null;
   discountAmount: number;
   vndPrice: number;
@@ -440,4 +442,22 @@ export type OrderRefundRecord = {
   reason: string | null;
   adminNote: string | null;
   by: string | null;
+};
+
+/** How an order's partner was chosen (doitac-3010 #022). */
+export type AttributionTrace = {
+  rule: string;
+  candidates: {
+    source: string;
+    partnerId: number | null;
+    linkId: number | null;
+    code?: string | null;
+    isPublic?: boolean;
+    clickId?: string | null;
+    clickedAt?: string | null;
+    confirmed?: boolean;
+    botScore?: number;
+    outcome: 'won' | 'lost' | 'rejected' | 'considered';
+    note?: string;
+  }[];
 };

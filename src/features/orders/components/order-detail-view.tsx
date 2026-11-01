@@ -1,5 +1,6 @@
 'use client';
 
+import { AttributionTraceCard } from './attribution-trace';
 import { esimQrLogoSettings } from '@/features/esims/lib/esim-qr';
 import { esimStatusLabel, esimStatusVariant } from '@/features/esims/lib/esim-status';
 import {
@@ -1011,6 +1012,9 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* doitac-3010 #022 */}
+      <AttributionTraceCard trace={order.attributionTrace} />
       {/* Coupon Info */}
       {order.coupon && (
         <Card>
