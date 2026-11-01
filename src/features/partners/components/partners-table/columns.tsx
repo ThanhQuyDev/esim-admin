@@ -1,7 +1,7 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { formatDateVn, formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { Partner } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
@@ -204,12 +204,20 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
     {
       id: 'lastActivityAt',
       header: 'Hoạt động gần nhất',
+      // The latest of signing in and what the partner did in the portal, and
+      // what it was (doitac-3010 #035).
       cell: ({ row }) => {
-        const at = row.original.lastLoginAt ?? row.original.lastActivityAt;
+        const at = row.original.lastActivityAt;
         return (
-          <div className='flex flex-col'>
-            <span className='text-xs'>{at ? formatDateVn(at) : 'Chưa đăng nhập'}</span>
-            {at && <span className='text-muted-foreground text-xs'>Lần đăng nhập gần nhất</span>}
+          <div className='flex flex-col' data-testid='partner-last-activity'>
+            <span className='text-xs whitespace-nowrap'>
+              {at ? formatDateTimeVn(at) : 'Chưa có hoạt động'}
+            </span>
+            {at && row.original.lastActivityLabel && (
+              <span className='text-muted-foreground text-xs'>
+                {row.original.lastActivityLabel}
+              </span>
+            )}
           </div>
         );
       },

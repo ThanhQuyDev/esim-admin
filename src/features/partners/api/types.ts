@@ -77,6 +77,8 @@ export type Partner = {
   revenue30dVnd?: number;
   walletBalanceVnd?: number;
   lastActivityAt?: string | null;
+  /** What the latest act was: "Đăng nhập", "Đặt mua eSIM"… (doitac-3010 #035). */
+  lastActivityLabel?: string | null;
   /** Lifetime paid/completed orders attributed to this partner (#095). */
   totalOrders?: number;
   /** Lifetime value of those orders. */
