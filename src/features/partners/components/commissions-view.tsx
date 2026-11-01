@@ -29,6 +29,10 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
+import {
+  PortalListPagination,
+  type PortalPagination
+} from '@/features/partner-portal/components/portal-list-pagination';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 import { commissionRejectionText } from '@/lib/commission-rejection';
 import { attributionWarningLabels } from '@/features/orders/components/order-detail-view';
@@ -93,16 +97,33 @@ export function CommissionsView() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [period, setPeriod] = useState('all');
+  // Paged like the admin's tables, by the server (doitac-3010 #037).
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
   const { data, isLoading } = useQuery(
     commissionsQueryOptions({
-      limit: 100,
+      page: pageIndex + 1,
+      limit: pageSize,
       ...(search.trim() && { search: search.trim() }),
       ...(status !== 'all' && { status }),
       ...(period !== 'all' && { period })
     })
   );
   const commissions = data?.data ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const pagination: PortalPagination = {
+    total: totalCount,
+    pageIndex: Math.min(pageIndex, pageCount - 1),
+    pageCount,
+    pageSize,
+    setPageIndex,
+    setPageSize: (size: number) => {
+      setPageSize(size);
+      setPageIndex(0);
+    }
+  };
 
   return (
     <div className='space-y-4'>
@@ -110,11 +131,20 @@ export function CommissionsView() {
         <Input
           placeholder='Tìm tên, email, SĐT hoặc ID đối tác'
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPageIndex(0);
+          }}
           className='max-w-[280px]'
           data-testid='commission-search'
         />
-        <Select value={period} onValueChange={setPeriod}>
+        <Select
+          value={period}
+          onValueChange={(value) => {
+            setPeriod(value);
+            setPageIndex(0);
+          }}
+        >
           <SelectTrigger className='w-[180px]' aria-label='Kỳ đối soát'>
             <SelectValue placeholder='Kỳ đối soát' />
           </SelectTrigger>
@@ -127,7 +157,13 @@ export function CommissionsView() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={status} onValueChange={setStatus}>
+        <Select
+          value={status}
+          onValueChange={(value) => {
+            setStatus(value);
+            setPageIndex(0);
+          }}
+        >
           <SelectTrigger
             className='w-[190px]'
             aria-label='Trạng thái'
@@ -150,9 +186,13 @@ export function CommissionsView() {
           <Icons.spinner className='h-6 w-6 animate-spin' />
         </div>
       ) : (
-        <div className='overflow-x-auto rounded-lg border'>
+        // Header pinned while the list scrolls (doitac-3010 #037).
+        <div
+          className='max-h-[70vh] overflow-auto rounded-lg border'
+          data-testid='commissions-table-scroll'
+        >
           <Table>
-            <TableHeader className='bg-muted'>
+            <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
               <TableRow>
                 <TableHead>Tên đối tác</TableHead>
                 <TableHead>Hạng</TableHead>
@@ -238,6 +278,14 @@ export function CommissionsView() {
             </TableBody>
           </Table>
         </div>
+      )}
+      {totalCount > 0 && (
+        <PortalListPagination
+          pagination={pagination}
+          unit='hoa hồng'
+          testId='commissions-pagination'
+          pageSizes={[10, 20, 30, 40, 50, 100, 200]}
+        />
       )}
     </div>
   );

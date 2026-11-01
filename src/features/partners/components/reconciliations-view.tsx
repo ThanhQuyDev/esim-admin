@@ -37,6 +37,10 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
+import {
+  PortalListPagination,
+  usePortalPagination
+} from '@/features/partner-portal/components/portal-list-pagination';
 import { formatVnd } from '@/lib/format';
 
 import { setReconciliationStatusMutation } from '../api/mutations';
@@ -95,6 +99,8 @@ export function ReconciliationsView() {
 
   const { data, isLoading } = useQuery(reconciliationsQueryOptions(params));
   const rows = data?.rows ?? [];
+  // Paged like the admin's tables (doitac-3010 #037).
+  const { pageRows, pagination } = usePortalPagination(rows, 20);
 
   const setStatusMutation = useMutation({
     ...setReconciliationStatusMutation,
@@ -197,9 +203,13 @@ export function ReconciliationsView() {
           Kỳ {periodLabel(period)} chưa có hoa hồng nào để đối soát.
         </p>
       ) : (
-        <div className='rounded-lg border'>
+        // Header pinned while the list scrolls (doitac-3010 #037).
+        <div
+          className='max-h-[70vh] overflow-auto rounded-lg border'
+          data-testid='reconciliations-table-scroll'
+        >
           <Table>
-            <TableHeader>
+            <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
               <TableRow>
                 <TableHead className='w-10'>
                   <Checkbox
@@ -220,7 +230,7 @@ export function ReconciliationsView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((row) => (
+              {pageRows.map((row) => (
                 <TableRow key={row.partnerId}>
                   <TableCell>
                     <Checkbox
@@ -262,6 +272,14 @@ export function ReconciliationsView() {
             </TableBody>
           </Table>
         </div>
+      )}
+      {rows.length > 0 && (
+        <PortalListPagination
+          pagination={pagination}
+          unit='đối tác'
+          testId='reconciliations-pagination'
+          pageSizes={[10, 20, 30, 40, 50, 100, 200]}
+        />
       )}
 
       {detailOf && (
