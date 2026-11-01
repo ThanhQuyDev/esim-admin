@@ -92,45 +92,50 @@ export function NoticeBanner({
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-lg border p-3 pr-10', tone.box)}
+      className={cn('relative overflow-hidden rounded-lg border p-3', tone.box)}
       role='status'
       data-testid='notice-banner'
       data-priority={current.priority ?? 'normal'}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div
-        key={current.id}
-        className='animate-in fade-in slide-in-from-right-4 flex flex-wrap items-center gap-x-3 gap-y-2 duration-500'
-      >
-        <Icons.notification className={cn('h-4 w-4 shrink-0', tone.icon)} />
-        <span className='text-xs font-semibold tracking-wide uppercase'>{tone.label}</span>
-        <span className='text-sm font-semibold' data-testid='notice-banner-title'>
-          {current.title}
-        </span>
-        <span className='line-clamp-1 min-w-0 flex-1 basis-40 text-sm opacity-90'>
-          {noticePreview(current.body)}
-        </span>
-        <Button
-          size='sm'
-          variant='outline'
-          className={tone.button}
-          onClick={() => {
-            onOpen(current);
-            close(current.id);
-          }}
+      <div className='flex items-center gap-2'>
+        <div
+          key={current.id}
+          className='animate-in fade-in slide-in-from-right-4 flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 duration-500'
         >
-          Xem chi tiết
-        </Button>
+          <Icons.notification className={cn('h-4 w-4 shrink-0', tone.icon)} />
+          <span className='text-xs font-semibold tracking-wide uppercase'>{tone.label}</span>
+          <span className='text-sm font-semibold' data-testid='notice-banner-title'>
+            {current.title}
+          </span>
+          <span className='line-clamp-1 min-w-0 flex-1 basis-40 text-sm opacity-90'>
+            {noticePreview(current.body)}
+          </span>
+          <Button
+            size='sm'
+            variant='outline'
+            className={tone.button}
+            onClick={() => {
+              onOpen(current);
+              close(current.id);
+            }}
+          >
+            Xem chi tiết
+          </Button>
+        </div>
+        {/* Beside the text and centred on it, whether the text takes one line
+            or wraps onto two (doitac-3010 #032). */}
+        <button
+          type='button'
+          aria-label='Tắt thông báo'
+          data-testid='notice-banner-close'
+          className='-mr-1 shrink-0 rounded p-1 opacity-70 hover:opacity-100'
+          onClick={() => close(current.id)}
+        >
+          <Icons.close className='h-4 w-4' />
+        </button>
       </div>
-      <button
-        type='button'
-        aria-label='Tắt thông báo'
-        className='absolute top-2 right-2 rounded p-1 opacity-70 hover:opacity-100'
-        onClick={() => close(current.id)}
-      >
-        <Icons.close className='h-4 w-4' />
-      </button>
       {visible.length > 1 && (
         <div className='mt-2 flex justify-center gap-1.5' data-testid='notice-banner-dots'>
           {visible.map((n, i) => (
