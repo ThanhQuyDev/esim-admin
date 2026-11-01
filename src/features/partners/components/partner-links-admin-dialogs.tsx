@@ -297,7 +297,8 @@ export function CreateLinkForPartnerDialog({
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
               />
               <p className='text-muted-foreground text-xs'>
-                esim.vn/go/{form.code.trim().toUpperCase() || '…'}
+                {/* As typed: an admin's link keeps its lower case (doitac-3010 #015). */}
+                esim.vn/go/{form.code.trim() || '…'}
               </p>
             </div>
             <div className='space-y-2'>

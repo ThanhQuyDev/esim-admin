@@ -861,7 +861,7 @@ export function RestoreRequestDialog({ link, onClose }: { link: MyLink; onClose:
         </DialogHeader>
         <p className='border-primary/40 bg-primary/5 rounded-lg border-l-4 p-3 text-sm'>
           {restoredBefore
-            ? 'Link này đã khôi phục 1 lần trước đó. Từ lần khôi phục thứ hai, admin cần duyệt để tránh lạm dụng. Link vẫn ở trạng thái đã xóa cho đến khi được duyệt.'
+            ? 'Link này đã được khôi phục 1 lần trong 30 ngày qua. Từ lần khôi phục thứ hai trong vòng 30 ngày, admin cần duyệt để tránh lạm dụng. Link vẫn ở trạng thái đã xóa cho đến khi được duyệt.'
             : 'Đã quá 30 ngày kể từ khi xóa nên cần esim.vn khôi phục giúp. Link vẫn ở trạng thái đã xóa cho đến khi được duyệt.'}
         </p>
         <div className='space-y-1.5'>

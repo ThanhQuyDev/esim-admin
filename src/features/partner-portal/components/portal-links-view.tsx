@@ -86,7 +86,8 @@ const EMPTY_FORM = { landing: '', label: '', channel: 'youtube', subid: '', code
 /** Bounds the API enforces for a code the partner names themselves (#014). */
 const CODE_MIN = 8;
 const CODE_MAX = 50;
-const CODE_PATTERN = /^[A-Za-z0-9]+$/;
+/** Letters, digits, "-", "_" and "."; kept as typed (doitac-3010 #015). */
+const CODE_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 /** The list's order (doitac-1410 #018). */
 const SORTS = [
@@ -216,7 +217,9 @@ export function PortalLinksView() {
         return;
       }
       if (!CODE_PATTERN.test(code)) {
-        setCodeError('Tên link chỉ gồm chữ và số, không dấu và không khoảng trắng.');
+        setCodeError(
+          'Tên link chỉ gồm chữ, số và các dấu "-", "_", ".", không dấu và không khoảng trắng.'
+        );
         return;
       }
     }
@@ -327,8 +330,8 @@ export function PortalLinksView() {
                   </p>
                 ) : (
                   <p id='linkCode-help' className='text-muted-foreground text-xs'>
-                    {CODE_MIN}–{CODE_MAX} ký tự, chỉ chữ và số, duy nhất trên hệ thống. Bỏ trống thì
-                    hệ thống tự tạo mã.
+                    {CODE_MIN}–{CODE_MAX} ký tự, gồm chữ, số và các dấu - _ . (giữ nguyên chữ
+                    hoa/thường), duy nhất trên hệ thống. Bỏ trống thì hệ thống tự tạo mã.
                   </p>
                 )}
               </div>
