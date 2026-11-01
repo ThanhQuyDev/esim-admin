@@ -72,6 +72,7 @@ function OrdersTableContent() {
     invoice: parseAsString,
     kind: parseAsString,
     partner: parseAsString,
+    usd: parseAsString,
     createdFrom: parseAsString,
     createdTo: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
@@ -270,7 +271,29 @@ function OrdersTableContent() {
             ))}
           </SelectContent>
         </Select>
+        {/* English checkouts, prices in $ (doitac-3010 #043). */}
+        <Select
+          value={params.usd === '1' ? 'usd' : 'all'}
+          onValueChange={(value) =>
+            startTransition(() => {
+              setParams({ usd: value === 'usd' ? '1' : null, page: 1 });
+            })
+          }
+        >
+          <SelectTrigger
+            className='w-52'
+            aria-label='Lọc theo tiền tệ khách xem'
+            data-testid='orders-usd'
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>Khách xem giá: Tất cả</SelectItem>
+            <SelectItem value='usd'>Khách xem giá $ (bản tiếng Anh)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+      {params.usd === '1' && <PaymentUsdStats filters={apiFilters} />}
 
       <DataTable table={table} totalRowCount={totalCount}>
         <DataTableToolbar table={table}>
@@ -291,5 +314,34 @@ export function OrdersTableSkeleton() {
       <div className='bg-muted h-96 w-full rounded-lg' />
       <div className='bg-muted h-10 w-full rounded' />
     </div>
+  );
+}
+
+/**
+ * How many English ($) checkouts never got paid (doitac-3010 #043): the figure
+ * the admin reads to decide on a USD gateway. Same filters as the list, minus
+ * the status, so the share is of every $ order in the period.
+ */
+function PaymentUsdStats({ filters }: { filters: Record<string, unknown> }) {
+  const base: Record<string, unknown> = { ...filters, usdCheckout: true };
+  delete base.status;
+  const count = (extra: Record<string, unknown>) => ({
+    page: 1,
+    limit: 1,
+    filters: JSON.stringify({ ...base, ...extra })
+  });
+  const { data: all } = useQuery(ordersQueryOptions(count({})));
+  const { data: unpaid } = useQuery(ordersQueryOptions(count({ status: ['pending', 'failed'] })));
+  if (!all || !unpaid) return null;
+  const total = all.totalCount ?? 0;
+  const failed = unpaid.totalCount ?? 0;
+  const share = total > 0 ? Math.round((failed / total) * 1000) / 10 : 0;
+  return (
+    <p className='text-muted-foreground text-sm' data-testid='payment-usd-stats'>
+      Khách xem giá $ (bản tiếng Anh): <b className='text-foreground'>{total}</b> đơn, trong đó{' '}
+      <b className='text-foreground'>{failed}</b>
+      {' đơn "payment $" chưa thanh toán được '}
+      (pending/failed) — <b className='text-foreground'>{share}%</b>.
+    </p>
   );
 }

@@ -62,6 +62,8 @@ export const searchParams = {
   kind: parseAsString,
   /** One affiliate partner's orders (vande #023). */
   partner: parseAsString,
+  /** "1": checked out in English, prices in $ (doitac-3010 #043). */
+  usd: parseAsString,
   createdFrom: parseAsString,
   createdTo: parseAsString,
   // esims list (#020). `esimStatus` rather than `status`, which is already a

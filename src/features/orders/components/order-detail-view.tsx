@@ -35,6 +35,7 @@ import { formatCountry, formatDataSize, formatDateTimeVn } from '@/lib/format';
 import { ValueAfterRefund } from '../utils/refund-values';
 import { commissionRejectionText } from '@/lib/commission-rejection';
 import { providerLabel } from '@/features/overview/api/constants';
+import { PaymentUsdBadge } from './payment-usd-badge';
 
 interface OrderDetailViewProps {
   orderId: number;
@@ -619,6 +620,8 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           <CardTitle className='flex items-center gap-3'>
             Thông tin đơn hàng
             <Badge variant={orderStatusVariant[order.status] ?? 'outline'}>{order.status}</Badge>
+            {/* "payment $" (doitac-3010 #043). */}
+            {order.paymentUsdIssue && <PaymentUsdBadge />}
           </CardTitle>
         </CardHeader>
         <CardContent className='grid gap-4 md:grid-cols-2'>

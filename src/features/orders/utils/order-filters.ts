@@ -22,6 +22,8 @@ export type OrderFilterParams = {
   kind?: string | null;
   /** Affiliate partner id (vande #023). */
   partner?: string | null;
+  /** "1": English ($) checkouts only (doitac-3010 #043). */
+  usd?: string | null;
   createdFrom?: string | null;
   createdTo?: string | null;
 };
@@ -51,6 +53,7 @@ export function buildOrderApiFilters(params: OrderFilterParams): Record<string, 
   if (params.kind && params.kind !== 'all') filters.kind = params.kind;
   const partnerId = Number(params.partner);
   if (Number.isInteger(partnerId) && partnerId > 0) filters.affiliatePartnerId = partnerId;
+  if (params.usd === '1') filters.usdCheckout = true;
   if (params.createdFrom) filters.createdFrom = params.createdFrom;
   if (params.createdTo) filters.createdTo = params.createdTo;
 

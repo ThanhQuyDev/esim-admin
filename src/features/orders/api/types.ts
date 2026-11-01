@@ -50,6 +50,10 @@ export type Order = {
   /** "Vị trí & IP" of the buyer (vande #058). */
   buyerIp?: string | null;
   buyerLocation?: string | null;
+  /** Storefront language at checkout; "en" read prices in $ (doitac-3010 #043). */
+  checkoutLocale?: string | null;
+  /** "payment $": an English ($) checkout still pending or failed (#043). */
+  paymentUsdIssue?: boolean;
   /** Ordered in bulk from a file: mailed spaced out, or as a list (vande #057). */
   bulkMode?: 'email' | 'file' | null;
   bulkEmailIntervalSec?: number | null;

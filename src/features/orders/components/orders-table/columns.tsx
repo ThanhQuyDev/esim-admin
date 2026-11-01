@@ -6,6 +6,7 @@ import type { Order } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { CellAction } from './cell-action';
 import { orderValuesAfterRefund, ValueAfterRefund } from '../../utils/refund-values';
+import { PaymentUsdBadge } from '../payment-usd-badge';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   pending: 'outline',
@@ -103,7 +104,13 @@ export const columns: ColumnDef<Order>[] = [
     // like any eSIM order that went through (#022, test round 4).
     cell: ({ row }) => {
       const status = row.original.status === 'completed' ? 'paid' : row.original.status;
-      return <Badge variant={statusVariant[status] ?? 'default'}>{status}</Badge>;
+      return (
+        <div className='flex flex-wrap items-center gap-1'>
+          <Badge variant={statusVariant[status] ?? 'default'}>{status}</Badge>
+          {/* "payment $" (doitac-3010 #043). */}
+          {row.original.paymentUsdIssue && <PaymentUsdBadge />}
+        </div>
+      );
     },
     enableSorting: false
   },
