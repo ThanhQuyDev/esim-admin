@@ -350,6 +350,17 @@ export type PartnerPayout = {
   createdAt: string;
 };
 
+/**
+ * One cost band of a distribution tier's markup (doitac-3010 #040): a cost
+ * from `fromVnd` to `toVnd` gets `fixedVnd` added when above 0, else `percent` %.
+ */
+export type CostMarkupRange = {
+  fromVnd: number;
+  toVnd: number;
+  percent: number;
+  fixedVnd: number;
+};
+
 export type PartnerTier = {
   id: number;
   partnerType: PartnerType;
@@ -364,6 +375,8 @@ export type PartnerTier = {
   minDepositVnd?: number;
   /** % added to cost price for a distribution partner (#073). */
   costMarkupPercent?: number;
+  /** The markup by cost band, like Profit Margin Tier (doitac-3010 #040). */
+  costMarkupRanges?: CostMarkupRange[];
   /** Negotiated rather than earned: off the public ladder (#074). */
   isInternal?: boolean;
   /** Where a new partner of the type starts (doitac-1410 #059). */
@@ -390,6 +403,7 @@ export type CreateTierPayload = {
   attributionDays?: number;
   minDepositVnd?: number;
   costMarkupPercent?: number;
+  costMarkupRanges?: CostMarkupRange[];
   isInternal?: boolean;
   isDefault?: boolean;
   sortOrder?: number;

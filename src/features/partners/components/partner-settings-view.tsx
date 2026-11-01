@@ -11,6 +11,7 @@ import { partnerOverviewQueryOptions, tiersQueryOptions } from '../api/queries';
 import { ProgramSettingsForm } from './program-settings-form';
 import { DepositPromotionsCard } from './deposit-promotions-card';
 import type { PartnerTier } from '../api/types';
+import { markupLines } from './tier-markup';
 
 const num = (v: string | number | undefined) => Number(v ?? 0);
 
@@ -132,7 +133,8 @@ export function PartnerSettingsView() {
         <TierTable
           tiers={distributionTiers}
           columns={[
-            { label: 'Giá gốc +%', value: (t) => `+${num(t.costMarkupPercent)}%` },
+            // By price band (doitac-3010 #040).
+            { label: 'Cộng vào giá gốc', value: (t) => markupLines(t).join(' · ') },
             // doitac-1410 #061
             {
               label: 'Ngưỡng ký quỹ',
