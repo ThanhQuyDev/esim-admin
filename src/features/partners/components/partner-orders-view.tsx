@@ -44,6 +44,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icons } from '@/components/icons';
 import { DateRangeFilter } from '@/components/date-range-filter';
+import {
+  ColumnVisibilityMenu,
+  useHiddenColumns
+} from '@/features/partner-portal/components/portal-column-visibility';
+import {
+  PortalListPagination,
+  usePortalPagination
+} from '@/features/partner-portal/components/portal-list-pagination';
 import { commissionRejectionText } from '@/lib/commission-rejection';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -96,6 +104,28 @@ const COMMISSION_STATUS_LABEL: Record<string, string> = {
   rejected: 'Bị loại'
 };
 
+/** The columns "Hiển thị" can switch off (doitac-3010 #039). */
+const MARKETING_COLUMNS = [
+  { key: 'partner', label: 'Đối tác' },
+  { key: 'products', label: 'Sản phẩm' },
+  { key: 'revenue', label: 'Doanh thu' },
+  { key: 'source', label: 'Nguồn ghi nhận' },
+  { key: 'customer', label: 'Khách hàng' },
+  { key: 'esim', label: 'eSIM' },
+  { key: 'commission', label: 'Hoa hồng' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'createdAt', label: 'Ngày đặt' }
+];
+const DISTRIBUTION_COLUMNS = [
+  { key: 'partner', label: 'Đối tác' },
+  { key: 'products', label: 'Sản phẩm × số lượng' },
+  { key: 'total', label: 'Tổng tiền' },
+  { key: 'orderType', label: 'Loại đơn' },
+  { key: 'createdAt', label: 'Ngày mua' },
+  { key: 'status', label: 'Trạng thái' }
+];
+const PAGE_SIZES = [10, 20, 30, 40, 50, 100, 200];
+
 const detailHref = (orderNumber: string, tab: PartnerTab) =>
   `/dashboard/partners/orders/${encodeURIComponent(orderNumber)}${tab === 'distribution' ? '?type=distribution' : ''}`;
 
@@ -120,9 +150,6 @@ function OrdersTab({ partnerType }: { partnerType: PartnerTab }) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [partnerId, setPartnerId] = useState<number | null>(null);
-  const [iccid, setIccid] = useState('');
-  const [planName, setPlanName] = useState('');
-  const [email, setEmail] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [source, setSource] = useState('all');
@@ -132,32 +159,17 @@ function OrdersTab({ partnerType }: { partnerType: PartnerTab }) {
   const filters = useMemo(
     () => ({
       partnerType,
-      limit: 200,
+      // Paged on the screen (doitac-3010 #039).
+      limit: 1000,
       ...(search.trim() && { search: search.trim() }),
       ...(status !== 'all' && { status }),
       ...(partnerId !== null && { partnerId }),
-      ...(iccid.trim() && { iccid: iccid.trim() }),
-      ...(planName.trim() && { planName: planName.trim() }),
-      ...(email.trim() && { email: email.trim() }),
       ...(from && { from }),
       ...(to && { to }),
       ...(!distribution && source !== 'all' && { source }),
       ...(distribution && orderType !== 'all' && { orderType })
     }),
-    [
-      partnerType,
-      search,
-      status,
-      partnerId,
-      iccid,
-      planName,
-      email,
-      from,
-      to,
-      source,
-      orderType,
-      distribution
-    ]
+    [partnerType, search, status, partnerId, from, to, source, orderType, distribution]
   );
 
   const { data: options = [] } = useQuery(partnerOptionsQueryOptions(partnerType));
@@ -167,6 +179,25 @@ function OrdersTab({ partnerType }: { partnerType: PartnerTab }) {
     partnerOrdersQueryOptions<AdminMarketingOrderRow | AdminDistributionOrderRow>(filters)
   );
   const rows = data ?? [];
+  const { pageRows, pagination } = usePortalPagination(rows, 20);
+  const { hidden, toggle } = useHiddenColumns(`admin-partner-orders-columns-${partnerType}`);
+  const filtered =
+    search !== '' ||
+    status !== 'all' ||
+    partnerId !== null ||
+    from !== '' ||
+    to !== '' ||
+    source !== 'all' ||
+    orderType !== 'all';
+  const clearFilters = () => {
+    setSearch('');
+    setStatus('all');
+    setPartnerId(null);
+    setFrom('');
+    setTo('');
+    setSource('all');
+    setOrderType('all');
+  };
 
   return (
     <div className='grid min-w-0 grid-cols-1 gap-4'>
@@ -174,35 +205,22 @@ function OrdersTab({ partnerType }: { partnerType: PartnerTab }) {
         className='flex flex-wrap items-center gap-2'
         data-testid={`order-filters-${partnerType}`}
       >
-        <Input
-          placeholder='Mã đơn hàng'
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className='w-full sm:w-[200px]'
-          aria-label='Mã đơn hàng'
-        />
+        <div className='relative w-full sm:w-[300px]'>
+          <Icons.search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
+          <Input
+            placeholder={
+              distribution
+                ? 'Mã đơn, ICCID, email nhận eSIM, tên sản phẩm…'
+                : 'Mã đơn, ICCID, email khách hàng, tên sản phẩm…'
+            }
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className='pl-9'
+            aria-label='Tìm đơn hàng'
+            data-testid={`order-search-${partnerType}`}
+          />
+        </div>
         <PartnerPicker options={options} value={partnerId} onChange={setPartnerId} />
-        <Input
-          placeholder='ICCID'
-          value={iccid}
-          onChange={(e) => setIccid(e.target.value)}
-          className='w-full sm:w-[190px]'
-          aria-label='ICCID'
-        />
-        <Input
-          placeholder='Tên sản phẩm'
-          value={planName}
-          onChange={(e) => setPlanName(e.target.value)}
-          className='w-full sm:w-[180px]'
-          aria-label='Tên sản phẩm'
-        />
-        <Input
-          placeholder={distribution ? 'Email nhận eSIM' : 'Email khách hàng'}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className='w-full sm:w-[200px]'
-          aria-label='Email'
-        />
         {/* The shared time filter (doitac-3010 #031). */}
         <DateRangeFilter
           from={from || undefined}
@@ -252,22 +270,36 @@ function OrdersTab({ partnerType }: { partnerType: PartnerTab }) {
             ))}
           </SelectContent>
         </Select>
-        <Button
-          variant='outline'
-          className='sm:ml-auto'
-          onClick={() => {
-            const query = new URLSearchParams(
-              Object.entries(filters).reduce<Record<string, string>>((acc, [k, v]) => {
-                if (k !== 'limit') acc[k] = String(v);
-                return acc;
-              }, {})
-            ).toString();
-            window.location.href = `/api/partners/orders/export-excel?${query}`;
-          }}
-        >
-          <Icons.download className='mr-2 h-4 w-4' />
-          Xuất file
-        </Button>
+        {filtered && (
+          <Button variant='ghost' onClick={clearFilters} data-testid={`order-clear-${partnerType}`}>
+            <Icons.close className='mr-1 h-4 w-4' />
+            Xoá bộ lọc
+          </Button>
+        )}
+        {/* "Hiển thị" right of "Xuất file", together (doitac-3010 #039). */}
+        <div className='flex items-center gap-2 sm:ml-auto'>
+          <Button
+            variant='outline'
+            onClick={() => {
+              const query = new URLSearchParams(
+                Object.entries(filters).reduce<Record<string, string>>((acc, [k, v]) => {
+                  if (k !== 'limit') acc[k] = String(v);
+                  return acc;
+                }, {})
+              ).toString();
+              window.location.href = `/api/partners/orders/export-excel?${query}`;
+            }}
+          >
+            <Icons.download className='mr-2 h-4 w-4' />
+            Xuất file
+          </Button>
+          <ColumnVisibilityMenu
+            columns={distribution ? DISTRIBUTION_COLUMNS : MARKETING_COLUMNS}
+            hidden={hidden}
+            onToggle={toggle}
+            testId={`order-columns-${partnerType}`}
+          />
+        </div>
       </div>
 
       {isLoading ? (
@@ -279,16 +311,25 @@ function OrdersTab({ partnerType }: { partnerType: PartnerTab }) {
           Không có đơn hàng nào khớp bộ lọc.
         </p>
       ) : (
-        <div
-          className='overflow-x-auto rounded-lg border'
-          data-testid={`order-rows-${partnerType}`}
-        >
-          {distribution ? (
-            <DistributionTable rows={rows as AdminDistributionOrderRow[]} />
-          ) : (
-            <MarketingTable rows={rows as AdminMarketingOrderRow[]} />
-          )}
-        </div>
+        <>
+          {/* Header pinned while the list scrolls (doitac-3010 #039). */}
+          <div
+            className='max-h-[70vh] overflow-auto rounded-lg border'
+            data-testid={`order-rows-${partnerType}`}
+          >
+            {distribution ? (
+              <DistributionTable rows={pageRows as AdminDistributionOrderRow[]} hidden={hidden} />
+            ) : (
+              <MarketingTable rows={pageRows as AdminMarketingOrderRow[]} hidden={hidden} />
+            )}
+          </div>
+          <PortalListPagination
+            pagination={pagination}
+            unit='đơn hàng'
+            testId={`order-pagination-${partnerType}`}
+            pageSizes={PAGE_SIZES}
+          />
+        </>
       )}
     </div>
   );
@@ -315,7 +356,7 @@ function PartnerPicker({
           role='combobox'
           aria-expanded={open}
           aria-label='Lọc theo đối tác'
-          className='w-full justify-between font-normal sm:w-[240px]'
+          className='w-full justify-between font-normal sm:w-[210px]'
           data-testid='partner-picker'
         >
           <span className='truncate'>
@@ -434,21 +475,22 @@ function DetailButton({ orderNumber, tab }: { orderNumber: string; tab: PartnerT
 }
 
 /** The affiliate tab: somebody else's order, credited to a partner. */
-function MarketingTable({ rows }: { rows: AdminMarketingOrderRow[] }) {
+function MarketingTable({ rows, hidden }: { rows: AdminMarketingOrderRow[]; hidden: string[] }) {
+  const show = (key: string) => !hidden.includes(key);
   return (
     <Table>
-      <TableHeader>
+      <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
         <TableRow>
           <TableHead>Mã đơn hàng</TableHead>
-          <TableHead>Đối tác</TableHead>
-          <TableHead>Sản phẩm</TableHead>
-          <TableHead className='text-right'>Doanh thu</TableHead>
-          <TableHead>Nguồn ghi nhận</TableHead>
-          <TableHead>Khách hàng</TableHead>
-          <TableHead className='text-right'>eSIM</TableHead>
-          <TableHead className='text-right'>Hoa hồng</TableHead>
-          <TableHead>Trạng thái</TableHead>
-          <TableHead>Ngày đặt</TableHead>
+          {show('partner') && <TableHead>Đối tác</TableHead>}
+          {show('products') && <TableHead>Sản phẩm</TableHead>}
+          {show('revenue') && <TableHead className='text-right'>Doanh thu</TableHead>}
+          {show('source') && <TableHead>Nguồn ghi nhận</TableHead>}
+          {show('customer') && <TableHead>Khách hàng</TableHead>}
+          {show('esim') && <TableHead className='text-right'>eSIM</TableHead>}
+          {show('commission') && <TableHead className='text-right'>Hoa hồng</TableHead>}
+          {show('status') && <TableHead className='min-w-[220px]'>Trạng thái</TableHead>}
+          {show('createdAt') && <TableHead>Ngày đặt</TableHead>}
           <TableHead className='text-right'>Thao tác</TableHead>
         </TableRow>
       </TableHeader>
@@ -463,60 +505,78 @@ function MarketingTable({ rows }: { rows: AdminMarketingOrderRow[] }) {
                 {row.orderNumber}
               </Link>
             </TableCell>
-            <TableCell>
-              <PartnerCell id={row.partnerId} name={row.partnerName} />
-            </TableCell>
-            <TableCell className='text-sm'>
-              <ProductsCell items={row.items} />
-            </TableCell>
-            <TableCell className='text-right tabular-nums'>{formatVnd(row.vndPrice)}</TableCell>
-            <TableCell className='text-sm'>
-              {row.linkCode ? (
-                <Badge variant='outline'>Link {row.linkCode}</Badge>
-              ) : row.couponCode ? (
-                <Badge variant='outline'>Mã {row.couponCode}</Badge>
-              ) : (
-                <span className='text-muted-foreground'>Khách gắn với đối tác</span>
-              )}
-            </TableCell>
-            <TableCell className='text-sm'>
-              {row.customerType === 'new' ? 'Khách mới' : 'Khách cũ'}
-            </TableCell>
-            <TableCell className='text-right tabular-nums'>{row.esimCount}</TableCell>
-            <TableCell className='text-right tabular-nums'>
-              {row.commissionVnd == null ? (
-                <span className='text-muted-foreground'>—</span>
-              ) : (
-                <>
-                  {formatVnd(row.commissionVnd)}
-                  {row.commissionPercent != null && (
-                    <span className='text-muted-foreground text-xs'>
-                      {' '}
-                      ({row.commissionPercent}%)
-                    </span>
-                  )}
-                </>
-              )}
-            </TableCell>
-            <TableCell>
-              <Badge variant='outline'>{ORDER_STATUS_LABEL[row.status] ?? row.status}</Badge>
-              {row.commissionStatus && (
-                <div className='text-muted-foreground mt-1 text-xs'>
-                  {COMMISSION_STATUS_LABEL[row.commissionStatus] ?? row.commissionStatus}
-                </div>
-              )}
-              {commissionRejectionText(row.rejectionReason) && (
-                <div
-                  className='text-destructive mt-1 max-w-[220px] text-xs'
-                  data-testid='row-rejection'
-                >
-                  {commissionRejectionText(row.rejectionReason)}
-                </div>
-              )}
-            </TableCell>
-            <TableCell className='text-sm whitespace-nowrap'>
-              {formatDateTimeVn(row.createdAt)}
-            </TableCell>
+            {show('partner') && (
+              <TableCell>
+                <PartnerCell id={row.partnerId} name={row.partnerName} />
+              </TableCell>
+            )}
+            {show('products') && (
+              <TableCell className='text-sm'>
+                <ProductsCell items={row.items} />
+              </TableCell>
+            )}
+            {show('revenue') && (
+              <TableCell className='text-right tabular-nums'>{formatVnd(row.vndPrice)}</TableCell>
+            )}
+            {show('source') && (
+              <TableCell className='text-sm'>
+                {row.linkCode ? (
+                  <Badge variant='outline'>Link {row.linkCode}</Badge>
+                ) : row.couponCode ? (
+                  <Badge variant='outline'>Mã {row.couponCode}</Badge>
+                ) : (
+                  <span className='text-muted-foreground'>Khách gắn với đối tác</span>
+                )}
+              </TableCell>
+            )}
+            {show('customer') && (
+              <TableCell className='text-sm'>
+                {row.customerType === 'new' ? 'Khách mới' : 'Khách cũ'}
+              </TableCell>
+            )}
+            {show('esim') && (
+              <TableCell className='text-right tabular-nums'>{row.esimCount}</TableCell>
+            )}
+            {show('commission') && (
+              <TableCell className='text-right tabular-nums'>
+                {row.commissionVnd == null ? (
+                  <span className='text-muted-foreground'>—</span>
+                ) : (
+                  <>
+                    {formatVnd(row.commissionVnd)}
+                    {row.commissionPercent != null && (
+                      <span className='text-muted-foreground text-xs'>
+                        {' '}
+                        ({row.commissionPercent}%)
+                      </span>
+                    )}
+                  </>
+                )}
+              </TableCell>
+            )}
+            {show('status') && (
+              <TableCell className='min-w-[220px] whitespace-normal'>
+                <Badge variant='outline'>{ORDER_STATUS_LABEL[row.status] ?? row.status}</Badge>
+                {row.commissionStatus && (
+                  <div className='text-muted-foreground mt-1 text-xs'>
+                    {COMMISSION_STATUS_LABEL[row.commissionStatus] ?? row.commissionStatus}
+                  </div>
+                )}
+                {commissionRejectionText(row.rejectionReason) && (
+                  <div
+                    className='text-destructive mt-1 max-w-[220px] text-xs break-words whitespace-normal'
+                    data-testid='row-rejection'
+                  >
+                    {commissionRejectionText(row.rejectionReason)}
+                  </div>
+                )}
+              </TableCell>
+            )}
+            {show('createdAt') && (
+              <TableCell className='text-sm whitespace-nowrap'>
+                {formatDateTimeVn(row.createdAt)}
+              </TableCell>
+            )}
             <TableCell className='text-right'>
               <DetailButton orderNumber={row.orderNumber} tab='kol' />
             </TableCell>
@@ -531,18 +591,25 @@ function MarketingTable({ rows }: { rows: AdminMarketingOrderRow[] }) {
  * The distribution tab: an order the partner placed themselves, with the
  * columns of the test round of 14/10 (doitac-1410 #058).
  */
-function DistributionTable({ rows }: { rows: AdminDistributionOrderRow[] }) {
+function DistributionTable({
+  rows,
+  hidden
+}: {
+  rows: AdminDistributionOrderRow[];
+  hidden: string[];
+}) {
+  const show = (key: string) => !hidden.includes(key);
   return (
     <Table>
-      <TableHeader>
+      <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
         <TableRow>
           <TableHead>Mã đơn hàng</TableHead>
-          <TableHead>Đối tác</TableHead>
-          <TableHead>Sản phẩm × số lượng</TableHead>
-          <TableHead className='text-right'>Tổng tiền</TableHead>
-          <TableHead>Loại đơn</TableHead>
-          <TableHead>Ngày mua</TableHead>
-          <TableHead>Trạng thái</TableHead>
+          {show('partner') && <TableHead>Đối tác</TableHead>}
+          {show('products') && <TableHead>Sản phẩm × số lượng</TableHead>}
+          {show('total') && <TableHead className='text-right'>Tổng tiền</TableHead>}
+          {show('orderType') && <TableHead>Loại đơn</TableHead>}
+          {show('createdAt') && <TableHead>Ngày mua</TableHead>}
+          {show('status') && <TableHead>Trạng thái</TableHead>}
           <TableHead className='text-right'>Thao tác</TableHead>
         </TableRow>
       </TableHeader>
@@ -557,27 +624,39 @@ function DistributionTable({ rows }: { rows: AdminDistributionOrderRow[] }) {
                 {row.orderNumber}
               </Link>
             </TableCell>
-            <TableCell>
-              <PartnerCell id={row.partnerId} name={row.partnerName} />
-            </TableCell>
-            <TableCell className='text-sm'>
-              <ProductsCell
-                items={row.items}
-                fallback={row.topupPackageName ? `Topup ${row.topupPackageName}` : undefined}
-              />
-            </TableCell>
-            <TableCell className='text-right font-medium tabular-nums'>
-              {formatVnd(row.paidVnd)}
-            </TableCell>
-            <TableCell className='text-sm whitespace-nowrap'>
-              {row.orderType === 'TOPUP' ? 'Nạp topup' : 'Mua eSIM'}
-            </TableCell>
-            <TableCell className='text-sm whitespace-nowrap'>
-              {formatDateTimeVn(row.createdAt)}
-            </TableCell>
-            <TableCell>
-              <Badge variant='outline'>{ORDER_STATUS_LABEL[row.status] ?? row.status}</Badge>
-            </TableCell>
+            {show('partner') && (
+              <TableCell>
+                <PartnerCell id={row.partnerId} name={row.partnerName} />
+              </TableCell>
+            )}
+            {show('products') && (
+              <TableCell className='text-sm'>
+                <ProductsCell
+                  items={row.items}
+                  fallback={row.topupPackageName ? `Topup ${row.topupPackageName}` : undefined}
+                />
+              </TableCell>
+            )}
+            {show('total') && (
+              <TableCell className='text-right font-medium tabular-nums'>
+                {formatVnd(row.paidVnd)}
+              </TableCell>
+            )}
+            {show('orderType') && (
+              <TableCell className='text-sm whitespace-nowrap'>
+                {row.orderType === 'TOPUP' ? 'Nạp topup' : 'Mua eSIM'}
+              </TableCell>
+            )}
+            {show('createdAt') && (
+              <TableCell className='text-sm whitespace-nowrap'>
+                {formatDateTimeVn(row.createdAt)}
+              </TableCell>
+            )}
+            {show('status') && (
+              <TableCell>
+                <Badge variant='outline'>{ORDER_STATUS_LABEL[row.status] ?? row.status}</Badge>
+              </TableCell>
+            )}
             <TableCell className='text-right'>
               <DetailButton orderNumber={row.orderNumber} tab='distribution' />
             </TableCell>

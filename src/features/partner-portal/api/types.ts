@@ -718,6 +718,8 @@ export type MyPurchaseDetail = {
     throttleSpeed?: string | null;
     refundable: boolean;
     esims: {
+      /** For the admin's link to the eSIM (doitac-3010 #039). */
+      esimId?: number;
       iccid: string;
       status: string | null;
       activatedAt: string | null;

@@ -386,7 +386,20 @@ export function PortalPurchaseDetailView({
                           <TableCell className='text-xs'>{dateOrDash(esim.activatedAt)}</TableCell>
                           <TableCell className='text-xs'>{dateOrDash(esim.expiresAt)}</TableCell>
                           <TableCell className='text-right'>
-                            {!admin && (
+                            {/* The admin opens its own eSIM page (doitac-3010 #039). */}
+                            {admin ? (
+                              esim.esimId ? (
+                                <Button
+                                  variant='outline'
+                                  size='sm'
+                                  className='h-7 text-xs'
+                                  asChild
+                                  data-testid='admin-esim-detail'
+                                >
+                                  <Link href={`/dashboard/esims/${esim.esimId}`}>Xem chi tiết</Link>
+                                </Button>
+                              ) : null
+                            ) : (
                               <Button
                                 variant='link'
                                 size='sm'
