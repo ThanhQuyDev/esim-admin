@@ -67,6 +67,7 @@ import {
   formatData
 } from './portal-esim-request-dialog';
 import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
+import { Compared } from './portal-month-compare';
 
 const statusFilters = [
   { value: 'all', label: 'Tất cả trạng thái' },
@@ -227,40 +228,6 @@ const ESIM_COLUMNS: EsimColumn[] = [
 ];
 
 const HIDDEN_COLUMNS_KEY = 'portal-esims-hidden-columns';
-
-/** "12 (tháng trước 5, +140%)" — the change, when there is something to compare. */
-function Compared({
-  value,
-  previous,
-  format = (n) => n.toLocaleString('vi-VN')
-}: {
-  value: number;
-  previous: number;
-  format?: (n: number) => string;
-}) {
-  const change = previous > 0 ? Math.round(((value - previous) / previous) * 100) : null;
-  return (
-    <span className='whitespace-nowrap'>
-      <strong className='tabular-nums'>{format(value)}</strong>
-      <span className='text-muted-foreground'>
-        {' '}
-        (tháng trước {format(previous)}
-        {change !== null && (
-          <span
-            className={cn(
-              change > 0 && 'text-emerald-600 dark:text-emerald-400',
-              change < 0 && 'text-red-600 dark:text-red-400'
-            )}
-          >
-            , {change > 0 ? '+' : ''}
-            {change}%
-          </span>
-        )}
-        )
-      </span>
-    </span>
-  );
-}
 
 function MonthSummary() {
   const { data, isLoading } = useQuery(myEsimSummaryQueryOptions());

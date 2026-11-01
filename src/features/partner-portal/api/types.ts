@@ -664,6 +664,10 @@ export type MyPurchase = {
   deliveryEmail?: string | null;
   topupPackageName?: string | null;
   targetIccid?: string | null;
+  /** The order's eSIMs, for "Báo lỗi" from the list (doitac-3010 #029). */
+  esims?: { iccid: string; refundable: boolean; openReport: 'fault' | 'refund' | null }[];
+  /** A fault or refund request still open on one of its eSIMs. */
+  openReport?: 'fault' | 'refund' | null;
 };
 
 /** "Chi tiết đơn hàng" of a distribution partner (doitac-1410 #042). */
@@ -1015,3 +1019,16 @@ export type MyNotificationList = {
 export type EsimMonthFigures = { count: number; activated: number; idle: number; costVnd: number };
 
 export type MyEsimSummary = { thisMonth: EsimMonthFigures; lastMonth: EsimMonthFigures };
+
+/** One month on "Đơn hàng" (doitac-3010 #029). */
+export type PurchaseMonthFigures = {
+  orders: number;
+  paidVnd: number;
+  esims: number;
+  refundedVnd: number;
+};
+
+export type MyPurchaseSummary = {
+  thisMonth: PurchaseMonthFigures;
+  lastMonth: PurchaseMonthFigures;
+};

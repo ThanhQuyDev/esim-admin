@@ -43,6 +43,7 @@ import type {
   MyEsim,
   MyEsimSummary,
   MyPurchase,
+  MyPurchaseSummary,
   PartnerCatalogue,
   PurchaseQuote,
   CreatePurchasePayload,
@@ -336,6 +337,11 @@ export async function getMyEsims(filters?: {
   }
   const query = params.toString();
   return apiClient<MyEsim[]>(`/partner-portal/esims${query ? `?${query}` : ''}`);
+}
+
+/** This month against last month on Đơn hàng (doitac-3010 #029). */
+export async function getMyPurchaseSummary(): Promise<MyPurchaseSummary> {
+  return apiClient<MyPurchaseSummary>('/partner-portal/purchases/summary');
 }
 
 /** This month against last month on Quản lý eSIM (doitac-3010 #028). */
