@@ -62,6 +62,20 @@ function rowActions(state: AdminLinkState): BulkLinkAction[] {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icons } from '@/components/icons';
 import { DateRangeFilter } from '@/components/date-range-filter';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  ColumnVisibilityMenu,
+  useHiddenColumns
+} from '@/features/partner-portal/components/portal-column-visibility';
+import {
+  PortalListPagination,
+  type PortalPagination
+} from '@/features/partner-portal/components/portal-list-pagination';
 import type { AdminLinkFilters, AdminLinkState } from '../api/types';
 
 /** The six states the admin works with (doitac-1410 #052). */
@@ -112,6 +126,20 @@ const EMPTY_FILTERS: Required<
 };
 const PAGE_SIZE = 20;
 
+/** The list's columns, each one hideable from "Hiển thị" (doitac-3010 #036). */
+const LINK_COLUMNS = [
+  { key: 'partner', label: 'Đối tác' },
+  { key: 'link', label: 'Liên kết' },
+  { key: 'channel', label: 'Kênh quảng bá' },
+  { key: 'created', label: 'Tạo lúc' },
+  { key: 'updated', label: 'Cập nhật' },
+  { key: 'edits', label: 'Số lần sửa' },
+  { key: 'clicks', label: 'Lượt nhấp' },
+  { key: 'orders', label: 'Số đơn' },
+  { key: 'commission', label: 'Hoa hồng' },
+  { key: 'status', label: 'Trạng thái' }
+];
+
 const TILE = 'from-primary/5 to-card dark:bg-card rounded-lg border bg-gradient-to-t p-4 shadow-xs';
 
 function StatTile({
@@ -149,6 +177,12 @@ export function PartnerLinksAdminView() {
   // The list's filters (doitac-1410 #052).
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  // Paged like the admin's tables (doitac-3010 #036).
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const { hidden: hiddenColumns, toggle: toggleColumn } = useHiddenColumns(
+    'admin-links-hidden-columns'
+  );
+  const show = (key: string) => !hiddenColumns.includes(key);
   const set = <K extends keyof typeof EMPTY_FILTERS>(key: K, value: (typeof EMPTY_FILTERS)[K]) => {
     setFilters((f) => ({ ...f, [key]: value }));
     setPage(1);
@@ -162,11 +196,23 @@ export function PartnerLinksAdminView() {
       partner: filters.partner.trim(),
       link: filters.link.trim(),
       page,
-      limit: PAGE_SIZE
+      limit: pageSize
     })
   );
   const links = list?.data ?? [];
-  const pages = Math.max(1, Math.ceil((list?.total ?? 0) / PAGE_SIZE));
+  const pages = Math.max(1, Math.ceil((list?.total ?? 0) / pageSize));
+  const pagination: PortalPagination = {
+    total: list?.total ?? 0,
+    pageIndex: Math.min(page, pages) - 1,
+    pageCount: pages,
+    pageSize,
+    setPageIndex: (next) =>
+      setPage((current) => (typeof next === 'function' ? next(current - 1) : next) + 1),
+    setPageSize: (size: number) => {
+      setPageSize(size);
+      setPage(1);
+    }
+  };
 
   // Ticked rows for "Thay đổi trạng thái" (doitac-1410 #053).
   const [selected, setSelected] = useState<number[]>([]);
@@ -213,43 +259,14 @@ export function PartnerLinksAdminView() {
         />
       </div>
 
-      <Card className='min-w-0'>
-        <CardHeader className='flex flex-row flex-wrap items-center justify-between gap-2'>
-          <CardTitle>Danh sách liên kết</CardTitle>
-          <div className='flex flex-wrap gap-2'>
-            <Button
-              size='sm'
-              variant='outline'
-              disabled={selected.length === 0}
-              onClick={() => setBulkOpen(true)}
-              data-testid='links-bulk-status'
-            >
-              Thay đổi trạng thái
-              {selected.length ? ` (${selected.length})` : ''}
-            </Button>
-            <Button asChild size='sm' variant='outline'>
-              <a
-                data-testid='links-export'
-                href={adminLinksExportUrl({
-                  ...filters,
-                  partner: filters.partner.trim(),
-                  link: filters.link.trim()
-                })}
-              >
-                <Icons.download className='size-4' />
-                Xuất file
-              </a>
-            </Button>
-            <Button size='sm' onClick={() => setCreateOpen(true)} data-testid='links-create'>
-              <Icons.add className='size-4' />
-              Tạo link giúp đối tác
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4'>
+      {/* The filters on their own, with the export and "Hiển thị", as on the
+          admin's other pages (doitac-3010 #036). */}
+      <Card className='min-w-0 gap-0 py-4' data-testid='admin-links-filter-card'>
+        <CardContent className='flex flex-wrap items-start gap-2 px-4'>
+          <div className='flex flex-1 flex-wrap items-center gap-2'>
             <Input
               placeholder='Tên / email / SĐT / mã ID đối tác'
+              className='w-full sm:w-56'
               aria-label='Đối tác'
               value={filters.partner}
               onChange={(e) => set('partner', e.target.value)}
@@ -257,6 +274,7 @@ export function PartnerLinksAdminView() {
             />
             <Input
               placeholder='Tên liên kết / trang đích / link tiếp thị'
+              className='w-full sm:w-60'
               aria-label='Liên kết'
               value={filters.link}
               onChange={(e) => set('link', e.target.value)}
@@ -264,7 +282,7 @@ export function PartnerLinksAdminView() {
             />
             <Select value={filters.channel} onValueChange={(v) => set('channel', v)}>
               <SelectTrigger
-                className='w-full'
+                className='w-auto gap-2'
                 aria-label='Kênh quảng bá'
                 data-testid='link-filter-channel'
               >
@@ -284,7 +302,7 @@ export function PartnerLinksAdminView() {
               onValueChange={(v) => set('status', v as AdminLinkFilters['status'] & string)}
             >
               <SelectTrigger
-                className='w-full'
+                className='w-auto gap-2'
                 aria-label='Trạng thái liên kết'
                 data-testid='link-filter-status'
               >
@@ -302,7 +320,6 @@ export function PartnerLinksAdminView() {
             {/* The shared time filter (doitac-3010 #031). */}
             <DateRangeFilter
               label='Tạo'
-              className='w-full'
               from={filters.createdFrom || undefined}
               to={filters.createdTo || undefined}
               onChange={(range) => {
@@ -313,7 +330,6 @@ export function PartnerLinksAdminView() {
             />
             <DateRangeFilter
               label='Cập nhật'
-              className='w-full'
               from={filters.updatedFrom || undefined}
               to={filters.updatedTo || undefined}
               onChange={(range) => {
@@ -327,7 +343,7 @@ export function PartnerLinksAdminView() {
               onValueChange={(v) => set('actor', v as 'admin' | 'partner' | 'all')}
             >
               <SelectTrigger
-                className='w-full'
+                className='w-auto gap-2'
                 aria-label='Người thực hiện'
                 data-testid='link-filter-actor'
               >
@@ -341,22 +357,72 @@ export function PartnerLinksAdminView() {
             </Select>
             {filtered && (
               <Button
-                variant='ghost'
+                variant='outline'
                 size='sm'
-                className='justify-self-start'
+                className='h-9'
+                data-testid='links-clear-filters'
                 onClick={() => {
                   setFilters(EMPTY_FILTERS);
                   setPage(1);
                 }}
               >
+                <Icons.close className='size-4' />
                 Xoá bộ lọc
               </Button>
             )}
           </div>
+          <div className='flex items-center gap-2'>
+            <Button asChild size='sm' variant='outline' className='h-8'>
+              <a
+                data-testid='links-export'
+                href={adminLinksExportUrl({
+                  ...filters,
+                  partner: filters.partner.trim(),
+                  link: filters.link.trim()
+                })}
+              >
+                <Icons.download className='size-4' />
+                Xuất file Excel
+              </a>
+            </Button>
+            <ColumnVisibilityMenu
+              columns={LINK_COLUMNS}
+              hidden={hiddenColumns}
+              onToggle={toggleColumn}
+              testId='links-columns'
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-          <div className='overflow-x-auto rounded-lg border'>
+      <Card className='min-w-0' data-testid='admin-links-list-card'>
+        <CardHeader className='flex flex-row flex-wrap items-center justify-between gap-2'>
+          <CardTitle>Danh sách liên kết</CardTitle>
+          <div className='flex flex-wrap gap-2'>
+            <Button
+              size='sm'
+              variant='outline'
+              disabled={selected.length === 0}
+              onClick={() => setBulkOpen(true)}
+              data-testid='links-bulk-status'
+            >
+              Thay đổi trạng thái
+              {selected.length ? ` (${selected.length})` : ''}
+            </Button>
+            <Button size='sm' onClick={() => setCreateOpen(true)} data-testid='links-create'>
+              <Icons.add className='size-4' />
+              Tạo link giúp đối tác
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          {/* Header pinned while the list scrolls (doitac-3010 #036). */}
+          <div
+            className='max-h-[70vh] overflow-auto rounded-lg border'
+            data-testid='admin-links-table-scroll'
+          >
             <Table>
-              <TableHeader className='bg-muted'>
+              <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
                 <TableRow>
                   <TableHead className='w-8'>
                     <Checkbox
@@ -371,16 +437,16 @@ export function PartnerLinksAdminView() {
                       }
                     />
                   </TableHead>
-                  <TableHead>Đối tác</TableHead>
-                  <TableHead>Liên kết</TableHead>
-                  <TableHead>Kênh quảng bá</TableHead>
-                  <TableHead>Tạo lúc</TableHead>
-                  <TableHead>Cập nhật</TableHead>
-                  <TableHead className='text-right'>Số lần sửa</TableHead>
-                  <TableHead className='text-right'>Lượt nhấp</TableHead>
-                  <TableHead className='text-right'>Số đơn</TableHead>
-                  <TableHead className='text-right'>Hoa hồng</TableHead>
-                  <TableHead>Trạng thái</TableHead>
+                  {show('partner') && <TableHead>Đối tác</TableHead>}
+                  {show('link') && <TableHead>Liên kết</TableHead>}
+                  {show('channel') && <TableHead>Kênh quảng bá</TableHead>}
+                  {show('created') && <TableHead>Tạo lúc</TableHead>}
+                  {show('updated') && <TableHead>Cập nhật</TableHead>}
+                  {show('edits') && <TableHead className='text-right'>Số lần sửa</TableHead>}
+                  {show('clicks') && <TableHead className='text-right'>Lượt nhấp</TableHead>}
+                  {show('orders') && <TableHead className='text-right'>Số đơn</TableHead>}
+                  {show('commission') && <TableHead className='text-right'>Hoa hồng</TableHead>}
+                  {show('status') && <TableHead>Trạng thái</TableHead>}
                   <TableHead className='text-right'>Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -406,78 +472,107 @@ export function PartnerLinksAdminView() {
                           onCheckedChange={(on) => toggle(link.id, on === true)}
                         />
                       </TableCell>
-                      <TableCell className='text-xs'>
-                        <Link
-                          href={`/dashboard/partners/${link.partner.id}`}
-                          className='font-medium hover:underline'
-                        >
-                          {link.partner.name ?? '—'}
-                        </Link>
-                        <div className='text-muted-foreground font-mono'>#{link.partner.id}</div>
-                      </TableCell>
-                      <TableCell className='max-w-[240px] text-xs'>
-                        <div className='truncate font-medium'>{link.label || '—'}</div>
-                        <div className='text-muted-foreground truncate font-mono'>
-                          {shortLinkOf(link.code)}
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-xs'>{channelOf(link.targetPath) || '—'}</TableCell>
-                      <TableCell className='text-xs whitespace-nowrap'>
-                        {formatDateTimeVn(link.createdAt)}
-                        <div className='text-muted-foreground'>
-                          bởi {ACTOR_LABEL[link.createdBy] ?? link.createdBy}
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-xs whitespace-nowrap'>
-                        {formatDateTimeVn(link.updatedAt)}
-                        <div className='text-muted-foreground'>
-                          bởi {ACTOR_LABEL[link.updatedBy] ?? link.updatedBy}
-                        </div>
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>{link.editCount}</TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        {link.clicks.toLocaleString('vi-VN')}
-                        {/* doitac-3010 #018 */}
-                        {link.validClicks !== undefined && (
-                          <div className='text-muted-foreground text-xs whitespace-nowrap'>
-                            {link.validClicks.toLocaleString('vi-VN')} hợp lệ
-                            {link.landingDropRate
-                              ? ` · rớt ${link.landingDropRate.toLocaleString('vi-VN')}%`
-                              : ''}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        {link.orders.toLocaleString('vi-VN')}
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        {formatVnd(link.commissionVnd)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={state.variant}>{state.label}</Badge>
-                      </TableCell>
-                      <TableCell className='text-right'>
-                        <div className='flex flex-col items-end gap-1 whitespace-nowrap'>
-                          <Button
-                            variant='link'
-                            size='sm'
-                            className='h-auto p-0 text-xs'
-                            onClick={() => setDetail(link)}
+                      {show('partner') && (
+                        <TableCell className='text-xs'>
+                          <Link
+                            href={`/dashboard/partners/${link.partner.id}`}
+                            className='font-medium hover:underline'
                           >
-                            Xem chi tiết
-                          </Button>
-                          {rowActions(link.state).map((action) => (
+                            {link.partner.name ?? '—'}
+                          </Link>
+                          <div className='text-muted-foreground font-mono'>#{link.partner.id}</div>
+                        </TableCell>
+                      )}
+                      {show('link') && (
+                        <TableCell className='max-w-[240px] text-xs'>
+                          <div className='truncate font-medium'>{link.label || '—'}</div>
+                          <div className='text-muted-foreground truncate font-mono'>
+                            {shortLinkOf(link.code)}
+                          </div>
+                        </TableCell>
+                      )}
+                      {show('channel') && (
+                        <TableCell className='text-xs'>
+                          {channelOf(link.targetPath) || '—'}
+                        </TableCell>
+                      )}
+                      {show('created') && (
+                        <TableCell className='text-xs whitespace-nowrap'>
+                          {formatDateTimeVn(link.createdAt)}
+                          <div className='text-muted-foreground'>
+                            bởi {ACTOR_LABEL[link.createdBy] ?? link.createdBy}
+                          </div>
+                        </TableCell>
+                      )}
+                      {show('updated') && (
+                        <TableCell className='text-xs whitespace-nowrap'>
+                          {formatDateTimeVn(link.updatedAt)}
+                          <div className='text-muted-foreground'>
+                            bởi {ACTOR_LABEL[link.updatedBy] ?? link.updatedBy}
+                          </div>
+                        </TableCell>
+                      )}
+                      {show('edits') && (
+                        <TableCell className='text-right tabular-nums'>{link.editCount}</TableCell>
+                      )}
+                      {show('clicks') && (
+                        <TableCell className='text-right tabular-nums'>
+                          {link.clicks.toLocaleString('vi-VN')}
+                          {/* doitac-3010 #018 */}
+                          {link.validClicks !== undefined && (
+                            <div className='text-muted-foreground text-xs whitespace-nowrap'>
+                              {link.validClicks.toLocaleString('vi-VN')} hợp lệ
+                              {link.landingDropRate
+                                ? ` · rớt ${link.landingDropRate.toLocaleString('vi-VN')}%`
+                                : ''}
+                            </div>
+                          )}
+                        </TableCell>
+                      )}
+                      {show('orders') && (
+                        <TableCell className='text-right tabular-nums'>
+                          {link.orders.toLocaleString('vi-VN')}
+                        </TableCell>
+                      )}
+                      {show('commission') && (
+                        <TableCell className='text-right tabular-nums'>
+                          {formatVnd(link.commissionVnd)}
+                        </TableCell>
+                      )}
+                      {show('status') && (
+                        <TableCell>
+                          <Badge variant={state.variant}>{state.label}</Badge>
+                        </TableCell>
+                      )}
+                      <TableCell className='text-right'>
+                        {/* Only the ⋮, every action behind it (doitac-3010 #036). */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
                             <Button
-                              key={action}
                               variant='ghost'
-                              size='sm'
-                              className={`h-auto p-0 text-xs ${action === 'suspend' ? 'text-destructive' : ''}`}
-                              onClick={() => setRowAction({ link, action })}
+                              size='icon'
+                              className='size-8'
+                              aria-label='Thao tác'
+                              data-testid={`link-actions-${link.id}`}
                             >
-                              {BULK_ACTION_LABEL[action]}
+                              <Icons.ellipsis className='size-4' />
                             </Button>
-                          ))}
-                        </div>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end'>
+                            <DropdownMenuItem onSelect={() => setDetail(link)}>
+                              Xem chi tiết
+                            </DropdownMenuItem>
+                            {rowActions(link.state).map((action) => (
+                              <DropdownMenuItem
+                                key={action}
+                                className={action === 'suspend' ? 'text-destructive' : undefined}
+                                onSelect={() => setRowAction({ link, action })}
+                              >
+                                {BULK_ACTION_LABEL[action]}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   );
@@ -486,32 +581,12 @@ export function PartnerLinksAdminView() {
             </Table>
           </div>
 
-          <div className='flex flex-wrap items-center justify-between gap-2 text-sm'>
-            <span className='text-muted-foreground' data-testid='admin-links-total'>
-              {(list?.total ?? 0).toLocaleString('vi-VN')} liên kết
-            </span>
-            <div className='flex items-center gap-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                disabled={page <= 1}
-                onClick={() => setPage((n) => n - 1)}
-              >
-                Trước
-              </Button>
-              <span className='tabular-nums'>
-                {page}/{pages}
-              </span>
-              <Button
-                variant='outline'
-                size='sm'
-                disabled={page >= pages}
-                onClick={() => setPage((n) => n + 1)}
-              >
-                Sau
-              </Button>
-            </div>
-          </div>
+          <PortalListPagination
+            pagination={pagination}
+            unit='liên kết'
+            testId='admin-links-pagination'
+            pageSizes={[10, 20, 30, 40, 50, 100, 200]}
+          />
         </CardContent>
       </Card>
 
