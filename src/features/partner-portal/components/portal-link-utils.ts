@@ -29,8 +29,14 @@ export function buildTargetPath(
 ): string | undefined {
   const trimmed = landing.trim();
   if (!trimmed) {
-    // The home page, still carrying the channel so the list can show it.
-    return channel ? `/?utm_source=${encodeURIComponent(channel)}` : undefined;
+    // The home page, still carrying the channel and the source code so the
+    // list can show them — the code used to be dropped here, so a link to the
+    // home page lost it (doitac-3010 #014).
+    const query = new URLSearchParams();
+    if (channel) query.set('utm_source', channel);
+    if (subid.trim()) query.set('subid', subid.trim());
+    const search = query.toString();
+    return search ? `/?${search}` : undefined;
   }
   try {
     const url = new URL(trimmed, 'https://esim.vn');

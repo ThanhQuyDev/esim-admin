@@ -1,4 +1,10 @@
 'use client';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { partnerLockMessage } from '../utils/partner-lock';
 import { downloadFilename } from '@/lib/download-filename';
 
@@ -71,7 +77,8 @@ import {
   landingOf,
   linkState,
   periodRange,
-  shortLinkOf
+  shortLinkOf,
+  subidOf
 } from './portal-link-utils';
 
 const EMPTY_FORM = { landing: '', label: '', channel: 'youtube', subid: '', code: '' };
@@ -145,6 +152,14 @@ export function PortalLinksView() {
   // dozen campaigns at once was left scrolling to find the one link they
   // needed to copy.
   const [filters, setFilters] = useState({ label: '' });
+  const filtersActive =
+    Boolean(filters.label.trim()) ||
+    status !== 'all' ||
+    channelFilter !== 'all' ||
+    sort !== 'created' ||
+    Boolean(createdFrom) ||
+    Boolean(createdTo) ||
+    period !== 'all';
   const rows = useMemo(() => {
     const text = filters.label.trim().toLowerCase();
     if (!text) return allRows;
@@ -255,7 +270,7 @@ export function PortalLinksView() {
               <Input
                 id='landing'
                 type='url'
-                placeholder='https://esim.vn/esim/nhat-ban'
+                placeholder='https://esim.vn/esim-nhat-ban'
                 value={form.landing}
                 onChange={(e) => setForm({ ...form, landing: e.target.value })}
               />
@@ -586,12 +601,15 @@ export function PortalLinksView() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className='space-y-1.5 sm:col-span-2'>
+                <div className='space-y-1.5 sm:col-span-2 lg:col-span-4'>
                   <Label>Thời gian tạo</Label>
-                  <div className='flex items-center gap-2'>
+                  {/* Date boxes as wide as a date, not the whole row (the icon
+                      sat in empty space), and "Đặt lại" beside them to clear
+                      every filter at once (doitac-3010 #014). */}
+                  <div className='flex flex-wrap items-center gap-2'>
                     <Input
                       type='date'
-                      className='min-w-0 flex-1'
+                      className='w-[150px]'
                       aria-label='Tạo từ ngày'
                       value={createdFrom}
                       onChange={(e) => setCreatedFrom(e.target.value)}
@@ -599,11 +617,30 @@ export function PortalLinksView() {
                     <span className='text-muted-foreground text-sm'>–</span>
                     <Input
                       type='date'
-                      className='min-w-0 flex-1'
+                      className='w-[150px]'
                       aria-label='Tạo đến ngày'
                       value={createdTo}
                       onChange={(e) => setCreatedTo(e.target.value)}
                     />
+                    {filtersActive && (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        data-testid='links-filters-reset'
+                        onClick={() => {
+                          setFilters({ label: '' });
+                          setStatus('all');
+                          setChannelFilter('all');
+                          setSort('created');
+                          setCreatedFrom('');
+                          setCreatedTo('');
+                          setPeriod('all');
+                        }}
+                      >
+                        <Icons.close className='size-4' />
+                        Đặt lại
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -616,6 +653,7 @@ export function PortalLinksView() {
                       <TableHead>Trang đích</TableHead>
                       <TableHead>Link tiếp thị</TableHead>
                       <TableHead>Kênh quảng bá</TableHead>
+                      <TableHead>Mã ghi nhận nguồn</TableHead>
                       <TableHead>Thời gian</TableHead>
                       <TableHead className='text-right'>Nhấp</TableHead>
                       <TableHead className='text-right'>Đơn</TableHead>
@@ -627,14 +665,14 @@ export function PortalLinksView() {
                   <TableBody>
                     {isLoading && (
                       <TableRow>
-                        <TableCell colSpan={10} className='text-muted-foreground h-24 text-center'>
+                        <TableCell colSpan={11} className='text-muted-foreground h-24 text-center'>
                           Đang tải liên kết…
                         </TableCell>
                       </TableRow>
                     )}
                     {!isLoading && rows.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={10} className='h-24 text-center'>
+                        <TableCell colSpan={11} className='h-24 text-center'>
                           <p className='text-muted-foreground text-sm'>
                             Không có liên kết nào khớp bộ lọc.
                           </p>
@@ -661,6 +699,10 @@ export function PortalLinksView() {
                             {shortLinkOf(r.code)}
                           </TableCell>
                           <TableCell className='text-xs'>{channelOf(r.targetPath)}</TableCell>
+                          {/* doitac-3010 #014 */}
+                          <TableCell className='font-mono text-xs'>
+                            {subidOf(r.targetPath) || '—'}
+                          </TableCell>
                           <TableCell className='text-xs whitespace-nowrap'>
                             <span className='block'>{formatDateTimeVn(r.createdAt)}</span>
                             <span className='text-muted-foreground block'>
@@ -698,55 +740,62 @@ export function PortalLinksView() {
                                   }
                                 >
                                   <Icons.copy />
-                                  Sao chép
+                                  Copy
                                 </Button>
                               )}
                               <Button
                                 size='sm'
-                                variant='ghost'
+                                variant='outline'
                                 onClick={() => setPopup({ kind: 'detail', link: r })}
                               >
                                 Xem chi tiết
                               </Button>
+                              {/* Sửa / Tạm tắt / Xóa under the three dots, so the row
+                                  keeps only Copy and Xem chi tiết (doitac-3010 #014). */}
                               {(state === 'active' || state === 'inactive') && (
-                                <>
-                                  <Button
-                                    size='sm'
-                                    variant='ghost'
-                                    onClick={() => setPopup({ kind: 'edit', link: r })}
-                                  >
-                                    Sửa
-                                  </Button>
-                                  {state === 'active' ? (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
                                     <Button
                                       size='sm'
                                       variant='ghost'
-                                      onClick={() => setPopup({ kind: 'pause', link: r })}
+                                      className='px-2'
+                                      aria-label={`Thao tác khác với ${r.label}`}
+                                      data-testid='link-more'
                                     >
-                                      Tạm tắt
+                                      <Icons.ellipsis className='size-4' />
                                     </Button>
-                                  ) : (
-                                    <Button
-                                      size='sm'
-                                      variant='ghost'
-                                      disabled={toggleLink.isPending}
-                                      onClick={() =>
-                                        toggleLink.mutate({ id: r.id, data: { isActive: true } })
-                                      }
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align='end'>
+                                    <DropdownMenuItem
+                                      onClick={() => setPopup({ kind: 'edit', link: r })}
                                     >
-                                      Bật lại
-                                    </Button>
-                                  )}
-                                  <Button
-                                    size='sm'
-                                    variant='ghost'
-                                    className='text-destructive hover:text-destructive'
-                                    onClick={() => setPopup({ kind: 'delete', link: r })}
-                                  >
-                                    <Icons.trash />
-                                    Xóa
-                                  </Button>
-                                </>
+                                      Sửa
+                                    </DropdownMenuItem>
+                                    {state === 'active' ? (
+                                      <DropdownMenuItem
+                                        onClick={() => setPopup({ kind: 'pause', link: r })}
+                                      >
+                                        Tạm tắt
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        disabled={toggleLink.isPending}
+                                        onClick={() =>
+                                          toggleLink.mutate({ id: r.id, data: { isActive: true } })
+                                        }
+                                      >
+                                        Bật lại
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem
+                                      className='text-destructive focus:text-destructive'
+                                      onClick={() => setPopup({ kind: 'delete', link: r })}
+                                    >
+                                      <Icons.trash />
+                                      Xóa
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               )}
                               {state === 'suspended' &&
                                 r.suspendedByAdmin &&

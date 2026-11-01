@@ -37,7 +37,13 @@ import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 
 import { updateLinkMutation } from '../api/mutations';
 import { myLinkDetailQueryOptions, myProfileQueryOptions, partnerPortalKeys } from '../api/queries';
-import { appealMyLink, createMyTicket, deleteMyLink, requestMyLinkRestore } from '../api/service';
+import {
+  appealMyLink,
+  createMyTicket,
+  deleteMyLink,
+  requestMyLinkRestore,
+  uploadAttachment
+} from '../api/service';
 import type { MyLink, MyLinkEvent } from '../api/types';
 import {
   CHANNELS,
@@ -56,6 +62,38 @@ import {
 
 const who = (role: string) =>
   role === 'admin' ? 'esim.vn' : role === 'system' ? 'Hệ thống' : 'Bạn';
+
+/**
+ * A change of `targetPath` said for what it changed (doitac-3010 #014): the
+ * page, the channel and the source code all live in it, so a new channel used
+ * to read "đổi đích đến".
+ */
+function describeRetarget(
+  actor: string,
+  from: string | null | undefined,
+  to: string | null | undefined
+): { title: string; lines: string[] } {
+  const parts: { what: string; line: string }[] = [];
+  if (landingOf(from) !== landingOf(to)) {
+    parts.push({ what: 'đích đến', line: `${landingOf(from)} → ${landingOf(to)}` });
+  }
+  if (channelValueOf(from) !== channelValueOf(to)) {
+    parts.push({ what: 'kênh quảng bá', line: `${channelOf(from)} → ${channelOf(to)}` });
+  }
+  if (subidOf(from) !== subidOf(to)) {
+    parts.push({
+      what: 'mã ghi nhận nguồn',
+      line: `${subidOf(from) || '—'} → ${subidOf(to) || '—'}`
+    });
+  }
+  if (!parts.length) {
+    return { title: `${actor} đổi đích đến`, lines: [`${landingOf(from)} → ${landingOf(to)}`] };
+  }
+  return {
+    title: `${actor} đổi ${parts.map((p) => p.what).join(', ')}`,
+    lines: parts.map((p) => p.line)
+  };
+}
 
 /** How one history line reads (figure 1). */
 export function describeEvent(
@@ -78,16 +116,13 @@ export function describeEvent(
         title: `${actor} tạo liên kết`,
         lines: [
           `esim.vn${landingOf(d.targetPath) === 'Trang chủ' ? '' : landingOf(d.targetPath)}`,
-          `Tên «${d.label ?? ''}» · kênh ${channelOf(d.targetPath)}`
+          `Tên: ${d.label ?? ''} · kênh ${channelOf(d.targetPath)}${subidOf(d.targetPath) ? ` · mã nguồn ${subidOf(d.targetPath)}` : ''}`
         ]
       };
     case 'renamed':
       return { title: `${actor} đổi tên`, lines: [`${d.from ?? ''} → ${d.to ?? ''}`] };
     case 'retargeted':
-      return {
-        title: `${actor} đổi đích đến`,
-        lines: [`${landingOf(d.from)} → ${landingOf(d.to)}`]
-      };
+      return describeRetarget(actor, d.from, d.to);
     case 'paused':
       return { title: `${actor} tạm tắt liên kết`, lines: [] };
     case 'resumed':
@@ -185,6 +220,13 @@ export function LinkDetailDialog({
         <div className='flex flex-wrap items-center gap-2'>
           <Badge variant={LINK_STATE[state].variant}>{LINK_STATE[state].label}</Badge>
           <span className='text-muted-foreground text-xs'>{channelOf(link.targetPath)}</span>
+          {/* Typed at creation and never shown again (doitac-3010 #014). */}
+          {subidOf(link.targetPath) && (
+            <span className='text-muted-foreground text-xs' data-testid='link-subid'>
+              · Mã ghi nhận nguồn:{' '}
+              <span className='text-foreground font-mono'>{subidOf(link.targetPath)}</span>
+            </span>
+          )}
         </div>
 
         {state === 'inactive' && detail && (
@@ -374,9 +416,13 @@ export function EditLinkDialog({ link, onClose }: { link: MyLink; onClose: () =>
   const [label, setLabel] = useState(link.label);
   const [landing, setLanding] = useState(initialLanding);
   const [channel, setChannel] = useState(initialChannel);
+  // "Mã ghi nhận nguồn" can be changed here too (doitac-3010 #014).
+  const initialSubid = subidOf(link.targetPath);
+  const [subid, setSubid] = useState(initialSubid);
   // The destination is only sent when the partner changed it, so a rename
   // does not also read "đổi đích đến" in the link's history.
-  const destinationChanged = landing !== initialLanding || channel !== initialChannel;
+  const destinationChanged =
+    landing !== initialLanding || channel !== initialChannel || subid !== initialSubid;
   const save = useMutation({
     ...updateLinkMutation,
     onSuccess: () => {
@@ -391,7 +437,7 @@ export function EditLinkDialog({ link, onClose }: { link: MyLink; onClose: () =>
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='sm:max-w-[520px]'>
         <DialogHeader>
-          <DialogTitle>Sửa liên kết «{link.label}»</DialogTitle>
+          <DialogTitle>Sửa liên kết — {link.label}</DialogTitle>
         </DialogHeader>
         <div className='space-y-4'>
           <div className='space-y-1.5'>
@@ -403,7 +449,7 @@ export function EditLinkDialog({ link, onClose }: { link: MyLink; onClose: () =>
             <Input
               id='edit-landing'
               type='url'
-              placeholder='https://esim.vn/esim/nhat-ban — để trống: trang chủ'
+              placeholder='https://esim.vn/esim-nhat-ban — để trống: trang chủ'
               value={landing}
               onChange={(e) => setLanding(e.target.value)}
             />
@@ -430,6 +476,15 @@ export function EditLinkDialog({ link, onClose }: { link: MyLink; onClose: () =>
               </SelectContent>
             </Select>
           </div>
+          <div className='space-y-1.5'>
+            <Label htmlFor='edit-subid'>Mã ghi nhận nguồn</Label>
+            <Input
+              id='edit-subid'
+              placeholder='Ví dụ: youtube_nhatban_01'
+              value={subid}
+              onChange={(e) => setSubid(e.target.value)}
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button variant='outline' onClick={onClose}>
@@ -445,8 +500,7 @@ export function EditLinkDialog({ link, onClose }: { link: MyLink; onClose: () =>
                   label: label.trim(),
                   ...(destinationChanged
                     ? {
-                        targetPath:
-                          buildTargetPath(landing, channel, subidOf(link.targetPath)) ?? ''
+                        targetPath: buildTargetPath(landing, channel, subid) ?? ''
                       }
                     : {})
                 }
@@ -492,7 +546,7 @@ export function PauseLinkDialog({ link, onClose }: { link: MyLink; onClose: () =
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='sm:max-w-[520px]'>
         <DialogHeader>
-          <DialogTitle>Tạm tắt liên kết «{link.label}»</DialogTitle>
+          <DialogTitle>Tạm tắt liên kết — {link.label}</DialogTitle>
           <DialogDescription className='font-mono'>{shortLinkOf(link.code)}</DialogDescription>
         </DialogHeader>
         <div className='grid grid-cols-2 gap-2'>
@@ -571,7 +625,7 @@ export function DeleteLinkDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='sm:max-w-[560px]' data-testid='link-delete'>
         <DialogHeader>
-          <DialogTitle>Xóa liên kết «{link.label}»</DialogTitle>
+          <DialogTitle>Xóa liên kết — {link.label}</DialogTitle>
           <DialogDescription className='font-mono'>{shortLinkOf(link.code)}</DialogDescription>
         </DialogHeader>
         <div className='grid grid-cols-2 gap-2'>
@@ -652,13 +706,17 @@ export function AppealLinkDialog({ link, onClose }: { link: MyLink; onClose: () 
   const queryClient = useQueryClient();
   const { data: me } = useQuery(myProfileQueryOptions());
   const [message, setMessage] = useState('');
+  // "Gửi kèm tài liệu (nếu có)" (doitac-3010 #014).
+  const [files, setFiles] = useState<{ name: string; url: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
   const send = useMutation({
     mutationFn: async () => {
       const ticket = await createMyTicket({
         customerEmail: me?.contactEmail ?? '',
         subject: 'Link hoặc mã giảm giá',
         description: message.trim(),
-        orderId: `https://${shortLinkOf(link.code)}`
+        orderId: `https://${shortLinkOf(link.code)}`,
+        ...(files.length ? { attachments: files.map((f) => f.url) } : {})
       });
       return appealMyLink(link.id, Number((ticket as { id?: number }).id) || undefined);
     },
@@ -676,17 +734,29 @@ export function AppealLinkDialog({ link, onClose }: { link: MyLink; onClose: () 
         <DialogHeader>
           <DialogTitle>Gửi kháng nghị</DialogTitle>
           <DialogDescription>
-            Liên kết «{link.label}» bị esim.vn đình chỉ. Lý do: {link.suspendedReason ?? '—'}
+            Liên kết {link.label} bị esim.vn đình chỉ. Lý do: {link.suspendedReason ?? '—'}
           </DialogDescription>
         </DialogHeader>
         <div className='space-y-3'>
+          {/* Filled in for the partner, in dark text: greyed out it read like a
+              hint they could not type into (doitac-3010 #014). */}
           <div className='space-y-1.5'>
-            <Label>Chủ đề</Label>
-            <Input value='Link hoặc mã giảm giá' disabled readOnly />
+            <Label htmlFor='appeal-subject'>Chủ đề</Label>
+            <Input
+              id='appeal-subject'
+              value='Link hoặc mã giảm giá'
+              readOnly
+              className='bg-muted/40 text-foreground'
+            />
           </div>
           <div className='space-y-1.5'>
-            <Label>Mã đơn hoặc mã yêu cầu</Label>
-            <Input value={`https://${shortLinkOf(link.code)}`} disabled readOnly />
+            <Label htmlFor='appeal-ref'>Mã đơn hoặc mã yêu cầu</Label>
+            <Input
+              id='appeal-ref'
+              value={`https://${shortLinkOf(link.code)}`}
+              readOnly
+              className='bg-muted/40 text-foreground'
+            />
           </div>
           <div className='space-y-1.5'>
             <Label htmlFor='appeal-message'>
@@ -699,6 +769,55 @@ export function AppealLinkDialog({ link, onClose }: { link: MyLink; onClose: () 
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
+          </div>
+          <div className='space-y-1.5'>
+            <Label>Gửi kèm tài liệu (nếu có)</Label>
+            <input
+              id='appeal-file'
+              type='file'
+              className='hidden'
+              accept='image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt'
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (!file) return;
+                setUploading(true);
+                try {
+                  const url = await uploadAttachment(file);
+                  setFiles((current) => [...current, { name: file.name, url }]);
+                } catch (err) {
+                  toast.error((err as Error).message);
+                } finally {
+                  setUploading(false);
+                }
+              }}
+            />
+            <Button size='sm' variant='outline' asChild disabled={uploading || files.length >= 5}>
+              <label htmlFor='appeal-file' className='cursor-pointer'>
+                <Icons.upload className='size-4' />
+                {uploading ? 'Đang tải tệp…' : 'Chọn tệp'}
+              </label>
+            </Button>
+            {files.length > 0 && (
+              <ul className='space-y-1' data-testid='appeal-files'>
+                {files.map((f, i) => (
+                  <li
+                    key={f.url}
+                    className='flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-xs'
+                  >
+                    <span className='truncate'>{f.name}</span>
+                    <button
+                      type='button'
+                      className='text-muted-foreground hover:text-destructive shrink-0'
+                      aria-label={`Bỏ ${f.name}`}
+                      onClick={() => setFiles((cur) => cur.filter((_, j) => j !== i))}
+                    >
+                      <Icons.close className='size-3.5' />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
         <DialogFooter>
@@ -737,7 +856,7 @@ export function RestoreRequestDialog({ link, onClose }: { link: MyLink; onClose:
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='sm:max-w-[520px]'>
         <DialogHeader>
-          <DialogTitle>Gửi yêu cầu khôi phục «{link.label}»</DialogTitle>
+          <DialogTitle>Gửi yêu cầu khôi phục — {link.label}</DialogTitle>
           <DialogDescription className='font-mono'>{shortLinkOf(link.code)}</DialogDescription>
         </DialogHeader>
         <p className='border-primary/40 bg-primary/5 rounded-lg border-l-4 p-3 text-sm'>
