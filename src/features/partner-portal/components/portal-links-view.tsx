@@ -49,6 +49,7 @@ import {
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DateRangeFilter } from '@/components/date-range-filter';
 
 import { createLinkMutation, updateLinkMutation } from '../api/mutations';
 import { exportMyLinks, restoreMyLink } from '../api/service';
@@ -625,20 +626,15 @@ export function PortalLinksView() {
                       sat in empty space), and "Đặt lại" beside them to clear
                       every filter at once (doitac-3010 #014). */}
                   <div className='flex flex-wrap items-center gap-2'>
-                    <Input
-                      type='date'
-                      className='w-[150px]'
-                      aria-label='Tạo từ ngày'
-                      value={createdFrom}
-                      onChange={(e) => setCreatedFrom(e.target.value)}
-                    />
-                    <span className='text-muted-foreground text-sm'>–</span>
-                    <Input
-                      type='date'
-                      className='w-[150px]'
-                      aria-label='Tạo đến ngày'
-                      value={createdTo}
-                      onChange={(e) => setCreatedTo(e.target.value)}
+                    {/* The shared time filter (doitac-3010 #031). */}
+                    <DateRangeFilter
+                      from={createdFrom || undefined}
+                      to={createdTo || undefined}
+                      onChange={(range) => {
+                        setCreatedFrom(range.from ?? '');
+                        setCreatedTo(range.to ?? '');
+                      }}
+                      testId='links-created'
                     />
                     {filtersActive && (
                       <Button

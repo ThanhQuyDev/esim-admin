@@ -2,12 +2,12 @@
 
 import { useTransition } from 'react';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
-import { Input } from '@/components/ui/input';
+import { DateRangeFilter } from '@/components/date-range-filter';
 
 /**
- * "Thời gian tạo Từ – đến" for a list toolbar (vande #041), the same native
- * date boxes as the orders list (#017): the days go into the URL as
- * `createdFrom` / `createdTo` (yyyy-mm-dd) and back to page 1.
+ * "Thời gian tạo" for a list toolbar (vande #041), now the shared time filter
+ * with its presets and calendar (doitac-3010 #031): the days go into the URL
+ * as `createdFrom` / `createdTo` (yyyy-mm-dd) and back to page 1.
  */
 export function CreatedDateRange({ idPrefix }: { idPrefix: string }) {
   const [, startTransition] = useTransition();
@@ -18,41 +18,22 @@ export function CreatedDateRange({ idPrefix }: { idPrefix: string }) {
   });
 
   return (
-    <div className='flex items-center gap-2' data-testid={`${idPrefix}-created-range`}>
-      <label
-        htmlFor={`${idPrefix}-created-from`}
-        className='text-muted-foreground text-sm whitespace-nowrap'
-      >
-        Tạo từ
-      </label>
-      <Input
-        id={`${idPrefix}-created-from`}
-        type='date'
-        className='h-8 w-40'
-        value={params.createdFrom ?? ''}
-        max={params.createdTo ?? undefined}
-        onChange={(e) =>
-          startTransition(() => {
-            void setParams({ createdFrom: e.target.value || null, page: 1 });
-          })
-        }
-      />
-      <label htmlFor={`${idPrefix}-created-to`} className='text-muted-foreground text-sm'>
-        đến
-      </label>
-      <Input
-        id={`${idPrefix}-created-to`}
-        type='date'
-        className='h-8 w-40'
-        value={params.createdTo ?? ''}
-        min={params.createdFrom ?? undefined}
-        onChange={(e) =>
-          startTransition(() => {
-            void setParams({ createdTo: e.target.value || null, page: 1 });
-          })
-        }
-      />
-    </div>
+    <DateRangeFilter
+      label='Thời gian tạo'
+      className='h-8'
+      from={params.createdFrom ?? undefined}
+      to={params.createdTo ?? undefined}
+      onChange={(range) =>
+        startTransition(() => {
+          void setParams({
+            createdFrom: range.from ?? null,
+            createdTo: range.to ?? null,
+            page: 1
+          });
+        })
+      }
+      testId={`${idPrefix}-created-range`}
+    />
   );
 }
 

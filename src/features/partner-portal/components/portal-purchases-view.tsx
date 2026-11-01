@@ -52,6 +52,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -315,28 +316,20 @@ export function PortalPurchasesView() {
                 ))}
               </SelectContent>
             </Select>
-            <div className='flex items-center gap-2'>
-              <span className='text-muted-foreground shrink-0 text-xs'>Từ</span>
-              <Input
-                type='date'
-                value={filters.from}
-                max={filters.to || undefined}
-                onChange={(e) => set('from')(e.target.value)}
-                aria-label='Thời gian từ'
-                className='w-[140px]'
-                data-testid='purchase-from'
-              />
-              <span className='text-muted-foreground shrink-0 text-xs'>đến</span>
-              <Input
-                type='date'
-                value={filters.to}
-                min={filters.from || undefined}
-                onChange={(e) => set('to')(e.target.value)}
-                aria-label='Thời gian đến'
-                className='w-[140px]'
-                data-testid='purchase-to'
-              />
-            </div>
+            {/* The shared time filter (doitac-3010 #031). */}
+            <DateRangeFilter
+              label='Ngày mua'
+              from={filters.from || undefined}
+              to={filters.to || undefined}
+              onChange={(range) =>
+                setFilters((current) => ({
+                  ...current,
+                  from: range.from ?? '',
+                  to: range.to ?? ''
+                }))
+              }
+              testId='purchase-date'
+            />
             {filtered && (
               <Button
                 variant='outline'

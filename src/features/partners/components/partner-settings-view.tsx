@@ -101,7 +101,7 @@ export function PartnerSettingsView() {
 
       <div>
         <div className='mb-3 flex items-center justify-between'>
-          <p className='text-sm font-medium'>Chính sách đối tác tiếp thị (KOL)</p>
+          <p className='text-sm font-medium'>Chính sách đối tác tiếp thị (Affiliate)</p>
           <Link
             href='/dashboard/partners/tiers'
             className='text-sm font-medium underline underline-offset-4'

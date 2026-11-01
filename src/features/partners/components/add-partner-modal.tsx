@@ -133,7 +133,7 @@ export function AddPartnerModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='kol'>Đối tác tiếp thị (KOL)</SelectItem>
+                <SelectItem value='kol'>Đối tác tiếp thị (Affiliate)</SelectItem>
                 <SelectItem value='distribution'>Đối tác phân phối</SelectItem>
               </SelectContent>
             </Select>

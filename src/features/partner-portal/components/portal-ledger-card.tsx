@@ -37,6 +37,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 
 import { myLedgerQueryOptions, myPayoutsQueryOptions } from '../api/queries';
@@ -118,24 +119,17 @@ export function PortalLedgerCard() {
               </SelectContent>
             </Select>
           </div>
-          <div className='min-w-0 space-y-1.5'>
-            <Label htmlFor='ledgerFrom'>Từ ngày</Label>
-            <Input
-              id='ledgerFrom'
-              type='date'
-              value={from}
-              max={to || undefined}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-          </div>
-          <div className='min-w-0 space-y-1.5'>
-            <Label htmlFor='ledgerTo'>Đến ngày</Label>
-            <Input
-              id='ledgerTo'
-              type='date'
-              value={to}
-              min={from || undefined}
-              onChange={(e) => setTo(e.target.value)}
+          {/* The shared time filter (doitac-3010 #031). */}
+          <div className='min-w-0 space-y-1.5 sm:col-span-2'>
+            <Label>Thời gian</Label>
+            <DateRangeFilter
+              from={from || undefined}
+              to={to || undefined}
+              onChange={(range) => {
+                setFrom(range.from ?? '');
+                setTo(range.to ?? '');
+              }}
+              testId='ledger-date'
             />
           </div>
         </div>

@@ -109,7 +109,7 @@ export function PartnerTierFormDialog({
           <DialogTitle>{isEdit ? 'Sửa hạng đối tác' : 'Thêm hạng đối tác'}</DialogTitle>
           <DialogDescription>
             {isKol
-              ? 'Áp dụng cho đối tác KOL — hoa hồng theo % đơn hàng.'
+              ? 'Áp dụng cho đối tác Affiliate — hoa hồng theo % đơn hàng.'
               : 'Áp dụng cho đối tác phân phối — giảm giá tối đa được phép.'}
           </DialogDescription>
         </DialogHeader>

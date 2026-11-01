@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { partnerListStatsQueryOptions } from '../api/queries';
 
 const PARTNER_TYPE_LABEL: Record<string, string> = {
-  kol: 'KOL',
+  kol: 'Affiliate',
   distribution: 'Phân phối',
   api: 'API'
 };

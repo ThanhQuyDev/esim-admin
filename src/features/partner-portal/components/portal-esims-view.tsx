@@ -51,6 +51,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -354,28 +355,17 @@ export function PortalEsimsView() {
                 <SelectItem value='false'>Hỗ trợ topup: Không</SelectItem>
               </SelectContent>
             </Select>
-            <div className='flex items-center gap-2'>
-              <span className='text-muted-foreground shrink-0 text-xs'>Tạo từ</span>
-              <Input
-                type='date'
-                value={from}
-                max={to || undefined}
-                onChange={(e) => setFrom(e.target.value)}
-                aria-label='Thời gian tạo từ'
-                className='w-[140px]'
-                data-testid='esim-from'
-              />
-              <span className='text-muted-foreground shrink-0 text-xs'>đến</span>
-              <Input
-                type='date'
-                value={to}
-                min={from || undefined}
-                onChange={(e) => setTo(e.target.value)}
-                aria-label='Thời gian tạo đến'
-                className='w-[140px]'
-                data-testid='esim-to'
-              />
-            </div>
+            {/* The shared time filter (doitac-3010 #031). */}
+            <DateRangeFilter
+              label='Thời gian tạo'
+              from={from || undefined}
+              to={to || undefined}
+              onChange={(range) => {
+                setFrom(range.from ?? '');
+                setTo(range.to ?? '');
+              }}
+              testId='esim-created'
+            />
             {filtered && (
               <Button
                 variant='outline'

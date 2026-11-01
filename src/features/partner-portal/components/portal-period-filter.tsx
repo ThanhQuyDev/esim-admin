@@ -23,6 +23,7 @@ import {
   snapRangeToGroupBy
 } from '@/features/overview/components/period-range-picker';
 import type { OverviewGroupBy, OverviewPreset } from '@/features/overview/api/types';
+import { resolveDatePreset } from '@/lib/date-presets';
 
 /**
  * The admin overview's presets plus "Tuần trước" / "Tháng trước" (vande #085):
@@ -59,51 +60,16 @@ const groupByOptions: { value: OverviewGroupBy; label: string }[] = [
   { value: 'year', label: 'Năm' }
 ];
 
-const iso = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
 /**
- * Concrete day bounds for whatever the partner chose.
- *
- * Presets are turned into dates here rather than on the server, so the window
- * follows the partner's own clock — "Hôm nay" in Hanoi is not "today" in UTC.
+ * Concrete day bounds for whatever the partner chose — the shared presets
+ * (doitac-3010 #031), worked out on the partner's own clock: "Hôm nay" in
+ * Hanoi is not "today" in UTC.
  */
 export function resolvePeriod(period: PortalPeriod): { from: string; to: string } {
   if (period.from) {
     return { from: period.from, to: period.to ?? period.from };
   }
-
-  const today = new Date();
-  const start = new Date(today);
-
-  switch (period.preset) {
-    case 'today':
-      break;
-    case 'yesterday':
-      start.setDate(today.getDate() - 1);
-      today.setDate(today.getDate() - 1);
-      break;
-    case 'last7days':
-      start.setDate(today.getDate() - 6);
-      break;
-    case 'lastWeek': {
-      // Monday to Sunday of the week before this one.
-      const sinceMonday = (today.getDay() + 6) % 7;
-      start.setDate(today.getDate() - sinceMonday - 7);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      return { from: iso(start), to: iso(end) };
-    }
-    case 'lastMonth': {
-      const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      const last = new Date(today.getFullYear(), today.getMonth(), 0);
-      return { from: iso(first), to: iso(last) };
-    }
-    default:
-      start.setDate(today.getDate() - 29);
-  }
-
-  return { from: iso(start), to: iso(today) };
+  return resolveDatePreset(period.preset ?? 'last30days');
 }
 
 /** What the header says the figures cover. */

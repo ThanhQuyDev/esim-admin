@@ -61,6 +61,7 @@ function rowActions(state: AdminLinkState): BulkLinkAction[] {
 }
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icons } from '@/components/icons';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import type { AdminLinkFilters, AdminLinkState } from '../api/types';
 
 /** The six states the admin works with (doitac-1410 #052). */
@@ -298,50 +299,29 @@ export function PartnerLinksAdminView() {
                 ))}
               </SelectContent>
             </Select>
-            <div className='flex min-w-0 items-center gap-2'>
-              <span className='text-muted-foreground shrink-0 text-xs'>Tạo từ</span>
-              <Input
-                type='date'
-                className='min-w-0 flex-1'
-                aria-label='Thời gian tạo từ'
-                value={filters.createdFrom}
-                max={filters.createdTo || undefined}
-                onChange={(e) => set('createdFrom', e.target.value)}
-                data-testid='link-filter-created-from'
-              />
-              <span className='text-muted-foreground shrink-0 text-xs'>đến</span>
-              <Input
-                type='date'
-                className='min-w-0 flex-1'
-                aria-label='Thời gian tạo đến'
-                value={filters.createdTo}
-                min={filters.createdFrom || undefined}
-                onChange={(e) => set('createdTo', e.target.value)}
-                data-testid='link-filter-created-to'
-              />
-            </div>
-            <div className='flex min-w-0 items-center gap-2'>
-              <span className='text-muted-foreground shrink-0 text-xs'>Cập nhật từ</span>
-              <Input
-                type='date'
-                className='min-w-0 flex-1'
-                aria-label='Thời gian cập nhật từ'
-                value={filters.updatedFrom}
-                max={filters.updatedTo || undefined}
-                onChange={(e) => set('updatedFrom', e.target.value)}
-                data-testid='link-filter-updated-from'
-              />
-              <span className='text-muted-foreground shrink-0 text-xs'>đến</span>
-              <Input
-                type='date'
-                className='min-w-0 flex-1'
-                aria-label='Thời gian cập nhật đến'
-                value={filters.updatedTo}
-                min={filters.updatedFrom || undefined}
-                onChange={(e) => set('updatedTo', e.target.value)}
-                data-testid='link-filter-updated-to'
-              />
-            </div>
+            {/* The shared time filter (doitac-3010 #031). */}
+            <DateRangeFilter
+              label='Tạo'
+              className='w-full'
+              from={filters.createdFrom || undefined}
+              to={filters.createdTo || undefined}
+              onChange={(range) => {
+                set('createdFrom', range.from ?? '');
+                set('createdTo', range.to ?? '');
+              }}
+              testId='link-filter-created'
+            />
+            <DateRangeFilter
+              label='Cập nhật'
+              className='w-full'
+              from={filters.updatedFrom || undefined}
+              to={filters.updatedTo || undefined}
+              onChange={(range) => {
+                set('updatedFrom', range.from ?? '');
+                set('updatedTo', range.to ?? '');
+              }}
+              testId='link-filter-updated'
+            />
             <Select
               value={filters.actor}
               onValueChange={(v) => set('actor', v as 'admin' | 'partner' | 'all')}

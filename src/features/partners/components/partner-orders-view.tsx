@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icons } from '@/components/icons';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { commissionRejectionText } from '@/lib/commission-rejection';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -202,23 +203,16 @@ function OrdersTab({ partnerType }: { partnerType: PartnerTab }) {
           className='w-full sm:w-[200px]'
           aria-label='Email'
         />
-        <div className='flex w-full items-center gap-1 sm:w-auto'>
-          <Input
-            type='date'
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className='min-w-0 flex-1 sm:w-[150px]'
-            aria-label='Từ ngày'
-          />
-          <span className='text-muted-foreground text-sm'>→</span>
-          <Input
-            type='date'
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className='min-w-0 flex-1 sm:w-[150px]'
-            aria-label='Đến ngày'
-          />
-        </div>
+        {/* The shared time filter (doitac-3010 #031). */}
+        <DateRangeFilter
+          from={from || undefined}
+          to={to || undefined}
+          onChange={(range) => {
+            setFrom(range.from ?? '');
+            setTo(range.to ?? '');
+          }}
+          testId='partner-orders-date'
+        />
         {distribution ? (
           <Select value={orderType} onValueChange={setOrderType}>
             <SelectTrigger className='w-full sm:w-[160px]' aria-label='Loại đơn'>

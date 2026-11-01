@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { bulkPayoutDecisionMutation, markPayoutPaidMutation } from '../api/mutations';
@@ -341,23 +342,16 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
             ))}
           </SelectContent>
         </Select>
-        <div className='flex items-center gap-1'>
-          <Input
-            type='date'
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className='w-[150px]'
-            aria-label='Từ ngày'
-          />
-          <span className='text-muted-foreground text-sm'>→</span>
-          <Input
-            type='date'
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className='w-[150px]'
-            aria-label='Đến ngày'
-          />
-        </div>
+        {/* The shared time filter (doitac-3010 #031). */}
+        <DateRangeFilter
+          from={dateFrom || undefined}
+          to={dateTo || undefined}
+          onChange={(range) => {
+            setDateFrom(range.from ?? '');
+            setDateTo(range.to ?? '');
+          }}
+          testId='payouts-date'
+        />
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger
             className='w-[180px]'

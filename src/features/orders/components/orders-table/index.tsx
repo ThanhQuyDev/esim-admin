@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { columns } from './columns';
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import {
   Select,
   SelectContent,
@@ -233,38 +234,23 @@ function OrdersTableContent() {
         </Select>
         {/* Created-date range (#017). Native date inputs: an admin types or picks,
             and the value goes straight into the URL as yyyy-mm-dd. */}
-        <div className='flex items-center gap-2'>
-          <label htmlFor='order-created-from' className='text-muted-foreground text-sm'>
-            Từ
-          </label>
-          <Input
-            id='order-created-from'
-            type='date'
-            className='w-40'
-            value={params.createdFrom ?? ''}
-            max={params.createdTo ?? undefined}
-            onChange={(e) =>
-              startTransition(() => {
-                setParams({ createdFrom: e.target.value || null, page: 1 });
-              })
-            }
-          />
-          <label htmlFor='order-created-to' className='text-muted-foreground text-sm'>
-            đến
-          </label>
-          <Input
-            id='order-created-to'
-            type='date'
-            className='w-40'
-            value={params.createdTo ?? ''}
-            min={params.createdFrom ?? undefined}
-            onChange={(e) =>
-              startTransition(() => {
-                setParams({ createdTo: e.target.value || null, page: 1 });
-              })
-            }
-          />
-        </div>
+        {/* The shared time filter (doitac-3010 #031). */}
+        <DateRangeFilter
+          label='Ngày tạo'
+          className='h-8'
+          from={params.createdFrom ?? undefined}
+          to={params.createdTo ?? undefined}
+          onChange={(range) =>
+            startTransition(() => {
+              setParams({
+                createdFrom: range.from ?? null,
+                createdTo: range.to ?? null,
+                page: 1
+              });
+            })
+          }
+          testId='orders-created'
+        />
         <Select
           value={params.invoice ?? 'all'}
           onValueChange={(value) =>

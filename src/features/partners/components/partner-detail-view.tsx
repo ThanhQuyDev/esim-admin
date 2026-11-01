@@ -45,7 +45,7 @@ import type { PartnerStatus } from '../api/types';
 
 const PARTNER_TYPE_LABELS = {
   distribution: 'Đối tác phân phối',
-  kol: 'Đối tác tiếp thị (KOL)'
+  kol: 'Đối tác tiếp thị (Affiliate)'
 } as const;
 const LEGAL_TYPE_LABELS = {
   individual: 'Cá nhân',

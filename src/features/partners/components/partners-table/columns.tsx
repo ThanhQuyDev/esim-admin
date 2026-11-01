@@ -20,7 +20,7 @@ function mainChannel(channelInfo: Record<string, unknown> | null | undefined): s
 
 const PARTNER_TYPE_LABEL: Record<string, string> = {
   distribution: 'Đối tác phân phối',
-  kol: 'KOL'
+  kol: 'Affiliate'
 };
 
 const STATUS_VARIANT: Record<string, 'default' | 'destructive' | 'secondary' | 'outline'> = {

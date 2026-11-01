@@ -10,6 +10,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { type DatePreset, presetOfRange, resolveDatePreset } from '@/lib/date-presets';
 import type { OverviewGroupBy, OverviewPreset, OverviewProvider } from '../api/types';
 import { OVERVIEW_PROVIDERS, providerCodeLabel } from '../api/constants';
 import { PeriodRangePicker, snapRangeToGroupBy } from './period-range-picker';
@@ -27,11 +28,15 @@ interface OverviewFiltersProps {
   onChange: (value: OverviewFiltersValue) => void;
 }
 
-const presetOptions: { value: OverviewPreset; label: string }[] = [
+// The full set of every page (doitac-3010 #031). The server knows the first
+// four; "Tuần trước" / "Tháng trước" are sent as their days.
+const presetOptions: { value: OverviewPreset | DatePreset; label: string }[] = [
   { value: 'today', label: 'Hôm nay' },
   { value: 'yesterday', label: 'Hôm qua' },
   { value: 'last7days', label: '7 ngày qua' },
-  { value: 'last30days', label: '30 ngày qua' }
+  { value: 'last30days', label: '30 ngày qua' },
+  { value: 'lastWeek', label: 'Tuần trước' },
+  { value: 'lastMonth', label: 'Tháng trước' }
 ];
 
 const groupByOptions: { value: OverviewGroupBy; label: string }[] = [
@@ -54,14 +59,27 @@ export function OverviewFilters({ value, onChange }: OverviewFiltersProps) {
   return (
     <div className='flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between'>
       <Tabs
-        value={value.preset ?? ''}
+        value={
+          value.preset ??
+          (value.groupBy === 'day' ? presetOfRange(value.from, value.to) : null) ??
+          ''
+        }
         onValueChange={(preset) =>
-          onChange({
-            ...value,
-            preset: preset as OverviewPreset,
-            from: undefined,
-            to: undefined
-          })
+          onChange(
+            preset === 'lastWeek' || preset === 'lastMonth'
+              ? {
+                  ...value,
+                  preset: undefined,
+                  groupBy: 'day',
+                  ...resolveDatePreset(preset)
+                }
+              : {
+                  ...value,
+                  preset: preset as OverviewPreset,
+                  from: undefined,
+                  to: undefined
+                }
+          )
         }
       >
         <TabsList className='h-auto flex-wrap'>

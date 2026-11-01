@@ -15,21 +15,20 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icons } from '@/components/icons';
+import { DateRangeFilter } from '@/components/date-range-filter';
+import { DATE_PRESETS, type DatePreset, resolveDatePreset } from '@/lib/date-presets';
 import { formatVnd } from '@/lib/format';
 
 import { partnerStatsQueryOptions } from '../api/queries';
 import type { Partner } from '../api/types';
 
-type Preset = 'today' | 'yesterday' | 'last7days' | 'last30days' | 'thisMonth' | 'sinceCreated';
+type Preset = DatePreset | 'thisMonth' | 'sinceCreated';
 
+/** The shared presets (doitac-3010 #031), plus this partner's own two. */
 const PRESETS: { value: Preset; label: string }[] = [
-  { value: 'today', label: 'Hôm nay' },
-  { value: 'yesterday', label: 'Hôm qua' },
-  { value: 'last7days', label: '7 ngày qua' },
-  { value: 'last30days', label: '30 ngày qua' },
+  ...DATE_PRESETS,
   { value: 'thisMonth', label: 'Tháng này' },
   { value: 'sinceCreated', label: 'Từ khi tạo' }
 ];
@@ -43,25 +42,13 @@ const iso = (d: Date) =>
  */
 function presetRange(preset: Preset, createdAt: string): { from: string; to: string } {
   const today = new Date();
-  const start = new Date(today);
-  switch (preset) {
-    case 'today':
-      break;
-    case 'yesterday':
-      start.setDate(today.getDate() - 1);
-      return { from: iso(start), to: iso(start) };
-    case 'last7days':
-      start.setDate(today.getDate() - 6);
-      break;
-    case 'thisMonth':
-      start.setDate(1);
-      break;
-    case 'sinceCreated':
-      return { from: iso(new Date(createdAt)), to: iso(today) };
-    default:
-      start.setDate(today.getDate() - 29);
+  if (preset === 'thisMonth') {
+    return { from: iso(new Date(today.getFullYear(), today.getMonth(), 1)), to: iso(today) };
   }
-  return { from: iso(start), to: iso(today) };
+  if (preset === 'sinceCreated') {
+    return { from: iso(new Date(createdAt)), to: iso(today) };
+  }
+  return resolveDatePreset(preset, today);
 }
 
 function Stat({
@@ -130,32 +117,23 @@ export function PartnerStatsSection({ partner }: { partner: Partner }) {
           ))}
         </TabsList>
       </Tabs>
-      <div className='flex flex-wrap items-center gap-2 text-sm'>
-        <span className='text-muted-foreground'>Từ</span>
-        <Input
-          type='date'
-          className='w-[160px]'
-          aria-label='Từ ngày'
-          value={preset ? range.from : custom.from}
-          max={iso(new Date())}
-          onChange={(e) => {
-            setPreset(null);
-            setCustom({ from: e.target.value, to: preset ? range.to : custom.to });
-          }}
-        />
-        <span className='text-muted-foreground'>Đến</span>
-        <Input
-          type='date'
-          className='w-[160px]'
-          aria-label='Đến ngày'
-          value={preset ? range.to : custom.to}
-          max={iso(new Date())}
-          onChange={(e) => {
-            setPreset(null);
-            setCustom({ from: preset ? range.from : custom.from, to: e.target.value });
-          }}
-        />
-      </div>
+      {/* The calendar by ngày / tuần / tháng / năm (doitac-3010 #031). */}
+      <DateRangeFilter
+        label='Chọn theo lịch'
+        placeholder='Chưa chọn'
+        from={preset ? undefined : custom.from || undefined}
+        to={preset ? undefined : custom.to || undefined}
+        onChange={(picked) => {
+          if (!picked.from) {
+            setPreset('last30days');
+            setCustom({ from: '', to: '' });
+            return;
+          }
+          setPreset(null);
+          setCustom({ from: picked.from, to: picked.to ?? picked.from });
+        }}
+        testId='partner-stats-date'
+      />
     </div>
   );
 

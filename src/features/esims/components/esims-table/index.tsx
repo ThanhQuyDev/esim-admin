@@ -17,7 +17,7 @@ import { bulkDeleteEsimsMutation } from '../../api/mutations';
 import { ImportEsimExcelDialog } from '../import-esim-excel-dialog';
 import { EsimFormDialog } from '../esim-form-dialog';
 import { buildEsimApiFilters } from '../../utils/esim-filters';
-import { Input } from '@/components/ui/input';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { columns } from './columns';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
@@ -115,42 +115,25 @@ export function EsimsTable() {
       />
       {/* Date ranges (#020). The column filters above cover the select-style
           conditions; a range needs two inputs, which the toolbar cannot express. */}
+      {/* The shared time filter (doitac-3010 #031). */}
       <div className='mb-4 flex flex-wrap items-center gap-2'>
-        <span className='text-muted-foreground text-sm'>Ngày tạo</span>
-        <Input
-          type='date'
-          aria-label='Ngày tạo từ'
-          className='w-40'
-          value={params.createdFrom ?? ''}
-          max={params.createdTo ?? undefined}
-          onChange={(e) => setParams({ createdFrom: e.target.value || null, page: 1 })}
+        <DateRangeFilter
+          label='Ngày tạo'
+          from={params.createdFrom ?? undefined}
+          to={params.createdTo ?? undefined}
+          onChange={(range) =>
+            setParams({ createdFrom: range.from ?? null, createdTo: range.to ?? null, page: 1 })
+          }
+          testId='esims-created'
         />
-        <span className='text-muted-foreground text-sm'>đến</span>
-        <Input
-          type='date'
-          aria-label='Ngày tạo đến'
-          className='w-40'
-          value={params.createdTo ?? ''}
-          min={params.createdFrom ?? undefined}
-          onChange={(e) => setParams({ createdTo: e.target.value || null, page: 1 })}
-        />
-        <span className='text-muted-foreground ml-4 text-sm'>Ngày hết hạn</span>
-        <Input
-          type='date'
-          aria-label='Ngày hết hạn từ'
-          className='w-40'
-          value={params.expiresFrom ?? ''}
-          max={params.expiresTo ?? undefined}
-          onChange={(e) => setParams({ expiresFrom: e.target.value || null, page: 1 })}
-        />
-        <span className='text-muted-foreground text-sm'>đến</span>
-        <Input
-          type='date'
-          aria-label='Ngày hết hạn đến'
-          className='w-40'
-          value={params.expiresTo ?? ''}
-          min={params.expiresFrom ?? undefined}
-          onChange={(e) => setParams({ expiresTo: e.target.value || null, page: 1 })}
+        <DateRangeFilter
+          label='Ngày hết hạn'
+          from={params.expiresFrom ?? undefined}
+          to={params.expiresTo ?? undefined}
+          onChange={(range) =>
+            setParams({ expiresFrom: range.from ?? null, expiresTo: range.to ?? null, page: 1 })
+          }
+          testId='esims-expires'
         />
       </div>
 

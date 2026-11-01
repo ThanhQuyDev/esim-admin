@@ -44,7 +44,7 @@ import { RejectPartnerModal } from './reject-partner-modal';
 
 const PARTNER_TYPE_LABEL: Record<string, string> = {
   distribution: 'Đối tác phân phối',
-  kol: 'Đối tác tiếp thị (KOL)',
+  kol: 'Đối tác tiếp thị (Affiliate)',
   api: 'Đối tác tích hợp API'
 };
 
@@ -69,7 +69,7 @@ const STATUS_FILTERS = [
 
 const TYPE_FILTERS = [
   { value: 'all', label: 'Tất cả loại đối tác' },
-  { value: 'kol', label: 'KOL' },
+  { value: 'kol', label: 'Affiliate' },
   { value: 'distribution', label: 'Đối tác phân phối' }
 ];
 

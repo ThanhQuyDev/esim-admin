@@ -10,7 +10,7 @@ export default function PartnerApprovalsPage() {
     <PageContainer
       scrollable
       pageTitle='Duyệt đăng ký đối tác'
-      pageDescription='Danh sách đăng ký đối tác/KOL đang chờ duyệt.'
+      pageDescription='Danh sách đăng ký đối tác/Affiliate đang chờ duyệt.'
     >
       <PartnerApprovalsView />
     </PageContainer>
