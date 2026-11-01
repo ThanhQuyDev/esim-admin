@@ -528,6 +528,8 @@ export type MyTierEvaluation = {
   /** The month reviewed, `YYYY-MM`; null on a change by hand (vande #053). */
   period?: string | null;
   revenueVnd: string | number;
+  /** What a distribution partner deposited over the month (doitac-3010 #030). */
+  depositVnd?: string | number;
   validOrders: number;
   tierBefore: string | null;
   tierAfter: string | null;

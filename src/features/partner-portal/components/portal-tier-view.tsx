@@ -40,6 +40,7 @@ import {
 } from '../api/queries';
 import { tierMonthHints, tierMonthLabel, tierThresholdLabel } from './tier-threshold';
 import { internalTierNote } from './internal-tier-note';
+import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
 
 const RESULT_LABEL: Record<string, string> = {
   promoted: 'Nâng hạng',
@@ -58,6 +59,10 @@ export function PortalTierView() {
   const { data: summary } = useQuery(mySummaryQueryOptions());
   const { data: tiers } = useQuery(myTiersQueryOptions());
   const { data: evaluations } = useQuery(myTierEvaluationsQueryOptions());
+  // Paged like the admin's tables, 10–100 rows (doitac-3010 #030).
+  const { pageRows: evaluationPage, pagination: evaluationPagination } = usePortalPagination(
+    evaluations ?? []
+  );
 
   const sorted = useMemo(
     () => [...(tiers ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
@@ -251,7 +256,12 @@ export function PortalTierView() {
             Lịch sử đánh giá hạng
             <Badge variant='outline'>{(evaluations ?? []).length} kỳ</Badge>
           </CardTitle>
-          <CardDescription>Hạng được cập nhật dựa trên dữ liệu đã xác nhận.</CardDescription>
+          <CardDescription>
+            Mỗi kỳ là một tháng: {isDistribution ? 'doanh số và tiền ký quỹ' : 'doanh số'} luỹ kế từ
+            ngày 1 đến hết 23:59:59 ngày cuối tháng. Đủ điều kiện thì tự động lên hạng từ 0:00 ngày
+            1 tháng sau, ưu đãi của hạng mới áp dụng ngay; kết quả của kỳ được ghi vào đây cùng lúc
+            đó.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className='overflow-x-auto rounded-lg border'>
@@ -263,13 +273,14 @@ export function PortalTierView() {
                   <TableHead>Hạng sau</TableHead>
                   <TableHead className='text-right'>Đơn hợp lệ</TableHead>
                   <TableHead className='text-right'>Doanh số</TableHead>
+                  {isDistribution && <TableHead className='text-right'>Ký quỹ trong kỳ</TableHead>}
                   <TableHead>Kết quả</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(evaluations ?? []).length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className='h-24 text-center'>
+                    <TableCell colSpan={isDistribution ? 7 : 6} className='h-24 text-center'>
                       <p className='text-muted-foreground text-sm'>Chưa có kỳ đánh giá nào.</p>
                       <p className='text-muted-foreground mt-1 text-xs'>
                         Hạng được xét ngày 1 hằng tháng theo doanh số của tháng trước.
@@ -277,15 +288,20 @@ export function PortalTierView() {
                     </TableCell>
                   </TableRow>
                 )}
-                {(evaluations ?? []).map((e) => (
+                {evaluationPage.map((e) => (
                   <TableRow key={e.id}>
                     <TableCell className='whitespace-nowrap'>
                       {e.period ? (
                         <>
                           <span className='capitalize'>{tierMonthLabel(e.period)}</span>
                           <span className='text-muted-foreground block text-xs'>
-                            Xét ngày {formatDateVn(e.evaluatedAt)}
+                            Chốt sổ 23:59:59 {formatDateVn(periodLastDay(e.period))}
                           </span>
+                          {(e.result === 'promoted' || e.result === 'demoted') && (
+                            <span className='text-muted-foreground block text-xs'>
+                              Áp dụng từ 0:00 {formatDateVn(periodNextStart(e.period))}
+                            </span>
+                          )}
                         </>
                       ) : (
                         formatDateVn(e.evaluatedAt)
@@ -299,6 +315,11 @@ export function PortalTierView() {
                     <TableCell className='text-right tabular-nums'>
                       {formatVnd(Number(e.revenueVnd))}
                     </TableCell>
+                    {isDistribution && (
+                      <TableCell className='text-right tabular-nums'>
+                        {formatVnd(Number(e.depositVnd ?? 0))}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Badge variant={e.result === 'promoted' ? 'default' : 'secondary'}>
                         {RESULT_LABEL[e.result] ?? 'Duy trì hạng'}
@@ -309,8 +330,27 @@ export function PortalTierView() {
               </TableBody>
             </Table>
           </div>
+          {(evaluations ?? []).length > 0 && (
+            <PortalListPagination
+              pagination={evaluationPagination}
+              unit='kỳ'
+              testId='tier-evaluation-pagination'
+            />
+          )}
         </CardContent>
       </Card>
     </div>
   );
+}
+
+/** The month's last day ("2026-10" → 31/10/2026), at noon so no clock shifts it. */
+function periodLastDay(period: string): string {
+  const [year, month] = period.split('-').map(Number);
+  return new Date(Date.UTC(year!, month!, 0, 12)).toISOString();
+}
+
+/** The 1st of the month after ("2026-10" → 01/11/2026). */
+function periodNextStart(period: string): string {
+  const [year, month] = period.split('-').map(Number);
+  return new Date(Date.UTC(year!, month!, 1, 12)).toISOString();
 }
