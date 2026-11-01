@@ -22,6 +22,8 @@ export type TopupPackage = {
   /** "addon": data on top of the current plan (Billion, vande #081). */
   kind?: 'topup' | 'addon';
   addonKind?: 'boost' | 'upgrade' | 'extra';
+  /** "1 GB/ngày" (eSIM Access): can be bought for several days (doitac-3010 #050). */
+  isDayPass?: boolean;
 };
 
 export type TopupPackagesResponse = {
@@ -36,6 +38,8 @@ export type AdminManualTopupPayload = {
   packageId: string;
   provider: string;
   note?: string;
+  /** Days for a day-pass package (doitac-3010 #050). */
+  periodNum?: number;
 };
 
 export type AdminManualTopupResponse = {

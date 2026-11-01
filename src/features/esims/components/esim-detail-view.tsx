@@ -174,6 +174,14 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   });
 
   const plan = esim.plan;
+  const refunded =
+    esim.status === 'refunded' ||
+    (esim as { lifecycleStatus?: string }).lifecycleStatus === 'refunded';
+  const topupBlockedReason = refunded
+    ? 'eSIM đã hoàn tiền, không topup được'
+    : plan && !plan.topUp
+      ? 'Gói của eSIM này không hỗ trợ topup'
+      : null;
   // What the supplier said, else the plan's refund rule: refundable eSIMs
   // roam, local ones do not (doitac-1410 #080).
   const isRoaming = esim.isRoaming ?? plan?.isRefundable ?? false;
@@ -199,10 +207,19 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
         </CardHeader>
         <CardContent className='flex flex-wrap items-center gap-3'>
           {esim.iccid && (
-            <Button variant='outline' onClick={() => setTopupOpen(true)}>
-              <Icons.wallet className='mr-2 h-4 w-4' />
-              Topup hộ khách
-            </Button>
+            // Greyed out where it cannot work (doitac-3010 #050): a plan with no
+            // top-up, or an eSIM already refunded.
+            <span title={topupBlockedReason ?? undefined}>
+              <Button
+                variant='outline'
+                onClick={() => setTopupOpen(true)}
+                disabled={!!topupBlockedReason}
+                data-testid='esim-topup'
+              >
+                <Icons.wallet className='mr-2 h-4 w-4' />
+                Topup hộ khách
+              </Button>
+            </span>
           )}
           <EsimFormDialog
             esim={esim}

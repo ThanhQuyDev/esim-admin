@@ -125,6 +125,11 @@ function PackageCard({
 export function AdminTopupDialog({ iccid, open, onOpenChange }: AdminTopupDialogProps) {
   const [selected, setSelected] = useState<TopupPackage | null>(null);
   const [note, setNote] = useState('');
+  // Days for a day pass (doitac-3010 #050): "1 GB/ngày" bought for N days.
+  const [days, setDays] = useState(1);
+  const dayPass = Boolean(selected?.isDayPass);
+  const setDaysClamped = (value: number) =>
+    setDays(Math.min(365, Math.max(1, Math.trunc(Number(value) || 1))));
 
   const { data, isLoading, error } = useQuery(topupPackagesQueryOptions(iccid, open));
 
@@ -192,9 +197,57 @@ export function AdminTopupDialog({ iccid, open, onOpenChange }: AdminTopupDialog
                 key={pkg.packageId}
                 pkg={pkg}
                 active={selected?.packageId === pkg.packageId}
-                onSelect={() => setSelected(pkg)}
+                onSelect={() => {
+                  setSelected(pkg);
+                  setDays(1);
+                }}
               />
             ))}
+          </div>
+        )}
+
+        {dayPass && selected && (
+          <div className='space-y-2 rounded-lg border p-3' data-testid='admin-topup-days'>
+            <Label htmlFor='admin-topup-days'>Số ngày dùng</Label>
+            <div className='flex items-center gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                aria-label='Giảm 1 ngày'
+                disabled={days <= 1}
+                onClick={() => setDaysClamped(days - 1)}
+              >
+                <Icons.minus className='h-4 w-4' />
+              </Button>
+              <Input
+                id='admin-topup-days'
+                type='number'
+                min={1}
+                max={365}
+                className='w-24 text-center'
+                value={days}
+                onChange={(e) => setDaysClamped(Number(e.target.value))}
+              />
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                aria-label='Tăng 1 ngày'
+                disabled={days >= 365}
+                onClick={() => setDaysClamped(days + 1)}
+              >
+                <Icons.add className='h-4 w-4' />
+              </Button>
+              <span className='text-muted-foreground text-sm'>ngày (1–365)</span>
+            </div>
+            <p className='text-muted-foreground text-xs'>
+              Gói tính theo ngày: {selected.dataAmountText ?? selected.name}/ngày × {days} ngày
+              {selected.vndPrice
+                ? ` · khoảng ${formatVnd(selected.vndPrice * days)} (giá chốt do hệ thống tính lại theo tổng giá vốn)`
+                : ''}
+              .
+            </p>
           </div>
         )}
 
@@ -224,7 +277,8 @@ export function AdminTopupDialog({ iccid, open, onOpenChange }: AdminTopupDialog
                 iccid,
                 packageId: selected.packageId,
                 provider: data!.provider,
-                note: note.trim() || undefined
+                note: note.trim() || undefined,
+                ...(dayPass && days > 1 && { periodNum: days })
               })
             }
           >
