@@ -4,10 +4,13 @@
  */
 export type NamedLocation = { name: string; title?: string | null; titleVi?: string | null };
 
-/** "Trung Quốc (China)" — the Vietnamese name, with the stored name beside it. */
+/**
+ * The name column of the destination / region page, as typed there. It is kept
+ * in both languages by hand now, so adding the Vietnamese title again read "Châu
+ * Á (Châu Á (Asia))" (vande-0411 #043). The titles stay searchable.
+ */
 export function locationLabel(location: NamedLocation): string {
-  const vi = location.titleVi?.trim();
-  return vi && vi !== location.name ? `${vi} (${location.name})` : location.name;
+  return location.name;
 }
 
 /** Vietnamese without its marks too, so "trung quoc" finds "Trung Quốc". */
