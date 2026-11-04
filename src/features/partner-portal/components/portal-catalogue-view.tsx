@@ -209,6 +209,7 @@ export function PortalCatalogueView() {
   const deferredFilters = useDeferredValue(filters);
   const [selected, setSelected] = useState<CataloguePlan | null>(null);
   const [quantity, setQuantity] = useState('1');
+  const [daysText, setDaysText] = useState('1');
   const { hidden: hiddenColumns, toggle: toggleColumn } = useHiddenColumns(HIDDEN_COLUMNS_KEY);
   const visibleColumns = CATALOGUE_COLUMNS.filter((c) => !hiddenColumns.includes(c.key));
   // "Xem chi tiết" and "Thêm giỏ hàng" (doitac-1410 #034).
@@ -246,8 +247,14 @@ export function PortalCatalogueView() {
     return Number.isInteger(value) && value > 0 ? value : 0;
   }, [quantity]);
 
+  // A day pass is bought for the days the customer needs: it could only be
+  // bought for 1 day here (vande-0411 #002).
+  const multiday = !!selected?.isAbleMultidate;
+  const days = multiday ? Number(daysText) : 1;
+  const daysValid = !multiday || (Number.isInteger(days) && days >= 1 && days <= 365);
+
   const { data: quote, isFetching: quoting } = useQuery(
-    purchaseQuoteQueryOptions(selected?.id ?? 0, parsedQuantity)
+    purchaseQuoteQueryOptions(selected?.id ?? 0, daysValid ? parsedQuantity : 0, days)
   );
 
   const purchase = useMutation({
@@ -264,6 +271,7 @@ export function PortalCatalogueView() {
       );
       setSelected(null);
       setQuantity('1');
+      setDaysText('1');
       setRecipientEmail('');
     },
     onError: (error: Error) => toast.error(error.message)
@@ -273,6 +281,7 @@ export function PortalCatalogueView() {
     if (!open) {
       setSelected(null);
       setQuantity('1');
+      setDaysText('1');
     }
   };
 
@@ -411,6 +420,25 @@ export function PortalCatalogueView() {
           </DialogHeader>
 
           <div className='space-y-4'>
+            {multiday && (
+              <div className='space-y-2'>
+                <Label htmlFor='purchase-days'>Số ngày dùng (1–365)</Label>
+                <Input
+                  id='purchase-days'
+                  type='number'
+                  min={1}
+                  max={365}
+                  step={1}
+                  value={daysText}
+                  onChange={(e) => setDaysText(e.target.value)}
+                  data-testid='purchase-days'
+                />
+                {!daysValid && (
+                  <p className='text-destructive text-xs'>Số ngày phải từ 1 đến 365.</p>
+                )}
+              </div>
+            )}
+
             <div className='space-y-2'>
               <Label htmlFor='purchase-quantity'>Số lượng</Label>
               <Input
@@ -485,6 +513,7 @@ export function PortalCatalogueView() {
               disabled={
                 !selected ||
                 parsedQuantity < 1 ||
+                !daysValid ||
                 !emailValid ||
                 quoting ||
                 Boolean(quote?.rejection) ||
@@ -495,6 +524,7 @@ export function PortalCatalogueView() {
                 purchase.mutate({
                   planId: selected.id,
                   quantity: parsedQuantity,
+                  ...(days > 1 ? { periodNum: days } : {}),
                   ...(recipientEmail.trim() ? { recipientEmail: recipientEmail.trim() } : {})
                 })
               }

@@ -227,10 +227,10 @@ export const catalogueLocationsQueryOptions = () =>
  * `enabled` để màn hình tắt hẳn khi chưa chọn gói hay số lượng — gọi với
  * `quantity = 0` chỉ tốn một vòng để nhận lại lỗi "từ 1 trở lên".
  */
-export const purchaseQuoteQueryOptions = (planId: number, quantity: number) =>
+export const purchaseQuoteQueryOptions = (planId: number, quantity: number, periodNum?: number) =>
   queryOptions({
-    queryKey: [...partnerPortalKeys.all, 'purchase-quote', planId, quantity],
-    queryFn: () => getPurchaseQuote(planId, quantity),
+    queryKey: [...partnerPortalKeys.all, 'purchase-quote', planId, quantity, periodNum ?? 1],
+    queryFn: () => getPurchaseQuote(planId, quantity, periodNum),
     enabled: planId > 0 && quantity > 0,
     // Số dư ví đổi theo từng lần mua, nên báo giá cũ không được dùng lại.
     staleTime: 0

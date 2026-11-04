@@ -393,9 +393,15 @@ export async function getCatalogueLocations(): Promise<CatalogueLocationOption[]
 export type CatalogueLocationOption = { value: string; label: string; keywords?: string[] };
 
 /** Số tiền sẽ bị trừ, tính trước khi bấm mua (#046). */
-export async function getPurchaseQuote(planId: number, quantity: number): Promise<PurchaseQuote> {
+export async function getPurchaseQuote(
+  planId: number,
+  quantity: number,
+  periodNum?: number
+): Promise<PurchaseQuote> {
   return apiClient<PurchaseQuote>(
-    `/partner-portal/purchases/quote?planId=${planId}&quantity=${quantity}`
+    `/partner-portal/purchases/quote?planId=${planId}&quantity=${quantity}${
+      periodNum && periodNum > 1 ? `&periodNum=${periodNum}` : ''
+    }`
   );
 }
 

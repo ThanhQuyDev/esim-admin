@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Icons } from '@/components/icons';
 import { formatDataSize, formatVnd } from '@/lib/format';
 
+import { quoteCart } from '../api/service';
 import type { CataloguePlan } from '../api/types';
 import { addToCart } from '../lib/partner-cart';
 import { PriceVndUsd } from './price-vnd-usd';
@@ -244,15 +246,23 @@ export function AddToCartDialog({
 }) {
   const [quantity, setQuantity] = useState('1');
   const [daysText, setDaysText] = useState('1');
-  if (!plan) return null;
   const qty = Number(quantity);
   // A day pass is bought for the days the customer needs (vande #014).
-  const multiday = !!plan.isAbleMultidate;
+  const multiday = !!plan?.isAbleMultidate;
   const days = multiday ? Number(daysText) : 1;
   const daysValid = !multiday || (Number.isInteger(days) && days >= 1 && days <= 365);
   const valid = Number.isInteger(qty) && qty > 0 && daysValid;
-  // An estimate; the cart is priced again by the server before paying.
-  const unitVnd = Math.round((plan.unitPriceVnd * (multiday ? days : 1)) / 1000) * 1000;
+  // Several days are priced by the server on their whole cost: the 1-day agent
+  // price × days is not what the partner pays (vande-0411 #002).
+  const needsQuote = !!plan && multiday && daysValid && days > 1;
+  const { data: dayQuote, isFetching: quoting } = useQuery({
+    queryKey: ['partner-portal', 'day-pass-quote', plan?.id, days],
+    queryFn: () => quoteCart([{ planId: plan!.id, quantity: 1, periodNum: days }]),
+    enabled: needsQuote
+  });
+  if (!plan) return null;
+  const unitVnd = needsQuote ? (dayQuote?.lines[0]?.unitPriceVnd ?? 0) : plan.unitPriceVnd;
+  const priced = !needsQuote || unitVnd > 0;
 
   return (
     <Dialog
@@ -297,13 +307,9 @@ export function AddToCartDialog({
             onChange={(e) => setQuantity(e.target.value)}
           />
           <p className='text-muted-foreground text-xs'>
-            Giá đại lý {formatVnd(multiday && valid ? unitVnd : plan.unitPriceVnd)} / eSIM
-            {multiday && valid && days > 1
-              ? ` (${days} ngày, ước tính — giỏ hàng tính lại chính xác)`
-              : multiday
-                ? ' / ngày'
-                : ''}
-            {valid && (
+            Giá đại lý {needsQuote && !priced ? '…' : formatVnd(unitVnd)} / eSIM
+            {needsQuote ? ` (${days} ngày)` : multiday ? ' / ngày' : ''}
+            {valid && priced && (
               <>
                 {' '}
                 · Thành tiền <Badge variant='outline'>{formatVnd(unitVnd * qty)}</Badge>
@@ -316,7 +322,7 @@ export function AddToCartDialog({
             Huỷ
           </Button>
           <Button
-            disabled={!valid}
+            disabled={!valid || !priced || quoting}
             onClick={() => {
               addToCart({
                 planId: plan.id,

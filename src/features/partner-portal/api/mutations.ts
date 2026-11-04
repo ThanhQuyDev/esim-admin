@@ -1,6 +1,7 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import {
+  purchaseCart,
   updateMyPartnerProfile,
   createMyDepositRequest,
   createMyManualDepositRequest,
@@ -123,7 +124,16 @@ export const markAllNotificationsReadMutation = mutationOptions({
  * và bảng giá (số dư quyết định gói nào còn mua được).
  */
 export const createPurchaseMutation = mutationOptions({
-  mutationFn: (data: CreatePurchasePayload) => createPurchase(data),
+  // Only the cart order carries the days of a day pass (vande-0411 #002).
+  mutationFn: (
+    data: CreatePurchasePayload & { periodNum?: number }
+  ): Promise<{ orderNumber: string; quantity: number; pendingEsims: number }> =>
+    data.periodNum && data.periodNum > 1
+      ? purchaseCart({
+          items: [{ planId: data.planId, quantity: data.quantity, periodNum: data.periodNum }],
+          ...(data.recipientEmail ? { recipientEmail: data.recipientEmail } : {})
+        })
+      : createPurchase(data),
   onSettled: invalidateAll
 });
 
