@@ -347,6 +347,7 @@ export type RefundOrderRequest = {
   esimIds?: number[];
   /** Also ask Airalo to refund its eSIMs, for this reason (doitac-1410 #079). */
   airaloRefundReason?: string;
+  airaloRefundNotes?: string;
 };
 
 export type OrderRefundResponse = {

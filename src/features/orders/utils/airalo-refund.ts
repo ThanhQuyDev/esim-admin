@@ -26,7 +26,7 @@ export const AIRALO_REFUND_REASONS = [
   ['IMSI_CHANGE', 'Đổi IMSI'],
   ['OVERCHARGED', 'Bị tính tiền quá'],
   ['UNKNOWN_CHARGES', 'Phí không rõ'],
-  ['OTHERS', 'Lý do khác (gửi kèm lý do hoàn tiền)']
+  ['OTHERS', 'Lý do khác (tự nhập)']
 ] as const;
 
 export type AiraloRefundReason = (typeof AIRALO_REFUND_REASONS)[number][0];

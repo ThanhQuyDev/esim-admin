@@ -69,6 +69,16 @@ export type EsimDestination = {
   avatarUrl: string | null;
 };
 
+/** A refund request sent to the supplier (vande-0411 #009). */
+export type EsimSupplierRefund = {
+  supplier: string;
+  requestId: string;
+  status: string;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type EsimPlan = {
   id: number;
   provider: string;
@@ -151,6 +161,7 @@ export type EsimDetail = Esim & {
   plan: EsimPlan | null;
   /** Newest first. Only the detail endpoint returns this (#026). */
   topups?: EsimTopup[];
+  supplierRefunds?: EsimSupplierRefund[];
   /** Days the customer picked for a day pass; null for fixed plans (vande #006). */
   chosenDays?: number | null;
 };

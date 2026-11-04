@@ -158,6 +158,8 @@ export function RefundOrderModal({
   const [airaloReason, setAiraloReason] = useState<AiraloRefundReason>(
     DEFAULT_AIRALO_REFUND_REASON
   );
+  // Written for Airalo when the reason is OTHERS (vande-0411 #009).
+  const [airaloNotes, setAiraloNotes] = useState('');
   // "Có chắc muốn hoàn eSIM đã cài vào máy?" (vande-0411 #008).
   const [installedConfirmed, setInstalledConfirmed] = useState(false);
 
@@ -172,6 +174,7 @@ export function RefundOrderModal({
     setPickedItemIds([]);
     setAskAiralo(true);
     setAiraloReason(DEFAULT_AIRALO_REFUND_REASON);
+    setAiraloNotes('');
     setInstalledConfirmed(false);
   }, [open]);
 
@@ -261,6 +264,11 @@ export function RefundOrderModal({
   const installedEsims = refundedEsims.filter((e) => e.installedAt);
   const topupEsims = refundedEsims.filter((e) => (e.paidTopups?.length ?? 0) > 0);
   const installedOk = installedEsims.length === 0 || installedConfirmed;
+  const airaloNotesOk =
+    !airaloIccids.length ||
+    !askAiralo ||
+    airaloReason !== 'OTHERS' ||
+    airaloNotes.trim().length > 0;
 
   const cap = isPartial ? Math.min(selectedValue, maxRefundable) : maxRefundable;
 
@@ -327,7 +335,11 @@ export function RefundOrderModal({
       adminNote: adminNote.trim() || undefined,
       orderItemIds: selection.orderItemIds.length ? selection.orderItemIds : undefined,
       esimIds: selection.esimIds.length ? selection.esimIds : undefined,
-      airaloRefundReason: airaloIccids.length && askAiralo ? airaloReason : undefined
+      airaloRefundReason: airaloIccids.length && askAiralo ? airaloReason : undefined,
+      airaloRefundNotes:
+        airaloIccids.length && askAiralo && airaloReason === 'OTHERS'
+          ? airaloNotes.trim()
+          : undefined
     });
   }
 
@@ -579,10 +591,10 @@ export function RefundOrderModal({
 
           {/* Reason */}
           <div className='space-y-2'>
-            <Label htmlFor='refund-reason'>Lý do hoàn tiền</Label>
+            <Label htmlFor='refund-reason'>Lý do hiển thị cho khách hàng</Label>
             <Textarea
               id='refund-reason'
-              placeholder='Nhập lý do hoàn tiền'
+              placeholder='Khách hàng đọc được nội dung này trong trang người dùng'
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
@@ -623,6 +635,18 @@ export function RefundOrderModal({
                       ))}
                     </SelectContent>
                   </Select>
+                  {airaloReason === 'OTHERS' && (
+                    <Textarea
+                      id='airalo-refund-notes'
+                      aria-label='Nội dung lý do gửi Airalo'
+                      placeholder='Nhập lý do gửi Airalo (bắt buộc, khách hàng không thấy nội dung này)'
+                      value={airaloNotes}
+                      maxLength={200}
+                      onChange={(e) => setAiraloNotes(e.target.value)}
+                      rows={2}
+                      data-testid='airalo-refund-notes'
+                    />
+                  )}
                   <p className='text-muted-foreground text-xs'>
                     Airalo duyệt thủ công từng yêu cầu; nếu được duyệt, tiền hoàn về dưới dạng
                     credit Airalo. Mã yêu cầu được lưu vào ghi chú đơn hàng.
@@ -702,7 +726,7 @@ export function RefundOrderModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isValidAmount || !installedOk || isSubmitting}
+            disabled={!isValidAmount || !installedOk || !airaloNotesOk || isSubmitting}
             isLoading={isSubmitting}
           >
             Xác nhận hoàn {isValidAmount ? formatVnd(amountVnd) : ''}

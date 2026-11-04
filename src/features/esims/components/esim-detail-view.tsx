@@ -159,6 +159,15 @@ function UsageBar({
   );
 }
 
+const SUPPLIER_REFUND_STATUS: Record<string, string> = {
+  pending: 'Đang chờ nhà cung cấp',
+  approved: 'Đã duyệt, chờ hoàn tiền',
+  rejected: 'Bị từ chối',
+  withdrawn: 'Đã rút lại',
+  refunded: 'Đã hoàn tiền',
+  refund_failed: 'Hoàn tiền thất bại'
+};
+
 export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   const { data: esim } = useSuspenseQuery(esimQueryOptions(esimId));
   const router = useRouter();
@@ -407,6 +416,35 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                   </span>
                   <span>Ngày: {formatDate(topup.createdAt)}</span>
                 </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* What the supplier did with a refund request (vande-0411 #009). */}
+      {esim.supplierRefunds && esim.supplierRefunds.length > 0 && (
+        <Card className='md:col-span-2' data-testid='esim-supplier-refunds'>
+          <CardHeader>
+            <CardTitle>Yêu cầu hoàn tiền gửi nhà cung cấp</CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-2 text-sm'>
+            {esim.supplierRefunds.map((refund) => (
+              <div
+                key={`${refund.supplier}-${refund.requestId}`}
+                className='flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md border p-3'
+              >
+                <span className='font-medium'>
+                  {refund.supplier} #{refund.requestId}
+                </span>
+                <Badge variant='outline'>
+                  {SUPPLIER_REFUND_STATUS[refund.status] ?? refund.status}
+                </Badge>
+                {refund.note && <span className='text-muted-foreground'>{refund.note}</span>}
+                <span className='text-muted-foreground'>Gửi: {formatDate(refund.createdAt)}</span>
+                <span className='text-muted-foreground'>
+                  Cập nhật: {formatDate(refund.updatedAt)}
+                </span>
               </div>
             ))}
           </CardContent>
