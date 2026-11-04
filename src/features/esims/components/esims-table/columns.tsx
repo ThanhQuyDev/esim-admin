@@ -1,5 +1,6 @@
 'use client';
 
+import { purchaseKindLabel, purchaseKindOf } from '@/lib/plan-purchase-kind';
 import Link from 'next/link';
 import { formatDateVn } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
@@ -213,10 +214,11 @@ export const columns: ColumnDef<Esim>[] = [
     // from "Đã Topup" below, which is a fact about this eSIM (#025).
     id: 'topUp',
     accessorFn: (row) => (row.plan?.topUp ? 'true' : 'false'),
-    header: 'Hỗ trợ Topup',
+    header: 'Mua thêm',
+    // Topup / Addon / Không (vande-0411 #015).
     cell: ({ row }) => (
-      <Badge variant={row.original.plan?.topUp ? 'default' : 'secondary'}>
-        {row.original.plan?.topUp ? 'Có' : 'Không'}
+      <Badge variant={purchaseKindOf(row.original.plan) === 'none' ? 'secondary' : 'default'}>
+        {purchaseKindLabel(row.original.plan)}
       </Badge>
     ),
     enableSorting: false,

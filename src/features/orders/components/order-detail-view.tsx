@@ -1,5 +1,6 @@
 'use client';
 
+import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { AttributionTraceCard } from './attribution-trace';
 import { esimQrLogoSettings } from '@/features/esims/lib/esim-qr';
 import { esimStatusLabel, esimStatusVariant } from '@/features/esims/lib/esim-status';
@@ -252,8 +253,8 @@ function EsimDetailCard({ esim, plan }: { esim: OrderItemEsim; plan?: OrderItemP
           />
           <InfoRow label='Số điện thoại' value={esim.phoneNumber || '—'} />
           <InfoRow
-            label='Hỗ trợ Topup'
-            value={<span data-testid='esim-topup'>{yesNo(plan?.topUp)}</span>}
+            label='Mua thêm'
+            value={<span data-testid='esim-topup'>{purchaseKindLabel(plan)}</span>}
           />
           <InfoRow
             label='Hỗ trợ hoàn tiền'

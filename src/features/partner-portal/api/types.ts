@@ -1,3 +1,5 @@
+import type { PlanPurchaseKind } from '@/lib/plan-purchase-kind';
+
 export type PartnerType = 'distribution' | 'kol';
 export type PartnerLegalType = 'individual' | 'company';
 export type PartnerStatus = 'pending' | 'active' | 'hold' | 'disabled' | 'rejected';
@@ -637,6 +639,7 @@ export type MyEsim = {
   esimCreatedAt?: string | null;
   /** doitac-1410 #037 */
   planType?: string | null;
+  purchaseKind?: PlanPurchaseKind;
   topUp?: boolean;
   /** doitac-1410 #038 */
   durationDays?: number | null;
@@ -724,6 +727,7 @@ export type MyPurchaseDetail = {
     /** doitac-3010 #005 — "Mã gói cước", KYC, topup, speed after the data. */
     planCode?: string | null;
     kycRequired?: boolean;
+    purchaseKind?: PlanPurchaseKind;
     topUp?: boolean;
     throttleSpeed?: string | null;
     refundable: boolean;
@@ -765,6 +769,7 @@ export type CataloguePlan = {
   dataMb: number;
   /** fixed / daily / unlimited / unlimited-reduce (doitac-1410 #033). */
   type?: string | null;
+  purchaseKind?: PlanPurchaseKind;
   topUp?: boolean;
   hasCallSms?: boolean;
   tiktokAi?: boolean;
@@ -961,6 +966,7 @@ export type MyEsimDetail = {
     sms: number | null;
     operatorName: string | null;
     speed: string | null;
+    purchaseKind?: PlanPurchaseKind;
     topUp: boolean;
     /** Billion: ask this eSIM's recharge products (doitac-1410 #064). */
     topUpPerEsim?: boolean;

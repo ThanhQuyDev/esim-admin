@@ -11,6 +11,7 @@
  * many eSIMs).
  */
 
+import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -381,7 +382,7 @@ export function PortalPurchaseDetailView({
                 value={PLAN_TYPE_LABEL[product.type ?? ''] ?? product.type ?? '—'}
               />
               <InfoRow label='Yêu cầu KYC' value={product.kycRequired ? 'Có' : 'Không'} />
-              <InfoRow label='Hỗ trợ Topup' value={product.topUp ? 'Có' : 'Không'} />
+              <InfoRow label='Mua thêm' value={purchaseKindLabel(product)} />
               <InfoRow label='Tốc độ sau khi hết data' value={product.throttleSpeed || '—'} />
               <InfoRow
                 label='Mã gói cước'

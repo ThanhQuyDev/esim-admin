@@ -10,6 +10,7 @@
  * No supplier name or supplier cost.
  */
 
+import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { useState } from 'react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
@@ -272,7 +273,7 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
                 )
               }
             />
-            <InfoRow label='Hỗ trợ Topup' value={yesNo(plan.topUp)} />
+            <InfoRow label='Mua thêm' value={purchaseKindLabel(plan)} />
             <InfoRow
               label='Tiktok & AI'
               value={esim.tiktokAi == null ? 'Không rõ' : yesNo(esim.tiktokAi)}

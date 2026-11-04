@@ -1,5 +1,6 @@
 'use client';
 
+import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
@@ -91,11 +92,9 @@ function isDailyPlan(plan: EsimPlan | null): boolean {
   return isDailyPlanType(plan?.type);
 }
 
-/** "Không" / "Có" / "Add-on" — Billion add-ons apart from top-ups (vande #019). */
+/** Topup / Addon / Không (vande-0411 #015). */
 function topUpLabel(plan: EsimPlan | null): string {
-  if (!plan) return '—';
-  if (plan.isAddOn) return 'Add-on';
-  return plan.topUp ? 'Có' : 'Không';
+  return plan ? purchaseKindLabel(plan) : '—';
 }
 
 /** The storefront's verdict on TikTok / AI apps (#045). */
@@ -306,7 +305,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                 value={data ? `${usedData(data.used)} / ${formatDataSize(data.total)}` : '—'}
               />
               <InfoRow label='Phút gọi / SMS' value={callSmsSummary(plan) ?? 'Không (chỉ data)'} />
-              <InfoRow label='Hỗ trợ Topup' value={topUpLabel(plan)} />
+              <InfoRow label='Mua thêm' value={topUpLabel(plan)} />
               <InfoRow label='Hỗ trợ hoàn tiền' value={<YesNo value={plan?.isRefundable} />} />
               <InfoRow
                 label='Giá vốn VNĐ'

@@ -1,3 +1,5 @@
+import type { PlanPurchaseKind } from '@/lib/plan-purchase-kind';
+
 export type Esim = {
   id: number;
   orderItemId: number;
@@ -113,6 +115,8 @@ export type EsimPlan = {
   speed: string;
   operatorName: string;
   isActive: boolean;
+  /** Topup / Addon / Không (vande-0411 #015). */
+  purchaseKind?: PlanPurchaseKind;
   /** Fields the eSIM detail page shows (vande #022). */
   standardName?: string | null;
   isAddOn?: boolean;

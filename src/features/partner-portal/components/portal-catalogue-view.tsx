@@ -12,6 +12,7 @@
  * lượng (đủ tiền là mua được), giao hàng bằng một file Excel tải về.
  */
 
+import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -142,9 +143,9 @@ const CATALOGUE_COLUMNS: CatalogueColumn[] = [
   },
   {
     key: 'topUp',
-    label: 'Topup',
+    label: 'Mua thêm',
     cellClassName: 'text-xs',
-    cell: (plan) => yesNo(plan.topUp)
+    cell: (plan) => purchaseKindLabel(plan)
   },
   {
     key: 'tiktokAi',

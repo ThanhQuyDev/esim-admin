@@ -1,3 +1,5 @@
+import type { PlanPurchaseKind } from '@/lib/plan-purchase-kind';
+
 import type { Destination } from '@/features/destinations/api/types';
 import type { Region } from '@/features/regions/api/types';
 import type { DailyResetPolicy } from '../schemas/plan';
@@ -43,6 +45,8 @@ export type Plan = {
    * the rule. Refundable eSIMs are the roaming ones.
    */
   isRefundable?: boolean;
+  /** Topup / Addon / Không (vande-0411 #015). */
+  purchaseKind?: PlanPurchaseKind;
   /** Refund support set by hand; null = by the rule (#080). */
   refundableOverride?: boolean | null;
   /** What the rule alone says (#080). */

@@ -130,6 +130,8 @@ export type PlanLocationInfo = {
 };
 
 export type OrderItemPlan = {
+  /** Topup / Addon / Không (vande-0411 #015). */
+  purchaseKind?: 'topup' | 'addon' | 'none';
   id: number;
   name: string;
   slug: string;

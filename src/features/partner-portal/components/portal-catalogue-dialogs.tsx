@@ -4,6 +4,7 @@
  * "Xem chi tiết" and "Thêm giỏ hàng" of the price list (doitac-1410 #034).
  */
 
+import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -199,7 +200,7 @@ export function PlanDetailDialog({
       'Gọi / SMS',
       plan.hasCallSms ? `Có · Gọi: ${plan.call ?? 0} phút · SMS: ${plan.sms ?? 0}` : 'Không'
     ],
-    ['Topup (nạp thêm)', yesNo(plan.topUp)],
+    ['Mua thêm', purchaseKindLabel(plan)],
     ['Tiktok & AI', tiktokAiLabel(plan)],
     // doitac-3010 #026
     ['eKYC', yesNo(plan.isKyc)],

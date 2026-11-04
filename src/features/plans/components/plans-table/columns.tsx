@@ -1,5 +1,6 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import { PURCHASE_KIND_LABEL, purchaseKindOf } from '@/lib/plan-purchase-kind';
 import * as React from 'react';
 import { PROVIDER_OPTIONS } from '@/lib/catalog-filters';
 import { formatUsd, planUsd } from '@/lib/plan-price';
@@ -426,28 +427,31 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       }
     },
     {
-      // Không / Có / Add-on (vande #019): Billion sells data add-ons apart from
-      // top-ups that extend the plan.
+      // Topup / Addon / Không (vande-0411 #015): Billion sells data add-ons
+      // apart from top-ups that extend the plan.
       id: 'topUp',
-      accessorFn: (row) => (row.isAddOn ? 'addon' : row.topUp ? 'topup' : 'none'),
-      header: 'Top-Up',
-      cell: ({ row }) => (
-        <Badge
-          variant={row.original.isAddOn ? 'outline' : row.original.topUp ? 'default' : 'secondary'}
-          data-testid='plan-topup'
-        >
-          {row.original.isAddOn ? 'Add-on' : row.original.topUp ? 'Có' : 'Không'}
-        </Badge>
-      ),
+      accessorFn: (row) => purchaseKindOf(row),
+      header: 'Mua thêm',
+      cell: ({ row }) => {
+        const kind = purchaseKindOf(row.original);
+        return (
+          <Badge
+            variant={kind === 'addon' ? 'outline' : kind === 'topup' ? 'default' : 'secondary'}
+            data-testid='plan-topup'
+          >
+            {PURCHASE_KIND_LABEL[kind]}
+          </Badge>
+        );
+      },
       enableSorting: false,
       enableColumnFilter: true,
       meta: {
-        label: 'Topup',
+        label: 'Mua thêm',
         variant: 'multiSelect' as const,
         options: [
-          { value: 'none', label: 'Không' },
-          { value: 'topup', label: 'Có' },
-          { value: 'addon', label: 'Add-on' }
+          { value: 'topup', label: 'Topup' },
+          { value: 'addon', label: 'Addon' },
+          { value: 'none', label: 'Không' }
         ]
       }
     },

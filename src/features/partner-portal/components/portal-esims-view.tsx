@@ -14,6 +14,7 @@
  * the list on its own — paged, its header pinned.
  */
 
+import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -204,9 +205,9 @@ const ESIM_COLUMNS: EsimColumn[] = [
   },
   {
     key: 'topUp',
-    label: 'Topup',
+    label: 'Mua thêm',
     cellClassName: 'text-xs',
-    cell: (esim) => yesNo(esim.topUp)
+    cell: (esim) => purchaseKindLabel(esim)
   },
   {
     key: 'refundable',
