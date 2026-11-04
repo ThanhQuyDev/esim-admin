@@ -472,6 +472,16 @@ export async function resendPurchaseEmail(orderNumber: string): Promise<{ sent: 
   );
 }
 
+/** "Gọi lại API lấy eSIM" for what has not come (vande-0411 #011). */
+export async function retryPurchase(
+  orderNumber: string
+): Promise<{ retried: number; message: string }> {
+  return apiClient(
+    `/partner-portal/purchases/${encodeURIComponent(orderNumber)}/retry-provisioning`,
+    { method: 'POST' }
+  );
+}
+
 /** "Báo lỗi" / "Yêu cầu hoàn tiền" for a whole order — a support ticket (#042). */
 export async function requestForPurchase(
   orderNumber: string,

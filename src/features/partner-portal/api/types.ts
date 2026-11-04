@@ -678,6 +678,8 @@ export type MyPurchase = {
 
 /** "Chi tiết đơn hàng" of a distribution partner (doitac-1410 #042). */
 export type MyPurchaseDetail = {
+  /** The admin's buttons work by id (vande-0411 #011). */
+  orderId?: number;
   orderNumber: string;
   status: string | null;
   orderType: string | null;
@@ -703,6 +705,10 @@ export type MyPurchaseDetail = {
     /** The order line, and one eSIM at the agent price (doitac-1410 #058). */
     itemId?: number;
     unitVnd?: number;
+    /** eSIMs not delivered yet, and what can be done (vande-0411 #011). */
+    missingEsims?: number;
+    canRetryEsims?: boolean;
+    supplierAccepted?: boolean;
     planName: string | null;
     quantity: number;
     agentTotalVnd: number;

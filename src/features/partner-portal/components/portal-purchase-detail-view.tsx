@@ -13,7 +13,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -30,12 +30,14 @@ import {
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
+import { retryOrderProvisioning } from '@/features/orders/api/service';
+import { ResendEsimEmailButton } from '@/features/orders/components/resend-esim-email-button';
 import { adminPartnerOrderDetailQueryOptions } from '@/features/partners/api/queries';
 import type { AdminOrderPartner } from '@/features/partners/api/types';
 import { PartnerPurchaseRefundDialog } from '@/features/partners/components/partner-purchase-refund-dialog';
 
 import { myPurchaseDetailQueryOptions } from '../api/queries';
-import { resendPurchaseEmail } from '../api/service';
+import { resendPurchaseEmail, retryPurchase } from '../api/service';
 import type { MyPurchaseDetail } from '../api/types';
 import { PLAN_TYPE_LABEL } from './portal-catalogue-dialogs';
 import {
@@ -98,6 +100,21 @@ export function PortalPurchaseDetailView({
   const [request, setRequest] = useState<EsimRequestTarget | null>(null);
   const [refundOpen, setRefundOpen] = useState(false);
 
+  const queryClient = useQueryClient();
+  // "Gọi lại API lấy eSIM": the partner's, or the admin's on their behalf
+  // (vande-0411 #011).
+  const retry = useMutation({
+    mutationFn: async (): Promise<string> =>
+      admin
+        ? (await retryOrderProvisioning(order!.orderId!)).message
+        : (await retryPurchase(orderNumber)).message,
+    onSuccess: (message) => {
+      toast.success(message);
+      queryClient.invalidateQueries();
+    },
+    onError: (err: Error) => toast.error(err.message)
+  });
+
   const resend = useMutation({
     mutationFn: () => resendPurchaseEmail(orderNumber),
     onSuccess: (result) =>
@@ -134,6 +151,10 @@ export function PortalPurchaseDetailView({
   const isTopup = order.orderType === 'TOPUP';
   const closed = order.status === 'refunded';
   const anyRefundable = order.products.some((p) => p.refundable);
+  const missingEsims = order.products.reduce((sum, p) => sum + (p.missingEsims ?? 0), 0);
+  const canRetry = order.products.some((p) =>
+    admin ? (p.missingEsims ?? 0) > 0 && !p.supplierAccepted : p.canRetryEsims
+  );
 
   return (
     <div className='grid min-w-0 grid-cols-1 gap-4'>
@@ -146,6 +167,29 @@ export function PortalPurchaseDetailView({
         </Button>
         {admin ? (
           <div className='flex flex-wrap gap-2' data-testid='purchase-detail-actions'>
+            {/* What the partner has, to act on their behalf (vande-0411 #011). */}
+            {!isTopup && order.orderId && (
+              <>
+                <Button asChild size='sm' data-testid='admin-purchase-esim-list'>
+                  <a href={`/api/admin/orders/${order.orderId}/esim-list`}>
+                    <Icons.download className='size-4' />
+                    Tải file danh sách eSIM
+                  </a>
+                </Button>
+                <ResendEsimEmailButton orderId={order.orderId} orderStatus='paid' size='sm' />
+                <Button
+                  variant='outline'
+                  size='sm'
+                  disabled={!canRetry || retry.isPending}
+                  title={canRetry ? undefined : 'Không có sản phẩm cần gọi lại'}
+                  onClick={() => retry.mutate()}
+                  data-testid='admin-purchase-retry'
+                >
+                  <Icons.send className='size-4' />
+                  {retry.isPending ? 'Đang gọi…' : 'Gọi lại API lấy eSIM'}
+                </Button>
+              </>
+            )}
             <Button
               variant='destructive'
               size='sm'
@@ -158,6 +202,19 @@ export function PortalPurchaseDetailView({
           </div>
         ) : (
           <div className='flex flex-wrap gap-2' data-testid='purchase-detail-actions'>
+            {/* Only when something can be done about it (vande-0411 #011). */}
+            {canRetry && (
+              <Button
+                size='sm'
+                variant='outline'
+                disabled={retry.isPending}
+                onClick={() => retry.mutate()}
+                data-testid='purchase-retry'
+              >
+                <Icons.send className='size-4' />
+                {retry.isPending ? 'Đang gọi…' : 'Gọi lại API lấy eSIM'}
+              </Button>
+            )}
             {/* Every eSIM with its plan, LPA and QR link — how a bulk "file"
                 order is delivered (vande #057). */}
             {!isTopup && order.esimCount > 0 && (
@@ -336,6 +393,19 @@ export function PortalPurchaseDetailView({
               </div>
             </div>
 
+            {(product.missingEsims ?? 0) > 0 && (
+              <p
+                className='border-destructive/40 bg-destructive/5 text-destructive rounded-md border p-2 text-sm'
+                data-testid={`purchase-missing-${product.itemId}`}
+              >
+                Còn thiếu {product.missingEsims} eSIM.{' '}
+                {product.supplierAccepted
+                  ? 'Nhà cung cấp đã nhận đơn và đang cấp, eSIM sẽ tự về.'
+                  : product.canRetryEsims
+                    ? 'Nhà cung cấp chưa nhận đơn. Có thể bấm "Gọi lại API lấy eSIM".'
+                    : 'Vui lòng liên hệ esim.vn để kiểm tra với nhà cung cấp.'}
+              </p>
+            )}
             <div className='overflow-x-auto'>
               <Table>
                 <TableHeader>
