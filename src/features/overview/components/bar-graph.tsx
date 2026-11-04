@@ -24,6 +24,11 @@ const providerComparisonConfig = {
     label: 'Đơn hàng',
     color: 'var(--chart-1)'
   },
+  // Beside the eSIM orders (vande-0411 #023).
+  topupOrders: {
+    label: 'Topup / Addon',
+    color: 'var(--chart-2)'
+  },
   revenue: {
     label: 'Doanh thu',
     color: 'var(--chart-2)'
@@ -70,7 +75,7 @@ export function BarGraph({ filters }: BarGraphProps) {
     }));
   }, [data]);
 
-  const total = chartData.reduce((sum, item) => sum + item[metric], 0);
+  const total = chartData.reduce((sum, item) => sum + item[metric] + (item.topupOrders ?? 0), 0);
 
   if (error) {
     return (
@@ -93,7 +98,9 @@ export function BarGraph({ filters }: BarGraphProps) {
           So sánh provider
           <Badge variant='outline'>{formatMetricValue(metric, total)}</Badge>
         </CardTitle>
-        <CardDescription>So sánh các nhà cung cấp theo số đơn hàng</CardDescription>
+        <CardDescription>
+          So sánh các nhà cung cấp theo số đơn hàng và Topup / Addon
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={providerComparisonConfig} className='h-[280px] w-full'>
@@ -122,6 +129,7 @@ export function BarGraph({ filters }: BarGraphProps) {
             />
             <ChartLegend content={<ChartLegendContent />} />
             <Bar dataKey={metric} fill={`var(--color-${metric})`} radius={6} />
+            <Bar dataKey='topupOrders' fill='var(--color-topupOrders)' radius={6} />
           </BarChart>
         </ChartContainer>
         {isLoading ? (

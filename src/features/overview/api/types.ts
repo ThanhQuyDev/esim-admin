@@ -54,6 +54,8 @@ export interface ProviderComparisonByProviderResponse {
     revenue: number;
     plansSold: number;
     successRate: number;
+    /** Finished top-ups and add-ons (vande-0411 #023). */
+    topupOrders?: number;
   }>;
 }
 
@@ -106,6 +108,8 @@ export interface FinancialTotals {
   profitMarginPercent: number;
   /** Plans delivered behind these figures; refunded products excluded. */
   plansSold: number;
+  /** Top-ups and add-ons in the figures; groupBy=provider (vande-0411 #023). */
+  topupOrders?: number;
 }
 
 export interface FinancialComparisonSeriesResponse {
@@ -131,6 +135,7 @@ export interface FinancialComparisonGroupedResponse {
     profit: number;
     profitMarginPercent: number;
     plansSold: number;
+    topupOrders?: number;
   }>;
   totals: FinancialTotals;
 }
@@ -156,6 +161,7 @@ export type OverviewKpis = {
   };
   orders: {
     paidOrders: number;
+    topupOrders: number;
     esimsSold: number;
     visits: number;
     /** Paid orders ÷ visits; null before any visit was recorded. */

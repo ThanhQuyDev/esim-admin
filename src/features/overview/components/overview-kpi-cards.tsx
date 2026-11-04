@@ -54,6 +54,7 @@ export function OverviewKpiCards({ filters }: { filters: OverviewFilters }) {
           note: 'Đơn thành công: khách web, tiếp thị, admin tạo (eSIM & topup)',
           rows: [
             ['eSIM đã bán', formatNumber(k.orders.esimsSold)],
+            ['Topup / Addon', formatNumber(k.orders.topupOrders)],
             [
               'Tỷ lệ chuyển đổi',
               k.orders.conversionPercent == null

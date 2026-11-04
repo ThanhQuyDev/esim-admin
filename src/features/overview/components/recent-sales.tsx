@@ -24,7 +24,14 @@ export function RecentSales({ filters }: RecentSalesProps) {
   const rows = isFinancialGrouped(data) ? data.data : [];
   const totals = isFinancialGrouped(data)
     ? data.totals
-    : { costPrice: 0, totalRevenue: 0, profit: 0, profitMarginPercent: 0, plansSold: 0 };
+    : {
+        costPrice: 0,
+        totalRevenue: 0,
+        profit: 0,
+        profitMarginPercent: 0,
+        plansSold: 0,
+        topupOrders: 0
+      };
 
   return (
     <Card className='h-full'>
@@ -54,7 +61,8 @@ export function RecentSales({ filters }: RecentSalesProps) {
                   <p className='text-sm leading-none font-medium'>{providerCodeLabel(row.group)}</p>
                   <p className='text-muted-foreground mt-1 text-xs'>
                     Giá vốn {formatVnd(row.costPrice)} · Doanh thu {formatVnd(row.totalRevenue)} ·{' '}
-                    {formatNumber(row.plansSold)} plan
+                    {formatNumber(row.plansSold)} plan · {formatNumber(row.topupOrders ?? 0)}{' '}
+                    topup/addon
                   </p>
                 </div>
                 <div className='text-right'>
@@ -76,7 +84,7 @@ export function RecentSales({ filters }: RecentSalesProps) {
           ))}
         </div>
         {rows.length > 0 ? (
-          <div className='text-muted-foreground mt-6 grid grid-cols-3 gap-2 border-t pt-4 text-xs'>
+          <div className='text-muted-foreground mt-6 grid grid-cols-2 gap-2 border-t pt-4 text-xs sm:grid-cols-4'>
             <div>
               <div>Giá vốn</div>
               <div className='text-foreground font-medium'>{formatVnd(totals.costPrice)}</div>
@@ -90,6 +98,12 @@ export function RecentSales({ filters }: RecentSalesProps) {
               {/* Was `rows.length` — the number of provider rows, always 7,
                   so it never moved after a refund (#009). */}
               <div className='text-foreground font-medium'>{formatNumber(totals.plansSold)}</div>
+            </div>
+            <div>
+              <div>Topup / Addon đã bán</div>
+              <div className='text-foreground font-medium' data-testid='profit-topup-total'>
+                {formatNumber(totals.topupOrders ?? 0)}
+              </div>
             </div>
           </div>
         ) : null}

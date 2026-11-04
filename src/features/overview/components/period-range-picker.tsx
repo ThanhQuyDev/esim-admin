@@ -247,12 +247,12 @@ export function PeriodRangePicker({ groupBy, from, to, onChange }: PeriodRangePi
           variant='outline'
           data-testid='overview-period-range'
           className={cn(
-            'w-full justify-start text-left font-normal sm:w-[250px]',
+            'w-full min-w-0 justify-start text-left font-normal sm:w-[250px]',
             !selectedFrom && 'text-muted-foreground'
           )}
         >
           <Icons.calendar className='mr-2 h-4 w-4' />
-          {label}
+          <span className='truncate'>{label}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className='w-auto p-0' align='end'>

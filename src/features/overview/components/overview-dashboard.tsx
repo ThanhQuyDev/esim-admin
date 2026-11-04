@@ -40,7 +40,8 @@ function vnDateBoundary(value: string, endOfDay: boolean) {
 export function OverviewDashboard() {
   const [urlFilters, setUrlFilters] = useQueryStates(
     {
-      preset: parseAsStringLiteral(presets).withDefault('last7days'),
+      // What happened today first (vande-0411 #023).
+      preset: parseAsStringLiteral(presets).withDefault('today'),
       groupBy: parseAsStringLiteral(groupings).withDefault('day'),
       provider: parseAsStringLiteral(providers),
       from: parseAsString,
