@@ -160,7 +160,25 @@ export type EsimTopup = {
   createdAt: string;
 };
 
+/** The first package, then each top-up or add-on (vande-0411 #020). */
+export type EsimPackage = {
+  kind: 'initial' | 'topup' | 'addon';
+  orderId: number | null;
+  orderNumber: string | null;
+  name: string | null;
+  dataText: string | null;
+  isUnlimited: boolean;
+  perDay: boolean;
+  durationDays: number | null;
+  status: 'active' | 'waiting' | 'expired' | 'processing';
+  createdAt: string | null;
+  activatedAt: string | null;
+  expiresAt: string | null;
+  vndPrice: number | null;
+};
+
 export type EsimDetail = Esim & {
+  packages?: EsimPackage[];
   user: EsimUser | null;
   plan: EsimPlan | null;
   /** Newest first. Only the detail endpoint returns this (#026). */
@@ -168,6 +186,9 @@ export type EsimDetail = Esim & {
   supplierRefunds?: EsimSupplierRefund[];
   /** Days the customer picked for a day pass; null for fixed plans (vande #006). */
   chosenDays?: number | null;
+  /** Added to the plan by finished top-ups (vande-0411 #019). */
+  addedDays?: number;
+  addedDataMb?: number;
 };
 
 export type EsimFilters = {

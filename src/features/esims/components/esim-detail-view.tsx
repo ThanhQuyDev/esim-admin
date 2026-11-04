@@ -29,7 +29,7 @@ import {
 } from '@/features/plans/utils/plan-label';
 import { providerLabel } from '@/features/overview/api/constants';
 import { formatUsd, planUsd } from '@/lib/plan-price';
-import type { EsimDetail, EsimPlan } from '../api/types';
+import type { EsimDetail, EsimPackage, EsimPlan, EsimTopup } from '../api/types';
 
 interface EsimDetailViewProps {
   esimId: number;
@@ -88,6 +88,79 @@ function formatDate(date: string | null | undefined) {
   return formatDateTimeVn(date);
 }
 
+const PACKAGE_KIND: Record<EsimPackage['kind'], string> = {
+  initial: 'Gói ban đầu',
+  topup: 'Topup',
+  addon: 'Add-on'
+};
+
+const PACKAGE_STATUS: Record<EsimPackage['status'], string> = {
+  active: 'Đang hoạt động',
+  waiting: 'Chưa kích hoạt',
+  expired: 'Đã hết hạn',
+  processing: 'Đang xử lý'
+};
+
+function PackageColumn({
+  title,
+  packages,
+  topups
+}: {
+  title: string;
+  packages: EsimPackage[];
+  topups: EsimTopup[];
+}) {
+  return (
+    <div className='space-y-3'>
+      <h4 className='text-sm font-semibold'>
+        {title} ({packages.length})
+      </h4>
+      {packages.length === 0 && <p className='text-muted-foreground text-sm'>Không có gói nào.</p>}
+      {packages.map((pkg, index) => {
+        const topup = topups.find((row) => row.orderId === pkg.orderId);
+        const offer = pkg.isUnlimited
+          ? 'Không giới hạn'
+          : pkg.dataText && `${pkg.dataText}${pkg.perDay ? '/ngày' : ''}`;
+        return (
+          <div key={index} className='space-y-2 rounded-lg border p-3'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <span className='text-sm font-semibold'>{PACKAGE_KIND[pkg.kind]}</span>
+              <span className='text-sm'>
+                {[offer, pkg.durationDays ? `${pkg.durationDays} ngày` : null]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+              <Badge variant={pkg.status === 'active' ? 'default' : 'secondary'}>
+                {PACKAGE_STATUS[pkg.status]}
+              </Badge>
+            </div>
+            {pkg.name && <p className='text-muted-foreground text-xs break-words'>{pkg.name}</p>}
+            <div className='text-muted-foreground grid gap-1 text-xs sm:grid-cols-2'>
+              <span>Ngày tạo: {formatDate(pkg.createdAt)}</span>
+              <span>Kích hoạt: {formatDate(pkg.activatedAt)}</span>
+              <span>Hết hạn: {formatDate(pkg.expiresAt)}</span>
+              <span>Giá bán: {pkg.vndPrice === null ? '—' : formatVnd(pkg.vndPrice)}</span>
+              {topup && <span>Giá vốn: {formatVnd(topup.vndCostPrice)}</span>}
+              {topup?.provider && <span>NCC: {topup.provider}</span>}
+              {pkg.orderId !== null && (
+                <span>
+                  Đơn:{' '}
+                  <Link
+                    href={`/dashboard/orders/${pkg.orderId}`}
+                    className='text-primary underline underline-offset-4'
+                  >
+                    {pkg.orderNumber}
+                  </Link>
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function isDailyPlan(plan: EsimPlan | null): boolean {
   return isDailyPlanType(plan?.type);
 }
@@ -115,7 +188,8 @@ function appSupportText(plan: EsimPlan | null): string | null {
 function daysProgress(esim: EsimDetail): { used: number; total: number } | null {
   const start = esim.activatedAt ?? esim.installedAt;
   const total =
-    esim.chosenDays && esim.chosenDays > 0 ? esim.chosenDays : (esim.plan?.durationDays ?? 0);
+    (esim.chosenDays && esim.chosenDays > 0 ? esim.chosenDays : (esim.plan?.durationDays ?? 0)) +
+    (esim.addedDays ?? 0);
   if (!total) return null;
   if (!start) return { used: 0, total };
   const end = esim.expiresAt ? new Date(esim.expiresAt).getTime() : Infinity;
@@ -126,7 +200,9 @@ function daysProgress(esim: EsimDetail): { used: number; total: number } | null 
 
 function dataProgress(esim: EsimDetail): { used: number; total: number } | null {
   const used = Number(esim.dataUsed) || 0;
-  const total = Number(esim.dataTotal) || esim.plan?.dataMb || 0;
+  // Never below the plan plus its top-ups (vande-0411 #020).
+  const planMb = Number(esim.plan?.dataMb) || 0;
+  const total = Math.max(Number(esim.dataTotal) || planMb, planMb + (esim.addedDataMb ?? 0));
   if (!total) return null;
   return { used: Math.min(used, total), total };
 }
@@ -379,45 +455,29 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
       {/* Topups applied to this eSIM (#026). Read from the snapshot each topup
           order stored, so a package that has since been withdrawn or repriced
           still reports what was actually bought. */}
+      {/* Packages side by side (vande-0411 #020). */}
       {esim.topups && esim.topups.length > 0 && (
-        <Card className='md:col-span-2'>
+        <Card className='md:col-span-2' data-testid='esim-packages'>
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <Icons.refresh className='h-4 w-4' />
-              Gói đã Topup / Mua thêm data ({esim.topups.length})
+              Gói đã Topup / Mua thêm data
             </CardTitle>
+            <p className='text-muted-foreground text-sm' data-testid='esim-topup-count'>
+              Số lần topup/add-on: <span className='font-semibold'>{esim.topups.length}</span>
+            </p>
           </CardHeader>
-          <CardContent className='grid gap-4 md:grid-cols-2'>
-            {esim.topups.map((topup) => (
-              <div key={topup.orderId} className='space-y-2 rounded-lg border p-3'>
-                <div className='flex flex-wrap items-center justify-between gap-2'>
-                  <span className='text-sm font-semibold'>
-                    Gói Topup: {topup.packageName || topup.packageId || '—'}
-                  </span>
-                  <span className='text-sm font-semibold'>{formatVnd(topup.vndPrice)}</span>
-                </div>
-                <div className='text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs'>
-                  <span>
-                    Dung lượng: {topup.isUnlimited ? 'Không giới hạn' : topup.dataText || '—'}
-                  </span>
-                  <span>Thời hạn: {topup.durationDays ? `${topup.durationDays} ngày` : '—'}</span>
-                  <span>Giá vốn: {formatVnd(topup.vndCostPrice)}</span>
-                  {topup.provider && <span>NCC: {topup.provider}</span>}
-                </div>
-                <div className='text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs'>
-                  <span>
-                    Đơn:{' '}
-                    <Link
-                      href={`/dashboard/orders/${topup.orderId}`}
-                      className='text-primary underline underline-offset-4'
-                    >
-                      {topup.orderNumber}
-                    </Link>
-                  </span>
-                  <span>Ngày: {formatDate(topup.createdAt)}</span>
-                </div>
-              </div>
-            ))}
+          <CardContent className='grid gap-6 md:grid-cols-2'>
+            <PackageColumn
+              title='Gói đang dùng'
+              packages={(esim.packages ?? []).filter((pkg) => pkg.status !== 'expired')}
+              topups={esim.topups}
+            />
+            <PackageColumn
+              title='Gói trước đó'
+              packages={(esim.packages ?? []).filter((pkg) => pkg.status === 'expired')}
+              topups={esim.topups}
+            />
           </CardContent>
         </Card>
       )}
