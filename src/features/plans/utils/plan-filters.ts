@@ -57,7 +57,7 @@ export function buildPlanApiFilters(params: PlanFilterParams): Record<string, un
   // Exact destination / region ids, every one picked (vande #019). A
   // substring match could not tell "Trung Quốc" from "Trung Quốc + Hong Kong"
   // (#010); sending only a single pick dropped the filter for two or more.
-  const locations = (params.country ?? []).filter((value) => /^[dr]:\d+$/.test(value));
+  const locations = (params.country ?? []).filter((value) => /^([dr]:\d+|r:all)$/.test(value));
   if (locations.length) filters.locations = locations;
 
   const hasCallSms = boolOf(params.hasCallSms);

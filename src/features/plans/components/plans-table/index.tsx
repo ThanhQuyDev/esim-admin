@@ -82,6 +82,7 @@ export function PlansTable() {
       buildColumns({
         apnOptions: apnValues.map((apn) => ({ value: apn, label: apn })),
         locationOptions: [
+          { value: 'r:all', label: 'Tất cả khu vực', keywords: ['khu vuc', 'region'] },
           // Vietnamese name first, searchable in either language (#018).
           ...regionsData.data.map((region) => ({
             value: `r:${region.id}`,

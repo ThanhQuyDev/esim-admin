@@ -31,6 +31,8 @@ export type Region = {
   providers: string | null;
   /** "Khu vực cha" (vande #035): listed as another pack on that region's page. */
   parentId?: number | null;
+  /** The parent's name, when a plan list asks for its region (vande-0411 #042). */
+  parentName?: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

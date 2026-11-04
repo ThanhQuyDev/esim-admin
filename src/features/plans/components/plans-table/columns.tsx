@@ -1,5 +1,8 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { STOREFRONT_ORIGIN } from '@/features/blogs/utils/preview-url';
 import { PURCHASE_KIND_LABEL, purchaseKindOf } from '@/lib/plan-purchase-kind';
 import * as React from 'react';
 import { PROVIDER_OPTIONS } from '@/lib/catalog-filters';
@@ -91,6 +94,88 @@ function AppSupportCell({ plan }: { plan: Plan }) {
   );
 }
 
+/** Region, the page it is sold on, and its countries, searchable (vande-0411 #042). */
+function RegionCell({ region }: { region: NonNullable<Plan['region']> }) {
+  const [query, setQuery] = useState('');
+  const destinations = region.destinations ?? [];
+  const needle = query.trim().toLowerCase();
+  const shown = needle
+    ? destinations.filter((d) => d.name.toLowerCase().includes(needle))
+    : destinations;
+  const slug = region.slugVi || region.slug;
+  return (
+    <div className='flex flex-col gap-0.5' data-testid='plan-region'>
+      <div className='flex items-center gap-2'>
+        {(region.iconUrl || region.avatarUrl) && (
+          <img
+            src={region.iconUrl || region.avatarUrl || ''}
+            alt={region.name}
+            className='size-5 shrink-0 rounded object-cover'
+          />
+        )}
+        <span className='text-sm font-medium'>{region.name}</span>
+        {destinations.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant='ghost' size='sm' className='h-6 px-1.5 text-xs'>
+                <Icons.eye className='mr-1 size-3' />
+                {destinations.length} nước
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className='w-64 p-0' align='start'>
+              <div className='space-y-2 border-b px-3 py-2'>
+                <p className='text-sm font-medium'>{region.name}</p>
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={`Tìm trong ${destinations.length} điểm đến...`}
+                  className='h-8 text-xs'
+                  data-testid='region-country-search'
+                />
+              </div>
+              <div className='max-h-60 overflow-y-auto p-2'>
+                <div className='grid gap-1'>
+                  {shown.map((d) => (
+                    <div key={d.id} className='flex items-center gap-2 rounded px-2 py-1'>
+                      {d.flagUrl && (
+                        <img
+                          src={d.flagUrl}
+                          alt={d.name}
+                          className='h-4 w-5 shrink-0 rounded object-cover'
+                        />
+                      )}
+                      <span className='text-sm'>{d.name}</span>
+                    </div>
+                  ))}
+                  {shown.length === 0 && (
+                    <p className='text-muted-foreground px-2 py-1 text-xs'>Không tìm thấy.</p>
+                  )}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+      {region.parentName && (
+        <span className='text-muted-foreground text-xs' data-testid='plan-region-tree'>
+          {region.parentName} › {region.name}
+        </span>
+      )}
+      {slug && (
+        <a
+          href={`${STOREFRONT_ORIGIN}/${slug}`}
+          target='_blank'
+          rel='noreferrer'
+          className='text-primary text-xs underline underline-offset-2'
+          data-testid='plan-region-link'
+        >
+          Xem trang khu vực
+        </a>
+      )}
+    </div>
+  );
+}
+
 export type PlanColumnOptions = {
   /** APN values in use, fetched at runtime (#010). */
   apnOptions?: { value: string; label: string }[];
@@ -141,52 +226,8 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
         const dest = row.original.destination;
         const region = row.original.region;
 
-        if (region && region.destinations && region.destinations.length > 0) {
-          return (
-            <div className='flex items-center gap-2'>
-              {region.avatarUrl && (
-                <img
-                  src={region.avatarUrl}
-                  alt={region.name}
-                  className='h-5 w-7 rounded object-cover'
-                />
-              )}
-              <span className='text-sm font-medium'>{region.name}</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant='ghost' size='sm' className='h-6 px-1.5 text-xs'>
-                    <Icons.eye className='mr-1 size-3' />
-                    {region.destinations.length} nước
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className='w-64 p-0' align='start'>
-                  <div className='border-b px-3 py-2'>
-                    <p className='text-sm font-medium'>{region.name}</p>
-                    <p className='text-muted-foreground text-xs'>
-                      {region.destinations.length} điểm đến
-                    </p>
-                  </div>
-                  <div className='max-h-60 overflow-y-auto p-2'>
-                    <div className='grid gap-1'>
-                      {region.destinations.map((d) => (
-                        <div key={d.id} className='flex items-center gap-2 rounded px-2 py-1'>
-                          {d.flagUrl && (
-                            <img
-                              src={d.flagUrl}
-                              alt={d.name}
-                              className='h-4 w-5 shrink-0 rounded object-cover'
-                            />
-                          )}
-                          <span className='text-sm'>{d.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          );
-        }
+        // The region's own icon and name, as set in its page (vande-0411 #042).
+        if (region) return <RegionCell region={region} />;
 
         return (
           <div className='flex items-center gap-2'>
