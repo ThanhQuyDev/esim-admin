@@ -232,6 +232,12 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
             was no longer used. */}
           <span className='font-medium' data-testid='plan-standard-name'>
             {row.original.standardName || planDisplayName(row.original)}
+            {/* Beside its topup twin, which reads the same; the customer's name
+                stays as it is (vande-0411 #040). */}
+            {row.original.standardName &&
+              row.original.provider === 'billion' &&
+              purchaseKindOf(row.original) === 'addon' &&
+              ' Addon'}
           </span>
           {row.original.standardName && row.original.standardName !== row.original.name && (
             <span className='text-muted-foreground text-xs' data-testid='plan-supplier-name'>
