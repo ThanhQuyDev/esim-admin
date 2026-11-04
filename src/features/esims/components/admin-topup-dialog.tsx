@@ -251,6 +251,14 @@ export function AdminTopupDialog({ iccid, open, onOpenChange }: AdminTopupDialog
           </div>
         )}
 
+        {/* Billion's fixed add-ons (F052) wait for the current plan to be ended. */}
+        {selected?.packageId.startsWith('billion:') && (
+          <p className='text-muted-foreground text-xs' data-testid='billion-fixed-topup-note'>
+            Dung lượng nạp thêm không tự chạy: cần kết thúc gói đang dùng để kích hoạt, sau đó hạn
+            dùng được gia hạn.
+          </p>
+        )}
+
         <div className='space-y-2'>
           <Label htmlFor='admin-topup-note'>Lý do / ghi chú</Label>
           <Input
