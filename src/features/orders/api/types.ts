@@ -167,6 +167,8 @@ export type OrderItemPlan = {
 };
 
 export type OrderItemEsim = {
+  /** Topups and add-ons that went through; refunded with the eSIM (vande-0411 #008). */
+  paidTopups?: { orderId: number; orderNumber: string; vndPrice: number }[];
   /** What the eSIM list shows: sold / active / expired / refunded (vande #024). */
   lifecycleStatus?: string;
   id: number;

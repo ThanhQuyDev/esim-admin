@@ -111,6 +111,19 @@ interface RefundOrderModalProps {
   isSubmitting: boolean;
 }
 
+/** Giờ phút - ngày tháng năm, giờ Việt Nam. */
+function formatDateTimeVn(value?: string | null): string {
+  if (!value) return '';
+  return new Intl.DateTimeFormat('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(new Date(value));
+}
+
 export function RefundOrderModal({
   orderId,
   orderNumber,
@@ -145,6 +158,8 @@ export function RefundOrderModal({
   const [airaloReason, setAiraloReason] = useState<AiraloRefundReason>(
     DEFAULT_AIRALO_REFUND_REASON
   );
+  // "Có chắc muốn hoàn eSIM đã cài vào máy?" (vande-0411 #008).
+  const [installedConfirmed, setInstalledConfirmed] = useState(false);
 
   // Every opening starts clean, from the order as it is now.
   useEffect(() => {
@@ -157,6 +172,7 @@ export function RefundOrderModal({
     setPickedItemIds([]);
     setAskAiralo(true);
     setAiraloReason(DEFAULT_AIRALO_REFUND_REASON);
+    setInstalledConfirmed(false);
   }, [open]);
 
   const isRefunded = (status?: string | null) => status === 'refunded';
@@ -235,6 +251,17 @@ export function RefundOrderModal({
     .filter(Boolean);
 
   // A per-item refund can never exceed what those lines were worth.
+  // The eSIMs this refund gives back: the ones picked, or all of them.
+  const refundedEsims = items.flatMap((item) => {
+    const live = liveEsimsOf(item);
+    if (!isPartial) return noRefund(item) ? [] : live;
+    if (selection.orderItemIds.includes(item.id)) return live;
+    return live.filter((e) => selection.esimIds.includes(e.id));
+  });
+  const installedEsims = refundedEsims.filter((e) => e.installedAt);
+  const topupEsims = refundedEsims.filter((e) => (e.paidTopups?.length ?? 0) > 0);
+  const installedOk = installedEsims.length === 0 || installedConfirmed;
+
   const cap = isPartial ? Math.min(selectedValue, maxRefundable) : maxRefundable;
 
   const amountVnd = parseInt(amount, 10);
@@ -463,6 +490,51 @@ export function RefundOrderModal({
             </div>
           )}
 
+          {/* What else this refund touches (vande-0411 #008). */}
+          {topupEsims.length > 0 && (
+            <div
+              className='space-y-1 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900'
+              data-testid='refund-topup-warning'
+            >
+              <p className='font-semibold'>eSIM đã mua thêm data hoặc gia hạn gói</p>
+              {topupEsims.map((esim) => (
+                <p key={esim.id} className='break-words'>
+                  ICCID <span className='font-mono'>{esim.iccid}</span> đã thực hiện giao dịch Mua
+                  thêm data / Gia hạn gói trước đó. Nếu hoàn tiền eSIM này, hệ thống sẽ hoàn luôn:{' '}
+                  {esim.paidTopups!.map((t, i) => (
+                    <span key={t.orderId}>
+                      {i > 0 ? ', ' : ''}
+                      <span className='font-mono'>{t.orderNumber}</span> ({formatVnd(t.vndPrice)})
+                    </span>
+                  ))}
+                  . Số tiền này nằm ngoài số tiền hoàn nhập bên dưới.
+                </p>
+              ))}
+            </div>
+          )}
+          {installedEsims.length > 0 && (
+            <div
+              className='space-y-1 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900'
+              data-testid='refund-installed-warning'
+            >
+              <p className='font-semibold'>eSIM đã được cài vào thiết bị</p>
+              {installedEsims.map((esim) => (
+                <p key={esim.id} className='break-words'>
+                  ICCID <span className='font-mono'>{esim.iccid}</span> đã được thêm (cài đặt) vào
+                  thiết bị lúc {formatDateTimeVn(esim.installedAt)}.
+                </p>
+              ))}
+              <label className='flex cursor-pointer items-center gap-2 pt-1 font-medium'>
+                <Checkbox
+                  checked={installedConfirmed}
+                  onCheckedChange={(v) => setInstalledConfirmed(v === true)}
+                  data-testid='refund-installed-confirm'
+                />
+                Tôi chắc chắn muốn hoàn tiền
+              </label>
+            </div>
+          )}
+
           {/* Refund Mode */}
           <div className='space-y-2'>
             <Label htmlFor='refund-mode'>Phương thức hoàn tiền</Label>
@@ -630,7 +702,7 @@ export function RefundOrderModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isValidAmount || isSubmitting}
+            disabled={!isValidAmount || !installedOk || isSubmitting}
             isLoading={isSubmitting}
           >
             Xác nhận hoàn {isValidAmount ? formatVnd(amountVnd) : ''}
