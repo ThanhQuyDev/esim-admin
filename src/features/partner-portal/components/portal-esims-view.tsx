@@ -149,6 +149,21 @@ const ESIM_COLUMNS: EsimColumn[] = [
             {esim.openReport === 'refund' ? 'Đang xem xét hoàn tiền' : 'Đang chờ xử lý lỗi'}
           </div>
         )}
+        {/* No need to open the eSIM to know (vande-0411 #024). */}
+        {(!!esim.topupCount || !!esim.addonCount) && (
+          <div className='mt-1 flex flex-wrap gap-1' data-testid='esim-bought-more'>
+            {!!esim.topupCount && (
+              <Badge variant='secondary' className='text-[11px]'>
+                Đã topup{esim.topupCount > 1 ? ` ×${esim.topupCount}` : ''}
+              </Badge>
+            )}
+            {!!esim.addonCount && (
+              <Badge variant='secondary' className='text-[11px]'>
+                Đã add-on{esim.addonCount > 1 ? ` ×${esim.addonCount}` : ''}
+              </Badge>
+            )}
+          </div>
+        )}
       </>
     )
   },

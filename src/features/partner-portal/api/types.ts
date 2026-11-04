@@ -643,6 +643,9 @@ export type MyEsim = {
   topUp?: boolean;
   /** doitac-1410 #038 */
   durationDays?: number | null;
+  /** Finished on this eSIM, shown on its row (vande-0411 #024). */
+  topupCount?: number;
+  addonCount?: number;
   hasCallSms?: boolean;
   tiktokAi?: boolean;
   /** The plan allows a refund at all. */
