@@ -27,11 +27,20 @@ function mentionsDuration(name: string, days: number): boolean {
 }
 
 /**
+ * The days read one way for every supplier, "- 23 days", "- 1 day" (vande-0411
+ * #039), and only when the supplier's own name does not say them already.
+ *
  * @param plan  the plan (or an order item's plan), whatever of it is loaded
  * @param fallback shown when the plan has no name at all
+ * @param chosenDays the days picked on a day pass, whose plan says 1
  */
-export function planDisplayName(plan: PlanLabelSource | null | undefined, fallback = '—'): string {
-  const base = plan?.name?.trim();
+export function planDisplayName(
+  plan: PlanLabelSource | null | undefined,
+  fallback = '—',
+  chosenDays?: number | null
+): string {
+  // Stored as "Tanzania 2GB / 15day" by the syncs of some suppliers.
+  const base = plan?.name?.trim().replace(/\s*\/\s*\d+\s*days?$/i, '');
   if (!base) return fallback;
 
   const parts = [base];
@@ -45,11 +54,11 @@ export function planDisplayName(plan: PlanLabelSource | null | undefined, fallba
 
   const label = parts.join(' - ');
 
-  const days = Number(plan?.durationDays) || 0;
+  const days = Number(chosenDays) || Number(plan?.durationDays) || 0;
   // Most supplier names already carry the duration; appending it again would
   // read "Japan 5GB - 7 days - 10Mins / 7day".
   if (days > 0 && !mentionsDuration(base, days)) {
-    return `${label} / ${days}day`;
+    return `${label} - ${days} ${days === 1 ? 'day' : 'days'}`;
   }
   return label;
 }

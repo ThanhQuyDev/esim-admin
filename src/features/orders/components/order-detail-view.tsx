@@ -1145,7 +1145,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                     <div className='flex flex-wrap items-center gap-2'>
                       <h4 className='text-sm font-semibold' data-testid='order-item-name'>
                         {item.plan?.standardName ||
-                          planDisplayName(item.plan, `Plan #${item.planId}`)}
+                          planDisplayName(item.plan, `Plan #${item.planId}`, item.periodNum)}
                       </h4>
                       {/* Kind of plan, in a thin frame beside the name (vande #024). */}
                       {planTypeLabel(item.plan?.type) && (
@@ -1196,7 +1196,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                         label='Tên gói cước'
                         value={
                           item.plan?.standardName ||
-                          planDisplayName(item.plan, `Plan #${item.planId}`)
+                          planDisplayName(item.plan, `Plan #${item.planId}`, item.periodNum)
                         }
                       />
                       <InfoRow label='Số lượng' value={item.quantity} />

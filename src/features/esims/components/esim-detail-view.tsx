@@ -272,7 +272,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   // roam, local ones do not (doitac-1410 #080).
   const isRoaming = esim.isRoaming ?? plan?.isRefundable ?? false;
   // The standard name when the plan has one (vande #020).
-  const planName = plan?.standardName || planDisplayName(plan);
+  const planName = plan?.standardName || planDisplayName(plan, '—', esim.chosenDays);
   const usd = plan ? planUsd(plan) : null;
   const days = daysProgress(esim);
   const data = dataProgress(esim);

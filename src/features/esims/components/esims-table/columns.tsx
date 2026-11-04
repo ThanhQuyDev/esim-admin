@@ -112,7 +112,7 @@ export const columns: ColumnDef<Esim>[] = [
     // call/SMS allowance (#008).
     accessorFn: (row) => row.plan?.name ?? '',
     header: 'Tên gói',
-    cell: ({ row }) => planDisplayName(row.original.plan),
+    cell: ({ row }) => planDisplayName(row.original.plan, '—', row.original.chosenDays),
     // Searched through the one box above (vande #021).
     enableColumnFilter: false,
     enableSorting: false
