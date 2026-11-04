@@ -24,6 +24,11 @@ import {
   type TopupPackage
 } from '../api/topup';
 
+/** dd/mm/yyyy in Vietnam (vande-0411 #021). */
+function shortDate(value: string): string {
+  return new Date(value).toLocaleDateString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
 interface AdminTopupDialogProps {
   iccid: string;
   open: boolean;
@@ -91,12 +96,17 @@ function PackageCard({
               className='inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-800 dark:bg-orange-950 dark:text-orange-300'
               data-testid='topup-addon-badge'
             >
-              Add-on ·{' '}
-              {pkg.addonKind === 'boost'
-                ? 'Tăng tốc 1 ngày'
-                : pkg.addonKind === 'upgrade'
-                  ? 'Nâng cấp gói'
-                  : 'Thêm dung lượng'}
+              Add-on · Hạn dùng giữ nguyên
+              {pkg.expiresAfter ? `: đến ${shortDate(pkg.expiresAfter)}` : ''}
+            </span>
+          )}
+          {pkg.kind !== 'addon' && pkg.expiresAfter && (
+            <span
+              className='inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800'
+              data-testid='topup-new-expiry'
+            >
+              <Icons.calendar className='size-3' />
+              Hạn mới: đến {shortDate(pkg.expiresAfter)}
             </span>
           )}
           {!!pkg.durationDays && (
@@ -107,6 +117,11 @@ function PackageCard({
           )}
         </div>
         <p className='text-sm leading-snug'>{pkg.name || pkg.packageId}</p>
+        {pkg.startsAfterCurrent && (
+          <p className='mt-1 text-xs text-orange-700'>
+            Gói này chạy sau khi gói hiện tại kết thúc.
+          </p>
+        )}
       </div>
       <span className='shrink-0 font-mono text-sm font-medium'>
         {pkg.vndPrice ? formatVnd(pkg.vndPrice) : `$${pkg.retailPrice}`}

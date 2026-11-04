@@ -22,6 +22,9 @@ export type TopupPackage = {
   /** "addon": data on top of the current plan (Billion, vande #081). */
   kind?: 'topup' | 'addon';
   addonKind?: 'boost' | 'upgrade' | 'extra';
+  /** The eSIM's date once bought (vande-0411 #021). */
+  expiresAfter?: string | null;
+  startsAfterCurrent?: boolean;
   /** "1 GB/ngày" (eSIM Access): can be bought for several days (doitac-3010 #050). */
   isDayPass?: boolean;
 };
