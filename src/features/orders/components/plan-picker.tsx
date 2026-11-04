@@ -162,6 +162,7 @@ export function PlanPicker({
                   <CommandItem
                     key={plan.id}
                     value={String(plan.id)}
+                    className='px-1.5'
                     data-testid={`plan-picker-option-${plan.id}`}
                     onSelect={() => {
                       onChange({
@@ -174,12 +175,16 @@ export function PlanPicker({
                       setOpen(false);
                     }}
                   >
-                    <Icons.check
-                      className={cn(
-                        'mt-1 mr-2 h-4 w-4 shrink-0 self-start',
-                        value?.id === plan.id ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
+                    {/* Only on the chosen one, so the others keep the width for
+                        their text (vande-0411 #050). */}
+                    {value?.id === plan.id && (
+                      <span
+                        className='mt-0.5 mr-1.5 flex size-4 shrink-0 items-center justify-center self-start rounded-full bg-black'
+                        data-testid='plan-picker-chosen'
+                      >
+                        <Icons.check className='size-3 text-white' />
+                      </span>
+                    )}
                     <div className='flex min-w-0 flex-1 flex-col'>
                       <div className='flex items-baseline justify-between gap-2'>
                         <span className='flex min-w-0 items-center gap-1.5'>
@@ -201,15 +206,21 @@ export function PlanPicker({
                           {formatVnd(Number(plan.vndPrice))}
                         </span>
                       </div>
-                      {plan.vndCostExact || plan.vndCostPrice ? (
-                        <span className='text-muted-foreground self-end text-xs tabular-nums'>
-                          Giá vốn (gồm thuế phí):{' '}
-                          {formatVnd(Number(plan.vndCostExact) || Number(plan.vndCostPrice))}
+                      <div className='flex items-baseline justify-between gap-2'>
+                        <span className='text-muted-foreground truncate text-xs'>
+                          {planMeta(plan)}
                         </span>
-                      ) : null}
-                      <span className='text-muted-foreground truncate text-xs'>
-                        {planMeta(plan)}
-                      </span>
+                        {/* Cost with fees: the amount alone, to the last digit
+                            (vande-0411 #050). */}
+                        {plan.vndCostExact || plan.vndCostPrice ? (
+                          <span
+                            className='text-muted-foreground shrink-0 text-xs tabular-nums'
+                            data-testid='plan-picker-cost'
+                          >
+                            {exactVnd(Number(plan.vndCostExact) || Number(plan.vndCostPrice))}
+                          </span>
+                        ) : null}
+                      </div>
                       {/* The two identifiers the order is actually built from —
                           shown so the admin can confirm the pick (#040). */}
                       <span className='text-muted-foreground truncate font-mono text-xs'>
@@ -230,6 +241,15 @@ export function PlanPicker({
       )}
     </div>
   );
+}
+
+/** "22.676,7775 ₫": the exact figure, not rounded for looks. */
+function exactVnd(value: number): string {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 4
+  }).format(value);
 }
 
 /** One line naming the plan, for the closed trigger. */
