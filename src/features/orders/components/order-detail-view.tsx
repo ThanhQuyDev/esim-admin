@@ -33,6 +33,7 @@ import { CreateInvoiceDialog } from './create-invoice-dialog';
 import { InvoiceViewDialog } from './invoice-view-dialog';
 import { canIssueInvoice } from '../utils/invoice-filter';
 import { formatCountry, formatDataSize, formatDateTimeVn } from '@/lib/format';
+import { VALIDITY_START_TITLE, validityStartLabel } from '@/lib/plan-validity-start';
 import { ValueAfterRefund } from '../utils/refund-values';
 import { commissionRejectionText } from '@/lib/commission-rejection';
 import { providerLabel } from '@/features/overview/api/constants';
@@ -1297,6 +1298,10 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                             }
                           />
                           <InfoRow label='Throttling' value={item.plan.fupSpeed || '—'} />
+                          <InfoRow
+                            label={VALIDITY_START_TITLE}
+                            value={validityStartLabel(item.plan)}
+                          />
                           {/* Allowance on the product line too, so it is visible
                               without opening the eSIM cards below (#013). */}
                           {hasCallOrSms(item.plan) && (

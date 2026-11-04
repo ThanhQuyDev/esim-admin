@@ -129,6 +129,8 @@ export type EsimPlan = {
   ipExport?: string | null;
   isKyc?: boolean | null;
   hotSpotAllow?: string | null;
+  /** When the days start counting, per supplier (vande-0411 #026). */
+  validityStart?: import('@/lib/plan-validity-start').PlanValidityStart | null;
   dailyResetPolicy?: 'rolling_24h' | 'calendar_day' | null;
   /** Hours east of UTC, for a calendar-day reset. */
   dailyResetUtcOffset?: number | null;

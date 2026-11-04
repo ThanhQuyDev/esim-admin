@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { VALIDITY_START_TITLE, validityStartLabel } from '@/lib/plan-validity-start';
 import { useAppForm, useFormContext, useFormFields } from '@/components/ui/tanstack-form';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -94,7 +95,7 @@ function dailyResetOffsetValue(value: CreatePlanFormValues): number | null {
  * both dialogs — `UpdatePlanFormValues` is `CreatePlanFormValues`, and the fields
  * resolve the form from context, so nothing has to be threaded through.
  */
-function ConnectivityFields() {
+function ConnectivityFields({ plan }: { plan?: Plan }) {
   const form = useFormContext();
   const { FormTextField, FormSelectField, FormSwitchField } = useFormFields<CreatePlanFormValues>();
 
@@ -109,14 +110,6 @@ function ConnectivityFields() {
           placeholder='internet'
           description='Nhà cung cấp trả về qua API; esimaccess không cung cấp APN.'
         />
-        <FormSwitchField
-          name='isNonHkIp'
-          label='TikTok & ChatGPT'
-          description='IP ra là IP nội địa, không đi qua Hồng Kông.'
-        />
-      </div>
-
-      <div className='grid grid-cols-2 gap-4'>
         {/* Where traffic exits (#043, test round 4). esimaccess reports it; any
             exit but HK means TikTok & ChatGPT work, and the sync sets the switch
             above from it. */}
@@ -128,7 +121,20 @@ function ConnectivityFields() {
         />
       </div>
 
+      {/* APN and IP ra, then TikTok & AI, then when the plan starts and resets
+          (vande-0411 #026). */}
+      <FormSwitchField
+        name='isNonHkIp'
+        label='TikTok & ChatGPT'
+        description='IP ra là IP nội địa, không đi qua Hồng Kông.'
+      />
+
       <div className='grid grid-cols-2 gap-4'>
+        <div className='space-y-2' data-testid='plan-validity-start'>
+          <div className='text-sm font-medium'>{VALIDITY_START_TITLE}</div>
+          <div className='text-sm'>{validityStartLabel(plan)}</div>
+          <p className='text-muted-foreground text-xs'>Lấy theo nhà cung cấp, không sửa tay.</p>
+        </div>
         <FormSelectField
           name='dailyResetPolicy'
           label='Giờ làm mới mỗi ngày'
@@ -548,7 +554,7 @@ function EditDialog({
             )}
           </form.AppField>
 
-          <ConnectivityFields />
+          <ConnectivityFields plan={plan} />
 
           <div className='grid grid-cols-2 gap-4'>
             <FormSwitchField name='topUp' label='Top-Up' />

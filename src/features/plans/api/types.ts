@@ -82,6 +82,8 @@ export type Plan = {
    * where the supplier has not stated it, which the storefront omits rather than
    * guessing at (#071).
    */
+  /** When the days start counting, per supplier (vande-0411 #026). */
+  validityStart?: import('@/lib/plan-validity-start').PlanValidityStart | null;
   dailyResetPolicy: DailyResetPolicy | null;
   /** Hours east of UTC; only meaningful for a calendar-day reset. */
   dailyResetUtcOffset: number | null;

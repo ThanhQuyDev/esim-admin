@@ -18,6 +18,7 @@ import { formatDataSize, formatDateTimeVn, formatVnd } from '@/lib/format';
 import { esimQueryOptions } from '../api/queries';
 import { deleteEsimMutation } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
+import { VALIDITY_START_TITLE, validityStartLabel } from '@/lib/plan-validity-start';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -561,7 +562,9 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                   : plan?.speed
               }
             />
-            <InfoRow label='Tốc độ sau khi hết data' value={plan?.fupSpeed} />
+            {/* Related lines together (vande-0411 #026). */}
+            <InfoRow label='Roaming' value={<YesNo value={isRoaming} testId='esim-roaming' />} />
+            <InfoRow label={VALIDITY_START_TITLE} value={validityStartLabel(plan)} />
           </div>
           <div className='space-y-3' data-testid='esim-tech-right'>
             <InfoRow
@@ -574,6 +577,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                   : '—'
               }
             />
+            <InfoRow label='Tốc độ sau khi hết data' value={plan?.fupSpeed} />
             <InfoRow label='Tổng phút gọi / SMS' value={callSmsSummary(plan) ?? 'Không'} />
             <InfoRow
               label='Tổng thời gian'
@@ -591,8 +595,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               label='Số điện thoại'
               value={esim.phoneNumber ? `Có: ${esim.phoneNumber}` : 'Không'}
             />
-            <InfoRow label='Roaming' value={<YesNo value={isRoaming} testId='esim-roaming' />} />
-            <InfoRow label='Thời gian làm mới mỗi ngày' value={dailyResetText(plan)} />
+            <InfoRow label='Giờ làm mới mỗi ngày' value={dailyResetText(plan)} />
             <InfoRow label='Hỗ trợ dùng TikTok & AI' value={appSupportText(plan)} />
           </div>
         </CardContent>
