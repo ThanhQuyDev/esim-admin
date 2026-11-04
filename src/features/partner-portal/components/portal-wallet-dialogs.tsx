@@ -190,6 +190,11 @@ export function DepositDialog({ open, onOpenChange }: DialogProps) {
                   khuyến mãi &quot;{pending.promotionName}&quot;).
                 </p>
               )}
+              {/* A deposit waits for its money, it has no time limit: a countdown
+                  here would invent one (vande-0411 #053). */}
+              <p className='text-xs font-medium' data-testid='deposit-no-time-limit'>
+                Mã QR này không giới hạn thời gian: chuyển khoản lúc nào, số dư được cộng lúc đó.
+              </p>
               <p className='text-muted-foreground text-xs'>
                 Giữ đúng nội dung chuyển khoản để hệ thống đối chiếu tự động. Số dư được cộng ngay
                 khi tiền vào, không cần chờ duyệt.
