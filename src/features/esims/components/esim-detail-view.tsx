@@ -299,7 +299,10 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               <InfoRow label='Phút gọi / SMS' value={callSmsSummary(plan) ?? 'Không (chỉ data)'} />
               <InfoRow label='Hỗ trợ Topup' value={topUpLabel(plan)} />
               <InfoRow label='Hỗ trợ hoàn tiền' value={<YesNo value={plan?.isRefundable} />} />
-              <InfoRow label='Giá vốn VNĐ' value={plan ? formatVnd(plan.vndCostPrice ?? 0) : '—'} />
+              <InfoRow
+                label='Giá vốn VNĐ'
+                value={plan ? formatVnd(plan.vndCostExact || plan.vndCostPrice || 0) : '—'}
+              />
               <InfoRow label='Giá bán VNĐ' value={plan ? formatVnd(plan.vndPrice ?? 0) : '—'} />
               <InfoRow label='Giá bán $' value={usd ? formatUsd(usd.price) : '—'} />
             </div>

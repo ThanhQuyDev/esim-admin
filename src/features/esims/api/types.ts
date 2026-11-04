@@ -107,6 +107,8 @@ export type EsimPlan = {
   standardName?: string | null;
   isAddOn?: boolean;
   vndCostPrice?: number | null;
+  /** The same cost to the đồng; the figure to show (vande-0411 #004). */
+  vndCostExact?: number | null;
   vndPrice?: number | null;
   fupSpeed?: string | null;
   apn?: string | null;

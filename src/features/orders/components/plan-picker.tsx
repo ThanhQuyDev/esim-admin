@@ -201,9 +201,10 @@ export function PlanPicker({
                           {formatVnd(Number(plan.vndPrice))}
                         </span>
                       </div>
-                      {plan.vndCostPrice ? (
+                      {plan.vndCostExact || plan.vndCostPrice ? (
                         <span className='text-muted-foreground self-end text-xs tabular-nums'>
-                          Giá vốn (gồm thuế phí): {formatVnd(Number(plan.vndCostPrice))}
+                          Giá vốn (gồm thuế phí):{' '}
+                          {formatVnd(Number(plan.vndCostExact) || Number(plan.vndCostPrice))}
                         </span>
                       ) : null}
                       <span className='text-muted-foreground truncate text-xs'>

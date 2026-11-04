@@ -26,6 +26,8 @@ export type Plan = {
   usdRetailPrice?: number | string | null;
   /** Cost incl. the supplier surcharge, in đồng (v3 #018). */
   vndCostPrice?: number | string | null;
+  /** The same cost to the đồng; the figure to show (vande-0411 #004). */
+  vndCostExact?: number | string | null;
   vndPrice: string;
   price: string;
   retailPrice: string;
