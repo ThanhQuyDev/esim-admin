@@ -16,13 +16,34 @@ import {
   esimStatusVariant,
   isExpiredStock
 } from '../../lib/esim-status';
-import { callSmsSummary, hasCallOrSms, planDisplayName } from '@/features/plans/utils/plan-label';
+import { hasCallOrSms, planDisplayName } from '@/features/plans/utils/plan-label';
 import { PROVIDER_LABELS, providerLabel } from '@/features/overview/api/constants';
 
 /** The days the customer picked, or the plan's own, then what top-ups added. */
 function esimTotalDays(esim: Esim): number | null {
   const days = esim.chosenDays && esim.chosenDays > 0 ? esim.chosenDays : esim.plan?.durationDays;
   return days == null ? null : days + (esim.addedDays ?? 0);
+}
+
+/** MB from what is stored: 2048, or "3GB" / "500MB" on older rows. */
+function storedMb(value: string | number | null | undefined): number {
+  const match = String(value ?? '').match(/^\s*([\d.]+)\s*(gb|mb)?\s*$/i);
+  if (!match) return 0;
+  const n = Number(match[1]);
+  return match[2]?.toLowerCase() === 'gb' ? n * 1024 : n;
+}
+
+function roundedSize(mb: number): string {
+  if (mb >= 1024) return `${parseFloat((mb / 1024).toFixed(2))} GB`;
+  return `${Math.round(mb)} MB`;
+}
+
+/** "24 MB / 2 GB": used of the plan and what top-ups added. */
+function esimDataLabel(esim: Esim): string {
+  const planMb = Number(esim.plan?.dataMb) || 0;
+  const total = Math.max(storedMb(esim.dataTotal), planMb + (esim.addedDataMb ?? 0));
+  const used = roundedSize(storedMb(esim.dataUsed));
+  return total > 0 ? `${used} / ${roundedSize(total)}` : `${used} / Không giới hạn`;
 }
 
 const packageTypeOptions = [
@@ -118,17 +139,6 @@ export const columns: ColumnDef<Esim>[] = [
     enableSorting: false
   },
   {
-    id: 'duration',
-    // The days the customer picked, then what top-ups added (vande-0411 #035).
-    accessorFn: (row) => esimTotalDays(row),
-    header: 'Thời hạn',
-    cell: ({ row }) => {
-      const durationDays = esimTotalDays(row.original);
-      return durationDays == null ? '—' : `${durationDays} ngày`;
-    },
-    enableSorting: false
-  },
-  {
     id: 'packageType',
     accessorFn: (row) => row.plan?.type ?? '',
     header: 'Loại gói',
@@ -179,16 +189,42 @@ export const columns: ColumnDef<Esim>[] = [
     }
   },
   {
-    // The plan's allowance, not the eSIM's own — an eSIM has no minutes of its
-    // own, it inherits the plan's (#020).
+    id: 'duration',
+    // The days the customer picked, then what top-ups added (vande-0411 #035).
+    accessorFn: (row) => esimTotalDays(row),
+    header: 'Thời hạn',
+    cell: ({ row }) => {
+      const durationDays = esimTotalDays(row.original);
+      return durationDays == null ? '—' : `${durationDays} ngày`;
+    },
+    enableSorting: false
+  },
+  {
+    // Rounded here, exact on the eSIM's page (vande-0411 #047).
+    id: 'dataUsed',
+    accessorKey: 'dataUsed',
+    header: 'Dữ liệu đã dùng',
+    cell: ({ row }) => <span className='whitespace-nowrap'>{esimDataLabel(row.original)}</span>,
+    enableSorting: false
+  },
+  {
+    // One column, with the figures when it has any (vande-0411 #047). The plan's
+    // allowance: an eSIM has no minutes of its own (#020).
     id: 'hasCallSms',
     accessorFn: (row) => (hasCallOrSms(row.plan) ? 'true' : 'false'),
     header: 'Call/SMS',
-    cell: ({ row }) => (
-      <Badge variant={hasCallOrSms(row.original.plan) ? 'default' : 'secondary'}>
-        {hasCallOrSms(row.original.plan) ? 'Có' : 'Không'}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const plan = row.original.plan;
+      const minutes = Number(plan?.call) || 0;
+      const sms = Number(plan?.sms) || 0;
+      if (minutes === 0 && sms === 0) return <Badge variant='secondary'>Không</Badge>;
+      return (
+        <div className='flex flex-col text-xs'>
+          {minutes > 0 && <span>{minutes} phút gọi</span>}
+          {sms > 0 && <span>{sms} SMS</span>}
+        </div>
+      );
+    },
     enableSorting: false,
     enableColumnFilter: true,
     meta: {
@@ -198,36 +234,29 @@ export const columns: ColumnDef<Esim>[] = [
     }
   },
   {
-    // The figures next to the Có/Không flag, laid out like the plans page (#022).
-    id: 'callSmsDetail',
-    accessorFn: (row) => callSmsSummary(row.plan) ?? '',
-    header: 'SMS & Gọi điện',
+    // What the plan takes, then when this eSIM last had one (vande-0411 #047).
+    id: 'topUp',
+    accessorFn: (row) => (row.plan?.topUp ? 'true' : 'false'),
+    header: 'Topup / Addon',
     cell: ({ row }) => {
-      const plan = row.original.plan;
-      const minutes = Number(plan?.call) || 0;
-      const sms = Number(plan?.sms) || 0;
-      if (minutes === 0 && sms === 0) return <span className='text-muted-foreground'>—</span>;
+      const count = row.original.topupCount ?? 0;
       return (
-        <div className='flex flex-col text-xs'>
-          {minutes > 0 && <span>{minutes} phút gọi</span>}
-          {sms > 0 && <span>{sms} SMS</span>}
+        <div className='flex flex-col gap-1'>
+          <Badge
+            variant={purchaseKindOf(row.original.plan) === 'none' ? 'secondary' : 'default'}
+            className='w-fit'
+          >
+            {purchaseKindLabel(row.original.plan)}
+            {count > 1 ? ` ×${count}` : ''}
+          </Badge>
+          {count > 0 && row.original.lastTopupAt && (
+            <span className='text-muted-foreground text-xs' data-testid='esim-last-topup'>
+              {formatDateVn(row.original.lastTopupAt)}
+            </span>
+          )}
         </div>
       );
     },
-    enableSorting: false
-  },
-  {
-    // "Can be topped up" — a property of the PLAN. Deliberately worded apart
-    // from "Đã Topup" below, which is a fact about this eSIM (#025).
-    id: 'topUp',
-    accessorFn: (row) => (row.plan?.topUp ? 'true' : 'false'),
-    header: 'Mua thêm',
-    // Topup / Addon / Không (vande-0411 #015).
-    cell: ({ row }) => (
-      <Badge variant={purchaseKindOf(row.original.plan) === 'none' ? 'secondary' : 'default'}>
-        {purchaseKindLabel(row.original.plan)}
-      </Badge>
-    ),
     enableSorting: false,
     enableColumnFilter: true,
     meta: {
@@ -235,47 +264,6 @@ export const columns: ColumnDef<Esim>[] = [
       variant: 'multiSelect' as const,
       options: YES_NO_OPTIONS
     }
-  },
-  {
-    // Whether this eSIM HAS been topped up (#025). Derived from the paid TOPUP
-    // orders against its ICCID, so it is right for eSIMs topped up long ago.
-    id: 'toppedUp',
-    accessorFn: (row) => ((row.topupCount ?? 0) > 0 ? 'true' : 'false'),
-    header: 'Đã Topup',
-    cell: ({ row }) => {
-      const count = row.original.topupCount ?? 0;
-      if (count === 0) return <span className='text-muted-foreground'>—</span>;
-      return (
-        <div className='flex flex-col gap-1'>
-          <Badge variant='default' className='w-fit'>
-            Topup{count > 1 ? ` ×${count}` : ''}
-          </Badge>
-          {row.original.lastTopupAt && (
-            <span className='text-muted-foreground text-xs'>
-              {formatDateVn(row.original.lastTopupAt)}
-            </span>
-          )}
-        </div>
-      );
-    },
-    enableSorting: false
-  },
-  {
-    id: 'dataUsed',
-    accessorKey: 'dataUsed',
-    header: 'Dữ liệu đã dùng',
-    cell: ({ row }) => (
-      <span>
-        {row.original.dataUsed} / {row.original.dataTotal}
-      </span>
-    ),
-    enableSorting: false
-  },
-  {
-    id: 'phoneNumber',
-    accessorKey: 'phoneNumber',
-    header: 'Số điện thoại',
-    cell: ({ row }) => row.original.phoneNumber || '—'
   },
   // The "Roaming" column is gone (#022): it said nothing useful about an eSIM,
   // and its place is taken by Call/SMS + SMS & Gọi điện above.

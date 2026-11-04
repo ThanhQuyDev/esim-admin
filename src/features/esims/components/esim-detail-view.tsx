@@ -378,7 +378,8 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               />
               <InfoRow
                 label='Dữ liệu'
-                value={data ? `${usedData(data.used)} / ${formatDataSize(data.total)}` : '—'}
+                // Exact here, with the unit; rounded in the list (vande-0411 #047).
+                value={data ? `${data.used} MB / ${data.total} MB` : '—'}
               />
               <InfoRow label='Phút gọi / SMS' value={callSmsSummary(plan) ?? 'Không (chỉ data)'} />
               <InfoRow label='Mua thêm' value={topUpLabel(plan)} />
