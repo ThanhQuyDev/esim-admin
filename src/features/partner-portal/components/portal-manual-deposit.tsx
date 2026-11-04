@@ -78,10 +78,15 @@ function PartnerBankBox() {
 /** "Nhập thông tin chuyển khoản" (vande #069). */
 export function ManualDepositDialog({
   open,
-  onOpenChange
+  onOpenChange,
+  minVnd,
+  maxVnd
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** This partner's deposit limits (vande-0411 #014). */
+  minVnd?: number;
+  maxVnd?: number;
 }) {
   const [amount, setAmount] = useState('');
   const [content, setContent] = useState('');
@@ -114,6 +119,8 @@ export function ManualDepositDialog({
     if (!amount.trim() || !(value > 0) || !Number.isInteger(value)) {
       return 'Nhập số tiền đã thanh toán.';
     }
+    if (minVnd && value < minVnd) return `Số tiền nạp tối thiểu là ${formatVnd(minVnd)}.`;
+    if (maxVnd && value > maxVnd) return `Số tiền nạp tối đa mỗi lần là ${formatVnd(maxVnd)}.`;
     if (content.trim().length < 2) return 'Nhập nội dung chuyển tiền.';
     if (files.length === 0) return 'Đính kèm bằng chứng chuyển tiền (ảnh hoặc ủy nhiệm chi).';
     return null;
@@ -185,6 +192,13 @@ export function ManualDepositDialog({
               onChange={(e) => setAmount(e.target.value)}
             />
             {value > 0 && <p className='text-muted-foreground text-xs'>{formatVnd(value)}</p>}
+            {(minVnd || maxVnd) && (
+              <p className='text-muted-foreground text-xs' data-testid='manual-deposit-limits'>
+                {minVnd ? `Tối thiểu ${formatVnd(minVnd)}` : ''}
+                {minVnd && maxVnd ? ' · ' : ''}
+                {maxVnd ? `Tối đa ${formatVnd(maxVnd)} mỗi lần` : ''}
+              </p>
+            )}
           </div>
 
           <div className='space-y-1.5'>

@@ -342,6 +342,8 @@ export function PortalWalletView() {
         <ManualDepositDialog
           open={dialog === 'deposit'}
           onOpenChange={(o) => setDialog(o ? 'deposit' : null)}
+          minVnd={wallet?.topupPolicy?.minVnd}
+          maxVnd={wallet?.topupPolicy?.maxVnd}
         />
       ) : (
         <DepositDialog
