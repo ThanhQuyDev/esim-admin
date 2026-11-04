@@ -1,5 +1,6 @@
 'use client';
 
+import { esimDataLabel } from '../../lib/esim-data';
 import { purchaseKindLabel, purchaseKindOf } from '@/lib/plan-purchase-kind';
 import Link from 'next/link';
 import { formatDateVn } from '@/lib/format';
@@ -23,27 +24,6 @@ import { PROVIDER_LABELS, providerLabel } from '@/features/overview/api/constant
 function esimTotalDays(esim: Esim): number | null {
   const days = esim.chosenDays && esim.chosenDays > 0 ? esim.chosenDays : esim.plan?.durationDays;
   return days == null ? null : days + (esim.addedDays ?? 0);
-}
-
-/** MB from what is stored: 2048, or "3GB" / "500MB" on older rows. */
-function storedMb(value: string | number | null | undefined): number {
-  const match = String(value ?? '').match(/^\s*([\d.]+)\s*(gb|mb)?\s*$/i);
-  if (!match) return 0;
-  const n = Number(match[1]);
-  return match[2]?.toLowerCase() === 'gb' ? n * 1024 : n;
-}
-
-function roundedSize(mb: number): string {
-  if (mb >= 1024) return `${parseFloat((mb / 1024).toFixed(2))} GB`;
-  return `${Math.round(mb)} MB`;
-}
-
-/** "24 MB / 2 GB": used of the plan and what top-ups added. */
-function esimDataLabel(esim: Esim): string {
-  const planMb = Number(esim.plan?.dataMb) || 0;
-  const total = Math.max(storedMb(esim.dataTotal), planMb + (esim.addedDataMb ?? 0));
-  const used = roundedSize(storedMb(esim.dataUsed));
-  return total > 0 ? `${used} / ${roundedSize(total)}` : `${used} / Không giới hạn`;
 }
 
 const packageTypeOptions = [
