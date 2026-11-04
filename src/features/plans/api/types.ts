@@ -75,6 +75,8 @@ export type Plan = {
     tiktokAndroid: boolean;
     tiktokAllDevices: boolean;
     chatGpt: boolean;
+    gemini?: boolean;
+    claude?: boolean;
     known: boolean;
   };
   /**

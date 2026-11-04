@@ -59,11 +59,22 @@ function AppSupportCell({ plan }: { plan: Plan }) {
   if (support?.tiktokAllDevices && support.chatGpt) {
     label = 'Có';
     variant = 'default';
-  } else if (support?.known && (support.chatGpt || support.tiktokIos || support.tiktokAndroid)) {
+  } else if (
+    support?.known &&
+    (support.chatGpt ||
+      support.tiktokIos ||
+      support.tiktokAndroid ||
+      support.gemini ||
+      support.claude)
+  ) {
+    // TikTok on both phones with no ChatGPT read a bare "Chỉ" (vande-0411 #041).
     const parts = [
+      support.tiktokIos && support.tiktokAndroid ? 'TikTok' : null,
       support.tiktokIos && !support.tiktokAndroid ? 'TikTok iPhone' : null,
       !support.tiktokIos && support.tiktokAndroid ? 'TikTok Android' : null,
-      support.chatGpt ? 'ChatGPT' : null
+      support.chatGpt ? 'ChatGPT' : null,
+      support.gemini ? 'Gemini' : null,
+      support.claude ? 'Claude' : null
     ].filter(Boolean);
     label = `Chỉ ${parts.join(', ')}`;
     variant = 'outline';
