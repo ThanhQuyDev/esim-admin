@@ -1,5 +1,6 @@
 'use client';
 
+import { paymentMethodName } from '../utils/payment-method';
 import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { AttributionTraceCard } from './attribution-trace';
 import { esimQrLogoSettings } from '@/features/esims/lib/esim-qr';
@@ -717,7 +718,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             )}
           </div>
           <div className='space-y-3'>
-            <InfoRow label='Thanh toán' value={order.paymentMethod} />
+            <InfoRow label='Thanh toán' value={paymentMethodName(order.paymentMethod)} />
             <InfoRow
               label='Payment ID'
               value={<span className='font-mono text-xs'>{order.paymentId}</span>}

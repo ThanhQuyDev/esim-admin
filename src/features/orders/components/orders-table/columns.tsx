@@ -1,4 +1,5 @@
 'use client';
+import { paymentMethodName } from '../../utils/payment-method';
 import { formatDateVn } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
@@ -16,14 +17,6 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
   completed: 'default',
   cancelled: 'destructive',
   refunded: 'destructive'
-};
-
-const paymentMethodLabel: Record<string, string> = {
-  credit_card: 'Thẻ tín dụng',
-  paypal: 'PayPal',
-  bank_transfer: 'Chuyển khoản',
-  momo: 'MoMo',
-  vnpay: 'VNPay'
 };
 
 function formatCurrency(amount: number, currency: string) {
@@ -181,7 +174,7 @@ export const columns: ColumnDef<Order>[] = [
     id: 'paymentMethod',
     accessorKey: 'paymentMethod',
     header: 'Thanh toán',
-    cell: ({ row }) => paymentMethodLabel[row.original.paymentMethod] ?? row.original.paymentMethod,
+    cell: ({ row }) => paymentMethodName(row.original.paymentMethod),
     enableSorting: false
   },
   {
