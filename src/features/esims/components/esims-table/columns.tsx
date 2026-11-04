@@ -19,6 +19,12 @@ import {
 import { callSmsSummary, hasCallOrSms, planDisplayName } from '@/features/plans/utils/plan-label';
 import { PROVIDER_LABELS, providerLabel } from '@/features/overview/api/constants';
 
+/** The days the customer picked, or the plan's own, then what top-ups added. */
+function esimTotalDays(esim: Esim): number | null {
+  const days = esim.chosenDays && esim.chosenDays > 0 ? esim.chosenDays : esim.plan?.durationDays;
+  return days == null ? null : days + (esim.addedDays ?? 0);
+}
+
 const packageTypeOptions = [
   { value: 'fixed', label: 'Cố định' },
   { value: 'daily', label: 'Theo ngày' },
@@ -113,10 +119,11 @@ export const columns: ColumnDef<Esim>[] = [
   },
   {
     id: 'duration',
-    accessorFn: (row) => row.plan?.durationDays,
+    // The days the customer picked, then what top-ups added (vande-0411 #035).
+    accessorFn: (row) => esimTotalDays(row),
     header: 'Thời hạn',
     cell: ({ row }) => {
-      const durationDays = row.original.plan?.durationDays;
+      const durationDays = esimTotalDays(row.original);
       return durationDays == null ? '—' : `${durationDays} ngày`;
     },
     enableSorting: false

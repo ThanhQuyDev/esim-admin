@@ -45,6 +45,11 @@ export type Esim = {
    */
   topupCount?: number;
   lastTopupAt?: string | null;
+  /** Days the customer picked for a day pass; null for fixed plans (vande #006). */
+  chosenDays?: number | null;
+  /** Added to the plan by finished top-ups (vande-0411 #019). */
+  addedDays?: number;
+  addedDataMb?: number;
 };
 
 export type EsimUser = {
@@ -186,11 +191,6 @@ export type EsimDetail = Esim & {
   /** Newest first. Only the detail endpoint returns this (#026). */
   topups?: EsimTopup[];
   supplierRefunds?: EsimSupplierRefund[];
-  /** Days the customer picked for a day pass; null for fixed plans (vande #006). */
-  chosenDays?: number | null;
-  /** Added to the plan by finished top-ups (vande-0411 #019). */
-  addedDays?: number;
-  addedDataMb?: number;
 };
 
 export type EsimFilters = {
