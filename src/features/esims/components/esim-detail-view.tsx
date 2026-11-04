@@ -276,8 +276,6 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   const usd = plan ? planUsd(plan) : null;
   const days = daysProgress(esim);
   const data = dataProgress(esim);
-  // Airalo does not report when the plan itself started (vande #022).
-  const showActivated = esim.provider !== 'airalo' && plan?.provider !== 'airalo';
   const lpa = esim.lpa || '';
   const iosLink = lpa ? `https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=${lpa}` : '';
   const androidLink = lpa
@@ -418,9 +416,9 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               {/* The moments the supplier reports, in order (vande #011). */}
               <InfoRow label='Ngày tạo' value={formatDate(esim.createdAt)} />
               <InfoRow label='Cài đặt lúc' value={formatDate(esim.installedAt)} />
-              {showActivated && (
-                <InfoRow label='Kích hoạt gói lúc' value={formatDate(esim.activatedAt)} />
-              )}
+              {/* Always, Airalo too (vande-0411 #037): it gives no install time but
+                  the plan's start is known. */}
+              <InfoRow label='Kích hoạt gói lúc' value={formatDate(esim.activatedAt)} />
               <InfoRow label='Hết hạn lúc' value={formatDate(esim.expiresAt)} />
               <InfoRow label='Thời gian cập nhật' value={formatDate(esim.updatedAt)} />
             </div>
