@@ -247,7 +247,7 @@ export function PeriodRangePicker({ groupBy, from, to, onChange }: PeriodRangePi
           variant='outline'
           data-testid='overview-period-range'
           className={cn(
-            'w-full min-w-0 justify-start text-left font-normal sm:w-[250px]',
+            'w-full min-w-0 shrink justify-start text-left font-normal sm:w-[250px]',
             !selectedFrom && 'text-muted-foreground'
           )}
         >
