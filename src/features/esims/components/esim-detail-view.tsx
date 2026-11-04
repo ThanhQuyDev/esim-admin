@@ -615,7 +615,9 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                 value={[esim.user.firstName, esim.user.lastName].filter(Boolean).join(' ')}
               />
               <InfoRow label='Email' value={esim.user.email} />
-              <InfoRow label='Số điện thoại' value={esim.phoneNumber} />
+              {/* The person's own number; the eSIM's is under technical details
+                  (vande-0411 #046). */}
+              <InfoRow label='Số điện thoại' value={esim.user.phoneNumber} />
               <InfoRow
                 label='Trạng thái'
                 value={
