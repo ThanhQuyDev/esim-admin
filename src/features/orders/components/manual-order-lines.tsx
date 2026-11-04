@@ -200,7 +200,12 @@ export function ManualOrderLines({
         if (line.key !== key) return line;
         const next = { ...line, ...patch };
         // A filter change can rule the picked plan out — make them pick again.
-        if (!('plan' in patch) && !('quantity' in patch)) next.plan = null;
+        // The quantity and the days are not filters: counting the days as one
+        // dropped the plan at each keystroke, and the days box with it, which
+        // is what made the popup jump (vande-0411 #012).
+        if (!('plan' in patch) && !('quantity' in patch) && !('days' in patch)) {
+          next.plan = null;
+        }
         return next;
       })
     );
