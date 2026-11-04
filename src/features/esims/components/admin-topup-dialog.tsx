@@ -188,7 +188,8 @@ export function AdminTopupDialog({ iccid, open, onOpenChange }: AdminTopupDialog
           </p>
         ) : packages.length === 0 ? (
           <p className='text-muted-foreground py-6 text-center text-sm'>
-            Nhà cung cấp của eSIM này không hỗ trợ nạp thêm, hoặc hiện không có gói nào khả dụng.
+            Nhà cung cấp hiện không trả về gói nào cho eSIM này: eSIM có thể chưa kích hoạt, đã hết
+            hạn, hoặc nhà cung cấp tạm thời không bán. Có thể thử lại sau.
           </p>
         ) : (
           <div className='max-h-[40vh] space-y-2 overflow-auto'>

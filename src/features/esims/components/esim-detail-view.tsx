@@ -1,6 +1,6 @@
 'use client';
 
-import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
+import { purchaseKindLabel, purchaseKindOf } from '@/lib/plan-purchase-kind';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
@@ -187,8 +187,9 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
     (esim as { lifecycleStatus?: string }).lifecycleStatus === 'refunded';
   const topupBlockedReason = refunded
     ? 'eSIM đã hoàn tiền, không topup được'
-    : plan && !plan.topUp
-      ? 'Gói của eSIM này không hỗ trợ topup'
+    : // An add-on plan has topUp off and still sells data (vande-0411 #017).
+      plan && purchaseKindOf(plan) === 'none'
+      ? 'Gói của eSIM này không hỗ trợ mua thêm'
       : null;
   // What the supplier said, else the plan's refund rule: refundable eSIMs
   // roam, local ones do not (doitac-1410 #080).
