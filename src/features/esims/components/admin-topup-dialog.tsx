@@ -257,6 +257,16 @@ export function AdminTopupDialog({ iccid, open, onOpenChange }: AdminTopupDialog
               </Button>
               <span className='text-muted-foreground text-sm'>ngày (1–365)</span>
             </div>
+            {selected.expiresAfter && (
+              <p className='text-xs font-medium' data-testid='admin-topup-days-expiry'>
+                Hạn mới: đến{' '}
+                {shortDate(
+                  new Date(
+                    new Date(selected.expiresAfter).getTime() + (days - 1) * 86_400_000
+                  ).toISOString()
+                )}
+              </p>
+            )}
             <p className='text-muted-foreground text-xs'>
               Gói tính theo ngày: {selected.dataAmountText ?? selected.name}/ngày × {days} ngày
               {selected.vndPrice
