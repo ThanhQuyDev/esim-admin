@@ -332,6 +332,8 @@ export type CreatePayoutPayload = {
 };
 
 export type PartnerApplyPayload = {
+  /** The hidden field only a script fills in (vande-0411 #006). */
+  website?: string;
   partnerType: PartnerType;
   legalType: PartnerLegalType;
   contactName: string;

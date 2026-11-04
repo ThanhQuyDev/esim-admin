@@ -7,7 +7,14 @@ export async function POST(request: NextRequest) {
   const body = await request.text();
   const res = await fetch(`${API_URL}/api/v1/partners/apply`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      // The API limits per visitor, and here it only sees this server (vande-0411 #006).
+      'x-esim-client-ip':
+        request.headers.get('x-real-ip') ||
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        ''
+    },
     body
   });
 

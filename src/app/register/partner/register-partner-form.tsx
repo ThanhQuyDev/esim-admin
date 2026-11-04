@@ -155,6 +155,8 @@ export function RegisterPartnerForm() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const [sent, setSent] = useState(false);
+  // Hidden from people; only a script fills it in (vande-0411 #006).
+  const [honeypot, setHoneypot] = useState('');
 
   const errors = useMemo(() => validate(form), [form]);
   const isCompany = form.legalType === 'company';
@@ -205,7 +207,8 @@ export function RegisterPartnerForm() {
         ...(form.channelUrl.trim() ? { url: form.channelUrl.trim() } : {}),
         ...(form.followers.trim() ? { followers: Number(form.followers.trim()) } : {})
       },
-      ...(form.notes.trim() ? { notes: form.notes.trim() } : {})
+      ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
+      ...(honeypot.trim() ? { website: honeypot.trim() } : {})
     });
   };
 
@@ -277,6 +280,21 @@ export function RegisterPartnerForm() {
 
   return (
     <form onSubmit={submit} className='space-y-4' noValidate>
+      <div
+        aria-hidden='true'
+        className='absolute top-auto left-[-9999px] h-px w-px overflow-hidden'
+      >
+        <label htmlFor='partner-website'>Website</label>
+        <input
+          id='partner-website'
+          name='website'
+          type='text'
+          tabIndex={-1}
+          autoComplete='off'
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className='text-base'>Loại hình hợp tác</CardTitle>
