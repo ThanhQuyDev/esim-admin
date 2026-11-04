@@ -178,6 +178,18 @@ export type OverviewKpis = {
   customers: { newUsers: number; plansSold: number; failedOrders: number };
 };
 
+/** Paid web orders by "Nguồn truy cập" (vande-0411 #052). */
+export type OverviewTrafficSources = {
+  total: number;
+  unrecorded: number;
+  groups: {
+    group: string;
+    orders: number;
+    percent: number;
+    sources: { source: string; orders: number; percent: number }[];
+  }[];
+};
+
 /** Visits and paid web orders, side by side (vande #059). */
 export type OverviewAudience = {
   totalVisitors: number;

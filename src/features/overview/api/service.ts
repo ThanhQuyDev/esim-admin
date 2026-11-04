@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import type {
   OverviewAudience,
+  OverviewTrafficSources,
   OverviewKpis,
   FinancialComparisonQuery,
   FinancialComparisonResponse,
@@ -75,6 +76,14 @@ export async function getOverviewKpis(filters: OverviewFilters = {}): Promise<Ov
 }
 
 /** Visits and orders by device, new or returning, and place (vande #059). */
+export async function getOverviewTrafficSources(
+  filters: OverviewFilters = {}
+): Promise<OverviewTrafficSources> {
+  return apiClient<OverviewTrafficSources>(
+    `/overview/traffic-sources${buildOverviewQuery(filters)}`
+  );
+}
+
 export async function getOverviewAudience(
   filters: OverviewFilters = {}
 ): Promise<OverviewAudience> {

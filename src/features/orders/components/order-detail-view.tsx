@@ -460,6 +460,15 @@ function buyerLocationText(location?: string | null, ip?: string | null): string
   return location ? `${location} - IP: ${ip}` : `IP: ${ip}`;
 }
 
+/** What the source was read from: the site, the campaign, the click ids. */
+function trafficEvidence(detail: Order['trafficDetail']): string {
+  if (!detail) return '';
+  const utm = [detail.utmSource, detail.utmMedium, detail.utmCampaign].filter(Boolean).join(' / ');
+  return [detail.referrer, utm && `UTM: ${utm}`, ...(detail.clickIds ?? [])]
+    .filter(Boolean)
+    .join(' · ');
+}
+
 /** Commission that is being paid: in the 24h queue or in the wallet. */
 const COUNTED_COMMISSION = new Set(['pending', 'credited']);
 
@@ -706,6 +715,15 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               label='Thiết bị'
               value={<span data-testid='order-device'>{deviceLabel(order.device)}</span>}
             />
+            {/* Moved up from Khách hàng so the two columns balance (vande-0411 #052). */}
+            <InfoRow
+              label='Vị trí & IP'
+              value={
+                <span data-testid='customer-location'>
+                  {buyerLocationText(order.buyerLocation, order.buyerIp)}
+                </span>
+              }
+            />
             {/* After refunds, the original struck through beside it (#009). */}
             <InfoRow
               label='Tổng tiền'
@@ -753,6 +771,19 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             )}
           </div>
           <div className='space-y-3'>
+            <InfoRow
+              label='Nguồn truy cập'
+              value={
+                <span data-testid='order-traffic-source'>
+                  {order.trafficSource || '—'}
+                  {trafficEvidence(order.trafficDetail) && (
+                    <span className='text-muted-foreground block text-xs'>
+                      {trafficEvidence(order.trafficDetail)}
+                    </span>
+                  )}
+                </span>
+              }
+            />
             <InfoRow label='Thanh toán' value={paymentMethodName(order.paymentMethod)} />
             <InfoRow
               label='Payment ID'
@@ -933,14 +964,6 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   }
                 />
                 <InfoRow label='Số điện thoại' value={order.user.phoneNumber || '—'} />
-                <InfoRow
-                  label='Vị trí & IP'
-                  value={
-                    <span data-testid='customer-location'>
-                      {buyerLocationText(order.buyerLocation, order.buyerIp)}
-                    </span>
-                  }
-                />
               </div>
             )}
             {hasWalletPayment && (

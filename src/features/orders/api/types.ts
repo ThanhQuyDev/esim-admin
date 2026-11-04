@@ -50,6 +50,17 @@ export type Order = {
   /** "Vị trí & IP" of the buyer (vande #058). */
   buyerIp?: string | null;
   buyerLocation?: string | null;
+  /** "Nguồn truy cập" (vande-0411 #052). */
+  trafficSource?: string | null;
+  trafficDetail?: {
+    referrer?: string | null;
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
+    clickIds?: string[] | null;
+    secFetchSite?: string | null;
+    textFragment?: boolean | null;
+  } | null;
   /** Storefront language at checkout; "en" read prices in $ (doitac-3010 #043). */
   checkoutLocale?: string | null;
   /** "payment $": an English ($) checkout still pending or failed (#043). */

@@ -2,6 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import {
   getFinancialComparison,
   getOverviewAudience,
+  getOverviewTrafficSources,
   getOverviewKpis,
   getOrdersByDevice,
   getOverview,
@@ -70,6 +71,12 @@ export const overviewKpisQueryOptions = (filters: OverviewFilters = {}) =>
   queryOptions({
     queryKey: [...overviewKeys.all, 'kpis', filters] as const,
     queryFn: () => getOverviewKpis(filters)
+  });
+
+export const overviewTrafficSourcesQueryOptions = (filters: OverviewFilters = {}) =>
+  queryOptions({
+    queryKey: [...overviewKeys.all, 'traffic-sources', filters] as const,
+    queryFn: () => getOverviewTrafficSources(filters)
   });
 
 export const overviewAudienceQueryOptions = (filters: OverviewFilters = {}) =>

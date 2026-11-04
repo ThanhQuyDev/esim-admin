@@ -9,6 +9,7 @@ import { BarGraph } from './bar-graph';
 import { AudienceCountries, AudienceCustomerGraph, AudienceDeviceGraph } from './audience-graphs';
 import { OverviewKpiCards } from './overview-kpi-cards';
 import { PieGraph } from './pie-graph';
+import { TrafficSourceGraph } from './traffic-source-graph';
 import { ProfitBySourceGraph } from './profit-by-source-graph';
 import { RecentSales } from './recent-sales';
 import { OverviewFilters, type OverviewFiltersValue } from './overview-filters';
@@ -125,6 +126,9 @@ export function OverviewDashboard() {
             <AudienceDeviceGraph filters={queryFilters} />
           </div>
         </div>
+
+        {/* Where paid orders came from (vande-0411 #052). */}
+        <TrafficSourceGraph filters={queryFilters} />
 
         {/* Who comes and who buys (vande #059). */}
         <div className='grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3'>
