@@ -49,8 +49,9 @@ export function planDisplayName(
   // "- 0Mins - 0SMS".
   const minutes = Number(plan?.call) || 0;
   const sms = Number(plan?.sms) || 0;
-  if (minutes > 0) parts.push(`${minutes}Mins`);
-  if (sms > 0) parts.push(`${sms}SMS`);
+  // Our own plans already name them: "… - 500 Mins Onnet - 30 days" (vande-0411 #044).
+  if (minutes > 0 && !/\bmins?\b|phút/i.test(base)) parts.push(`${minutes}Mins`);
+  if (sms > 0 && !/\bsms\b/i.test(base)) parts.push(`${sms}SMS`);
 
   const label = parts.join(' - ');
 
