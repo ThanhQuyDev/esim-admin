@@ -73,6 +73,7 @@ function OrdersTableContent() {
     kind: parseAsString,
     partner: parseAsString,
     usd: parseAsString,
+    esimError: parseAsString,
     createdFrom: parseAsString,
     createdTo: parseAsString,
     sort: getSortingStateParser(columnIds).withDefault([])
@@ -290,6 +291,27 @@ function OrdersTableContent() {
           <SelectContent>
             <SelectItem value='all'>Khách xem giá: Tất cả</SelectItem>
             <SelectItem value='usd'>Khách xem giá $ (bản tiếng Anh)</SelectItem>
+          </SelectContent>
+        </Select>
+        {/* Orders with eSIMs the supplier has not taken (vande-0411 #010). */}
+        <Select
+          value={params.esimError === '1' ? 'error' : 'all'}
+          onValueChange={(value) =>
+            startTransition(() => {
+              setParams({ esimError: value === 'error' ? '1' : null, page: 1 });
+            })
+          }
+        >
+          <SelectTrigger
+            className='w-44'
+            aria-label='Lọc đơn có eSIM lỗi'
+            data-testid='orders-esim-error'
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>eSIM: Tất cả</SelectItem>
+            <SelectItem value='error'>Đơn có eSIM lỗi</SelectItem>
           </SelectContent>
         </Select>
       </div>

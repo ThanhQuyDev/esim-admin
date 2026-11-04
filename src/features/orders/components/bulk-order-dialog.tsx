@@ -87,6 +87,7 @@ export function BulkOrderDialog({
         rows: lines.map((l) => ({
           slug: l.slug,
           quantity: l.quantity,
+          ...(l.days ? { days: l.days } : {}),
           email: l.email ?? null
         }))
       }),
@@ -255,6 +256,7 @@ export function BulkOrderDialog({
                     <tr className='text-left'>
                       <th className='px-2 py-1.5'>Dòng</th>
                       <th className='px-2 py-1.5'>Gói</th>
+                      <th className='px-2 py-1.5 text-right'>Số ngày</th>
                       <th className='px-2 py-1.5 text-right'>SL</th>
                       <th className='px-2 py-1.5'>Email nhận QR</th>
                     </tr>
@@ -264,6 +266,7 @@ export function BulkOrderDialog({
                       <tr key={l.row} className='border-t'>
                         <td className='px-2 py-1.5'>{l.row}</td>
                         <td className='px-2 py-1.5'>{l.plan?.label ?? l.slug}</td>
+                        <td className='px-2 py-1.5 text-right tabular-nums'>{l.days ?? '—'}</td>
                         <td className='px-2 py-1.5 text-right tabular-nums'>{l.quantity}</td>
                         <td className='px-2 py-1.5'>
                           {l.email ?? (mode === 'file' ? '—' : 'Thiếu')}

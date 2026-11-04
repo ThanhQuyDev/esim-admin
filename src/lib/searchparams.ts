@@ -66,6 +66,7 @@ export const searchParams = {
   partner: parseAsString,
   /** "1": checked out in English, prices in $ (doitac-3010 #043). */
   usd: parseAsString,
+  esimError: parseAsString,
   createdFrom: parseAsString,
   createdTo: parseAsString,
   // esims list (#020). `esimStatus` rather than `status`, which is already a

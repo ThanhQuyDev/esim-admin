@@ -49,6 +49,16 @@ export const columns: ColumnDef<Order>[] = [
     cell: ({ row }) => (
       <div className='flex items-center gap-1.5'>
         <span className='font-mono text-xs font-medium'>{row.original.orderNumber}</span>
+        {(row.original.esimErrorCount ?? 0) > 0 && (
+          <Badge
+            variant='destructive'
+            className='px-1 py-0 text-[10px]'
+            title='Nhà cung cấp chưa nhận, mở đơn để xem lỗi và gọi lại API'
+            data-testid={`esim-error-${row.original.id}`}
+          >
+            {row.original.esimErrorCount} eSIM lỗi
+          </Badge>
+        )}
         {row.original.hasInvoice && (
           <Badge variant='destructive' className='px-1 py-0 text-[10px]'>
             VAT

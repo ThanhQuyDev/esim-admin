@@ -49,7 +49,8 @@ export function ManualOrderFileImport({
           packageCode: l.plan!.packageCode,
           label: l.plan!.label
         },
-        quantity: String(l.quantity)
+        quantity: String(l.quantity),
+        days: String(l.days ?? 1)
       }));
       if (kept.length + imported.length > MAX_LINES) {
         toast.error(

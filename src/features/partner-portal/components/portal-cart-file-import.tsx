@@ -97,7 +97,11 @@ function BulkOrderDialog({
         const result = await purchaseCart({
           items: preview!.lines
             .filter((l) => l.planId)
-            .map((l) => ({ planId: l.planId!, quantity: l.quantity })),
+            .map((l) => ({
+              planId: l.planId!,
+              quantity: l.quantity,
+              ...(l.days && l.days > 1 ? { periodNum: l.days } : {})
+            })),
           bulkMode: 'file',
           bulkBatch: newBatchId()
         });
@@ -107,7 +111,11 @@ function BulkOrderDialog({
       for (const order of preview!.orders) {
         const items = preview!.lines
           .filter((l) => (l.email ?? null) === order.email && l.planId)
-          .map((l) => ({ planId: l.planId!, quantity: l.quantity }));
+          .map((l) => ({
+            planId: l.planId!,
+            quantity: l.quantity,
+            ...(l.days && l.days > 1 ? { periodNum: l.days } : {})
+          }));
         const recipientEmail = order.email ?? (email.trim() || undefined);
         try {
           const result = await purchaseCart({
@@ -283,6 +291,7 @@ function BulkOrderDialog({
                       <p className='truncate text-sm font-medium'>{line.name ?? line.slug}</p>
                       <p className='text-muted-foreground truncate text-xs'>
                         {line.slug}
+                        {line.days ? ` · ${line.days} ngày` : ''}
                         {line.email ? ` · QR: ${line.email}` : ''}
                       </p>
                       {line.error && <p className='text-destructive text-xs'>{line.error}</p>}
@@ -376,10 +385,14 @@ function BulkOrderDialog({
                 for (const line of preview.lines) {
                   addToCart({
                     planId: line.planId!,
-                    name: line.name ?? line.slug,
+                    name:
+                      line.days && line.days > 1
+                        ? `${line.name ?? line.slug} — ${line.days} ngày`
+                        : (line.name ?? line.slug),
                     destinationName: line.destinationName,
                     unitPriceVnd: line.unitPriceVnd,
-                    quantity: line.quantity
+                    quantity: line.quantity,
+                    ...(line.days && line.days > 1 ? { periodNum: line.days } : {})
                   });
                 }
                 toast.success(`Đã thêm ${preview.lines.length} dòng vào giỏ hàng.`);

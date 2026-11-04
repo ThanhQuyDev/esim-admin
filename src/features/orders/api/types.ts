@@ -54,6 +54,8 @@ export type Order = {
   checkoutLocale?: string | null;
   /** "payment $": an English ($) checkout still pending or failed (#043). */
   paymentUsdIssue?: boolean;
+  /** eSIMs of this order the supplier has not taken (vande-0411 #010). */
+  esimErrorCount?: number;
   /** Ordered in bulk from a file: mailed spaced out, or as a list (vande #057). */
   bulkMode?: 'email' | 'file' | null;
   bulkEmailIntervalSec?: number | null;
@@ -424,6 +426,8 @@ export type ManualOrderFilePreview = {
     row: number;
     slug: string;
     quantity: number;
+    /** Days of a day pass; null for any other plan (vande-0411 #010). */
+    days?: number | null;
     /** "Email nhận QR" — only read for a bulk order (vande #057). */
     email?: string | null;
     plan: { id: number; slug: string; packageCode: string; label: string } | null;

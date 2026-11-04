@@ -24,6 +24,7 @@ export type OrderFilterParams = {
   partner?: string | null;
   /** "1": English ($) checkouts only (doitac-3010 #043). */
   usd?: string | null;
+  esimError?: string | null;
   createdFrom?: string | null;
   createdTo?: string | null;
 };
@@ -54,6 +55,7 @@ export function buildOrderApiFilters(params: OrderFilterParams): Record<string, 
   const partnerId = Number(params.partner);
   if (Number.isInteger(partnerId) && partnerId > 0) filters.affiliatePartnerId = partnerId;
   if (params.usd === '1') filters.usdCheckout = true;
+  if (params.esimError === '1') filters.esimError = true;
   if (params.createdFrom) filters.createdFrom = params.createdFrom;
   if (params.createdTo) filters.createdTo = params.createdTo;
 

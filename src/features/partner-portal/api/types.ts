@@ -835,6 +835,8 @@ export type CartFilePreview = {
     row: number;
     slug: string;
     quantity: number;
+    /** Days of a day pass; null for any other plan (vande-0411 #010). */
+    days: number | null;
     email: string | null;
     planId: number | null;
     name: string | null;

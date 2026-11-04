@@ -20,6 +20,7 @@ export default function OrderListingPage() {
     kind: searchParamsCache.get('kind'),
     partner: searchParamsCache.get('partner'),
     usd: searchParamsCache.get('usd'),
+    esimError: searchParamsCache.get('esimError'),
     createdFrom: searchParamsCache.get('createdFrom'),
     createdTo: searchParamsCache.get('createdTo')
   });

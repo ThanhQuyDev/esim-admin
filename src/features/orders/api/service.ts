@@ -91,7 +91,7 @@ export async function previewBulkOrderFile(file: File): Promise<ManualOrderFileP
 export async function submitBulkOrder(data: {
   mode: 'email' | 'file';
   emailIntervalSec?: number;
-  rows: { slug: string; quantity: number; email?: string | null }[];
+  rows: { slug: string; quantity: number; days?: number; email?: string | null }[];
 }): Promise<BulkOrderResult> {
   return apiClient<BulkOrderResult>('/admin/orders/bulk', {
     method: 'POST',
