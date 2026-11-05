@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle
 } from '@/components/ui/sheet';
+import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
 import { ChatDestinationSearch } from './chat-destination-search';
 import { ChatOrderWidget } from './chat-order-widget';
 
@@ -36,9 +37,17 @@ export function ChatToolSheet({
   onClose: () => void;
 }) {
   const info = section ? SECTIONS[section] : null;
+  // Sits on top of the keyboard, and scrolls within what the keyboard leaves
+  // (vande-0411 #078).
+  const keyboard = useKeyboardInset(!!section);
   return (
     <Sheet open={!!section} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side='bottom' className='max-h-[85dvh] overflow-y-auto pb-6'>
+      <SheetContent
+        side='bottom'
+        className='max-h-[85dvh] overflow-y-auto pb-6'
+        data-testid='chat-tool-sheet'
+        style={keyboard ? { bottom: keyboard.bottom, maxHeight: keyboard.height - 8 } : undefined}
+      >
         <SheetHeader className='px-0'>
           <SheetTitle>{info?.title}</SheetTitle>
           <SheetDescription>{info?.description}</SheetDescription>
