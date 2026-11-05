@@ -3,7 +3,8 @@ import type {
   AnnouncementAudience,
   AnnouncementPeriod,
   CreateCustomerAnnouncementPayload,
-  CustomerAnnouncement
+  CustomerAnnouncement,
+  CustomerAnnouncementDetail
 } from './types';
 
 export async function getCustomerAnnouncements(): Promise<CustomerAnnouncement[]> {
@@ -21,8 +22,8 @@ export async function getAnnouncementAudienceCount(
 export async function previewCustomerAnnouncement(data: {
   subject: string;
   body: string;
-}): Promise<{ html: string }> {
-  return apiClient<{ html: string }>('/customer-announcements/preview', {
+}): Promise<{ html: string; from?: string }> {
+  return apiClient<{ html: string; from?: string }>('/customer-announcements/preview', {
     method: 'POST',
     body: JSON.stringify(data)
   });
@@ -35,6 +36,14 @@ export async function createCustomerAnnouncement(
     method: 'POST',
     body: JSON.stringify(data)
   });
+}
+
+export async function getCustomerAnnouncement(id: number): Promise<CustomerAnnouncementDetail> {
+  return apiClient<CustomerAnnouncementDetail>(`/customer-announcements/${id}`);
+}
+
+export async function deleteCustomerAnnouncement(id: number): Promise<void> {
+  await apiClient<unknown>(`/customer-announcements/${id}`, { method: 'DELETE' });
 }
 
 export async function cancelCustomerAnnouncement(id: number): Promise<CustomerAnnouncement> {

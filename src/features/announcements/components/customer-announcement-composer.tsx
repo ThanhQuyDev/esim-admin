@@ -38,11 +38,11 @@ import { cn } from '@/lib/utils';
 
 import { announcementKeys, audienceCountQueryOptions } from '../api/queries';
 import { createCustomerAnnouncement, previewCustomerAnnouncement } from '../api/service';
+import { EmailPreviewFrame, SenderWarning } from './email-preview-frame';
 import type { AnnouncementAudience, AnnouncementPeriod } from '../api/types';
 import { AUDIENCE_OPTIONS, PERIOD_OPTIONS } from '../constants';
 import { EmailChipsInput } from './email-chips-input';
 
-const SENDER = 'service@esim.com.vn';
 const SUBJECT_LIMIT = 200;
 
 /** The value as it changes, once it has stopped changing for `ms`. */
@@ -371,7 +371,8 @@ export function CustomerAnnouncementComposer() {
           <div className='bg-muted/60 space-y-0.5 border-b px-4 py-3 text-sm'>
             <p className='text-muted-foreground text-xs'>Xem trước email khách hàng nhận</p>
             <p className='truncate'>
-              <span className='text-muted-foreground'>Từ: </span>ESIM.VN &lt;{SENDER}&gt;
+              <span className='text-muted-foreground'>Từ: </span>ESIM.VN &lt;
+              {preview?.from ?? '…'}&gt;
             </p>
             <p className='truncate'>
               <span className='text-muted-foreground'>Tiêu đề: </span>
@@ -379,13 +380,9 @@ export function CustomerAnnouncementComposer() {
                 {subject || '(Chưa có tiêu đề)'}
               </span>
             </p>
+            <SenderWarning from={preview?.from} />
           </div>
-          <iframe
-            title='Xem trước email'
-            sandbox=''
-            srcDoc={preview?.html ?? ''}
-            className='h-[640px] w-full bg-[#f5f5f5]'
-          />
+          <EmailPreviewFrame html={preview?.html ?? ''} subject={subject} />
         </div>
       </div>
 

@@ -18,7 +18,12 @@ import { Icons } from '@/components/icons';
 import { formatDateTimeVn } from '@/lib/format';
 
 import { announcementKeys, customerAnnouncementsQueryOptions } from '../api/queries';
-import { cancelCustomerAnnouncement } from '../api/service';
+import {
+  cancelCustomerAnnouncement,
+  deleteCustomerAnnouncement,
+  getCustomerAnnouncement
+} from '../api/service';
+import { EmailPreviewFrame, SenderWarning } from './email-preview-frame';
 import type { CustomerAnnouncement } from '../api/types';
 import { AUDIENCE_LABEL, PERIOD_LABEL } from '../constants';
 import { formatSpan } from '@/lib/format-span';
@@ -87,12 +92,94 @@ function when(item: CustomerAnnouncement): string {
   )}`;
 }
 
+/** "Xem" (vande-0411 #059): the email as it went, and who it went to. */
+function AnnouncementDialog({
+  item,
+  onClose
+}: {
+  item: CustomerAnnouncement;
+  onClose: () => void;
+}) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: [...announcementKeys.all, 'detail', item.id],
+    queryFn: () => getCustomerAnnouncement(item.id)
+  });
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className='max-h-[92vh] overflow-y-auto sm:max-w-3xl'
+        data-testid='announcement-view'
+      >
+        <DialogHeader>
+          <DialogTitle className='pr-6 break-words'>{item.subject}</DialogTitle>
+          <DialogDescription>{when(item)}</DialogDescription>
+        </DialogHeader>
+        {isLoading && <Icons.spinner className='mx-auto h-6 w-6 animate-spin' />}
+        {error && <p className='text-destructive text-sm'>{(error as Error).message}</p>}
+        {data && (
+          <div className='space-y-3'>
+            <SenderWarning from={data.from} />
+            <div className='overflow-hidden rounded-lg border'>
+              <EmailPreviewFrame
+                html={data.html}
+                subject={data.subject}
+                className='h-[420px] w-full bg-[#f5f5f5]'
+              />
+            </div>
+            <details
+              className='rounded-lg border p-3 text-sm'
+              data-testid='announcement-recipients'
+            >
+              <summary className='cursor-pointer font-medium'>
+                Người nhận ({data.recipients.length}
+                {data.recipientCount != null && data.recipientCount > data.recipients.length
+                  ? ` / ${data.recipientCount}`
+                  : ''}
+                )
+              </summary>
+              <ul className='mt-2 max-h-48 space-y-1 overflow-y-auto text-xs'>
+                {data.recipients.map((r) => (
+                  <li key={r.email} className='flex justify-between gap-3'>
+                    <span className='break-all'>{r.email}</span>
+                    <span
+                      className={
+                        r.sentAt || !r.lastError
+                          ? 'text-muted-foreground shrink-0'
+                          : 'text-destructive shrink-0'
+                      }
+                      title={r.lastError ?? undefined}
+                    >
+                      {r.sentAt ? formatDateTimeVn(r.sentAt) : r.lastError ? 'Gửi lỗi' : 'Chưa gửi'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /** "Thông báo khách hàng": what has been sent or is waiting to go (vande #072). */
 export function CustomerAnnouncementsList() {
   const now = useNow();
   const queryClient = useQueryClient();
   const { data: items = [], isLoading } = useQuery(customerAnnouncementsQueryOptions());
   const [cancelling, setCancelling] = useState<CustomerAnnouncement | null>(null);
+  const [viewing, setViewing] = useState<CustomerAnnouncement | null>(null);
+  const [deleting, setDeleting] = useState<CustomerAnnouncement | null>(null);
+
+  const remove = useMutation({
+    mutationFn: (id: number) => deleteCustomerAnnouncement(id),
+    onSuccess: () => {
+      toast.success('Đã xoá thông báo khỏi danh sách.');
+      setDeleting(null);
+      void queryClient.invalidateQueries({ queryKey: announcementKeys.all });
+    },
+    onError: (e: Error) => toast.error(e.message || 'Xoá thất bại')
+  });
 
   const cancel = useMutation({
     mutationFn: (id: number) => cancelCustomerAnnouncement(id),
@@ -132,17 +219,37 @@ export function CustomerAnnouncementsList() {
               <span className='font-medium break-words'>{item.subject}</span>
               <StatusLabel item={item} now={now} />
             </div>
-            {(item.status === 'scheduled' || item.status === 'sending') && (
+            <div className='flex flex-wrap gap-2'>
               <Button
                 size='sm'
                 variant='outline'
-                className='text-destructive'
-                data-testid={`cancel-announcement-${item.id}`}
-                onClick={() => setCancelling(item)}
+                data-testid={`view-announcement-${item.id}`}
+                onClick={() => setViewing(item)}
               >
-                <Icons.close className='mr-1 h-4 w-4' /> Hủy gửi
+                <Icons.eye className='mr-1 h-4 w-4' /> Xem
               </Button>
-            )}
+              {item.status === 'scheduled' || item.status === 'sending' ? (
+                <Button
+                  size='sm'
+                  variant='outline'
+                  className='text-destructive'
+                  data-testid={`cancel-announcement-${item.id}`}
+                  onClick={() => setCancelling(item)}
+                >
+                  <Icons.close className='mr-1 h-4 w-4' /> Hủy gửi
+                </Button>
+              ) : (
+                <Button
+                  size='sm'
+                  variant='outline'
+                  className='text-destructive'
+                  data-testid={`delete-announcement-${item.id}`}
+                  onClick={() => setDeleting(item)}
+                >
+                  <Icons.trash className='mr-1 h-4 w-4' /> Xoá
+                </Button>
+              )}
+            </div>
           </div>
           <div className='mt-2 flex flex-wrap gap-2'>
             {item.audience === 'emails' ? (
@@ -166,6 +273,35 @@ export function CustomerAnnouncementsList() {
           </p>
         </div>
       ))}
+
+      {viewing && <AnnouncementDialog item={viewing} onClose={() => setViewing(null)} />}
+
+      {deleting && (
+        <Dialog open onOpenChange={(open) => !open && setDeleting(null)}>
+          <DialogContent className='sm:max-w-md'>
+            <DialogHeader>
+              <DialogTitle>Xoá thông báo?</DialogTitle>
+              <DialogDescription>
+                “{deleting.subject}” sẽ biến mất khỏi danh sách. Email đã gửi tới khách hàng thì
+                không thu hồi được.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant='outline' onClick={() => setDeleting(null)}>
+                Không
+              </Button>
+              <Button
+                variant='destructive'
+                disabled={remove.isPending}
+                onClick={() => remove.mutate(deleting.id)}
+                data-testid='confirm-delete-announcement'
+              >
+                {remove.isPending ? 'Đang xoá…' : 'Xoá'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {cancelling && (
         <Dialog open onOpenChange={(open) => !open && setCancelling(null)}>

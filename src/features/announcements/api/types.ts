@@ -54,3 +54,10 @@ export type CreateCustomerAnnouncementPayload = {
   /** ISO; omitted to send now. */
   scheduledAt?: string;
 };
+
+/** An announcement as sent, for "Xem" (vande-0411 #059). */
+export type CustomerAnnouncementDetail = CustomerAnnouncement & {
+  html: string;
+  from: string;
+  recipients: { email: string; sentAt: string | null; lastError: string | null }[];
+};

@@ -294,23 +294,14 @@ export const navGroups: NavGroup[] = [
       {
         // Its own menu (vande #072): email announcements to customers, and
         // the partner announcements that used to sit under "Quản lý đối tác".
+        // One entry: the page has the two tabs itself (vande-0411 #059). No
+        // `items` at all: an empty list with `access` is filtered out as a group
+        // nobody may open.
         title: 'Thông báo',
-        url: '#',
+        url: '/dashboard/announcements',
         icon: 'notification',
         isActive: false,
-        access: { role: [1] },
-        items: [
-          {
-            title: 'Thông báo khách hàng',
-            url: '/dashboard/announcements?tab=customer',
-            access: { role: [1] }
-          },
-          {
-            title: 'Thông báo đối tác',
-            url: '/dashboard/announcements?tab=partner',
-            access: { role: [1] }
-          }
-        ]
+        access: { role: [1] }
       },
       {
         title: 'Trò chuyện',
