@@ -17,6 +17,9 @@ import type {
   UpdateMembershipTierPayload
 } from '../api/types';
 
+/** The smallest order a referral code works on (`REFERRAL_MIN_ORDER_VND`). */
+const MAX_REFEREE_DISCOUNT_VND = 100_000;
+
 interface MembershipTierFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -35,7 +38,8 @@ const EMPTY_FORM = {
   nameEn: '',
   minimumSpendVnd: '',
   cashbackPercent: '0',
-  referralRewardVnd: '0'
+  referralRewardVnd: '0',
+  refereeDiscountVnd: '10000'
 };
 
 export function MembershipTierFormDialog({
@@ -61,7 +65,8 @@ export function MembershipTierFormDialog({
       nameEn: tier.nameEn ?? '',
       minimumSpendVnd: String(tier.minimumSpendVnd),
       cashbackPercent: String(tier.cashbackPercent),
-      referralRewardVnd: String(tier.referralRewardVnd)
+      referralRewardVnd: String(tier.referralRewardVnd),
+      refereeDiscountVnd: String(tier.refereeDiscountVnd)
     });
   }, [open, tier]);
 
@@ -70,6 +75,7 @@ export function MembershipTierFormDialog({
   const minimumSpend = Number(form.minimumSpendVnd);
   const cashback = Number(form.cashbackPercent);
   const referral = Number(form.referralRewardVnd);
+  const refereeDiscount = Number(form.refereeDiscountVnd);
   const sameThreshold = isCreate
     ? allTiers.find((t) => t.minimumSpendVnd === minimumSpend)
     : undefined;
@@ -93,6 +99,14 @@ export function MembershipTierFormDialog({
     problem = '% hoàn tiền phải từ 0 đến 100.';
   } else if (!Number.isInteger(referral) || referral < 0) {
     problem = 'Thưởng giới thiệu phải là số nguyên không âm.';
+  } else if (
+    form.refereeDiscountVnd.trim() === '' ||
+    !Number.isInteger(refereeDiscount) ||
+    refereeDiscount < 0 ||
+    refereeDiscount > MAX_REFEREE_DISCOUNT_VND
+  ) {
+    problem =
+      'Giảm giá đơn đầu tiên phải là số nguyên từ 0 đến 100.000đ, là giá trị đơn tối thiểu được dùng mã giới thiệu.';
   }
 
   function handleSubmit() {
@@ -102,7 +116,8 @@ export function MembershipTierFormDialog({
       nameEn: form.nameEn.trim() || null,
       ...(isLowest ? {} : { minimumSpendVnd: minimumSpend }),
       cashbackPercent: Math.round(cashback * 100) / 100,
-      referralRewardVnd: referral
+      referralRewardVnd: referral,
+      refereeDiscountVnd: refereeDiscount
     });
   }
 
@@ -181,6 +196,23 @@ export function MembershipTierFormDialog({
               value={form.referralRewardVnd}
               onChange={(e) => setForm((f) => ({ ...f, referralRewardVnd: e.target.value }))}
             />
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='refereeDiscountVnd'>
+              Giảm giá đơn đầu tiên cho người được giới thiệu (VND)
+            </Label>
+            <Input
+              id='refereeDiscountVnd'
+              type='number'
+              min={0}
+              max={MAX_REFEREE_DISCOUNT_VND}
+              value={form.refereeDiscountVnd}
+              onChange={(e) => setForm((f) => ({ ...f, refereeDiscountVnd: e.target.value }))}
+            />
+            <p className='text-muted-foreground text-xs'>
+              Theo hạng của người giới thiệu, áp dụng cho đơn đầu tiên từ 100.000đ.
+            </p>
           </div>
 
           {problem && <p className='text-destructive text-sm'>{problem}</p>}

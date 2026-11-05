@@ -13,6 +13,8 @@ export type MembershipTier = {
   minimumSpendVnd: number;
   cashbackPercent: number;
   referralRewardVnd: number;
+  /** Off the first order of a friend this tier referred (vande-0411 #056). */
+  refereeDiscountVnd: number;
 };
 
 export type UpdateMembershipTierPayload = Partial<Omit<MembershipTier, 'tier'>>;

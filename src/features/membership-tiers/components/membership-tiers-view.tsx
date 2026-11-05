@@ -22,6 +22,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalidMinimumSpend: 'Ngưỡng chi tiêu phải là số nguyên không âm.',
   invalidCashbackPercent: '% hoàn tiền phải từ 0 đến 100.',
   invalidReferralReward: 'Thưởng giới thiệu phải là số nguyên không âm.',
+  invalidRefereeDiscount: 'Giảm giá đơn đầu tiên phải là số nguyên từ 0 đến 100.000đ.',
   nameRequired: 'Vui lòng nhập tên hạng.',
   tierAlreadyExists: 'Đã có hạng trùng tên này. Hãy đặt tên khác.'
 };
@@ -129,7 +130,8 @@ export function MembershipTiersView() {
                 )}
                 <p className='text-muted-foreground text-sm'>
                   Ngưỡng chi tiêu: từ {vnd(tier.minimumSpendVnd)} · Hoàn tiền:{' '}
-                  {tier.cashbackPercent}% · Thưởng giới thiệu: {vnd(tier.referralRewardVnd)}
+                  {tier.cashbackPercent}% · Thưởng giới thiệu: {vnd(tier.referralRewardVnd)} · Người
+                  được giới thiệu giảm: {vnd(tier.refereeDiscountVnd)}
                 </p>
               </div>
               <div className='flex flex-wrap items-center gap-2'>
