@@ -31,11 +31,20 @@ export const PROVIDER_OPTIONS = OVERVIEW_PROVIDERS.map((provider) => ({
   label: PROVIDER_LABELS[provider] ?? provider
 }));
 
+export const REGION_TYPE_OPTIONS = [
+  { value: 'parent', label: 'Cha' },
+  { value: 'child', label: 'Con' },
+  { value: 'standalone', label: 'Thường' }
+];
+
 export type CatalogFilterParams = {
   name?: string | null;
   isPopular?: string[] | null;
   isActive?: string[] | null;
   providers?: string[] | null;
+  /** Khu vực only (vande-0411 #073). */
+  regionType?: string[] | null;
+  parentId?: string[] | null;
 };
 
 /** A Có/Không select only means something when exactly one side is picked. */
@@ -61,7 +70,11 @@ function providerTokens(slugs: string[]): string[] {
 export function buildCatalogApiFilters(params: CatalogFilterParams): Record<string, unknown> {
   const filters: Record<string, unknown> = {};
 
-  if (params.name) filters.search = params.name;
+  // The CMS also finds by slug; the storefront, sharing this search, does not.
+  if (params.name) {
+    filters.search = params.name;
+    filters.searchSlug = true;
+  }
 
   const isPopular = boolOf(params.isPopular);
   if (isPopular !== undefined) filters.isPopular = isPopular;
@@ -70,6 +83,10 @@ export function buildCatalogApiFilters(params: CatalogFilterParams): Record<stri
   if (isActive !== undefined) filters.isActive = isActive;
 
   if (params.providers?.length) filters.providers = providerTokens(params.providers);
+
+  if (params.regionType?.length) filters.regionTypes = params.regionType;
+
+  if (params.parentId?.length) filters.parentIds = params.parentId.map(Number);
 
   return filters;
 }

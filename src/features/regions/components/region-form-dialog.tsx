@@ -97,6 +97,7 @@ function CreateDialog({
   const [uploading, setUploading] = useState(false);
   const [selectedDestinationIds, setSelectedDestinationIds] = useState<number[]>([]);
   const [parentId, setParentId] = useState<number | null>(null);
+  const [isParent, setIsParent] = useState(false);
 
   const createMutation = useMutation({
     ...createRegionMutation,
@@ -155,7 +156,8 @@ function CreateDialog({
           ...(value.description && { description: value.description }),
           ...(value.descriptionVi && { descriptionVi: value.descriptionVi }),
           ...(value.providers && { providers: value.providers }),
-          ...(parentId && { parentId }),
+          isParent,
+          ...(parentId && !isParent && { parentId }),
           ...(selectedDestinationIds.length > 0 && { destinationIds: selectedDestinationIds })
         };
 
@@ -202,7 +204,12 @@ function CreateDialog({
                 onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
               }}
             />
-            <ParentRegionSelect value={parentId} onChange={setParentId} />
+            <ParentRegionSelect
+              isParent={isParent}
+              onIsParentChange={setIsParent}
+              value={parentId}
+              onChange={setParentId}
+            />
           </div>
 
           {/* The two slugs are what an editor compares against each other (#035). */}
@@ -311,6 +318,7 @@ function EditDialogForm({
     region.destinations?.map((d) => d.id) ?? []
   );
   const [parentId, setParentId] = useState<number | null>(region.parentId ?? null);
+  const [isParent, setIsParent] = useState(!!region.isParent);
 
   const updateMutation = useMutation({
     ...updateRegionMutation,
@@ -370,7 +378,8 @@ function EditDialogForm({
           noticeVi: value.noticeVi ?? '',
           providers: value.providers || null,
           // Always sent, so "Không có" takes the region off its parent (#035).
-          parentId,
+          parentId: isParent ? null : parentId,
+          isParent,
           destinationIds: selectedDestinationIds
         };
 
@@ -420,7 +429,13 @@ function EditDialogForm({
                 onBlur: z.string().min(2, 'Tên phải có ít nhất 2 ký tự')
               }}
             />
-            <ParentRegionSelect regionId={region.id} value={parentId} onChange={setParentId} />
+            <ParentRegionSelect
+              regionId={region.id}
+              isParent={isParent}
+              onIsParentChange={setIsParent}
+              value={parentId}
+              onChange={setParentId}
+            />
           </div>
 
           {/* The two slugs are what an editor compares against each other (#035). */}

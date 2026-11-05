@@ -14,7 +14,9 @@ export default function RegionListingPage() {
     name: searchParamsCache.get('name'),
     isPopular: searchParamsCache.get('isPopular'),
     isActive: searchParamsCache.get('isActive'),
-    providers: searchParamsCache.get('providers')
+    providers: searchParamsCache.get('providers'),
+    regionType: searchParamsCache.get('regionType'),
+    parentId: searchParamsCache.get('parentId')
   });
 
   // Built exactly as the client builds it, keys in the same order — the query key

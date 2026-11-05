@@ -31,6 +31,8 @@ export type Region = {
   providers: string | null;
   /** "Khu vực cha" (vande #035): listed as another pack on that region's page. */
   parentId?: number | null;
+  /** Ticked "Làm khu vực cha" (vande-0411 #073). */
+  isParent?: boolean;
   /** The parent's name, when a plan list asks for its region (vande-0411 #042). */
   parentName?: string | null;
   createdAt: string;
@@ -67,6 +69,7 @@ export type CreateRegionPayload = {
   noticeVi?: string | null;
   providers?: string | null;
   parentId?: number | null;
+  isParent?: boolean;
   destinationIds?: number[];
 };
 
@@ -75,6 +78,7 @@ export type UpdateRegionPayload = {
   slug?: string;
   slugVi?: string | null;
   parentId?: number | null;
+  isParent?: boolean;
   avatarUrl?: string | null;
   iconUrl?: string | null;
   isPopular?: boolean;

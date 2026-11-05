@@ -34,6 +34,9 @@ export const searchParams = {
   // one, which filters an exact single-value column.
   isPopular: parseAsArrayOf(parseAsString, ','),
   providers: parseAsArrayOf(parseAsString, ','),
+  // regions: "Kiểu khu vực" and "Khu vực cha" (vande-0411 #073).
+  regionType: parseAsArrayOf(parseAsString, ','),
+  parentId: parseAsArrayOf(parseAsString, ','),
   type: parseAsArrayOf(parseAsString, ','),
   tags: parseAsArrayOf(parseAsString, ','),
   duration: parseAsString,

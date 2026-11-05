@@ -5,10 +5,15 @@ import type { Region } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
-import { ACTIVE_OPTIONS, PROVIDER_OPTIONS, YES_NO_OPTIONS } from '@/lib/catalog-filters';
-import { ParentRegionName } from '../parent-region-select';
+import {
+  ACTIVE_OPTIONS,
+  PROVIDER_OPTIONS,
+  REGION_TYPE_OPTIONS,
+  YES_NO_OPTIONS
+} from '@/lib/catalog-filters';
 
-export const columns: ColumnDef<Region>[] = [
+/** Parents come from the API, so their column is built with its filter options. */
+export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
   {
     id: 'index',
     header: 'STT',
@@ -43,7 +48,6 @@ export const columns: ColumnDef<Region>[] = [
       <div className='flex flex-col'>
         <span className='font-medium'>{row.original.name}</span>
         <span className='text-muted-foreground text-xs'>{row.original.slug}</span>
-        {row.original.parentId ? <ParentRegionName parentId={row.original.parentId} /> : null}
       </div>
     ),
     meta: {
@@ -53,6 +57,51 @@ export const columns: ColumnDef<Region>[] = [
       icon: Icons.text
     },
     enableColumnFilter: true
+  },
+  {
+    // After the name, to tell parents from packs (vande-0411 #073).
+    id: 'regionType',
+    accessorFn: (row) => (row.isParent ? 'parent' : row.parentId ? 'child' : 'standalone'),
+    header: 'Kiểu khu vực',
+    cell: ({ row }) =>
+      row.original.isParent ? (
+        <Badge data-testid='region-type'>Cha</Badge>
+      ) : row.original.parentId ? (
+        <Badge variant='outline' data-testid='region-type'>
+          Con
+        </Badge>
+      ) : (
+        <span className='text-muted-foreground text-xs' data-testid='region-type'>
+          Thường
+        </span>
+      ),
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Kiểu khu vực',
+      variant: 'multiSelect' as const,
+      options: REGION_TYPE_OPTIONS
+    }
+  },
+  {
+    id: 'parentId',
+    accessorKey: 'parentId',
+    header: 'Khu vực cha',
+    cell: ({ row }) => {
+      const { parentId } = row.original;
+      if (!parentId) return <span className='text-muted-foreground text-xs'>—</span>;
+      const parent = parents.find((p) => p.id === parentId);
+      return (
+        <span className='text-sm'>{parent ? parent.titleVi || parent.name : `#${parentId}`}</span>
+      );
+    },
+    enableSorting: false,
+    enableColumnFilter: true,
+    meta: {
+      label: 'Khu vực cha',
+      variant: 'multiSelect' as const,
+      options: parents.map((p) => ({ value: String(p.id), label: p.titleVi || p.name }))
+    }
   },
   {
     id: 'children',

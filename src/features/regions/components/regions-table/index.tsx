@@ -3,14 +3,18 @@
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { buildCatalogApiFilters } from '@/lib/catalog-filters';
 import { regionsQueryOptions } from '../../api/queries';
-import { columns } from './columns';
+import { parentRegionsQuery } from '../parent-region-select';
+import { buildColumns } from './columns';
 
-const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
+const columnIds = buildColumns([])
+  .map((c) => c.id)
+  .filter(Boolean) as string[];
 
 export function RegionsTable() {
   const [params] = useQueryStates({
@@ -21,6 +25,8 @@ export function RegionsTable() {
     isPopular: parseAsArrayOf(parseAsString, ','),
     isActive: parseAsArrayOf(parseAsString, ','),
     providers: parseAsArrayOf(parseAsString, ','),
+    regionType: parseAsArrayOf(parseAsString, ','),
+    parentId: parseAsArrayOf(parseAsString, ','),
     sort: getSortingStateParser(columnIds).withDefault([])
   });
 
@@ -42,6 +48,9 @@ export function RegionsTable() {
 
   const { data } = useSuspenseQuery(regionsQueryOptions(filters));
   const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
+
+  const { data: parents } = useQuery(parentRegionsQuery);
+  const columns = useMemo(() => buildColumns(parents?.data ?? []), [parents]);
 
   const { table } = useDataTable({
     data: data.data,
