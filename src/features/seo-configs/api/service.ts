@@ -24,7 +24,10 @@ export async function getSeoConfig(id: number): Promise<SeoConfig> {
 
 export async function getSeoConfigByUrl(url: string): Promise<SeoConfig | null> {
   try {
-    return await apiClient<SeoConfig>(`/seo-configs/by-url?url=${encodeURIComponent(url)}`);
+    const found = await apiClient<SeoConfig>(`/seo-configs/by-url?url=${encodeURIComponent(url)}`);
+    // No config on that URL arrives as an empty `{}`, not as nothing: reading
+    // its `url` took the whole page down at the first "/" (vande-0411 #055).
+    return found?.url ? found : null;
   } catch {
     return null;
   }
