@@ -10,6 +10,7 @@ import type {
   ImportGadgetKoreaExcelPayload,
   ImportPlansExcelResponse,
   ImportGadgetKoreaResponse,
+  ImportEsimAccessResponse,
   BatchDiscountPayload
 } from './types';
 
@@ -117,6 +118,16 @@ export async function importGadgetKoreaExcel(
     if (job.status === 'failed') throw new Error(job.error || 'Nhập file thất bại.');
   }
   throw new Error('Nhập file chạy quá lâu, vui lòng tải lại trang để xem kết quả.');
+}
+
+/** The esimaccess package list fills in each plan's APN (vande-0411 #027). */
+export async function importEsimAccessFile(file: File): Promise<ImportEsimAccessResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch('/api/plans/import-esimaccess', { method: 'POST', body: formData });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || `Nhập file thất bại (${res.status}).`);
+  return data as ImportEsimAccessResponse;
 }
 
 /** Delete the plans ticked in the list (vande #019). */

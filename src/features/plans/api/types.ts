@@ -189,6 +189,16 @@ export type ImportGadgetKoreaResponse = {
   destinationNotFound: string[];
 };
 
+/** vande-0411 #027: what the esimaccess file filled in, and what it could not. */
+export type ImportEsimAccessResponse = {
+  total: number;
+  updated: number;
+  notInCatalog: string[];
+  noApn: string[];
+  unknownApns: { apn: string; plans: number }[];
+  billingMismatches: { code: string; file: string; api: number }[];
+};
+
 export type BatchDiscountPayload = {
   ids: number[];
   discount: number;

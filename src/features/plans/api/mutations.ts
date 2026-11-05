@@ -6,6 +6,7 @@ import {
   deletePlan,
   importPlansExcel,
   importGadgetKoreaExcel,
+  importEsimAccessFile,
   batchDiscount,
   bulkDeletePlans
 } from './service';
@@ -44,6 +45,11 @@ export const importPlansExcelMutation = mutationOptions({
 
 export const importGadgetKoreaExcelMutation = mutationOptions({
   mutationFn: (data: ImportGadgetKoreaExcelPayload) => importGadgetKoreaExcel(data),
+  onSettled: invalidatePlans
+});
+
+export const importEsimAccessFileMutation = mutationOptions({
+  mutationFn: (file: File) => importEsimAccessFile(file),
   onSettled: invalidatePlans
 });
 
