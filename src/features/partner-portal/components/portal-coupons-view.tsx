@@ -272,7 +272,7 @@ export function PortalCouponsView() {
                 <Card key={coupon.id} className='@container/card'>
                   <CardHeader>
                     <CardTitle
-                      className='font-mono text-lg font-bold tracking-wide break-all sm:text-xl sm:tracking-wider'
+                      className='w-fit max-w-full rounded-md border px-2 py-1 font-mono text-lg font-bold tracking-wide break-all sm:text-xl sm:tracking-wider'
                       data-testid='coupon-code'
                     >
                       {coupon.code}
@@ -340,7 +340,8 @@ export function PortalCouponsView() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className='sm:max-w-lg'>
+        {/* Wide enough for the date, hour and minute on one line (vande-0411 #058). */}
+        <DialogContent className='sm:max-w-3xl'>
           <DialogHeader>
             <DialogTitle>Tạo mã giảm giá</DialogTitle>
             <DialogDescription>

@@ -40,7 +40,8 @@ export function DateTimeField({
         {label}
         {required && <span className='text-destructive'> *</span>}
       </label>
-      <div className='flex items-center gap-2'>
+      {/* In a narrow box the time drops below the date, hour and minute together. */}
+      <div className='flex flex-wrap items-center gap-2'>
         <Input
           id={id}
           type='date'
@@ -48,35 +49,41 @@ export function DateTimeField({
           value={parts.date}
           onChange={(e) => update({ date: e.target.value })}
         />
-        <Select value={parts.hour} onValueChange={(hour) => update({ hour })}>
-          <SelectTrigger
-            className='w-[72px]'
-            aria-label='Giờ (24h)'
-            data-testid='coupon-expiry-hour'
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className='max-h-64'>
-            {HOURS.map((h) => (
-              <SelectItem key={h} value={h}>
-                {h}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className='text-muted-foreground'>:</span>
-        <Select value={parts.minute} onValueChange={(minute) => update({ minute })}>
-          <SelectTrigger className='w-[72px]' aria-label='Phút' data-testid='coupon-expiry-minute'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className='max-h-64'>
-            {MINUTES.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className='flex items-center gap-2'>
+          <Select value={parts.hour} onValueChange={(hour) => update({ hour })}>
+            <SelectTrigger
+              className='w-[72px]'
+              aria-label='Giờ (24h)'
+              data-testid='coupon-expiry-hour'
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className='max-h-64'>
+              {HOURS.map((h) => (
+                <SelectItem key={h} value={h}>
+                  {h}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className='text-muted-foreground'>:</span>
+          <Select value={parts.minute} onValueChange={(minute) => update({ minute })}>
+            <SelectTrigger
+              className='w-[72px]'
+              aria-label='Phút'
+              data-testid='coupon-expiry-minute'
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className='max-h-64'>
+              {MINUTES.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <p className='text-muted-foreground text-xs'>Giờ theo định dạng 24h (00:00 – 23:59).</p>
     </div>
