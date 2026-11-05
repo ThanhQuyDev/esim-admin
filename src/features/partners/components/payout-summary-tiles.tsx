@@ -51,6 +51,7 @@ export function PayoutSummaryTiles() {
         label='Đang yêu cầu thanh toán'
         amountVnd={data.payoutRequested.totalVnd}
         partners={data.payoutRequested.partners}
+        partnersLabel={`đối tác · ${data.payoutRequested.requests ?? 0} yêu cầu`}
         hint='Đối tác đã bấm yêu cầu rút tiền, chờ duyệt chi'
       />
       <Tile

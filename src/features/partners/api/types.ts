@@ -674,7 +674,7 @@ export type SetReconciliationStatusPayload = {
 
 /** The four figures at the head of "Tài chính" (#067). */
 export type PayoutSummary = {
-  payoutRequested: { totalVnd: number; partners: number };
+  payoutRequested: { totalVnd: number; partners: number; requests?: number };
   paidThisMonth: { totalVnd: number; partners: number };
   paidAllTime: { totalVnd: number; partners: number };
   distributionDeposit: { totalVnd: number; partners: number };
