@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 const VARS: { name: string; description: string; example: string }[] = [
   {
     name: '${name}',
-    description: 'Tên quốc gia / khu vực đang xem',
+    description: 'Tên quốc gia / khu vực / nhà mạng đang xem',
     example: 'Nhật Bản'
   },
   {
@@ -81,6 +81,13 @@ export function SeoTemplateVarsHint() {
       <p className='text-muted-foreground text-xs'>
         Trang không phải quốc gia / khu vực (vd <span className='font-mono'>/blog</span>) không có
         các biến giá, nên đừng dùng chúng ở đó.
+      </p>
+      <p className='text-muted-foreground text-xs'>
+        Trang eSIM nội địa dùng được các biến này, với{' '}
+        <span className='font-mono'>${'{name}'}</span> là tên nhà mạng. Nhập URL{' '}
+        <span className='font-mono'>/esim-itel</span> cho riêng một nhà mạng, hoặc{' '}
+        <span className='font-mono'>/esim-noi-dia</span> cho mọi nhà mạng (tiếng Anh thêm{' '}
+        <span className='font-mono'>/en</span> phía trước).
       </p>
     </div>
   );
