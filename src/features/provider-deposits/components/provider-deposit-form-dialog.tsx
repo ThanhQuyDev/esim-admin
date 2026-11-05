@@ -10,6 +10,14 @@ import { FormDialog } from '@/components/ui/form-dialog';
 import { Icons } from '@/components/icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar } from '@/components/ui/calendar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { HOURS, MINUTES } from '@/features/coupons/utils/datetime';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -24,8 +32,8 @@ import {
   type ProviderDepositEntryFormValues
 } from '../schemas/provider-deposit';
 
-/** The picked day is kept as `yyyy-MM-dd`; the box shows it as DD-MM-YYYY. */
-const VALUE_FORMAT = 'yyyy-MM-dd';
+/** The moment is kept as `yyyy-MM-ddTHH:mm`; the box shows the day as DD-MM-YYYY. */
+const VALUE_FORMAT = "yyyy-MM-dd'T'HH:mm";
 
 function toDate(value: string): Date | undefined {
   if (!value) return undefined;
@@ -34,14 +42,13 @@ function toDate(value: string): Date | undefined {
 }
 
 /**
- * The picked day at local noon, so no time zone can roll it onto the day
- * before or after. Empty means "now" on the server.
+ * The moment picked, never later than now, since it records something that has
+ * happened. Empty means "now" on the server.
  */
 function parseOccurredAt(value: string): string | undefined {
-  const day = toDate(value);
-  if (!day) return undefined;
-  day.setHours(12, 0, 0, 0);
-  return day.toISOString();
+  const moment = toDate(value);
+  if (!moment) return undefined;
+  return new Date(Math.min(moment.getTime(), Date.now())).toISOString();
 }
 
 /**
@@ -57,11 +64,19 @@ function OccurredAtPicker({
 }) {
   const [open, setOpen] = useState(false);
   const selected = toDate(value);
+  const setClock = (hour: string | null, minute: string | null) => {
+    if (!selected) return;
+    const next = new Date(selected);
+    if (hour !== null) next.setHours(Number(hour));
+    if (minute !== null) next.setMinutes(Number(minute));
+    onChange(format(next, VALUE_FORMAT));
+  };
 
   return (
-    <div className='space-y-2'>
+    <div className='min-w-0 space-y-2'>
       <Label>Thời điểm</Label>
-      <div className='flex gap-2'>
+      {/* The day gives way to the time, or drops above it, never wider than the form. */}
+      <div className='flex min-w-0 flex-wrap gap-2'>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -69,7 +84,7 @@ function OccurredAtPicker({
               variant='outline'
               data-testid='deposit-occurred-at'
               className={cn(
-                'w-full justify-start text-left font-normal',
+                'min-w-[11rem] flex-1 justify-start text-left font-normal',
                 !selected && 'text-muted-foreground'
               )}
             >
@@ -87,7 +102,15 @@ function OccurredAtPicker({
               selected={selected}
               defaultMonth={selected}
               onSelect={(day) => {
-                onChange(day ? format(day, VALUE_FORMAT) : '');
+                if (!day) {
+                  onChange('');
+                } else {
+                  // The time already picked, or the time now: the table shows hour
+                  // and minute, and a made-up noon would read as fact (vande-0411 #060).
+                  const clock = selected ?? new Date();
+                  day.setHours(clock.getHours(), clock.getMinutes(), 0, 0);
+                  onChange(format(day, VALUE_FORMAT));
+                }
                 setOpen(false);
               }}
               locale={vi}
@@ -95,6 +118,45 @@ function OccurredAtPicker({
             />
           </PopoverContent>
         </Popover>
+        {selected && (
+          <div className='flex gap-2'>
+            <Select value={format(selected, 'HH')} onValueChange={(hour) => setClock(hour, null)}>
+              <SelectTrigger
+                className='w-[72px] shrink-0'
+                aria-label='Giờ (24h)'
+                data-testid='deposit-hour'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className='max-h-64'>
+                {HOURS.map((h) => (
+                  <SelectItem key={h} value={h}>
+                    {h}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={format(selected, 'mm')}
+              onValueChange={(minute) => setClock(null, minute)}
+            >
+              <SelectTrigger
+                className='w-[72px] shrink-0'
+                aria-label='Phút'
+                data-testid='deposit-minute'
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className='max-h-64'>
+                {MINUTES.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {selected && (
           <Button
             type='button'

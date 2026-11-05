@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { formatDate } from '@/lib/format';
+import { formatTimeDateVn } from '@/lib/format';
 import { PROVIDER_LABELS } from '@/features/overview/api/constants';
 import { providerSurchargesQueryOptions } from '../api/queries';
 import { saveProviderSurchargeMutation } from '../api/mutations';
@@ -88,7 +88,7 @@ function SurchargeRow({ row }: { row: ProviderSurcharge }) {
         />
       </TableCell>
       <TableCell className='text-muted-foreground text-sm whitespace-nowrap'>
-        {row.updatedAt ? formatDate(row.updatedAt) : '—'}
+        {formatTimeDateVn(row.updatedAt) || '—'}
       </TableCell>
       <TableCell className='text-right'>
         <Button

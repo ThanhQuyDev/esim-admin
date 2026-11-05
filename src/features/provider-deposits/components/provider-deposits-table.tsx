@@ -14,7 +14,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Icons } from '@/components/icons';
-import { formatDate, formatVnd } from '@/lib/format';
+import { formatTimeDateVn, formatVnd } from '@/lib/format';
 import { PROVIDER_LABELS } from '@/features/overview/api/constants';
 import { providerDepositSummaryQueryOptions } from '../api/queries';
 import { ProviderDepositFormDialog } from './provider-deposit-form-dialog';
@@ -114,7 +114,7 @@ export function ProviderDepositsTable() {
                         <DriftCell row={row} />
                       </TableCell>
                       <TableCell className='text-muted-foreground text-sm'>
-                        {row.reportedAt ? formatDate(row.reportedAt) : '—'}
+                        {formatTimeDateVn(row.reportedAt) || '—'}
                       </TableCell>
                       <TableCell className='text-right whitespace-nowrap'>
                         <Button

@@ -81,6 +81,16 @@ export function formatDateTimeVn(
  * Format data size from MB to a human-readable string.
  * >= 1024 MB → display as GB, otherwise display as MB.
  */
+/** "14:05 29/10/2026", Vietnam time (vande-0411 #060); "" when there is no date. */
+export function formatTimeDateVn(date: Date | string | number | null | undefined): string {
+  if (!date) return '';
+  const when = new Date(date);
+  if (Number.isNaN(when.getTime())) return '';
+  const zone = { timeZone: VN_TIME_ZONE };
+  const time = when.toLocaleTimeString('en-GB', { ...zone, hour: '2-digit', minute: '2-digit' });
+  return `${time} ${when.toLocaleDateString('en-GB', zone)}`;
+}
+
 export function formatDataSize(mb: number): string {
   if (mb <= 0) return 'Không giới hạn';
   if (mb >= 1024) {

@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { formatDateTimeVn } from '@/lib/format';
+import { formatTimeDateVn } from '@/lib/format';
 import { PROVIDER_LABELS } from '@/features/overview/api/constants';
 import { providerSalesStatusesQueryOptions } from '../api/queries';
 import { setProviderSalesStatusMutation } from '../api/mutations';
@@ -91,15 +91,7 @@ function StatusRow({ row }: { row: ProviderSalesStatus }) {
         </TableCell>
         <TableCell className='text-muted-foreground text-sm whitespace-nowrap'>
           {/* Hour and day, Vietnam time: "14:05 29/10/2026" (vande #088). */}
-          {row.disabledAt
-            ? formatDateTimeVn(row.disabledAt, {
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-              })
-            : '—'}
+          {formatTimeDateVn(row.disabledAt) || '—'}
         </TableCell>
         <TableCell className='text-right'>
           <Switch
