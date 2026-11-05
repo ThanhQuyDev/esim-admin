@@ -24,6 +24,9 @@ import { NoticeBanner, NoticeBody } from '@/components/notice-banner';
 import { formatDateTimeVn } from '@/lib/format';
 import { noticePreview } from '@/lib/notice-banner';
 
+import { useRoleId } from '@/components/layout/session-role';
+import { ROLE_ADMIN, ROLE_AUTHOR } from '@/config/role-access';
+
 import { notificationsQueryOptions } from '../api/queries';
 import type { PartnerNotification } from '../api/types';
 
@@ -34,7 +37,12 @@ const AUDIENCE_LABEL: Record<string, string> = {
 };
 
 export function AdminNotificationBell() {
-  const { data = [] } = useQuery(notificationsQueryOptions());
+  const { roleId } = useRoleId();
+  // Admins only on the API: an author would only draw a refused request.
+  const { data = [] } = useQuery({
+    ...notificationsQueryOptions(),
+    enabled: roleId === ROLE_ADMIN
+  });
   const [open, setOpen] = useState<PartnerNotification | null>(null);
 
   return (
@@ -53,12 +61,15 @@ export function AdminNotificationBell() {
         >
           <div className='flex items-center justify-between px-4 py-3'>
             <h4 className='text-sm font-semibold'>Thông báo đã gửi đối tác</h4>
-            <Link
-              href='/dashboard/partners/notifications'
-              className='text-muted-foreground text-xs underline underline-offset-4'
-            >
-              Soạn mới
-            </Link>
+            {/* An author may not compose (vande-0411 #061). */}
+            {roleId !== ROLE_AUTHOR && (
+              <Link
+                href='/dashboard/partners/notifications'
+                className='text-muted-foreground text-xs underline underline-offset-4'
+              >
+                Soạn mới
+              </Link>
+            )}
           </div>
           <ScrollArea className='max-h-[320px]'>
             {data.length === 0 ? (

@@ -33,6 +33,8 @@ import {
 } from '@/config/portal-nav-config';
 import { myProfileQueryOptions } from '@/features/partner-portal/api/queries';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
+import { useRoleId } from '@/components/layout/session-role';
+import { ROLE_AUTHOR } from '@/config/role-access';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
@@ -59,6 +61,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
   const { data: user } = useQuery(authMeQueryOptions);
+  const { roleId } = useRoleId();
   const router = useRouter();
   const queryClient = useQueryClient();
   // In the portal the menu also depends on what kind of partner is signed in
@@ -238,18 +241,21 @@ export default function AppSidebar() {
                     <Icons.account className='mr-2 h-4 w-4' />
                     Hồ sơ
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      router.push(
-                        IS_PARTNER_PORTAL
-                          ? '/dashboard/portal/notifications'
-                          : '/dashboard/notifications'
-                      )
-                    }
-                  >
-                    <Icons.notification className='mr-2 h-4 w-4' />
-                    Thông báo
-                  </DropdownMenuItem>
+                  {/* An author has no notifications page to go to (vande-0411 #061). */}
+                  {roleId !== ROLE_AUTHOR && (
+                    <DropdownMenuItem
+                      onClick={() =>
+                        router.push(
+                          IS_PARTNER_PORTAL
+                            ? '/dashboard/portal/notifications'
+                            : '/dashboard/notifications'
+                        )
+                      }
+                    >
+                      <Icons.notification className='mr-2 h-4 w-4' />
+                      Thông báo
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
