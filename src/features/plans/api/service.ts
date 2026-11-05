@@ -13,7 +13,7 @@ import type {
   BatchDiscountPayload
 } from './types';
 
-export async function getPlans(filters: PlanFilters): Promise<PlansResponse> {
+export async function getPlans(filters: PlanFilters, signal?: AbortSignal): Promise<PlansResponse> {
   const params = new URLSearchParams();
   if (filters.page) params.set('page', String(filters.page));
   if (filters.limit) params.set('limit', String(filters.limit));
@@ -21,7 +21,7 @@ export async function getPlans(filters: PlanFilters): Promise<PlansResponse> {
   if (filters.sort) params.set('sort', filters.sort);
 
   const query = params.toString();
-  return apiClient<PlansResponse>(`/plans${query ? `?${query}` : ''}`);
+  return apiClient<PlansResponse>(`/plans${query ? `?${query}` : ''}`, { signal });
 }
 
 export async function getPlan(id: number): Promise<Plan> {

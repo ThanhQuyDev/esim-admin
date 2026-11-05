@@ -22,7 +22,8 @@ export const planApnOptionsQueryOptions = () =>
 export const plansQueryOptions = (filters: PlanFilters) =>
   queryOptions({
     queryKey: planKeys.list(filters),
-    queryFn: () => getPlans(filters)
+    // A page nobody waits for any more is dropped (vande-0411 #054).
+    queryFn: ({ signal }) => getPlans(filters, signal)
   });
 
 export const planQueryOptions = (id: number) =>

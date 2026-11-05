@@ -84,6 +84,7 @@ function DataTableToolbarFilter<TData>({ column }: DataTableToolbarFilterProps<T
         case 'text':
           return (
             <Input
+              type='search'
               placeholder={columnMeta.placeholder ?? columnMeta.label}
               value={(column.getFilterValue() as string) ?? ''}
               onChange={(event) => column.setFilterValue(event.target.value)}

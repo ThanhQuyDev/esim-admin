@@ -13,7 +13,8 @@ export const esimKeys = {
 export const esimsQueryOptions = (filters: EsimFilters) =>
   queryOptions({
     queryKey: esimKeys.list(filters),
-    queryFn: () => getEsims(filters)
+    // A page nobody waits for any more is dropped (vande-0411 #054).
+    queryFn: ({ signal }) => getEsims(filters, signal)
   });
 
 export const esimQueryOptions = (id: number) =>

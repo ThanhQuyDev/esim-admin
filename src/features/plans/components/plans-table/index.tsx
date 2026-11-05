@@ -1,10 +1,17 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { Suspense, useMemo, useState, useCallback, useSyncExternalStore } from 'react';
+import type { Plan } from '../../api/types';
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  inBrowserSnapshot,
+  ListLoadState,
+  noSubscribe,
+  onServerSnapshot
+} from '@/components/ui/table/list-load-state';
 import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { Button } from '@/components/ui/button';
@@ -25,7 +32,24 @@ const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 /** Enough to cover the whole catalogue; both lists are small and cached. */
 const OPTIONS_LIMIT = 500;
 
+const NO_PLANS: Plan[] = [];
+
+/**
+ * Drawn in the browser, so changing page keeps the rows on screen with a bar
+ * above them, and drops the request of a page already left (vande-0411 #054).
+ */
 export function PlansTable() {
+  const inBrowser = useSyncExternalStore(noSubscribe, inBrowserSnapshot, onServerSnapshot);
+  return inBrowser ? (
+    <Suspense fallback={<PlansTableSkeleton />}>
+      <PlansTableContent />
+    </Suspense>
+  ) : (
+    <PlansTableSkeleton />
+  );
+}
+
+function PlansTableContent() {
   const [params] = useQueryStates({
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
@@ -64,8 +88,18 @@ export function PlansTable() {
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
 
-  const { data: responseData } = useSuspenseQuery(plansQueryOptions(filters));
-  const pageCount = Math.ceil((responseData.totalCount ?? 0) / params.perPage);
+  const {
+    data: responseData,
+    isFetching,
+    isPending,
+    isError,
+    refetch
+  } = useQuery({
+    ...plansQueryOptions(filters),
+    placeholderData: keepPreviousData,
+    retry: 1
+  });
+  const pageCount = Math.ceil((responseData?.totalCount ?? 0) / params.perPage);
 
   // Filter option lists (#010). Cached and shared with the other screens that
   // already load them.
@@ -100,7 +134,7 @@ export function PlansTable() {
   );
 
   const { table } = useDataTable({
-    data: responseData.data,
+    data: responseData?.data ?? NO_PLANS,
     columns: tableColumns,
     pageCount,
     shallow: true,
@@ -130,8 +164,11 @@ export function PlansTable() {
     }
   }, [filters]);
 
+  if (isPending) return <PlansTableSkeleton />;
+
   return (
-    <DataTable table={table} totalRowCount={responseData.totalCount}>
+    <DataTable table={table} totalRowCount={responseData?.totalCount}>
+      <ListLoadState loading={isFetching} failed={isError} onRetry={() => refetch()} />
       <ApnFilterCounts filters={apiFilters} />
       <DataTableToolbar table={table}>
         <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>

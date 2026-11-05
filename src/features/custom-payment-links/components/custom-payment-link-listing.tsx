@@ -240,6 +240,7 @@ export function CustomPaymentLinkListing() {
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
+                  type='text'
                   placeholder='Tìm email, nội dung, mã đơn...'
                   aria-label='Tìm trong lịch sử lệnh thanh toán'
                   className='h-8 w-56 pr-8'

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Command as CommandPrimitive } from 'cmdk';
+import { Command as CommandPrimitive, useCommandState } from 'cmdk';
 import { Icons } from '@/components/icons';
 
 import { cn } from '@/lib/utils';
@@ -54,6 +54,17 @@ function CommandInput({
   className,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input>) {
+  const input = React.useRef<HTMLInputElement>(null);
+  const search = useCommandState((state) => state.search);
+  // Through the input's own event, so whoever owns the value hears of it, and
+  // the list opens up again (vande-0411 #054).
+  const clear = () => {
+    const box = input.current;
+    if (!box) return;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(box, '');
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    box.focus();
+  };
   return (
     <div data-slot='command-input-wrapper' className='flex h-9 items-center gap-2 border-b px-3'>
       <Icons.search className='size-4 shrink-0 opacity-50' />
@@ -63,8 +74,20 @@ function CommandInput({
           'placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
+        ref={input}
         {...props}
       />
+      {search ? (
+        <button
+          type='button'
+          onClick={clear}
+          aria-label='Xoá nội dung tìm kiếm'
+          className='text-muted-foreground hover:text-foreground shrink-0'
+          data-testid='command-clear'
+        >
+          <Icons.close className='size-3.5' />
+        </button>
+      ) : null}
     </div>
   );
 }

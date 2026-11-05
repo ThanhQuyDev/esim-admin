@@ -1,5 +1,6 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import type { Option } from '@/types/data-table';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { STOREFRONT_ORIGIN } from '@/features/blogs/utils/preview-url';
@@ -184,7 +185,7 @@ export type PlanColumnOptions = {
    * filters on the exact id, which is the point of #010: typing "Trung quốc"
    * matched China, China+Hong Kong and China+Macau all at once.
    */
-  locationOptions?: { value: string; label: string }[];
+  locationOptions?: Option[];
 };
 
 const YES_NO_OPTIONS = [

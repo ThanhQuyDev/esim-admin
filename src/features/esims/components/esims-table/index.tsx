@@ -1,10 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
+import type { Esim } from '../../api/types';
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
-import { useSuspenseQuery, useMutation } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation } from '@tanstack/react-query';
+import {
+  inBrowserSnapshot,
+  ListLoadState,
+  noSubscribe,
+  onServerSnapshot
+} from '@/components/ui/table/list-load-state';
 import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { getSortingStateParser } from '@/lib/parsers';
 import { Button } from '@/components/ui/button';
@@ -22,7 +29,18 @@ import { columns } from './columns';
 
 const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
+const NO_ESIMS: Esim[] = [];
+
+/**
+ * Drawn in the browser, so changing page keeps the rows on screen with a bar
+ * above them, and drops the request of a page already left (vande-0411 #054).
+ */
 export function EsimsTable() {
+  const inBrowser = useSyncExternalStore(noSubscribe, inBrowserSnapshot, onServerSnapshot);
+  return inBrowser ? <EsimsTableContent /> : <EsimsTableSkeleton />;
+}
+
+function EsimsTableContent() {
   const [params, setParams] = useQueryStates({
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
@@ -59,11 +77,15 @@ export function EsimsTable() {
     ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
   };
 
-  const { data } = useSuspenseQuery(esimsQueryOptions(filters));
-  const pageCount = Math.ceil((data.totalCount ?? 0) / params.perPage);
+  const { data, isFetching, isPending, isError, refetch } = useQuery({
+    ...esimsQueryOptions(filters),
+    placeholderData: keepPreviousData,
+    retry: 1
+  });
+  const pageCount = Math.ceil((data?.totalCount ?? 0) / params.perPage);
 
   const { table } = useDataTable({
-    data: data.data,
+    data: data?.data ?? NO_ESIMS,
     columns,
     pageCount,
     shallow: true,
@@ -101,6 +123,8 @@ export function EsimsTable() {
     }
   };
 
+  if (isPending) return <EsimsTableSkeleton />;
+
   return (
     <>
       <AlertModal
@@ -137,7 +161,8 @@ export function EsimsTable() {
         />
       </div>
 
-      <DataTable table={table} totalRowCount={data.totalCount}>
+      <ListLoadState loading={isFetching} failed={isError} onRetry={() => refetch()} />
+      <DataTable table={table} totalRowCount={data?.totalCount}>
         <DataTableToolbar table={table}>
           {selectedIds.length > 0 ? (
             <Button

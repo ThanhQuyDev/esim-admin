@@ -13,7 +13,7 @@ import type {
 
 const BASE = '/esims';
 
-export async function getEsims(filters: EsimFilters): Promise<EsimsResponse> {
+export async function getEsims(filters: EsimFilters, signal?: AbortSignal): Promise<EsimsResponse> {
   const params = new URLSearchParams();
   if (filters.page) params.set('page', String(filters.page));
   if (filters.limit) params.set('limit', String(filters.limit));
@@ -21,7 +21,7 @@ export async function getEsims(filters: EsimFilters): Promise<EsimsResponse> {
   if (filters.sort) params.set('sort', filters.sort);
 
   const query = params.toString();
-  return apiClient<EsimsResponse>(`${BASE}${query ? `?${query}` : ''}`);
+  return apiClient<EsimsResponse>(`${BASE}${query ? `?${query}` : ''}`, { signal });
 }
 
 export async function getEsim(id: number): Promise<EsimDetail> {

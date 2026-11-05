@@ -53,6 +53,7 @@ export type Esim = {
 };
 
 export type EsimUser = {
+  phoneNumber?: string | null;
   id: number;
   email: string;
   provider: string;
