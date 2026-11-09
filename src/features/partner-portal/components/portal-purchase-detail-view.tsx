@@ -64,6 +64,29 @@ const ORDER_STATUS: Record<
 
 const dateOrDash = (value: string | null) => (value ? formatDateTimeVn(value) : '—');
 
+/**
+ * What the partner reads under a product short of eSIMs (doitac-0911 #001).
+ * Nothing is refunded automatically: the system asks the supplier again, the
+ * partner can ask now, and only an admin refunds.
+ */
+export function missingEsimHint(product: MyPurchaseDetail['products'][number]): string {
+  if (product.supplierAccepted) {
+    return 'Nhà cung cấp đã nhận đơn và đang cấp, eSIM sẽ tự về.';
+  }
+  if (!product.canRetryEsims) {
+    return 'Nhà cung cấp chưa nhận đơn. Vui lòng liên hệ Admin để được hỗ trợ.';
+  }
+  const tries = Math.max(1, product.provisionAttempts ?? 1);
+  const auto = product.nextRetryAt
+    ? ` Hệ thống sẽ tự động gọi lại lần ${tries + 1} trong vòng 3–5 phút nữa.`
+    : '';
+  return (
+    `Nhà cung cấp chưa nhận đơn — đã thử ${tries} lần.${auto}` +
+    ` ${auto ? 'Hoặc bạn' : 'Bạn'} có thể bấm "Gọi lại API lấy eSIM" để gọi lại ngay lập tức.` +
+    ' Nếu vẫn còn lỗi vui lòng liên hệ Admin để được hỗ trợ.'
+  );
+}
+
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className='flex flex-col gap-0.5 border-b py-2 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4'>
@@ -203,19 +226,8 @@ export function PortalPurchaseDetailView({
           </div>
         ) : (
           <div className='flex flex-wrap gap-2' data-testid='purchase-detail-actions'>
-            {/* Only when something can be done about it (vande-0411 #011). */}
-            {canRetry && (
-              <Button
-                size='sm'
-                variant='outline'
-                disabled={retry.isPending}
-                onClick={() => retry.mutate()}
-                data-testid='purchase-retry'
-              >
-                <Icons.send className='size-4' />
-                {retry.isPending ? 'Đang gọi…' : 'Gọi lại API lấy eSIM'}
-              </Button>
-            )}
+            {/* "Gọi lại API lấy eSIM" sits in the box of the product it is
+                about (doitac-0911 #001). */}
             {/* Every eSIM with its plan, LPA and QR link — how a bulk "file"
                 order is delivered (vande #057). */}
             {!isTopup && order.esimCount > 0 && (
@@ -354,14 +366,31 @@ export function PortalPurchaseDetailView({
 
       {order.products.map((product, index) => (
         <Card key={`${product.planName}-${index}`} className='min-w-0'>
-          <CardHeader>
-            <CardTitle>
-              {product.planName || 'Sản phẩm'} × {product.quantity}
-            </CardTitle>
-            <CardDescription>
-              Giá đại lý {formatVnd(product.agentTotalVnd)} · Giá bán lẻ đề xuất{' '}
-              {formatVnd(product.suggestedRetailTotalVnd)}
-            </CardDescription>
+          <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-2 space-y-0'>
+            <div className='min-w-0 space-y-1.5'>
+              <CardTitle>
+                {product.planName || 'Sản phẩm'} × {product.quantity}
+              </CardTitle>
+              <CardDescription>
+                Giá đại lý {formatVnd(product.agentTotalVnd)} · Giá bán lẻ đề xuất{' '}
+                {formatVnd(product.suggestedRetailTotalVnd)}
+              </CardDescription>
+            </div>
+            {/* In the box of the product the supplier has not taken yet
+                (doitac-0911 #001). */}
+            {!admin && product.canRetryEsims && (
+              <Button
+                size='sm'
+                variant='outline'
+                className='shrink-0'
+                disabled={retry.isPending}
+                onClick={() => retry.mutate()}
+                data-testid={`purchase-retry-${product.itemId}`}
+              >
+                <Icons.send className='size-4' />
+                {retry.isPending ? 'Đang gọi…' : 'Gọi lại API lấy eSIM'}
+              </Button>
+            )}
           </CardHeader>
           <CardContent className='space-y-4'>
             <div className='grid grid-cols-1 gap-x-8 md:grid-cols-2'>
@@ -399,12 +428,7 @@ export function PortalPurchaseDetailView({
                 className='border-destructive/40 bg-destructive/5 text-destructive rounded-md border p-2 text-sm'
                 data-testid={`purchase-missing-${product.itemId}`}
               >
-                Còn thiếu {product.missingEsims} eSIM.{' '}
-                {product.supplierAccepted
-                  ? 'Nhà cung cấp đã nhận đơn và đang cấp, eSIM sẽ tự về.'
-                  : product.canRetryEsims
-                    ? 'Nhà cung cấp chưa nhận đơn. Có thể bấm "Gọi lại API lấy eSIM".'
-                    : 'Vui lòng liên hệ esim.vn để kiểm tra với nhà cung cấp.'}
+                Còn thiếu {product.missingEsims} eSIM. {missingEsimHint(product)}
               </p>
             )}
             <div className='overflow-x-auto'>

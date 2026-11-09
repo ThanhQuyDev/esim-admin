@@ -73,8 +73,9 @@ function CartCheckoutDialog({
       queryClient.invalidateQueries({ queryKey: partnerPortalKeys.all });
       const parts = [
         `Đã đặt ${result.quantity} eSIM (${result.planCount} gói) — đơn ${result.orderNumber}.`,
-        result.refundedVnd > 0
-          ? `Hoàn ${formatVnd(result.refundedVnd)} cho gói nhà cung cấp chưa nhận.`
+        // Nothing is refunded at checkout (doitac-0911 #001).
+        (result.notReceivedEsims ?? 0) > 0
+          ? `${result.notReceivedEsims} eSIM nhà cung cấp chưa nhận, hệ thống sẽ tự gọi lại trong 3–5 phút (xem ở chi tiết đơn hàng).`
           : '',
         email.trim() ? `Mã QR gửi tới ${email.trim()}.` : 'Tải file Excel ở trang Đơn hàng.'
       ];

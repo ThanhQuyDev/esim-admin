@@ -22,7 +22,8 @@ import type { OrderNote, OrderRefundRecord } from '../api/types';
 
 const REFUND_MODE: Record<string, string> = {
   wallet: 'Hoàn vào ví eXU',
-  direct_bank: 'Chuyển khoản trực tiếp'
+  direct_bank: 'Chuyển khoản trực tiếp',
+  partner_wallet: 'Ví ký quỹ đối tác'
 };
 
 export function OrderNotesSection({

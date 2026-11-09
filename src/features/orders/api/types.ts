@@ -345,7 +345,7 @@ export type OrdersResponse = {
 };
 
 // Refund types
-export type RefundMode = 'wallet' | 'direct_bank';
+export type RefundMode = 'wallet' | 'direct_bank' | 'partner_wallet';
 
 export type RefundOrderRequest = {
   mode: RefundMode;

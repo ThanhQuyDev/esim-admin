@@ -127,7 +127,12 @@ export const createPurchaseMutation = mutationOptions({
   // Only the cart order carries the days of a day pass (vande-0411 #002).
   mutationFn: (
     data: CreatePurchasePayload & { periodNum?: number }
-  ): Promise<{ orderNumber: string; quantity: number; pendingEsims: number }> =>
+  ): Promise<{
+    orderNumber: string;
+    quantity: number;
+    pendingEsims: number;
+    notReceivedEsims?: number;
+  }> =>
     data.periodNum && data.periodNum > 1
       ? purchaseCart({
           items: [{ planId: data.planId, quantity: data.quantity, periodNum: data.periodNum }],

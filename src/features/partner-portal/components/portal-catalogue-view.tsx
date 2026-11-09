@@ -264,11 +264,13 @@ export function PortalCatalogueView() {
       // eSIMs from most providers arrive a little after the order, by webhook
       // (doitac-1410 #006), so the order is placed but not all of them are in.
       toast.success(
-        result.pendingEsims > 0
-          ? `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Nhà cung cấp đang cấp ${result.pendingEsims} eSIM, sẽ hiện ở Quản lý eSIM trong ít phút.`
-          : recipientEmail.trim()
-            ? `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Mã QR đã gửi tới ${recipientEmail.trim()}.`
-            : `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Tải file Excel ở trang Đơn hàng.`
+        (result.notReceivedEsims ?? 0) > 0
+          ? `Đã đặt đơn ${result.orderNumber}. Nhà cung cấp chưa nhận đơn, hệ thống sẽ tự gọi lại trong 3–5 phút (xem ở chi tiết đơn hàng).`
+          : result.pendingEsims > 0
+            ? `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Nhà cung cấp đang cấp ${result.pendingEsims} eSIM, sẽ hiện ở Quản lý eSIM trong ít phút.`
+            : recipientEmail.trim()
+              ? `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Mã QR đã gửi tới ${recipientEmail.trim()}.`
+              : `Đã đặt ${result.quantity} eSIM — đơn ${result.orderNumber}. Tải file Excel ở trang Đơn hàng.`
       );
       setSelected(null);
       setQuantity('1');

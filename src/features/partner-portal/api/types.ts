@@ -715,6 +715,9 @@ export type MyPurchaseDetail = {
     missingEsims?: number;
     canRetryEsims?: boolean;
     supplierAccepted?: boolean;
+    /** Tries so far, and when the system asks again (doitac-0911 #001). */
+    provisionAttempts?: number;
+    nextRetryAt?: string | null;
     planName: string | null;
     quantity: number;
     agentTotalVnd: number;
@@ -841,6 +844,8 @@ export type CartPurchaseResult = {
   refundedVnd: number;
   esimCount: number;
   pendingEsims: number;
+  /** eSIMs the supplier has not taken yet; the system asks again (doitac-0911 #001). */
+  notReceivedEsims?: number;
 };
 
 /** An order file read for the cart, priced, one order per QR email (doitac-1410 #084). */
@@ -1019,6 +1024,8 @@ export type PurchaseResult = {
   esimCount: number;
   /** eSIM nhà cung cấp còn đang cấp, về sau qua webhook (doitac-1410 #006). */
   pendingEsims: number;
+  /** eSIMs the supplier has not taken yet; the system asks again (doitac-0911 #001). */
+  notReceivedEsims?: number;
 };
 
 /** An announcement from esim.vn, as this partner sees it (#079). */
