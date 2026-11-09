@@ -75,6 +75,30 @@ export function removeFromCart(key: string): void {
   write(read().filter((l) => cartLineKey(l) !== key));
 }
 
+/**
+ * Take the server's prices into the stored lines (doitac-0911 #003).
+ * A line keeps the price it was added at, and the price moves with the
+ * exchange rate and the partner's tier: the bar read 312.000đ while checkout
+ * took 314.000đ. Writes only when a price actually changed.
+ */
+export function syncCartPrices(
+  prices: { planId: number; periodNum?: number | null; unitPriceVnd: number }[]
+): void {
+  const byKey = new Map(prices.map((p) => [cartLineKey(p), p.unitPriceVnd]));
+  const lines = read();
+  const changed = lines.some((l) => {
+    const price = byKey.get(cartLineKey(l));
+    return price !== undefined && price > 0 && price !== l.unitPriceVnd;
+  });
+  if (!changed) return;
+  write(
+    lines.map((l) => {
+      const price = byKey.get(cartLineKey(l));
+      return price !== undefined && price > 0 ? { ...l, unitPriceVnd: price } : l;
+    })
+  );
+}
+
 export function clearCart(): void {
   write([]);
 }

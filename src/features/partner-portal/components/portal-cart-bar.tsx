@@ -6,7 +6,7 @@
  * cart icon with its eSIM count, "Thanh toán", and the price list download.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -33,11 +33,22 @@ import {
   clearCart,
   removeFromCart,
   setCartQuantity,
-  usePartnerCart
+  syncCartPrices,
+  usePartnerCart,
+  type CartLine
 } from '../lib/partner-cart';
 import { PortalCartFileImport } from './portal-cart-file-import';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** What the server prices: the plan, how many, and the days of a day pass. */
+function cartItems(cart: CartLine[]) {
+  return cart.map((l) => ({
+    planId: l.planId,
+    quantity: l.quantity,
+    ...(l.periodNum && l.periodNum > 1 ? { periodNum: l.periodNum } : {})
+  }));
+}
 
 function CartCheckoutDialog({
   open,
@@ -50,11 +61,7 @@ function CartCheckoutDialog({
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const emailValid = !email.trim() || EMAIL.test(email.trim());
-  const items = cart.map((l) => ({
-    planId: l.planId,
-    quantity: l.quantity,
-    ...(l.periodNum && l.periodNum > 1 ? { periodNum: l.periodNum } : {})
-  }));
+  const items = cartItems(cart);
 
   // Priced by the server, the same way the order will be (doitac-1410 #035).
   const { data: quote, isFetching } = useQuery({
@@ -216,7 +223,18 @@ export function PortalCartBar({ filters }: { filters: CatalogueFilters }) {
   const { data: wallet } = useQuery(myWalletQueryOptions());
   const [checkout, setCheckout] = useState(false);
   const esims = cart.reduce((sum, l) => sum + l.quantity, 0);
-  const total = cart.reduce((sum, l) => sum + l.unitPriceVnd * l.quantity, 0);
+  const items = cartItems(cart);
+  // The total the wallet will be charged, priced by the server like the
+  // checkout (doitac-0911 #003); the stored prices only fill the wait.
+  const { data: quote } = useQuery({
+    queryKey: [...partnerPortalKeys.all, 'cart-quote', items],
+    queryFn: () => quoteCart(items),
+    enabled: items.length > 0
+  });
+  useEffect(() => {
+    if (quote?.lines) syncCartPrices(quote.lines);
+  }, [quote]);
+  const total = quote?.totalVnd ?? cart.reduce((sum, l) => sum + l.unitPriceVnd * l.quantity, 0);
 
   return (
     <>
