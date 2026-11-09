@@ -574,7 +574,13 @@ export async function getAdminPartnerOrderDetail<T>(
 export async function refundPartnerPurchase(
   orderNumber: string,
   payload: { iccids?: string[]; itemIds?: number[]; reason: string }
-): Promise<{ refundedVnd: number; esims: string[] }> {
+): Promise<{
+  refundedVnd: number;
+  esims: string[];
+  /** Topups refunded with the eSIMs (doitac-0911 #002). */
+  topups?: { orderNumber: string; amountVnd: number; iccid: string }[];
+  warnings?: string[];
+}> {
   return apiClient(`/partners/orders/${encodeURIComponent(orderNumber)}/refund`, {
     method: 'POST',
     body: JSON.stringify(payload)

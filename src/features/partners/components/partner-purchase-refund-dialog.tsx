@@ -71,6 +71,14 @@ export function PartnerPurchaseRefundDialog({
         )
       );
 
+  // The topups of the picked eSIMs go back with them (doitac-0911 #002).
+  const linkedTopups = lines.flatMap((p) =>
+    p.openEsims
+      .filter((e) => iccids.includes(e.iccid))
+      .flatMap((e) => (e.openTopups ?? []).map((t) => ({ ...t, iccid: e.iccid })))
+  );
+  const linkedVnd = linkedTopups.reduce((sum, t) => sum + t.amountVnd, 0);
+
   const toggle = (iccid: string) =>
     setIccids((prev) =>
       prev.includes(iccid) ? prev.filter((x) => x !== iccid) : [...prev, iccid]
@@ -89,7 +97,16 @@ export function PartnerPurchaseRefundDialog({
         reason: reason.trim()
       }),
     onSuccess: (result) => {
-      toast.success(`Đã hoàn ${formatVnd(result.refundedVnd)} về ví ký quỹ của đối tác.`);
+      const topups = result.topups ?? [];
+      toast.success(
+        `Đã hoàn ${formatVnd(result.refundedVnd)} về ví ký quỹ của đối tác.` +
+          (topups.length
+            ? ` Hoàn kèm ${topups.length} đơn topup: ${topups
+                .map((t) => `${t.orderNumber} (${formatVnd(t.amountVnd)})`)
+                .join(', ')}.`
+            : '')
+      );
+      for (const warning of result.warnings ?? []) toast.warning(warning);
       void queryClient.invalidateQueries({ queryKey: partnerKeys.all });
       onOpenChange(false);
     },
@@ -172,8 +189,34 @@ export function PartnerPurchaseRefundDialog({
             placeholder='Ví dụ: eSIM không kết nối được, nhà mạng xác nhận lỗi'
           />
         </div>
+        {linkedTopups.length > 0 && (
+          <div
+            className='rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200'
+            data-testid='refund-linked-topups'
+          >
+            <p className='font-medium'>
+              eSIM đã chọn có đơn topup/add-on. Hệ thống sẽ hoàn kèm vào ví ký quỹ và chuyển các đơn
+              này sang &quot;Đã hoàn tiền&quot;:
+            </p>
+            <ul className='mt-1 list-disc space-y-0.5 pl-5'>
+              {linkedTopups.map((t) => (
+                <li key={t.orderNumber}>
+                  <span className='font-mono'>{t.orderNumber}</span> (eSIM{' '}
+                  <span className='font-mono'>{t.iccid}</span>): {formatVnd(t.amountVnd)}
+                </li>
+              ))}
+            </ul>
+            <p className='mt-1'>Số này nằm ngoài số tiền hoàn bên dưới.</p>
+          </div>
+        )}
         <p className='text-sm'>
           Số tiền hoàn: <span className='font-semibold tabular-nums'>{formatVnd(total)}</span>
+          {linkedVnd > 0 && (
+            <span className='text-muted-foreground'>
+              {' '}
+              (+ {formatVnd(linkedVnd)} hoàn kèm topup)
+            </span>
+          )}
         </p>
 
         <DialogFooter>

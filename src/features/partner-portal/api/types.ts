@@ -747,6 +747,8 @@ export type MyPurchaseDetail = {
       dataUsed: number | null;
       dataTotal: number | null;
       openReport: 'fault' | 'refund' | null;
+      /** Deposit-wallet topups refunded with it (doitac-0911 #002). */
+      openTopups?: { orderNumber: string; amountVnd: number }[];
     }[];
   }[];
 };
