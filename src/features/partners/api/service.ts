@@ -212,6 +212,17 @@ export async function setPartnerAffiliateGrant(
   });
 }
 
+/** "Gửi email đối soát", for any type of partner (doitac-0911 #008). */
+export async function setPartnerReconciliationEmail(
+  id: number,
+  sendReconciliationEmail: boolean
+): Promise<Partner> {
+  return apiClient<Partner>(`/partners/${id}/reconciliation-email`, {
+    method: 'PATCH',
+    body: JSON.stringify({ sendReconciliationEmail })
+  });
+}
+
 export async function adjustPartnerWallet(
   id: number,
   data: AdjustWalletPayload

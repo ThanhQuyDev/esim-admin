@@ -15,6 +15,7 @@ import {
   createNotification,
   setReconciliationStatus,
   setPartnerAffiliateGrant,
+  setPartnerReconciliationEmail,
   setPartnerLinkCodePermission,
   adjustPartnerWallet,
   setPartnerWalletLocked,
@@ -129,6 +130,12 @@ export const setPartnerAdminNoteMutation = mutationOptions({
 export const setPartnerAffiliateGrantMutation = mutationOptions({
   mutationFn: ({ id, canAffiliate }: { id: number; canAffiliate: boolean }) =>
     setPartnerAffiliateGrant(id, canAffiliate),
+  onSettled: invalidateAll
+});
+
+export const setPartnerReconciliationEmailMutation = mutationOptions({
+  mutationFn: ({ id, sendReconciliationEmail }: { id: number; sendReconciliationEmail: boolean }) =>
+    setPartnerReconciliationEmail(id, sendReconciliationEmail),
   onSettled: invalidateAll
 });
 

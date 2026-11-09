@@ -8,6 +8,7 @@ import {
   assignPartnerTierMutation,
   setPartnerAdminNoteMutation,
   setPartnerAffiliateGrantMutation,
+  setPartnerReconciliationEmailMutation,
   setPartnerLinkCodePermissionMutation
 } from '../api/mutations';
 import { Badge } from '@/components/ui/badge';
@@ -174,6 +175,19 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
       refetch();
     },
     onError: (e: Error) => toast.error(e.message || 'Cập nhật quyền thất bại')
+  });
+
+  const reconciliationEmailMutation = useMutation({
+    ...setPartnerReconciliationEmailMutation,
+    onSuccess: (updated) => {
+      toast.success(
+        updated.sendReconciliationEmail
+          ? 'Đối tác này sẽ nhận email đối soát hằng tháng.'
+          : 'Đã tắt email đối soát của đối tác này.'
+      );
+      refetch();
+    },
+    onError: (e: Error) => toast.error(e.message || 'Cập nhật thất bại')
   });
 
   const saveAll = async () => {
@@ -442,6 +456,29 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
                 ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`
                 : 'Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ, hệ thống không tính hồi tố.'}
             </p>
+
+            {/* Every type of partner (doitac-0911 #008). */}
+            <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>
+              <div>
+                <p className='text-sm font-medium'>Gửi email đối soát</p>
+                <p className='text-muted-foreground text-xs'>
+                  Tích chọn thì đối tác nhận email đối soát hằng tháng vào ngày đặt ở Cấu hình
+                  chung. Bỏ tích thì không gửi email; số liệu và kỳ thanh toán vẫn tính như thường.
+                </p>
+              </div>
+              <Switch
+                checked={Boolean(partner.sendReconciliationEmail)}
+                disabled={reconciliationEmailMutation.isPending}
+                onCheckedChange={(checked) =>
+                  reconciliationEmailMutation.mutate({
+                    id: partnerId,
+                    sendReconciliationEmail: checked
+                  })
+                }
+                aria-label='Gửi email đối soát'
+                data-testid='partner-reconciliation-email'
+              />
+            </div>
 
             {!isKol && (
               <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>

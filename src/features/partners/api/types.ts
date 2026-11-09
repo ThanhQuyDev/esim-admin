@@ -66,6 +66,8 @@ export type Partner = {
    * (#048). Always effectively true for a marketing partner.
    */
   canAffiliate?: boolean;
+  /** "Gửi email đối soát" (doitac-0911 #008). */
+  sendReconciliationEmail?: boolean;
   /** "Không cần ký quỹ": buys on a monthly credit limit (vande #056). */
   noDepositRequired?: boolean;
   /** "Hạn mức giao dịch" — refilled at 0h on the 1st. */
