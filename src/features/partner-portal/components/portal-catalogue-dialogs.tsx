@@ -4,6 +4,7 @@
  * "Xem chi tiết" and "Thêm giỏ hàng" of the price list (doitac-1410 #034).
  */
 
+import { VALIDITY_START_TITLE, validityStartLabel } from '@/lib/plan-validity-start';
 import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -200,7 +201,8 @@ export function PlanDetailDialog({
       'Gọi / SMS',
       plan.hasCallSms ? `Có · Gọi: ${plan.call ?? 0} phút · SMS: ${plan.sms ?? 0}` : 'Không'
     ],
-    ['Mua thêm', purchaseKindLabel(plan)],
+    // "Topup / Addon" says what it is (doitac-0911 #017).
+    ['Topup / Addon', purchaseKindLabel(plan)],
     ['Tiktok & AI', tiktokAiLabel(plan)],
     // doitac-3010 #026
     ['eKYC', yesNo(plan.isKyc)],
@@ -210,6 +212,8 @@ export function PlanDetailDialog({
     ['Rẻ nhất', yesNo(plan.isCheapest)],
     ['APN', plan.apn || '—'],
     ['IP thoát mạng', exitIpLabel(plan)],
+    // Right under the exit IP (doitac-0911 #017).
+    [VALIDITY_START_TITLE, validityStartLabel(plan)],
     ['Reset dung lượng tốc độ cao', resetLabel(plan)],
     ['Giá đại lý', <PriceVndUsd key='unit' vnd={plan.unitPriceVnd} usd={plan.unitPriceUsd} />],
     [

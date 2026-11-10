@@ -1,3 +1,4 @@
+import type { PlanValidityStart } from '@/lib/plan-validity-start';
 import type { PlanPurchaseKind } from '@/lib/plan-purchase-kind';
 
 export type PartnerType = 'distribution' | 'kol';
@@ -802,6 +803,8 @@ export type CataloguePlan = {
   apn?: string | null;
   ipExport?: string | null;
   isNonHkIp?: boolean;
+  /** "Thời điểm bắt đầu tính gói" (doitac-0911 #017). */
+  validityStart?: PlanValidityStart | null;
   speed?: string | null;
   operatorName?: string | null;
   dailyResetPolicy?: string | null;

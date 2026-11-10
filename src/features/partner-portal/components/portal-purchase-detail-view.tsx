@@ -411,7 +411,7 @@ export function PortalPurchaseDetailView({
                 value={PLAN_TYPE_LABEL[product.type ?? ''] ?? product.type ?? '—'}
               />
               <InfoRow label='Yêu cầu KYC' value={product.kycRequired ? 'Có' : 'Không'} />
-              <InfoRow label='Mua thêm' value={purchaseKindLabel(product)} />
+              <InfoRow label='Topup / Addon' value={purchaseKindLabel(product)} />
               <InfoRow label='Tốc độ sau khi hết data' value={product.throttleSpeed || '—'} />
               <InfoRow
                 label='Mã gói cước'

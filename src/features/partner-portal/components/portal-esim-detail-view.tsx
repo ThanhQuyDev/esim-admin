@@ -273,7 +273,7 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
                 )
               }
             />
-            <InfoRow label='Mua thêm' value={purchaseKindLabel(plan)} />
+            <InfoRow label='Topup / Addon' value={purchaseKindLabel(plan)} />
             <InfoRow
               label='Tiktok & AI'
               value={esim.tiktokAi == null ? 'Không rõ' : yesNo(esim.tiktokAi)}

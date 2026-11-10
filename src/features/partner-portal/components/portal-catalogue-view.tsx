@@ -143,7 +143,7 @@ const CATALOGUE_COLUMNS: CatalogueColumn[] = [
   },
   {
     key: 'topUp',
-    label: 'Mua thêm',
+    label: 'Topup / Addon',
     cellClassName: 'text-xs',
     cell: (plan) => purchaseKindLabel(plan)
   },
@@ -371,8 +371,16 @@ export function PortalCatalogueView() {
                       ))}
                       <TableCell className='text-right'>
                         <div className='flex justify-end gap-1'>
-                          <Button size='sm' variant='outline' onClick={() => setDetail(plan)}>
-                            Xem chi tiết
+                          {/* An icon, to save the room (doitac-0911 #017). */}
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => setDetail(plan)}
+                            aria-label='Xem chi tiết'
+                            title='Xem chi tiết'
+                            data-testid={`plan-detail-${plan.id}`}
+                          >
+                            <Icons.eye className='size-4' />
                           </Button>
                           {plan.purchasable ? (
                             <>
