@@ -144,7 +144,7 @@ export function ProductLine({
  * The products of an order. No date under them: the list has its own "Ngày
  * đặt hàng" column (doitac-3010 #011).
  */
-function OrderProducts({ items }: { items: MyOrderItem[] }) {
+export function OrderProducts({ items }: { items: MyOrderItem[] }) {
   // One product per row keeps the list compact; the "+" opens the whole order
   // (#058, test round 4 — two names per row made the rows too tall).
   const shown = items.slice(0, 1);

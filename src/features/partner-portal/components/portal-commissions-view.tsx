@@ -42,7 +42,8 @@ import { formatDateVn, formatVnd } from '@/lib/format';
 
 import { myOrdersQueryOptions, mySummaryQueryOptions } from '../api/queries';
 import type { MyOrder } from '../api/types';
-import { COMMISSION_STATUS } from './orders-table/columns';
+import { COMMISSION_STATUS, OrderProducts } from './orders-table/columns';
+import { PortalPager, usePortalPage } from './portal-pager';
 
 const DAYS = 14;
 
@@ -103,6 +104,8 @@ export function PortalCommissionsView() {
 
   const chartData = useMemo(() => buildSeries(orders ?? []), [orders]);
   const ledger = useMemo(() => (orders ?? []).filter((o) => o.commissionVnd != null), [orders]);
+  // Paged, so the page stays short (doitac-0911 #014).
+  const { pageRows: ledgerPage, pager } = usePortalPage(ledger);
 
   const pendingCount = ledger.filter((o) => o.commissionStatus === 'pending').length;
   const rate = summary?.tier.current ? Number(summary.tier.current.commissionPercent) : 0;
@@ -156,7 +159,7 @@ export function PortalCommissionsView() {
   ];
 
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
+    <div className='flex min-w-0 flex-1 flex-col space-y-4'>
       <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
         {cards.map((card) => {
           const Icon = card.icon;
@@ -261,7 +264,9 @@ export function PortalCommissionsView() {
         </div>
       </div>
 
-      <Card>
+      {/* min-w-0: the table scrolls inside its box on a phone instead of
+          pushing the whole page sideways (doitac-0911 #014). */}
+      <Card className='min-w-0'>
         <CardHeader>
           <CardTitle className='flex flex-wrap items-center gap-2'>
             Giao dịch hoa hồng
@@ -270,7 +275,7 @@ export function PortalCommissionsView() {
           <CardDescription>Chi tiết theo từng đơn hàng hợp lệ.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='rounded-lg border'>
+          <div className='overflow-x-auto rounded-lg border'>
             <Table>
               <TableHeader className='bg-muted'>
                 <TableRow>
@@ -296,7 +301,7 @@ export function PortalCommissionsView() {
                     </TableCell>
                   </TableRow>
                 )}
-                {ledger.map((o) => {
+                {ledgerPage.map((o) => {
                   const status = COMMISSION_STATUS[o.commissionStatus ?? ''];
                   // The API works the rate out from the money on the order
                   // (#026); recomputing it here would be a second answer to
@@ -310,7 +315,11 @@ export function PortalCommissionsView() {
                         {formatDateVn(o.createdAt)}
                       </TableCell>
                       <TableCell className='font-mono text-xs'>{o.orderNumber}</TableCell>
-                      <TableCell>{o.items.map((i) => i.planName).join(' + ') || '—'}</TableCell>
+                      {/* One product and "+ N sản phẩm khác", as on the orders
+                          page, not every name on one long line (doitac-0911 #014). */}
+                      <TableCell className='max-w-[320px]'>
+                        <OrderProducts items={o.items} />
+                      </TableCell>
                       <TableCell className='text-right tabular-nums'>
                         {formatVnd(o.vndPrice)}
                       </TableCell>
@@ -335,6 +344,7 @@ export function PortalCommissionsView() {
               </TableBody>
             </Table>
           </div>
+          <PortalPager {...pager} testId='commission-ledger-pager' />
         </CardContent>
       </Card>
     </div>
