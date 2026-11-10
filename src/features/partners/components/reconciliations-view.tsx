@@ -160,6 +160,23 @@ export function ReconciliationsView() {
             ))}
           </SelectContent>
         </Select>
+        {/* Back to this month's whole list in one click (doitac-0911 #025). */}
+        {(search.trim() || status !== 'all' || period !== recentPeriods()[0].value) && (
+          <Button
+            variant='outline'
+            size='sm'
+            className='h-9 border-dashed'
+            onClick={() => {
+              setSearch('');
+              setStatus('all');
+              setPeriod(recentPeriods()[0].value);
+            }}
+            data-testid='reconciliation-clear-filters'
+          >
+            <Icons.close className='size-4' />
+            Xóa bộ lọc
+          </Button>
+        )}
         <Button
           variant='outline'
           className='ml-auto'

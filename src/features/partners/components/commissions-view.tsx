@@ -11,6 +11,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -78,7 +79,9 @@ function recentPeriods(): { value: string; label: string }[] {
 
 function sourceText(c: OrderPartnerCommission): string {
   if (c.source?.type === 'link') return `Link ${c.source.code}`;
-  if (c.source?.type === 'coupon') return `Mã giảm giá ${c.source.code}`;
+  // Short, as asked: "MÃ: TESTMA" — a long code name made the cell long
+  // (doitac-0911 #025).
+  if (c.source?.type === 'coupon') return `MÃ: ${c.source.code}`;
   return 'Khách gắn với đối tác';
 }
 
@@ -179,6 +182,24 @@ export function CommissionsView() {
             ))}
           </SelectContent>
         </Select>
+        {/* One click back to the whole list (doitac-0911 #025). */}
+        {(search.trim() || status !== 'all' || period !== 'all') && (
+          <Button
+            variant='outline'
+            size='sm'
+            className='h-9 border-dashed'
+            onClick={() => {
+              setSearch('');
+              setStatus('all');
+              setPeriod('all');
+              setPageIndex(0);
+            }}
+            data-testid='commission-clear-filters'
+          >
+            <Icons.close className='size-4' />
+            Xóa bộ lọc
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -258,7 +279,10 @@ export function CommissionsView() {
                     <TableCell className='text-right font-medium tabular-nums'>
                       {formatVnd(c.commissionVnd)}
                     </TableCell>
-                    <TableCell className='max-w-[220px] text-xs'>
+                    {/* A fixed width that wraps: table cells do not wrap by
+                        default, so a long reason ran over the status badge
+                        (doitac-0911 #025). */}
+                    <TableCell className='w-[220px] max-w-[220px] min-w-[220px] text-xs whitespace-normal break-words'>
                       {info.length ? (
                         info.map((line) => (
                           <div key={line} className='text-destructive'>
