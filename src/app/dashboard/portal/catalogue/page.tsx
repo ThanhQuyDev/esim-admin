@@ -1,4 +1,5 @@
 import PageContainer from '@/components/layout/page-container';
+import { PortalHoldNotice } from '@/features/partner-portal/components/portal-hold-notice';
 import { PortalCatalogueView } from '@/features/partner-portal/components/portal-catalogue-view';
 import { PortalFeatureGate } from '@/features/partner-portal/components/portal-feature-gate';
 
@@ -18,7 +19,11 @@ export default function PortalCataloguePage() {
         title='Trang này dành cho đối tác phân phối'
         description='Đối tác tiếp thị không lấy hàng eSIM nên không có bảng giá vốn. Thu nhập của bạn là hoa hồng trên đơn phát sinh qua link hoặc mã của bạn.'
       >
-        <PortalCatalogueView />
+        {/* A held account says so on top (doitac-0911 #023). */}
+        <div className='flex min-w-0 flex-1 flex-col gap-4'>
+          <PortalHoldNotice />
+          <PortalCatalogueView />
+        </div>
       </PortalFeatureGate>
     </PageContainer>
   );
