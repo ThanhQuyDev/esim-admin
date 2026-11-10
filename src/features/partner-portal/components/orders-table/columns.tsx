@@ -89,7 +89,16 @@ export function refundedQtyOf(item: MyOrderItem): number {
  * faded with "Đã hoàn tiền" — no strike-through, no "×0"; one given back in
  * part stays plain, with what is left and "Đã hoàn N eSIM".
  */
-export function ProductLine({ item, wrap = false }: { item: MyOrderItem; wrap?: boolean }) {
+export function ProductLine({
+  item,
+  wrap = false,
+  showPrice = true
+}: {
+  item: MyOrderItem;
+  wrap?: boolean;
+  /** Off in the list row: the order's own total sits right next to it (doitac-0911 #013). */
+  showPrice?: boolean;
+}) {
   const refundedQty = refundedQtyOf(item);
   const fullyRefunded = refundedQty > 0 && refundedQty >= item.quantity;
   const keptQty = item.quantity - refundedQty;
@@ -123,7 +132,9 @@ export function ProductLine({ item, wrap = false }: { item: MyOrderItem; wrap?: 
             </Badge>
           )
         )}
-        <span className='tabular-nums'>{item.vndPrice ? formatVnd(item.vndPrice) : '—'}</span>
+        {showPrice && (
+          <span className='tabular-nums'>{item.vndPrice ? formatVnd(item.vndPrice) : '—'}</span>
+        )}
       </span>
     </div>
   );
@@ -141,8 +152,10 @@ function OrderProducts({ items }: { items: MyOrderItem[] }) {
 
   return (
     <div className='min-w-0 space-y-1'>
+      {/* No price in the row: it read as part of "Tổng tiền" beside it
+          (doitac-0911 #013); the "+" and "Xem chi tiết" still give it. */}
       {shown.map((item, index) => (
-        <ProductLine key={`${item.planName}-${index}`} item={item} />
+        <ProductLine key={`${item.planName}-${index}`} item={item} showPrice={false} />
       ))}
       {items.length === 0 && <p className='text-sm'>—</p>}
       {hidden > 0 && (
@@ -180,11 +193,14 @@ export const columns: ColumnDef<MyOrder>[] = [
     cell: ({ row }) => (
       <span className='font-mono text-xs font-semibold'>{row.original.orderNumber}</span>
     ),
+    // One box for the order code, a product, a link code or a discount code
+    // (doitac-0911 #013); the filtering is the table's (orders-table/index).
     meta: {
       label: 'Mã đơn',
-      placeholder: 'Tìm mã đơn hoặc sản phẩm...',
+      placeholder: 'Tìm mã đơn, sản phẩm, mã link hoặc mã giảm giá...',
       variant: 'text' as const,
-      icon: Icons.text
+      icon: Icons.text,
+      inputClassName: 'h-8 w-full sm:w-80 lg:w-96'
     },
     enableColumnFilter: true,
     enableSorting: false
@@ -195,19 +211,16 @@ export const columns: ColumnDef<MyOrder>[] = [
     // worked, but nobody would guess that is where to type it.
     accessorFn: (row) => row.items.map((i) => i.planName).join(' '),
     header: 'Sản phẩm',
-    enableColumnFilter: true,
-    meta: {
-      label: 'Sản phẩm',
-      placeholder: 'Tên gói...',
-      variant: 'text' as const
-    },
+    // Searched through the one box above (doitac-0911 #013).
+    enableColumnFilter: false,
+    meta: { label: 'Sản phẩm' },
     cell: ({ row }) => <OrderProducts items={row.original.items} />,
     enableSorting: false
   },
   {
     id: 'vndPrice',
     accessorKey: 'vndPrice',
-    header: 'Giá trị',
+    header: 'Tổng tiền',
     // Net of refunds (#018); the original is kept beside it so a partner can
     // see why the number moved rather than doubting the report.
     cell: ({ row }) => {

@@ -42,7 +42,9 @@ export function DataTableToolbar<TData>({
     <div
       role='toolbar'
       aria-orientation='horizontal'
-      className={cn('flex w-full items-start justify-between gap-2 p-1', className)}
+      // Wraps on a narrow screen instead of pushing the page sideways
+      // (doitac-0911 #013).
+      className={cn('flex w-full flex-wrap items-start justify-between gap-2 p-1', className)}
       {...props}
     >
       <div className='flex flex-1 flex-wrap items-center gap-2'>
@@ -62,7 +64,7 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <div className='flex items-center gap-2'>
+      <div className='flex flex-wrap items-center gap-2'>
         {children}
         <DataTableViewOptions table={table} />
       </div>
