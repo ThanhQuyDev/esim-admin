@@ -66,6 +66,7 @@ import {
   type FaultKind
 } from './portal-esim-request-dialog';
 import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
+import { OrderProducts } from './orders-table/columns';
 import { Compared } from './portal-month-compare';
 
 const statusLabel: Record<
@@ -449,16 +450,18 @@ function ProductSummary({ purchase }: { purchase: MyPurchase }) {
   if (purchase.orderType === 'TOPUP') {
     return <span>{purchase.topupPackageName || 'Gói topup'}</span>;
   }
-  const [first, ...rest] = purchase.items;
-  if (!first) return <span className='text-muted-foreground'>—</span>;
+  if (!purchase.items.length) return <span className='text-muted-foreground'>—</span>;
+  // "+ N sản phẩm khác" opens the products, their eSIMs and price, as on the
+  // marketing partner's orders (doitac-0911 #016). A line stores its unit price.
   return (
-    <div className='space-y-0.5'>
-      <div className='truncate' title={first.planName ?? undefined}>
-        {first.planName ?? '—'} × {first.quantity}
-      </div>
-      {rest.length > 0 && (
-        <div className='text-muted-foreground'>+ {rest.length} sản phẩm khác</div>
-      )}
+    <div className='max-w-[320px]'>
+      <OrderProducts
+        items={purchase.items.map((item) => ({
+          planName: item.planName ?? '—',
+          quantity: item.quantity,
+          vndPrice: item.vndPrice * item.quantity
+        }))}
+      />
     </div>
   );
 }

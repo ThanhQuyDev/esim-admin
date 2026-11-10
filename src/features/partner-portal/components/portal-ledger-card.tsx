@@ -44,6 +44,7 @@ import { myLedgerQueryOptions, myPayoutsQueryOptions } from '../api/queries';
 import { myLedgerExportUrl } from '../api/service';
 import type { MyLedgerFilters } from '../api/types';
 import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
+import { OrderProducts } from './orders-table/columns';
 
 const KINDS = [
   { value: 'all', label: 'Tất cả loại' },
@@ -74,7 +75,7 @@ export function PortalLedgerCard() {
   const { pageRows, pagination } = usePortalPagination(rows);
 
   return (
-    <Card data-testid='ledger-card'>
+    <Card className='min-w-0' data-testid='ledger-card'>
       <CardHeader>
         <CardTitle className='col-start-1 flex flex-wrap items-center gap-2'>
           Lịch sử giao dịch
@@ -188,7 +189,20 @@ export function PortalLedgerCard() {
                     <TableCell className='font-mono text-xs whitespace-nowrap'>
                       {row.code ?? '—'}
                     </TableCell>
-                    <TableCell className='min-w-[220px]'>{row.description}</TableCell>
+                    <TableCell className='min-w-[220px]'>
+                      {/* Two products or more: one name and "+ N sản phẩm
+                          khác", not every name on one line (doitac-0911 #016). */}
+                      {(row.products?.length ?? 0) >= 2 ? (
+                        <div className='max-w-[320px] space-y-1'>
+                          <span className='text-muted-foreground text-xs'>
+                            {row.kind === 'refund' ? 'Hoàn tiền eSIM' : 'Mua eSIM'}
+                          </span>
+                          <OrderProducts items={row.products ?? []} />
+                        </div>
+                      ) : (
+                        row.description
+                      )}
+                    </TableCell>
                     <TableCell className='text-right whitespace-nowrap'>
                       <span
                         className={
@@ -250,7 +264,7 @@ export function PortalPayoutHistoryCard() {
   const { data: payouts = [] } = useQuery(myPayoutsQueryOptions());
   const { pageRows, pagination } = usePortalPagination(payouts);
   return (
-    <Card data-testid='payout-history'>
+    <Card className='min-w-0' data-testid='payout-history'>
       <CardHeader>
         <CardTitle className='flex flex-wrap items-center gap-2'>
           Lịch sử rút tiền

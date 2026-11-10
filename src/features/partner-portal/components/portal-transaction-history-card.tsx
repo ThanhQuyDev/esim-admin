@@ -24,7 +24,7 @@ import {
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { myWalletTransactionsQueryOptions } from '../api/queries';
-import { PortalPager, usePortalPage } from './portal-pager';
+import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
 
 /** What a line is, when it carries no reason of its own. */
 const TYPE_LABEL: Record<string, string> = {
@@ -41,7 +41,7 @@ const TYPE_LABEL: Record<string, string> = {
 export function PortalTransactionHistoryCard() {
   const { data: transactions = [], isLoading } = useQuery(myWalletTransactionsQueryOptions());
   // Paged (doitac-0911 #015).
-  const { pageRows, pager } = usePortalPage(transactions);
+  const { pageRows, pagination } = usePortalPagination(transactions);
 
   return (
     <Card className='min-w-0'>
@@ -120,7 +120,11 @@ export function PortalTransactionHistoryCard() {
             </TableBody>
           </Table>
         </div>
-        <PortalPager {...pager} testId='transaction-history-pager' />
+        <PortalListPagination
+          pagination={pagination}
+          unit='hàng'
+          testId='transaction-history-pager'
+        />
       </CardContent>
     </Card>
   );

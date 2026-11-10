@@ -49,7 +49,7 @@ import { formatDateVn, formatVnd } from '@/lib/format';
 
 import { createPayoutRequestMutation } from '../api/mutations';
 import { PortalTransactionHistoryCard } from './portal-transaction-history-card';
-import { PortalPager, usePortalPage } from './portal-pager';
+import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
 import {
   myPayoutsQueryOptions,
   myProfileQueryOptions,
@@ -98,7 +98,7 @@ export function PortalPayoutsView() {
   const payoutLock = partnerLockMessage(me?.status, 'payout');
   const { data: payouts } = useQuery(myPayoutsQueryOptions());
   // Paged (doitac-0911 #015).
-  const { pageRows: payoutPage, pager: payoutPager } = usePortalPage(payouts ?? []);
+  const { pageRows: payoutPage, pagination: payoutPager } = usePortalPagination(payouts ?? []);
   const router = useRouter();
   // A distribution partner withdraws from "Thanh toán" (doitac-1410 #032);
   // an old bookmark of this page goes there.
@@ -358,7 +358,11 @@ export function PortalPayoutsView() {
               </TableBody>
             </Table>
           </div>
-          <PortalPager {...payoutPager} testId='payout-history-pager' />
+          <PortalListPagination
+            pagination={payoutPager}
+            unit='hàng'
+            testId='payout-history-pager'
+          />
         </CardContent>
       </Card>
 

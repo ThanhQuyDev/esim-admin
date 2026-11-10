@@ -171,7 +171,7 @@ export function PortalWalletView() {
     !isLoading && !credit && warnVnd > 0 && (wallet?.availableBalanceVnd ?? 0) < warnVnd;
 
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
+    <div className='flex min-w-0 flex-1 flex-col space-y-4'>
       {lowBalance && (
         <div className='border-amber-500/40 bg-amber-500/10 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm'>
           <Icons.warning className='h-4 w-4 shrink-0 text-amber-600' />
@@ -229,7 +229,7 @@ export function PortalWalletView() {
 
       {/* Nothing to top up on credit (vande #056); older top-ups stay listed. */}
       {(!credit || deposits.length > 0) && (
-        <Card>
+        <Card className='min-w-0'>
           <CardHeader>
             <CardTitle className='flex flex-wrap items-center gap-2'>
               Lịch sử nạp tiền
@@ -241,7 +241,7 @@ export function PortalWalletView() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='rounded-lg border'>
+            <div className='overflow-x-auto rounded-lg border'>
               <Table>
                 <TableHeader className='bg-muted'>
                   <TableRow>

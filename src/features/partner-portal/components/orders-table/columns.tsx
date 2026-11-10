@@ -166,10 +166,10 @@ export function OrderProducts({ items }: { items: MyOrderItem[] }) {
               {hidden} sản phẩm khác
             </Button>
           </PopoverTrigger>
-          <PopoverContent align='start' className='w-80 space-y-1'>
+          <PopoverContent align='start' className='w-[min(24rem,90vw)] space-y-1'>
             <p className='text-muted-foreground mb-2 text-xs'>{items.length} sản phẩm trong đơn</p>
             {items.map((item, index) => (
-              <ProductLine key={`all-${item.planName}-${index}`} item={item} />
+              <ProductLine key={`all-${item.planName}-${index}`} item={item} wrap />
             ))}
           </PopoverContent>
         </Popover>

@@ -43,7 +43,7 @@ import { formatDateVn, formatVnd } from '@/lib/format';
 import { myOrdersQueryOptions, mySummaryQueryOptions } from '../api/queries';
 import type { MyOrder } from '../api/types';
 import { COMMISSION_STATUS, OrderProducts } from './orders-table/columns';
-import { PortalPager, usePortalPage } from './portal-pager';
+import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
 
 const DAYS = 14;
 
@@ -105,7 +105,7 @@ export function PortalCommissionsView() {
   const chartData = useMemo(() => buildSeries(orders ?? []), [orders]);
   const ledger = useMemo(() => (orders ?? []).filter((o) => o.commissionVnd != null), [orders]);
   // Paged, so the page stays short (doitac-0911 #014).
-  const { pageRows: ledgerPage, pager } = usePortalPage(ledger);
+  const { pageRows: ledgerPage, pagination } = usePortalPagination(ledger);
 
   const pendingCount = ledger.filter((o) => o.commissionStatus === 'pending').length;
   const rate = summary?.tier.current ? Number(summary.tier.current.commissionPercent) : 0;
@@ -344,7 +344,11 @@ export function PortalCommissionsView() {
               </TableBody>
             </Table>
           </div>
-          <PortalPager {...pager} testId='commission-ledger-pager' />
+          <PortalListPagination
+            pagination={pagination}
+            unit='hàng'
+            testId='commission-ledger-pager'
+          />
         </CardContent>
       </Card>
     </div>

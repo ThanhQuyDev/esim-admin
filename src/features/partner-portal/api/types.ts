@@ -145,6 +145,8 @@ export type MyLedgerRow = {
   kindLabel: string;
   code: string | null;
   description: string;
+  /** An eSIM purchase or its refund: the order's products (doitac-0911 #016). */
+  products?: { planName: string; quantity: number; vndPrice: number }[];
   amountVnd: number;
   balanceAfterVnd: number;
 };
