@@ -33,6 +33,8 @@ export type RelatedTicket = {
   iccid: string | null;
   orderId: string | null;
   createdAt: string;
+  /** What the partner wrote, for a glance (doitac-0911 #022). */
+  excerpt?: string;
 };
 
 export async function getRelatedTickets(id: number): Promise<RelatedTicket[]> {

@@ -35,12 +35,25 @@ export function RelatedTickets({ ticketId }: { ticketId: number }) {
             href={`/dashboard/tickets/${ticket.id}`}
             target='_blank'
             rel='noreferrer'
-            className='hover:bg-muted/40 flex flex-wrap items-center justify-between gap-2 py-2 text-sm'
+            className='hover:bg-muted/40 flex flex-col gap-1 py-2 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3'
           >
-            <span className='min-w-0'>
-              <span className='font-mono'>{ticket.ticketNumber}</span> · {ticket.subject}
+            {/* The subject, then what the partner wrote, cut with "…" when it
+                does not fit (doitac-0911 #022). */}
+            <span className='flex min-w-0 flex-1 flex-col sm:flex-row sm:items-baseline sm:gap-2'>
+              <span className='sm:shrink-0'>
+                <span className='font-mono'>{ticket.ticketNumber}</span> · {ticket.subject}
+              </span>
+              {ticket.excerpt && (
+                <span
+                  className='text-muted-foreground min-w-0 truncate text-xs'
+                  title={ticket.excerpt}
+                  data-testid='related-ticket-excerpt'
+                >
+                  — {ticket.excerpt}
+                </span>
+              )}
             </span>
-            <span className='flex items-center gap-2'>
+            <span className='flex shrink-0 items-center gap-2'>
               <StatusTag status={ticket.status} />
               <span className='text-muted-foreground text-xs'>
                 {formatDateTimeVn(ticket.createdAt)}
