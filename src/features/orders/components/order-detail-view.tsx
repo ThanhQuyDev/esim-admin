@@ -545,6 +545,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         walletSpentVndAmount={order.walletSpentVndAmount}
         refundedAmountVnd={order.refundedAmountVnd}
         items={order.items}
+        partnerPurchase={order.paymentMethod === 'partner_wallet'}
         benefits={{
           tier: order.membershipTierSnapshot ?? null,
           cashbackPercent: order.cashbackPercentSnapshot ?? null,

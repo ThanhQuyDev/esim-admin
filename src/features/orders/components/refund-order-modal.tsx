@@ -105,6 +105,11 @@ interface RefundOrderModalProps {
    * #065): the buyer's tier and cashback, the referrer's reward.
    */
   benefits?: RefundBenefits;
+  /**
+   * A distribution partner's own purchase (doitac-0911 #021): no eXU and no
+   * referral reward apply, and the money goes back to the deposit wallet.
+   */
+  partnerPurchase?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: RefundOrderRequest) => void;
@@ -132,6 +137,7 @@ export function RefundOrderModal({
   refundedAmountVnd,
   items = [],
   benefits,
+  partnerPurchase = false,
   open,
   onOpenChange,
   onSubmit,
@@ -261,6 +267,13 @@ export function RefundOrderModal({
     if (selection.orderItemIds.includes(item.id)) return live;
     return live.filter((e) => selection.esimIds.includes(e.id));
   });
+  // Products this refund touches: whole lines and the lines of single eSIMs.
+  const selectedLineCount = new Set([
+    ...selection.orderItemIds,
+    ...items
+      .filter((item) => liveEsimsOf(item).some((e) => selection.esimIds.includes(e.id)))
+      .map((item) => item.id)
+  ]).size;
   const installedEsims = refundedEsims.filter((e) => e.installedAt);
   const topupEsims = refundedEsims.filter((e) => (e.paidTopups?.length ?? 0) > 0);
   const installedOk = installedEsims.length === 0 || installedConfirmed;
@@ -547,24 +560,35 @@ export function RefundOrderModal({
             </div>
           )}
 
-          {/* Refund Mode */}
-          <div className='space-y-2'>
-            <Label htmlFor='refund-mode'>Phương thức hoàn tiền</Label>
-            <Select value={mode} onValueChange={(v) => setMode(v as RefundMode)}>
-              <SelectTrigger id='refund-mode'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='wallet'>Hoàn vào ví eXu</SelectItem>
-                <SelectItem value='direct_bank'>Hoàn trực tiếp (chuyển khoản)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className='text-muted-foreground text-xs'>
-              {mode === 'wallet'
-                ? 'Tiền sẽ được hoàn vào ví eXu của người dùng, có hiệu lực 365 ngày.'
-                : 'Admin sẽ xử lý chuyển khoản ngân hàng thủ công. Hệ thống chỉ ghi nhận.'}
-            </p>
-          </div>
+          {/* Refund Mode — a partner's purchase always goes back to the
+              deposit wallet (doitac-0911 #021). */}
+          {partnerPurchase ? (
+            <div className='space-y-1' data-testid='refund-partner-wallet'>
+              <Label>Phương thức hoàn tiền</Label>
+              <p className='text-sm font-medium'>Hoàn vào ví ký quỹ của đối tác</p>
+              <p className='text-muted-foreground text-xs'>
+                Đơn đối tác phân phối mua bằng ví ký quỹ: tiền hoàn về đúng ví ký quỹ đó.
+              </p>
+            </div>
+          ) : (
+            <div className='space-y-2'>
+              <Label htmlFor='refund-mode'>Phương thức hoàn tiền</Label>
+              <Select value={mode} onValueChange={(v) => setMode(v as RefundMode)}>
+                <SelectTrigger id='refund-mode'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='wallet'>Hoàn vào ví eXu</SelectItem>
+                  <SelectItem value='direct_bank'>Hoàn trực tiếp (chuyển khoản)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className='text-muted-foreground text-xs'>
+                {mode === 'wallet'
+                  ? 'Tiền sẽ được hoàn vào ví eXu của người dùng, có hiệu lực 365 ngày.'
+                  : 'Admin sẽ xử lý chuyển khoản ngân hàng thủ công. Hệ thống chỉ ghi nhận.'}
+              </p>
+            </div>
+          )}
 
           {/* Refund Amount */}
           <div className='space-y-2'>
@@ -693,28 +717,40 @@ export function RefundOrderModal({
             <ul className='space-y-1 text-xs' data-testid='refund-impact'>
               {/* The real figures of this order, not a fixed 2% / 10.000đ
                   (vande #065). */}
-              {benefitLines(
-                benefits,
-                {
-                  totalOrderValue,
-                  alreadyRefunded,
-                  amountVnd: amountVnd || 0
-                },
-                tierLabels.label
+              {(partnerPurchase
+                ? ['Đơn đại lý: không áp dụng hoàn eXU và thưởng giới thiệu']
+                : benefitLines(
+                    benefits,
+                    {
+                      totalOrderValue,
+                      alreadyRefunded,
+                      amountVnd: amountVnd || 0
+                    },
+                    tierLabels.label
+                  )
               ).map((line) => (
                 <li key={line} className='text-muted-foreground'>
                   • {line}
                 </li>
               ))}
-              {mode === 'wallet' && (
+              {partnerPurchase ? (
                 <li className='text-green-600'>
-                  • +{formatVnd(amountVnd || 0)} sẽ được hoàn vào ví eXu (365 ngày)
+                  • +{formatVnd(amountVnd || 0)} sẽ được hoàn vào ví ký quỹ của đối tác
                 </li>
+              ) : (
+                mode === 'wallet' && (
+                  <li className='text-green-600'>
+                    • +{formatVnd(amountVnd || 0)} sẽ được hoàn vào ví eXu (365 ngày)
+                  </li>
+                )
               )}
-              <li className='text-muted-foreground'>
+              <li className='text-muted-foreground' data-testid='refund-selection-summary'>
+                {/* Every eSIM this refund gives back, whole lines included:
+                    picking all of a line's eSIMs read "0 ICCID" because the
+                    line goes as a line (doitac-0911 #021). */}
                 {isPartial
-                  ? `• ${selection.orderItemIds.length} sản phẩm, ${selection.esimIds.length} ICCID được chọn → refunded; đơn chỉ chuyển sang refunded khi đã hoàn hết giá trị`
-                  : '• Trạng thái đơn hàng → refunded'}
+                  ? `• ${selectedLineCount} sản phẩm, ${refundedEsims.length} ICCID được chọn → đã hoàn tiền; đơn chỉ chuyển sang "Đã hoàn tiền" khi đã hoàn hết giá trị`
+                  : '• Trạng thái đơn hàng → Đã hoàn tiền'}
               </li>
             </ul>
           </div>
