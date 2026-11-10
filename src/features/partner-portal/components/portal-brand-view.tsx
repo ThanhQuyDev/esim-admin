@@ -40,6 +40,7 @@ type BrandForm = {
   displayName: string;
   tagline: string;
   website: string;
+  supportPhone: string;
   supportEmail: string;
   primaryColor: string;
   showUsageCheck: boolean;
@@ -52,6 +53,7 @@ const EMPTY: BrandForm = {
   displayName: '',
   tagline: '',
   website: '',
+  supportPhone: '',
   supportEmail: '',
   primaryColor: '#000000',
   showUsageCheck: true,
@@ -68,6 +70,7 @@ function readBrand(info: Record<string, unknown> | null | undefined): BrandForm 
     displayName: str(info?.displayName),
     tagline: str(info?.tagline),
     website: str(info?.website),
+    supportPhone: str(info?.supportPhone),
     supportEmail: str(info?.supportEmail),
     primaryColor: /^#[0-9a-f]{6}$/i.test(str(info?.primaryColor))
       ? str(info?.primaryColor)
@@ -85,6 +88,7 @@ function toBrandInfo(form: BrandForm): PartnerBrandInfo {
     logoPosition: form.logoPosition,
     tagline: form.tagline.trim() || undefined,
     website: form.website.trim() || undefined,
+    supportPhone: form.supportPhone.trim() || undefined,
     supportEmail: form.supportEmail.trim() || undefined,
     primaryColor: form.primaryColor,
     showUsageCheck: form.showUsageCheck,
@@ -263,6 +267,20 @@ export function PortalBrandView() {
                 placeholder='Trang web chính thức'
                 value={form.website}
                 onChange={(e) => set('website', e.target.value)}
+              />
+            </div>
+            {/* Above the support email, as in the email's footer (doitac-0911 #019). */}
+            <div className='brand-form-row'>
+              <label className='brand-form-label' htmlFor='brandPhoneInput'>
+                Số điện thoại:
+              </label>
+              <input
+                id='brandPhoneInput'
+                type='tel'
+                inputMode='tel'
+                placeholder='Số điện thoại liên hệ'
+                value={form.supportPhone}
+                onChange={(e) => set('supportPhone', e.target.value)}
               />
             </div>
             <div className='brand-form-row'>

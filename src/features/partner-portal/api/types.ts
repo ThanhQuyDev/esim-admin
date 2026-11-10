@@ -555,6 +555,8 @@ export type PartnerBrandInfo = {
   logoPosition?: 'left' | 'center' | 'right';
   tagline?: string;
   website?: string;
+  /** "Số điện thoại" (doitac-0911 #019). */
+  supportPhone?: string;
   supportEmail?: string;
   primaryColor?: string;
   showUsageCheck?: boolean;

@@ -304,7 +304,8 @@
 }
 .brand-port .brand-custom-form input[type='text'],
 .brand-port .brand-custom-form input[type='email'],
-.brand-port .brand-custom-form input[type='url'] {
+.brand-port .brand-custom-form input[type='url'],
+.brand-port .brand-custom-form input[type='tel'] {
   height: 2rem;
   border-radius: 0.5rem;
   border: 0.0625rem solid #d7dce7;
