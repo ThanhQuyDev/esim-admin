@@ -158,16 +158,25 @@ export function PartnerContractCard({
       <CardContent className='space-y-4'>
         <div className='space-y-2'>
           {lines.map((line, index) => (
-            <div key={index} className='flex flex-wrap items-center gap-2'>
+            // The contract's title is the long part and its number the short
+            // one: "Tên thông tin" takes 3/4 of the row, "Nội dung" 1/4
+            // (doitac-0911 #024). On a phone they stack.
+            <div
+              key={index}
+              className='grid grid-cols-[1fr_auto] items-center gap-2 sm:grid-cols-[3fr_1fr_auto]'
+              data-testid={`contract-line-${index}`}
+            >
               <Input
-                className='max-w-[220px]'
-                placeholder='Tên thông tin (VD: Số hợp đồng)'
+                className='col-span-2 min-w-0 sm:col-span-1'
+                placeholder='Tên thông tin (VD: Hợp đồng đại lý số)'
+                title={line.label || undefined}
                 value={line.label}
                 onChange={(e) => setLine(index, { label: e.target.value })}
               />
               <Input
-                className='min-w-[220px] flex-1'
+                className='min-w-0'
                 placeholder='Nội dung (VD: HD-2026/014)'
+                title={line.value || undefined}
                 value={line.value}
                 onChange={(e) => setLine(index, { value: e.target.value })}
               />
