@@ -124,6 +124,8 @@ export type MyWalletTransaction = {
   orderId: number | null;
   reason: string | null;
   createdAt: string;
+  /** "Mã đối chiếu": the order, WD-… or the deposit code (doitac-0911 #015). */
+  reference?: string | null;
 };
 
 /** One line of "Lịch sử giao dịch" (doitac-1410 #031). */

@@ -49,6 +49,7 @@ import { formatDateVn, formatVnd } from '@/lib/format';
 
 import { createPayoutRequestMutation } from '../api/mutations';
 import { PortalTransactionHistoryCard } from './portal-transaction-history-card';
+import { PortalPager, usePortalPage } from './portal-pager';
 import {
   myPayoutsQueryOptions,
   myProfileQueryOptions,
@@ -96,6 +97,8 @@ export function PortalPayoutsView() {
   const { data: me } = useQuery(myProfileQueryOptions());
   const payoutLock = partnerLockMessage(me?.status, 'payout');
   const { data: payouts } = useQuery(myPayoutsQueryOptions());
+  // Paged (doitac-0911 #015).
+  const { pageRows: payoutPage, pager: payoutPager } = usePortalPage(payouts ?? []);
   const router = useRouter();
   // A distribution partner withdraws from "Thanh toán" (doitac-1410 #032);
   // an old bookmark of this page goes there.
@@ -157,7 +160,7 @@ export function PortalPayoutsView() {
     : 'Chưa cập nhật';
 
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
+    <div className='flex min-w-0 flex-1 flex-col space-y-4'>
       <div className='grid gap-4 md:grid-cols-2'>
         <Card className='@container/card'>
           <CardHeader>
@@ -278,7 +281,7 @@ export function PortalPayoutsView() {
         </Card>
       </div>
 
-      <Card>
+      <Card className='min-w-0'>
         <CardHeader>
           <CardTitle className='flex flex-wrap items-center gap-2'>
             Lịch sử thanh toán
@@ -287,7 +290,7 @@ export function PortalPayoutsView() {
           <CardDescription>Các yêu cầu gần đây và trạng thái xử lý.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='rounded-lg border'>
+          <div className='overflow-x-auto rounded-lg border'>
             <Table>
               <TableHeader className='bg-muted'>
                 <TableRow>
@@ -310,7 +313,7 @@ export function PortalPayoutsView() {
                     </TableCell>
                   </TableRow>
                 )}
-                {(payouts ?? []).map((p) => {
+                {payoutPage.map((p) => {
                   const status = PAYOUT_STATUS[p.status];
                   return (
                     <TableRow key={p.id}>
@@ -355,6 +358,7 @@ export function PortalPayoutsView() {
               </TableBody>
             </Table>
           </div>
+          <PortalPager {...payoutPager} testId='payout-history-pager' />
         </CardContent>
       </Card>
 

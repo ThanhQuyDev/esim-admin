@@ -24,6 +24,7 @@ import {
 import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { myWalletTransactionsQueryOptions } from '../api/queries';
+import { PortalPager, usePortalPage } from './portal-pager';
 
 /** What a line is, when it carries no reason of its own. */
 const TYPE_LABEL: Record<string, string> = {
@@ -39,9 +40,11 @@ const TYPE_LABEL: Record<string, string> = {
 
 export function PortalTransactionHistoryCard() {
   const { data: transactions = [], isLoading } = useQuery(myWalletTransactionsQueryOptions());
+  // Paged (doitac-0911 #015).
+  const { pageRows, pager } = usePortalPage(transactions);
 
   return (
-    <Card>
+    <Card className='min-w-0'>
       <CardHeader>
         <CardTitle>Lịch sử giao dịch</CardTitle>
         <CardDescription>
@@ -54,6 +57,7 @@ export function PortalTransactionHistoryCard() {
             <TableHeader className='bg-muted'>
               <TableRow>
                 <TableHead>Thời điểm</TableHead>
+                <TableHead>Mã đối chiếu</TableHead>
                 <TableHead>Nội dung</TableHead>
                 <TableHead className='text-right'>Số tiền</TableHead>
                 <TableHead className='text-right'>Số dư sau</TableHead>
@@ -62,19 +66,19 @@ export function PortalTransactionHistoryCard() {
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={4} className='text-muted-foreground h-24 text-center'>
+                  <TableCell colSpan={5} className='text-muted-foreground h-24 text-center'>
                     Đang tải giao dịch…
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && transactions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className='h-24 text-center'>
+                  <TableCell colSpan={5} className='h-24 text-center'>
                     <p className='text-muted-foreground text-sm'>Chưa có giao dịch nào.</p>
                   </TableCell>
                 </TableRow>
               )}
-              {transactions.map((tx) => {
+              {pageRows.map((tx) => {
                 const amount = Number(tx.amountVnd);
                 const isCredit = amount > 0;
                 const label = TYPE_LABEL[tx.type] ?? tx.type;
@@ -82,6 +86,10 @@ export function PortalTransactionHistoryCard() {
                   <TableRow key={tx.id}>
                     <TableCell className='whitespace-nowrap'>
                       {formatDateTimeVn(tx.createdAt)}
+                    </TableCell>
+                    {/* The order or the withdrawal request (doitac-0911 #015). */}
+                    <TableCell className='font-mono text-xs whitespace-nowrap'>
+                      {tx.reference || '—'}
                     </TableCell>
                     <TableCell>
                       <div className='flex flex-col'>
@@ -112,6 +120,7 @@ export function PortalTransactionHistoryCard() {
             </TableBody>
           </Table>
         </div>
+        <PortalPager {...pager} testId='transaction-history-pager' />
       </CardContent>
     </Card>
   );

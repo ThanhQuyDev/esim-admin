@@ -114,7 +114,8 @@ export async function getMyWallet(): Promise<MyWalletSummary> {
 }
 
 export async function getMyWalletTransactions(): Promise<MyWalletTransaction[]> {
-  return apiClient<MyWalletTransaction[]>('/partner-portal/wallet/transactions');
+  // The whole history, paged on the page (doitac-0911 #015).
+  return apiClient<MyWalletTransaction[]>('/partner-portal/wallet/transactions?limit=2000');
 }
 
 export async function getMyDepositRequests(): Promise<MyDepositRequest[]> {
