@@ -41,6 +41,7 @@ import { PortalEmailChangeCard } from './portal-email-change-card';
 import { updateMyProfileMutation } from '../api/mutations';
 import { myProfileQueryOptions, mySummaryQueryOptions } from '../api/queries';
 import type { UpdateMyProfilePayload } from '../api/types';
+import { partnerDisplayName } from '../lib/display-name';
 
 const TAB_VALUES = ['basic', 'channels', 'payment', 'security'] as const;
 type ProfileTab = (typeof TAB_VALUES)[number];
@@ -565,9 +566,12 @@ export function PortalProfileView() {
         <Card>
           <CardHeader className='items-center text-center'>
             <Avatar className='mx-auto size-16'>
-              <AvatarFallback className='text-lg'>{initialsOf(me?.contactName)}</AvatarFallback>
+              <AvatarFallback className='text-lg'>
+                {initialsOf(partnerDisplayName(me) ?? undefined)}
+              </AvatarFallback>
             </Avatar>
-            <CardTitle className='mt-3'>{me?.contactName ?? 'Đối tác'}</CardTitle>
+            {/* A company by its own name (doitac-0911 #012). */}
+            <CardTitle className='mt-3'>{partnerDisplayName(me) ?? 'Đối tác'}</CardTitle>
             <CardDescription>
               {me?.partnerType === 'distribution' ? 'Đối tác phân phối' : 'Đối tác tiếp thị'}
               {summary?.tier.current ? ` · Hạng ${summary.tier.current.tierName}` : ''}

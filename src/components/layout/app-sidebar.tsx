@@ -25,6 +25,7 @@ import {
   SidebarRail
 } from '@/components/ui/sidebar';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
+import { usePortalAccount } from '@/features/partner-portal/lib/display-name';
 import { navGroups } from '@/config/nav-config';
 import {
   AFFILIATE_ONLY_PORTAL_URLS,
@@ -60,7 +61,9 @@ function NavBadge({ id }: { id: string }) {
 export default function AppSidebar() {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
-  const { data: user } = useQuery(authMeQueryOptions);
+  const { data: account } = useQuery(authMeQueryOptions);
+  // A company partner reads as the company (doitac-0911 #012).
+  const user = usePortalAccount(account);
   const { roleId } = useRoleId();
   const router = useRouter();
   const queryClient = useQueryClient();

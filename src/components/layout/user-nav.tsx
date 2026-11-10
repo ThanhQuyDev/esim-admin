@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
+import { usePortalAccount } from '@/features/partner-portal/lib/display-name';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
 import { logout } from '@/features/auth/api/service';
@@ -17,7 +18,9 @@ import { resetDismissedNotices } from '@/lib/notice-banner';
 import { useRouter } from 'next/navigation';
 
 export function UserNav() {
-  const { data: user } = useQuery(authMeQueryOptions);
+  const { data: account } = useQuery(authMeQueryOptions);
+  // A company partner reads as the company (doitac-0911 #012).
+  const user = usePortalAccount(account);
   const router = useRouter();
   const queryClient = useQueryClient();
 

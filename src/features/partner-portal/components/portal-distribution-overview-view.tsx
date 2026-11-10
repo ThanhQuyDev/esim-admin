@@ -14,6 +14,7 @@
  * colour written by hand.
  */
 
+import { partnerDisplayName } from '../lib/display-name';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -177,7 +178,7 @@ export function PortalDistributionOverviewView() {
         <CardHeader>
           <CardDescription>
             Tổng tiền đã chi · {rangeLabel}
-            {me?.contactName ? ` · ${me.contactName}` : ''}
+            {partnerDisplayName(me) ? ` · ${partnerDisplayName(me)}` : ''}
           </CardDescription>
           <CardTitle className='text-3xl font-semibold tabular-nums'>
             {isLoading ? '…' : formatVnd(total?.revenueVnd)}
