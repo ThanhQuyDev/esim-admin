@@ -220,7 +220,8 @@ const ESIM_COLUMNS: EsimColumn[] = [
   },
   {
     key: 'topUp',
-    label: 'Mua thêm',
+    // Topup / Addon / Không (doitac-0911 #018).
+    label: 'Topup / Addon',
     cellClassName: 'text-xs',
     cell: (esim) => purchaseKindLabel(esim)
   },
