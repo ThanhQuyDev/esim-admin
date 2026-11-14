@@ -237,8 +237,9 @@ function CreateDialog({
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <ImageUploadField label='Ảnh đại diện' onFileSelect={setAvatarFile} file={avatarFile} />
+            {/* Icon first, as on a country (vande-1411 #029). */}
             <ImageUploadField label='Icon' onFileSelect={setIconFile} file={iconFile} />
+            <ImageUploadField label='Ảnh đại diện' onFileSelect={setAvatarFile} file={avatarFile} />
           </div>
 
           <div className='grid grid-cols-2 gap-4'>
@@ -476,17 +477,18 @@ function EditDialogForm({
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <ImageUploadField
-              label='Ảnh đại diện'
-              currentUrl={region.avatarUrl}
-              onFileSelect={setAvatarFile}
-              file={avatarFile}
-            />
+            {/* Icon first, as on a country (vande-1411 #029). */}
             <ImageUploadField
               label='Icon'
               currentUrl={region.iconUrl}
               onFileSelect={setIconFile}
               file={iconFile}
+            />
+            <ImageUploadField
+              label='Ảnh đại diện'
+              currentUrl={region.avatarUrl}
+              onFileSelect={setAvatarFile}
+              file={avatarFile}
             />
           </div>
 
