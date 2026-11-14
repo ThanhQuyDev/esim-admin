@@ -9,6 +9,8 @@ export type Destination = {
   avatarUrl: string | null;
   keySearch: string | null;
   isPopular: boolean;
+  /** In a list: plans on sale now (vande-1411 #031). */
+  planCount?: number;
   /** Place among the five on the home page on a phone (vande-1411 #021). */
   mobileHomeRank?: number | null;
   /** "travel", or "local" for a domestic carrier (vande-1411 #025). */

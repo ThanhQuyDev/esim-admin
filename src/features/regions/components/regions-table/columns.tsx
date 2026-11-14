@@ -141,6 +141,25 @@ export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
     enableSorting: false
   },
   {
+    // Plans on sale now: with none, the storefront leaves it out (vande-1411 #031).
+    id: 'planCount',
+    accessorFn: (row) => row.planCount ?? 0,
+    header: 'Số lượng gói',
+    cell: ({ row }) => {
+      const n = Number(row.original.planCount ?? 0);
+      return (
+        <span
+          className={`tabular-nums ${n === 0 ? 'text-muted-foreground' : ''}`}
+          title={n === 0 ? 'Không có gói đang bán: không hiện ngoài web' : undefined}
+          data-testid='plan-count'
+        >
+          {n.toLocaleString('vi-VN')}
+        </span>
+      );
+    },
+    enableSorting: false
+  },
+  {
     // Which ones sell (doitac-1410 #077).
     id: 'soldCount',
     accessorKey: 'soldCount',

@@ -18,6 +18,8 @@ export type Region = {
   avatarUrl: string | null;
   iconUrl: string | null;
   isPopular: boolean;
+  /** In a list: plans on sale now (vande-1411 #031). */
+  planCount?: number;
   /** Every pack it is the parent of, on or off (vande-1411 #030). */
   childTotal?: number;
   /** Place among the five on the home page on a phone (vande-1411 #021). */
