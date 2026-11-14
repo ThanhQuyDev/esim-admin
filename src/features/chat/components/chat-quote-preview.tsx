@@ -50,7 +50,7 @@ export function ChatQuotePreview({
       <span
         className={cn(
           'block truncate text-[0.7rem] font-semibold',
-          isOwn ? 'text-primary-foreground/90' : 'text-foreground/70'
+          isOwn ? 'text-foreground/80' : 'text-foreground/70'
         )}
       >
         {authorName}
@@ -58,7 +58,7 @@ export function ChatQuotePreview({
       <span
         className={cn(
           'block truncate text-[0.72rem]',
-          isOwn ? 'text-primary-foreground/75' : 'text-muted-foreground'
+          isOwn ? 'text-muted-foreground' : 'text-muted-foreground'
         )}
       >
         {summary}
@@ -71,7 +71,9 @@ export function ChatQuotePreview({
       data-testid={testId}
       className={cn(
         'flex items-center gap-2 rounded-lg border-l-2 py-1 pr-1 pl-2',
-        isOwn ? 'border-primary-foreground/60 bg-black/10' : 'border-primary/60 bg-muted/60',
+        isOwn
+          ? 'border-[#5353ff]/60 bg-white/60 dark:bg-black/20'
+          : 'border-primary/60 bg-muted/60',
         className
       )}
     >

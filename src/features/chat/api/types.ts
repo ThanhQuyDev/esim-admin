@@ -23,6 +23,8 @@ export interface ChatMessage {
   senderId: number;
   message: string;
   isRead: boolean;
+  /** Reached the customer: "Đã nhận" (vande-1411 #035). */
+  deliveredAt?: string | null;
   createdAt: string; // ISO 8601
   updatedAt: string;
   // Optional file attachment (image/* or video/*) uploaded via Cloudinary
@@ -68,6 +70,8 @@ export interface ServerToClientEvents {
   newMessage: (data: ChatMessage) => void;
   messages: (data: { chatRoomId: number; messages: ChatMessage[] }) => void;
   markedAsRead: (data: { chatRoomId: number }) => void;
+  /** The customer received or saw the admin's messages (vande-1411 #035). */
+  messagesStatus: (data: { chatRoomId: number; status: 'delivered' | 'read' }) => void;
   rooms: (data: ChatRoomWithMeta[]) => void;
   /** A customer opened a conversation — refetch the list (#032). */
   roomsChanged: () => void;

@@ -55,7 +55,9 @@ export function ChatMessageBubble({
           isBot
             ? 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 mx-auto max-w-[90%] text-center'
             : isOwn
-              ? 'border-primary/40 bg-primary text-primary-foreground ml-auto'
+              ? // Light, not black: long replies on black were hard on the eyes
+                // (vande-1411 #035). The storefront's own-message colour, faint.
+                'ml-auto border-[#5353ff]/25 bg-[#eef0ff] text-foreground dark:border-[#5353ff]/40 dark:bg-[#5353ff]/20'
               : 'bg-muted border-transparent'
         )}
       >
@@ -65,7 +67,7 @@ export function ChatMessageBubble({
             isBot
               ? 'justify-center text-amber-700 dark:text-amber-300'
               : isOwn
-                ? 'text-primary-foreground/80'
+                ? 'text-foreground/80'
                 : 'text-foreground/80'
           )}
         >
@@ -81,7 +83,7 @@ export function ChatMessageBubble({
               className={cn(
                 'ml-auto shrink-0 rounded-full p-1 opacity-0 transition group-focus-within/message:opacity-100 group-hover/message:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none',
                 isOwn
-                  ? 'text-primary-foreground/80 hover:bg-black/15 focus-visible:ring-primary-foreground/50'
+                  ? 'text-muted-foreground hover:bg-background/70 hover:text-foreground focus-visible:ring-primary/40'
                   : 'text-muted-foreground hover:bg-background/70 hover:text-foreground focus-visible:ring-primary/40'
               )}
               aria-label={`Trả lời tin nhắn của ${displayName}`}
@@ -165,7 +167,7 @@ export function ChatMessageBubble({
                 isBot
                   ? 'border-amber-300 text-amber-800 dark:border-amber-700 dark:text-amber-200'
                   : isOwn
-                    ? 'border-primary-foreground/30 text-primary-foreground'
+                    ? 'border-[#5353ff]/30 text-foreground'
                     : 'border-border/60 text-foreground'
               )}
             >
@@ -182,7 +184,7 @@ export function ChatMessageBubble({
               isBot
                 ? 'text-amber-900 dark:text-amber-100'
                 : isOwn
-                  ? 'text-primary-foreground/90'
+                  ? 'text-foreground/90'
                   : 'text-foreground/90'
             )}
           >
@@ -192,28 +194,38 @@ export function ChatMessageBubble({
         )}
         <div className='mt-2 flex items-center justify-end gap-1.5 text-[0.65rem] sm:mt-3 sm:gap-2 sm:text-[0.7rem]'>
           <span
-            className={cn(
-              'text-muted-foreground',
-              isBot && 'text-amber-600 dark:text-amber-400',
-              isOwn && 'text-primary-foreground/80'
-            )}
+            className={cn('text-muted-foreground', isBot && 'text-amber-600 dark:text-amber-400')}
           >
             {time}
           </span>
-          {isOwn && message.isRead && (
-            <Icons.checks
-              className='text-primary-foreground/80 h-3 w-3 sm:h-3.5 sm:w-3.5'
-              aria-label='Đã đọc'
-            />
-          )}
-          {isOwn && !message.isRead && (
-            <Icons.check
-              className='text-primary-foreground/60 h-3 w-3 sm:h-3.5 sm:w-3.5'
-              aria-label='Đã gửi'
-            />
-          )}
+          {/* Said in words, as Zalo does, for the admin only (vande-1411 #035):
+              a bare tick did not tell sent from received from seen. */}
+          {isOwn && <MessageStatus message={message} />}
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/** "Đã gửi" → "Đã nhận" → "Đã xem" under the admin's own message (vande-1411 #035). */
+function MessageStatus({ message }: { message: ChatMessage }) {
+  const status = message.isRead ? 'read' : message.deliveredAt ? 'delivered' : 'sent';
+  const label = status === 'read' ? 'Đã xem' : status === 'delivered' ? 'Đã nhận' : 'Đã gửi';
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 font-medium',
+        status === 'read' ? 'text-[#5353ff]' : 'text-muted-foreground'
+      )}
+      data-testid={`chat-status-${message.id}`}
+      data-status={status}
+    >
+      {status === 'sent' ? (
+        <Icons.check className='h-3 w-3 sm:h-3.5 sm:w-3.5' aria-hidden='true' />
+      ) : (
+        <Icons.checks className='h-3 w-3 sm:h-3.5 sm:w-3.5' aria-hidden='true' />
+      )}
+      {label}
+    </span>
   );
 }

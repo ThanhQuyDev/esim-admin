@@ -238,7 +238,9 @@ export function ChatComposer({
         </div>
       )}
 
-      <div className='border-border/40 bg-background/80 flex items-end gap-2 rounded-2xl border p-3 backdrop-blur sm:gap-3 sm:rounded-3xl sm:p-4'>
+      {/* Focused: the storefront's own-message colour, twice as thick
+          (vande-1411 #035), instead of a heavy black edge. */}
+      <div className='border-border/40 bg-background/80 flex items-end gap-2 rounded-2xl border p-3 backdrop-blur transition-[border-color,box-shadow] focus-within:border-[#5353ff] focus-within:ring-1 focus-within:ring-[#5353ff] sm:gap-3 sm:rounded-3xl sm:p-4'>
         <div className='min-w-0 flex-1'>
           {/* 16px text on phones: iOS zooms the page into any field smaller than
               that and leaves it zoomed, which made the chat "swell" (#007). The
@@ -272,7 +274,7 @@ export function ChatComposer({
             }
             rows={2}
             enterKeyHint={enterSends ? 'send' : 'enter'}
-            className='text-foreground placeholder:text-muted-foreground/70 max-h-40 min-h-[3rem] w-full resize-none overflow-y-auto border-none bg-transparent text-base focus-visible:ring-0 focus-visible:outline-none sm:min-h-[4rem] sm:text-sm'
+            className='text-foreground placeholder:text-muted-foreground/70 max-h-40 min-h-[3rem] w-full resize-none overflow-y-auto border-none bg-transparent text-base focus-visible:border-transparent focus-visible:ring-0 focus-visible:outline-none sm:min-h-[4rem] sm:text-sm'
             aria-label='Ô nhập tin nhắn'
           />
         </div>

@@ -318,14 +318,44 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       }));
     });
 
+    // The admin read the room: the CUSTOMER's messages are read. Ours were
+    // marked too before, so a reply looked "seen" the moment it was sent
+    // (vande-1411 #035).
     socket.on('markedAsRead', ({ chatRoomId }) => {
-      set((s) => ({
-        rooms: s.rooms.map((room) => (room.id === chatRoomId ? { ...room, unreadCount: 0 } : room)),
-        messages: s.messages.map((msg) =>
-          msg.chatRoomId === chatRoomId ? { ...msg, isRead: true } : msg
-        )
-      }));
+      set((s) => {
+        const room = s.rooms.find((r) => r.id === chatRoomId);
+        return {
+          rooms: s.rooms.map((r) => (r.id === chatRoomId ? { ...r, unreadCount: 0 } : r)),
+          messages: s.messages.map((msg) =>
+            msg.chatRoomId === chatRoomId && room && msg.senderId === room.userId
+              ? { ...msg, isRead: true }
+              : msg
+          )
+        };
+      });
     });
+
+    // The customer received or saw our messages (vande-1411 #035).
+    socket.on(
+      'messagesStatus',
+      ({ chatRoomId, status }: { chatRoomId: number; status: 'delivered' | 'read' }) => {
+        set((s) => {
+          const room = s.rooms.find((r) => r.id === chatRoomId);
+          const now = new Date().toISOString();
+          return {
+            messages: s.messages.map((msg) => {
+              if (msg.chatRoomId !== chatRoomId) return msg;
+              if (room && msg.senderId === room.userId) return msg;
+              return {
+                ...msg,
+                deliveredAt: msg.deliveredAt ?? now,
+                isRead: status === 'read' ? true : msg.isRead
+              };
+            })
+          };
+        });
+      }
+    );
 
     socket.on('roomsChanged', () => {
       socket.emit('getRooms');
