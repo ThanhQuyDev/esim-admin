@@ -1,6 +1,6 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { createUser, updateUser, deleteUser } from './service';
+import { createUser, updateUser, deleteUser, lockUser, unlockUser } from './service';
 import { userKeys } from './queries';
 import type { CreateUserPayload, UpdateUserPayload } from './types';
 
@@ -20,5 +20,15 @@ export const updateUserMutation = mutationOptions({
 
 export const deleteUserMutation = mutationOptions({
   mutationFn: (id: number) => deleteUser(id),
+  onSettled: invalidateUsers
+});
+
+export const lockUserMutation = mutationOptions({
+  mutationFn: ({ id, reason }: { id: number; reason: string }) => lockUser(id, reason),
+  onSettled: invalidateUsers
+});
+
+export const unlockUserMutation = mutationOptions({
+  mutationFn: (id: number) => unlockUser(id),
   onSettled: invalidateUsers
 });

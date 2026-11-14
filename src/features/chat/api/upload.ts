@@ -1,3 +1,5 @@
+import { cloudinaryUploadRequest } from '@/lib/cloudinary-upload';
+
 // ─── Cloudinary upload for chat attachments (image/* + video/*) ─────────────
 
 export interface ChatUploadResult {
@@ -16,37 +18,27 @@ export function isAcceptedChatFile(file: File): boolean {
 }
 
 /**
- * Upload an image or video to Cloudinary using an unsigned upload preset.
+ * Upload an image or video to Cloudinary with a ticket signed by the API.
  * Returns the metadata required by the `sendMessage` WebSocket event.
  *
  * Uses XMLHttpRequest (instead of fetch) so we can report upload progress
  * back to the UI.
  */
-export function uploadChatFileToCloudinary(
+export async function uploadChatFileToCloudinary(
   file: File,
   onProgress?: (percent: number) => void
 ): Promise<ChatUploadResult> {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    return Promise.reject(new Error('Cloudinary configuration is missing'));
-  }
-
   if (!isAcceptedChatFile(file)) {
-    return Promise.reject(new Error('Chỉ hỗ trợ tệp hình ảnh hoặc video'));
+    throw new Error('Chỉ hỗ trợ tệp hình ảnh hoặc video');
   }
 
   if (file.size > CHAT_FILE_MAX_SIZE) {
-    return Promise.reject(new Error('Tệp vượt quá 25MB'));
+    throw new Error('Tệp vượt quá 25MB');
   }
 
-  // `auto` resource type lets Cloudinary route image vs video automatically
-  const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', uploadPreset);
+  // Signed by the API (security 15/11/2026) — no public upload preset.
+  // `auto` resource type lets Cloudinary route image vs video automatically.
+  const { endpoint, body: formData } = await cloudinaryUploadRequest(file, 'chat');
 
   return new Promise<ChatUploadResult>((resolve, reject) => {
     const xhr = new XMLHttpRequest();

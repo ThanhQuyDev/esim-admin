@@ -71,3 +71,15 @@ export async function deleteUser(id: number): Promise<void> {
     method: 'DELETE'
   });
 }
+
+/** "Khoá tài khoản" (security 15/11/2026): signs it out on every device. */
+export async function lockUser(id: number, reason: string): Promise<User> {
+  return apiClient<User>(`/users/${id}/lock`, {
+    method: 'POST',
+    body: JSON.stringify({ reason })
+  });
+}
+
+export async function unlockUser(id: number): Promise<User> {
+  return apiClient<User>(`/users/${id}/unlock`, { method: 'POST' });
+}

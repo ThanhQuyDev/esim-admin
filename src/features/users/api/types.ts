@@ -60,6 +60,9 @@ export type User = {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  /** Set while an admin has locked the account (security 15/11/2026). */
+  lockedAt?: string | null;
+  lockReason?: string | null;
 };
 
 export type UserFilters = {
