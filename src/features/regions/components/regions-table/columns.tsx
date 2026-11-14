@@ -45,9 +45,20 @@ export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
       <DataTableColumnHeader column={column} title='Tên' />
     ),
     cell: ({ row }) => (
-      <div className='flex flex-col'>
+      <div className='relative flex flex-col pr-12'>
         <span className='font-medium'>{row.original.name}</span>
         <span className='text-muted-foreground text-xs'>{row.original.slug}</span>
+        {/* How many packs a parent has, top right (vande-1411 #030). */}
+        {row.original.isParent && row.original.childTotal ? (
+          <Badge
+            variant='secondary'
+            className='absolute top-0 right-0'
+            title={`Khu vực cha của ${row.original.childTotal} khu vực`}
+            data-testid='region-child-count'
+          >
+            {row.original.childTotal}
+          </Badge>
+        ) : null}
       </div>
     ),
     meta: {

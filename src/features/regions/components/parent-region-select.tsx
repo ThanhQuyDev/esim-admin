@@ -75,7 +75,7 @@ export function ParentRegionSelect({
       {isParent ? (
         <p className='text-muted-foreground text-xs'>
           {children.length > 0
-            ? `Đang là khu vực cha của: ${children.map((c) => c.titleVi || c.name).join(', ')}. Muốn bỏ tích thì chuyển các khu vực con này ra trước.`
+            ? `Đang là khu vực cha của ${children.length} khu vực gồm: ${children.map((c) => c.titleVi || c.name).join(', ')}. Muốn bỏ tích thì chuyển các khu vực con này ra trước.`
             : 'Khu vực này có thể được chọn làm khu vực cha cho các khu vực khác.'}
         </p>
       ) : (
