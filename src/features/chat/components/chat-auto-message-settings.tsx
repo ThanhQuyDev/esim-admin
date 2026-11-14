@@ -123,9 +123,16 @@ export function ChatAutoMessageSettings() {
 
   const handleSave = (type: ChatAutomationType, state: AutomationCardState, exists: boolean) => {
     if (exists) {
-      updateMutation.mutate({ type, data: { message: state.message, isActive: state.isActive } });
+      updateMutation.mutate({
+        type,
+        data: { message: state.message, isActive: state.isActive }
+      });
     } else {
-      createMutation.mutate({ type, message: state.message, isActive: state.isActive });
+      createMutation.mutate({
+        type,
+        message: state.message,
+        isActive: state.isActive
+      });
     }
   };
 

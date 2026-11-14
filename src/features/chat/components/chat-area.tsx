@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useChatStore } from '../utils/store';
 import { ChatRoomHeader } from './chat-room-header';
 import { ChatMessageBubble } from './chat-message-bubble';
+import { chatDayLabel, startsNewDay } from '../utils/format';
 import { ChatComposer } from './chat-composer';
 import { Spinner } from '@/components/ui/spinner';
 import type { ChatUploadResult } from '../api/upload';
@@ -142,7 +143,21 @@ export function ChatArea() {
             )}
 
             <AnimatePresence initial={false}>
-              {messages.map((msg) => (
+              {messages.flatMap((msg, i) => [
+                // "Hôm nay", "Hôm qua" or the date, centred (vande-1411 #036).
+                ...(startsNewDay(msg.createdAt, messages[i - 1]?.createdAt)
+                  ? [
+                      <div
+                        key={`day-${msg.id}`}
+                        className='flex justify-center py-1'
+                        data-testid='chat-day'
+                      >
+                        <span className='bg-muted text-muted-foreground rounded-full px-3 py-0.5 text-xs font-medium'>
+                          {chatDayLabel(msg.createdAt)}
+                        </span>
+                      </div>
+                    ]
+                  : []),
                 <ChatMessageBubble
                   key={msg.id}
                   message={msg}
@@ -152,7 +167,7 @@ export function ChatArea() {
                   onReply={setReplyTo}
                   onJumpToQuoted={handleJumpToQuoted}
                 />
-              ))}
+              ])}
             </AnimatePresence>
           </div>
 

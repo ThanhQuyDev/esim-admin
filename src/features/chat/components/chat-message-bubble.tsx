@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/
 import { motion, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '../api/types';
-import { formatMessageTime } from '../utils/format';
+import { chatTime } from '../utils/format';
 import { ChatQuotePreview } from './chat-quote-preview';
 import { ChatLinkifiedText } from './chat-linkified-text';
 
@@ -32,7 +32,8 @@ export function ChatMessageBubble({
   onJumpToQuoted
 }: ChatMessageBubbleProps) {
   const shouldReduceMotion = useReducedMotion();
-  const time = formatMessageTime(message.createdAt);
+  // The time alone: the day is in the header above (vande-1411 #036).
+  const time = chatTime(message.createdAt);
   const isBot = message.senderId === BOT_SENDER_ID;
 
   const displayName = isBot ? 'Hệ thống' : senderName;

@@ -145,6 +145,9 @@ export function ChatComposer({
 
     onSubmit(e, uploadResult ?? undefined);
     resetAttachment();
+    // Keep the box focused, so a phone keeps its keyboard and the page does
+    // not drop when it folds away (vande-1411 #036).
+    textareaRef.current?.focus({ preventScroll: true });
   };
 
   const isImage = pendingFile?.type.startsWith('image/');
@@ -323,6 +326,10 @@ export function ChatComposer({
           </Button>
           <Button
             type='submit'
+            // Tapping send must not take the focus from the box: on a phone
+            // that folds the keyboard and the page jumps (vande-1411 #036).
+            onPointerDown={(e) => e.preventDefault()}
+            onMouseDown={(e) => e.preventDefault()}
             size='icon'
             className='bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:size-10'
             disabled={!canSubmit}

@@ -37,7 +37,11 @@ function useWaitingCountInTitle(waiting: number) {
     apply();
 
     const observer = new MutationObserver(apply);
-    observer.observe(document.head, { subtree: true, childList: true, characterData: true });
+    observer.observe(document.head, {
+      subtree: true,
+      childList: true,
+      characterData: true
+    });
 
     const timer = window.setInterval(() => {
       // Flash only in the background, as on the storefront.

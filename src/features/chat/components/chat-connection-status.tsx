@@ -17,7 +17,10 @@ const statusConfig = {
     label: 'Disconnected',
     className: 'bg-red-500/15 text-red-600 border-red-500/30'
   },
-  error: { label: 'Connection Error', className: 'bg-red-500/15 text-red-600 border-red-500/30' }
+  error: {
+    label: 'Connection Error',
+    className: 'bg-red-500/15 text-red-600 border-red-500/30'
+  }
 } as const;
 
 export function ChatConnectionStatus() {
