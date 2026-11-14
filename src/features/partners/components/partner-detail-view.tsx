@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BulkStatusModal } from './bulk-status-modal';
 import { PartnerContractCard, type PartnerContractCardHandle } from './partner-contract-card';
+import { PartnerSepayAccountField } from './partner-sepay-account-field';
 import { PartnerStatsSection } from './partner-stats-section';
 import { PartnerWalletSheet } from './partner-wallet-sheet';
 import { RejectPartnerModal } from './reject-partner-modal';
@@ -456,6 +457,17 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
                 ? `Hạng này áp dụng từ ${formatDateVn(partner.tierEffectiveFrom)}. Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ (#042).`
                 : 'Đổi hạng chỉ tính cho đơn phát sinh sau thời điểm đổi — đơn trước đó giữ mức hoa hồng cũ, hệ thống không tính hồi tố.'}
             </p>
+            {/* SePay personal or company for this partner's customers
+                (vande-1411 #046). */}
+            {isKol && (
+              <div className='mt-4 border-t pt-4'>
+                <PartnerSepayAccountField
+                  partnerId={partner.id}
+                  value={partner.sepayAccount}
+                  kind='kol'
+                />
+              </div>
+            )}
 
             {/* Every type of partner (doitac-0911 #008). */}
             <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>

@@ -28,6 +28,7 @@ import { formatVnd } from '@/lib/format';
 import { updatePartnerByAdminMutation } from '../api/mutations';
 import { programSettingsQueryOptions } from '../api/queries';
 import type { Partner } from '../api/types';
+import { PartnerSepayAccountField } from './partner-sepay-account-field';
 
 type Line = { label: string; value: string };
 
@@ -235,6 +236,18 @@ export function PartnerContractCard({
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* SePay personal or company for this partner's automatic deposits
+            (vande-1411 #046); saved on change. */}
+        {showDepositLimits && (
+          <div className='border-t pt-4'>
+            <PartnerSepayAccountField
+              partnerId={partner.id}
+              value={partner.sepayAccount}
+              kind='distribution'
+            />
           </div>
         )}
 

@@ -60,6 +60,8 @@ export type Partner = {
    * công" (reported with proof, confirmed by an admin) — vande #068.
    */
   depositMode?: 'auto' | 'manual';
+  /** The SePay account this partner's transfers go to (vande-1411 #046). */
+  sepayAccount?: 'personal' | 'company';
   /**
    * Ticked by an admin: this distribution partner may also run the affiliate
    * programme, which is what puts the four marketing menus in their portal
@@ -589,6 +591,7 @@ export type UpdatePartnerProfileByAdminPayload = {
   contractInfo?: { label: string; value: string }[];
   depositMinVnd?: number | null;
   depositMaxVnd?: number | null;
+  sepayAccount?: 'personal' | 'company';
 };
 
 /** Link and code performance over the last 30 days (#061). */
