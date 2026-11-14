@@ -1,4 +1,5 @@
 'use client';
+import { TwoFactorCard } from './two-factor-card';
 
 import { useQuery } from '@tanstack/react-query';
 import { authMeQueryOptions } from '@/features/auth/api/queries';
@@ -42,6 +43,9 @@ export default function ProfileViewPage() {
 
       {/* The second password of money transactions (vande-1411 #004). */}
       <SalesPasswordCard />
+
+      {/* Two-step sign-in with a mailed code (vande-1411 #005). */}
+      <TwoFactorCard />
     </div>
   );
 }

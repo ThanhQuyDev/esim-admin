@@ -1,4 +1,5 @@
 'use client';
+import { TwoFactorCard } from '@/features/profile/components/two-factor-card';
 
 /**
  * Partner profile.
@@ -509,6 +510,9 @@ export function PortalProfileView() {
 
             {/* The second password of money transactions (vande-1411 #004). */}
             <SalesPasswordCard />
+
+            {/* Two-step sign-in with a mailed code (vande-1411 #005). */}
+            <TwoFactorCard />
 
             <Card>
               <CardHeader>

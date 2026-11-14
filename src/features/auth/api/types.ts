@@ -42,6 +42,14 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+/** Two-step sign-in on: a code went by email, no session yet (vande-1411 #005). */
+export interface TwoFactorChallenge {
+  twoFactorRequired: true;
+  challenge: string;
+  sentTo: string;
+  expiresInMinutes: number;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;

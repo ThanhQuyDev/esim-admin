@@ -12,7 +12,8 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { useEffect, useState } from 'react';
 import { resetDismissedNotices } from '@/lib/notice-banner';
-import { LoginError, login } from '../api/service';
+import { LoginError, login, loginTwoFactor, resendTwoFactorCode } from '../api/service';
+import type { AuthResponse, TwoFactorChallenge } from '../api/types';
 import { HOME_PATH, IS_PARTNER_PORTAL } from '@/config/app-mode';
 import { CHANGE_PASSWORD_PATH } from '@/features/partner-portal/components/must-change-password-gate';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -48,6 +49,10 @@ export default function SignInViewPage() {
   // instead of being let into a portal with nothing behind its menus (#001),
   // and so is a locked partner (doitac-1410 #004).
   const [notice, setNotice] = useState<SignInNotice | null>(null);
+  // Two-step sign-in on (vande-1411 #005): the password passed, a code went
+  // by email; this holds what the code step needs.
+  const [twoFactor, setTwoFactor] = useState<TwoFactorChallenge | null>(null);
+  const [code, setCode] = useState('');
 
   // A partner cut off mid-session arrives here as `?reason=locked|ended`.
   // Read off `window` rather than useSearchParams, which would need a Suspense
@@ -63,25 +68,57 @@ export default function SignInViewPage() {
   // Logo, cover image and copy come from the CMS (#006).
   const content = useAuthPageContent();
 
+  const enter = (result: AuthResponse) => {
+    setNotice(null);
+    setRedirecting(true);
+    // Announcements closed in the last sign-in show again (#062).
+    resetDismissedNotices();
+    // A full page load, not router.push (doitac-1410 #007). The soft
+    // navigation could hang with no sign of life while the dashboard
+    // rendered on a cold server, and anything cached while signed out (the
+    // "who am I" answer above all) survived into the new session — both
+    // left the partner on this page until they refreshed. Dropping the cache
+    // and loading the page afresh is exactly what that refresh did.
+    queryClient.clear();
+    // A partner on the password an admin emailed goes straight to the form
+    // that replaces it (doitac-1410 #011).
+    window.location.assign(
+      IS_PARTNER_PORTAL && result.user?.mustChangePassword ? CHANGE_PASSWORD_PATH : HOME_PATH
+    );
+  };
+
+  const verifyCode = useMutation({
+    mutationFn: () => loginTwoFactor(twoFactor!.challenge, code.trim()),
+    onSuccess: enter,
+    onError: (error: Error) => {
+      // Too many wrong codes, or too late: back to the password.
+      if (
+        error instanceof LoginError &&
+        (error.code === 'otpMaxAttemptsExceeded' || error.code === 'otpExpired')
+      ) {
+        setTwoFactor(null);
+        setCode('');
+      }
+      toast.error(error.message);
+    }
+  });
+
+  const resend = useMutation({
+    mutationFn: () => resendTwoFactorCode(twoFactor!.challenge),
+    onSuccess: (r) => toast.success(`Đã gửi lại mã tới ${r.sentTo}`),
+    onError: (error: Error) => toast.error(error.message)
+  });
+
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: (result) => {
-      setNotice(null);
-      setRedirecting(true);
-      // Announcements closed in the last sign-in show again (#062).
-      resetDismissedNotices();
-      // A full page load, not router.push (doitac-1410 #007). The soft
-      // navigation could hang with no sign of life while the dashboard
-      // rendered on a cold server, and anything cached while signed out (the
-      // "who am I" answer above all) survived into the new session — both
-      // left the partner on this page until they refreshed. Dropping the cache
-      // and loading the page afresh is exactly what that refresh did.
-      queryClient.clear();
-      // A partner on the password an admin emailed goes straight to the form
-      // that replaces it (doitac-1410 #011).
-      window.location.assign(
-        IS_PARTNER_PORTAL && result.user?.mustChangePassword ? CHANGE_PASSWORD_PATH : HOME_PATH
-      );
+      if ('twoFactorRequired' in result && result.twoFactorRequired) {
+        setNotice(null);
+        setCode('');
+        setTwoFactor(result);
+        return;
+      }
+      enter(result as AuthResponse);
     },
     onError: (error: Error) => {
       if (error instanceof LoginError && error.code === 'partnerPending') {
@@ -138,74 +175,138 @@ export default function SignInViewPage() {
               <AlertDescription>{notice.message}</AlertDescription>
             </Alert>
           )}
-          <form.AppForm>
-            <form.Form className='space-y-4'>
-              <form.AppField
-                name='email'
-                children={(field) => (
-                  <field.FieldSet>
-                    <field.Field>
-                      <Label htmlFor={field.name}>Email</Label>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type='email'
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder='name@example.com'
-                        disabled={mutation.isPending}
-                      />
-                    </field.Field>
-                    <field.FieldError />
-                  </field.FieldSet>
-                )}
-              />
-              <form.AppField
-                name='password'
-                children={(field) => (
-                  <field.FieldSet>
-                    <field.Field>
-                      <Label htmlFor={field.name}>Mật khẩu</Label>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type='password'
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder='Nhập mật khẩu'
-                        disabled={mutation.isPending}
-                      />
-                    </field.Field>
-                    <field.FieldError />
-                  </field.FieldSet>
-                )}
-              />
-              <div className='flex justify-end'>
-                <Link
-                  href='/auth/forgot-password'
-                  className='text-muted-foreground hover:text-primary text-sm underline-offset-4 hover:underline'
-                >
-                  Quên mật khẩu?
-                </Link>
+          {twoFactor ? (
+            <form
+              className='space-y-4'
+              data-testid='two-factor-step'
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (/^\d{6}$/.test(code.trim())) verifyCode.mutate();
+              }}
+            >
+              <Alert>
+                <Icons.mail className='h-4 w-4' />
+                <AlertTitle>Đăng nhập 2 lớp</AlertTitle>
+                <AlertDescription>
+                  Đã gửi mã 6 số tới {twoFactor.sentTo}. Mã có hiệu lực {twoFactor.expiresInMinutes}{' '}
+                  phút.
+                </AlertDescription>
+              </Alert>
+              <div className='space-y-2'>
+                <Label htmlFor='two-factor-code'>Mã xác thực</Label>
+                <Input
+                  id='two-factor-code'
+                  inputMode='numeric'
+                  autoComplete='one-time-code'
+                  autoFocus
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder='123456'
+                  disabled={verifyCode.isPending || redirecting}
+                  data-testid='two-factor-code'
+                />
               </div>
-              {/*
+              <Button
+                type='submit'
+                className='w-full'
+                isLoading={verifyCode.isPending || redirecting}
+                disabled={!/^\d{6}$/.test(code.trim()) || verifyCode.isPending || redirecting}
+                data-testid='two-factor-submit'
+              >
+                {redirecting ? 'Đang vào trang…' : 'Xác nhận'}
+              </Button>
+              <div className='flex justify-between text-sm'>
+                <button
+                  type='button'
+                  className='text-muted-foreground hover:text-primary underline-offset-4 hover:underline'
+                  onClick={() => {
+                    setTwoFactor(null);
+                    setCode('');
+                  }}
+                >
+                  Quay lại
+                </button>
+                <button
+                  type='button'
+                  className='text-muted-foreground hover:text-primary underline-offset-4 hover:underline disabled:opacity-50'
+                  disabled={resend.isPending}
+                  onClick={() => resend.mutate()}
+                >
+                  Gửi lại mã
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form.AppForm>
+              <form.Form className='space-y-4'>
+                <form.AppField
+                  name='email'
+                  children={(field) => (
+                    <field.FieldSet>
+                      <field.Field>
+                        <Label htmlFor={field.name}>Email</Label>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          type='email'
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder='name@example.com'
+                          disabled={mutation.isPending}
+                        />
+                      </field.Field>
+                      <field.FieldError />
+                    </field.FieldSet>
+                  )}
+                />
+                <form.AppField
+                  name='password'
+                  children={(field) => (
+                    <field.FieldSet>
+                      <field.Field>
+                        <Label htmlFor={field.name}>Mật khẩu</Label>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          type='password'
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder='Nhập mật khẩu'
+                          disabled={mutation.isPending}
+                        />
+                      </field.Field>
+                      <field.FieldError />
+                    </field.FieldSet>
+                  )}
+                />
+                <div className='flex justify-end'>
+                  <Link
+                    href='/auth/forgot-password'
+                    className='text-muted-foreground hover:text-primary text-sm underline-offset-4 hover:underline'
+                  >
+                    Quên mật khẩu?
+                  </Link>
+                </div>
+                {/*
                 Busy for as long as the request and the page change take
                 (doitac-1410 #007): the form's own submit button only spins
                 while the form validates, so a slow sign-in looked like a dead
                 button and was clicked again and again.
               */}
-              <Button
-                type='submit'
-                className='w-full'
-                isLoading={mutation.isPending || redirecting}
-                disabled={mutation.isPending || redirecting}
-              >
-                {redirecting ? 'Đang vào trang…' : 'Đăng nhập'}
-              </Button>
-            </form.Form>
-          </form.AppForm>
+                <Button
+                  type='submit'
+                  className='w-full'
+                  isLoading={mutation.isPending || redirecting}
+                  disabled={mutation.isPending || redirecting}
+                >
+                  {redirecting ? 'Đang vào trang…' : 'Đăng nhập'}
+                </Button>
+              </form.Form>
+            </form.AppForm>
+          )}
           {content.signUpUrl && (
             <p className='text-muted-foreground text-center text-sm'>
               Chưa có tài khoản?{' '}

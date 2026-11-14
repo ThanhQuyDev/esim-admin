@@ -1,4 +1,4 @@
-import type { AuthResponse, AuthUser, LoginPayload } from './types';
+import type { AuthResponse, AuthUser, LoginPayload, TwoFactorChallenge } from './types';
 
 /** A login the API refused, carrying the reason code it sent back (#001). */
 export class LoginError extends Error {
@@ -11,7 +11,7 @@ export class LoginError extends Error {
   }
 }
 
-export async function login(payload: LoginPayload): Promise<AuthResponse> {
+export async function login(payload: LoginPayload): Promise<AuthResponse | TwoFactorChallenge> {
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -24,6 +24,31 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
   }
 
   return res.json();
+}
+
+/** The code step of a two-step sign-in (vande-1411 #005). */
+export async function loginTwoFactor(challenge: string, code: string): Promise<AuthResponse> {
+  const res = await fetch('/api/auth/login/2fa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ challenge, code })
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new LoginError(error.message || 'Mã xác thực không đúng.', error?.errors?.otp);
+  }
+  return res.json();
+}
+
+export async function resendTwoFactorCode(challenge: string): Promise<{ sentTo: string }> {
+  const res = await fetch('/api/auth/login/2fa/resend', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ challenge })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || 'Không gửi lại được mã.');
+  return body;
 }
 
 export async function logout(): Promise<void> {
