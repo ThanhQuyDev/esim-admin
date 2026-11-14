@@ -6,6 +6,7 @@ import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { BreadcrumbProvider } from '@/hooks/use-breadcrumb-context';
 import { ChatNotificationListener } from '@/features/chat/components/chat-notification-listener';
+import { SalesPasswordPrompt } from '@/components/sales-password-prompt';
 import { IS_PARTNER_PORTAL } from '@/config/app-mode';
 import { RoleRouteGuard } from '@/components/layout/role-route-guard';
 import { MustChangePasswordRedirect } from '@/features/partner-portal/components/must-change-password-gate';
@@ -52,6 +53,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </SidebarInset>
             </SidebarProvider>
             <ChatNotificationListener />
+            {/* Asks for the sales password of a money transaction (vande-1411 #004). */}
+            <SalesPasswordPrompt />
           </InfobarProvider>
         </BreadcrumbProvider>
       </KBar>

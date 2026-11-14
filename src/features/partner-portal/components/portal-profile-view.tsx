@@ -11,6 +11,7 @@
 
 import { partnerStatusLabel } from '../utils/partner-lock';
 import { useEffect, useRef, useState } from 'react';
+import { SalesPasswordCard } from '@/features/profile/components/sales-password-card';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { toast } from 'sonner';
@@ -505,6 +506,9 @@ export function PortalProfileView() {
             {/* A partner is keyed by partner id, so the login address is theirs
                 to change like any customer's (#031). */}
             <PortalEmailChangeCard currentEmail={signInEmail} />
+
+            {/* The second password of money transactions (vande-1411 #004). */}
+            <SalesPasswordCard />
 
             <Card>
               <CardHeader>

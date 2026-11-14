@@ -5,6 +5,7 @@ import { authMeQueryOptions } from '@/features/auth/api/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { ChangePasswordCard } from './change-password-card';
+import { SalesPasswordCard } from './sales-password-card';
 
 export default function ProfileViewPage() {
   const { data: user } = useQuery(authMeQueryOptions);
@@ -38,6 +39,9 @@ export default function ProfileViewPage() {
 
       {/* Let staff rotate their own login password (#066) */}
       <ChangePasswordCard />
+
+      {/* The second password of money transactions (vande-1411 #004). */}
+      <SalesPasswordCard />
     </div>
   );
 }

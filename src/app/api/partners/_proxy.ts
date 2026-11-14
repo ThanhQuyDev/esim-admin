@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { salesPasswordHeader } from '@/lib/sales-password-header';
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 
@@ -19,7 +20,8 @@ async function authHeaders() {
  * this proxy adds no additional access control of its own.
  */
 export async function proxyAdminPartners(request: NextRequest, path: string, init?: RequestInit) {
-  const headers = await authHeaders();
+  // The sales password of a money transaction (vande-1411 #004).
+  const headers = { ...(await authHeaders()), ...salesPasswordHeader(request) };
   const search = request.nextUrl.search;
   const res = await fetch(`${API_URL}/api/v1/admin/partners${path}${search}`, {
     headers,

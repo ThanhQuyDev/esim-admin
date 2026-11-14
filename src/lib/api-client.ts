@@ -1,3 +1,6 @@
+import { askSalesPassword, isSalesPasswordReason } from './sales-password-prompt';
+import { SALES_PASSWORD_HEADER } from './sales-password-header';
+
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '/api';
   // Server-side (RSC prefetch) needs an absolute URL. On Vercel there is no
@@ -49,15 +52,49 @@ async function serverCookieHeader(): Promise<Record<string, string>> {
 }
 
 export async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${getBaseUrl()}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(await serverCookieHeader()),
-      ...(options?.headers as Record<string, string> | undefined)
+  let salesPassword: string | null = null;
+  for (;;) {
+    const res: Response = await fetch(`${getBaseUrl()}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await serverCookieHeader()),
+        ...(options?.headers as Record<string, string> | undefined),
+        ...(salesPassword ? { [SALES_PASSWORD_HEADER]: salesPassword } : {})
+      }
+    });
+    if (res.status === 403 && typeof window !== 'undefined') {
+      // A money transaction wants the sales password (vande-1411 #004): ask,
+      // then send the same request again with it. Cancel ends it here.
+      const body: { message?: unknown; errors?: Record<string, string> } = await res
+        .clone()
+        .json()
+        .catch(() => ({}));
+      const reason: unknown = body?.errors?.salesPassword;
+      if (isSalesPasswordReason(reason)) {
+        const message = typeof body.message === 'string' ? body.message : '';
+        const typed: string | null =
+          reason === 'required' || reason === 'invalid'
+            ? await askSalesPassword(reason, message)
+            : (await askSalesPassword(reason, message), null);
+        if (typed) {
+          salesPassword = typed;
+          continue;
+        }
+        throw new ApiError(
+          reason === 'not_set' || reason === 'locked'
+            ? message
+            : 'Đã huỷ: chưa nhập mật khẩu bán hàng.',
+          403,
+          body.errors
+        );
+      }
     }
-  });
+    return readResponse<T>(res);
+  }
+}
 
+async function readResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const errors =

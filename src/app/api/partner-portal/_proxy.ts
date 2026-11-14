@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { salesPasswordHeader } from '@/lib/sales-password-header';
 import { PARTNER_LOCKED_MESSAGE } from '@/config/partner-session';
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
@@ -20,7 +21,9 @@ async function authHeaders(request: NextRequest) {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(clientIp ? { 'x-esim-client-ip': clientIp } : {}),
-    ...(userAgent ? { 'x-esim-client-ua': userAgent } : {})
+    ...(userAgent ? { 'x-esim-client-ua': userAgent } : {}),
+    // The sales password of a money transaction (vande-1411 #004).
+    ...salesPasswordHeader(request)
   };
 }
 

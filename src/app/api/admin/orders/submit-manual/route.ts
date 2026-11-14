@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { salesPasswordHeader } from '@/lib/sales-password-header';
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 
@@ -14,7 +15,8 @@ async function getAuthHeaders() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const headers = await getAuthHeaders();
+  // The sales password of a money transaction (vande-1411 #004).
+  const headers = { ...(await getAuthHeaders()), ...salesPasswordHeader(request) };
 
   const res = await fetch(`${API_URL}/api/v1/admin/orders/submit-manual`, {
     method: 'POST',

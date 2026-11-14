@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { salesPasswordHeader } from '@/lib/sales-password-header';
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 
@@ -18,7 +19,9 @@ export async function proxyTopup(request: NextRequest, path: string, init?: Requ
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // The sales password of a money transaction (vande-1411 #004).
+      ...salesPasswordHeader(request)
     },
     cache: 'no-store'
   });
