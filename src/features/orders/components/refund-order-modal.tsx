@@ -22,7 +22,7 @@ import {
 import { formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useTierLabels } from '@/features/membership-tiers/hooks/use-tier-labels';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   AIRALO_REFUND_REASONS,
@@ -110,6 +110,10 @@ interface RefundOrderModalProps {
    * referral reward apply, and the money goes back to the deposit wallet.
    */
   partnerPurchase?: boolean;
+  /** eSIMs ticked when it opens: "Hoàn tiền" from an eSIM's page (vande-1411 #009). */
+  initialEsimIds?: number[];
+  /** Shown above the form, e.g. that the order is marked failed. */
+  notice?: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: RefundOrderRequest) => void;
@@ -138,6 +142,8 @@ export function RefundOrderModal({
   items = [],
   benefits,
   partnerPurchase = false,
+  initialEsimIds,
+  notice,
   open,
   onOpenChange,
   onSubmit,
@@ -182,6 +188,9 @@ export function RefundOrderModal({
     setAiraloReason(DEFAULT_AIRALO_REFUND_REASON);
     setAiraloNotes('');
     setInstalledConfirmed(false);
+    // Opened from an eSIM's page: that eSIM ticked, the amount following.
+    if (initialEsimIds?.length) applySelection(initialEsimIds, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const isRefunded = (status?: string | null) => status === 'refunded';
@@ -378,6 +387,7 @@ export function RefundOrderModal({
           className='-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2'
           data-testid='refund-modal-body'
         >
+          {notice}
           {/* Order Summary */}
           <div className='rounded-lg border p-4 space-y-2'>
             <div className='flex items-center justify-between'>

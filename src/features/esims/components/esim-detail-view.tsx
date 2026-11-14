@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { AlertModal } from '@/components/modal/alert-modal';
 import { esimStatusLabel, esimStatusVariant } from '../lib/esim-status';
+import { EsimRefundButton } from './esim-refund-button';
 import { formatDataSize, formatDateTimeVn, formatVnd } from '@/lib/format';
 import { esimQueryOptions } from '../api/queries';
 import { deleteEsimMutation } from '../api/mutations';
@@ -305,6 +306,13 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               </Button>
             </span>
           )}
+          {/* For an order that failed yet got its QR code, too (vande-1411 #009). */}
+          <EsimRefundButton
+            esimId={esim.id}
+            orderNumber={esim.orderNumber}
+            refunded={refunded}
+            refundable={plan?.isRefundable !== false}
+          />
           <EsimFormDialog
             esim={esim}
             trigger={
