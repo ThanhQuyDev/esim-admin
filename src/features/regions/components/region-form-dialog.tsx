@@ -22,6 +22,12 @@ import { FormDialog } from '@/components/ui/form-dialog';
 import { DestinationSelector } from './destination-selector';
 import { ParentRegionSelect } from './parent-region-select';
 
+/** "Vị trí trên mobile": the home page shows five per tab on a phone. */
+const MOBILE_HOME_RANK_OPTIONS = [
+  { value: '', label: 'Không hiện trên mobile' },
+  ...[1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: `Vị trí ${n}` }))
+];
+
 interface RegionFormDialogProps {
   region?: Region;
   open: boolean;
@@ -119,6 +125,7 @@ function CreateDialog({
       slug: '',
       slugVi: '',
       isPopular: false,
+      mobileHomeRank: '',
       isActive: true,
       title: '',
       titleVi: '',
@@ -150,6 +157,7 @@ function CreateDialog({
           ...(avatarUrl && { avatarUrl }),
           ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular ?? false,
+          mobileHomeRank: value.mobileHomeRank ? Number(value.mobileHomeRank) : null,
           isActive: value.isActive ?? true,
           ...(value.title && { title: value.title }),
           ...(value.titleVi && { titleVi: value.titleVi }),
@@ -170,7 +178,7 @@ function CreateDialog({
     }
   });
 
-  const { FormTextField, FormSwitchField, FormTextareaField } =
+  const { FormTextField, FormSwitchField, FormTextareaField, FormSelectField } =
     useFormFields<CreateRegionFormValues>();
 
   const isPending = createMutation.isPending || uploading;
@@ -227,6 +235,12 @@ function CreateDialog({
             <FormSwitchField name='isPopular' label='Nổi bật' />
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
+          {/* The five a phone shows on the home page (vande-1411 #021). */}
+          <FormSelectField
+            name='mobileHomeRank'
+            label='Vị trí trên mobile (trang chủ)'
+            options={MOBILE_HOME_RANK_OPTIONS}
+          />
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 
@@ -335,6 +349,7 @@ function EditDialogForm({
       slug: region.slug ?? '',
       slugVi: region.slugVi ?? '',
       isPopular: region.isPopular,
+      mobileHomeRank: region.mobileHomeRank ? String(region.mobileHomeRank) : '',
       isActive: region.isActive,
       title: region.title ?? '',
       titleVi: region.titleVi ?? '',
@@ -368,6 +383,8 @@ function EditDialogForm({
           ...(avatarUrl && { avatarUrl }),
           ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular,
+          // Always sent, so choosing "Không" takes it off the phone.
+          mobileHomeRank: value.mobileHomeRank ? Number(value.mobileHomeRank) : null,
           isActive: value.isActive,
           title: value.title || null,
           titleVi: value.titleVi || null,
@@ -395,7 +412,7 @@ function EditDialogForm({
     }
   });
 
-  const { FormTextField, FormSwitchField, FormTextareaField } =
+  const { FormTextField, FormSwitchField, FormTextareaField, FormSelectField } =
     useFormFields<UpdateRegionFormValues>();
 
   const isPending = updateMutation.isPending || uploading;
@@ -463,6 +480,12 @@ function EditDialogForm({
             <FormSwitchField name='isPopular' label='Nổi bật' />
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
+          {/* The five a phone shows on the home page (vande-1411 #021). */}
+          <FormSelectField
+            name='mobileHomeRank'
+            label='Vị trí trên mobile (trang chủ)'
+            options={MOBILE_HOME_RANK_OPTIONS}
+          />
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 

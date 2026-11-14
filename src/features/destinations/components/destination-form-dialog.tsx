@@ -29,6 +29,12 @@ import {
   type UpdateDestinationFormValues
 } from '../schemas/destination';
 
+/** "Vị trí trên mobile": the home page shows five per tab on a phone. */
+const MOBILE_HOME_RANK_OPTIONS = [
+  { value: '', label: 'Không hiện trên mobile' },
+  ...[1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: `Vị trí ${n}` }))
+];
+
 interface DestinationFormDialogProps {
   destination?: Destination;
   open: boolean;
@@ -252,6 +258,7 @@ function CreateDestinationDialog({
       parentId: '',
       keySearch: '',
       isPopular: false,
+      mobileHomeRank: '',
       isActive: true,
       title: '',
       titleVi: '',
@@ -285,6 +292,7 @@ function CreateDestinationDialog({
           ...(avatarUrl && { avatarUrl }),
           ...(value.keySearch && { keySearch: value.keySearch }),
           isPopular: value.isPopular ?? false,
+          mobileHomeRank: value.mobileHomeRank ? Number(value.mobileHomeRank) : null,
           isActive: value.isActive ?? true,
           ...(value.title && { title: value.title }),
           ...(value.titleVi && { titleVi: value.titleVi }),
@@ -302,7 +310,7 @@ function CreateDestinationDialog({
     }
   });
 
-  const { FormTextField, FormSwitchField, FormTextareaField } =
+  const { FormTextField, FormSwitchField, FormTextareaField, FormSelectField } =
     useFormFields<CreateDestinationFormValues>();
 
   const isPending = createMutation.isPending || uploading;
@@ -380,6 +388,12 @@ function CreateDestinationDialog({
             <FormSwitchField name='isPopular' label='Nổi bật' />
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
+          {/* The five a phone shows on the home page (vande-1411 #021). */}
+          <FormSelectField
+            name='mobileHomeRank'
+            label='Vị trí trên mobile (trang chủ)'
+            options={MOBILE_HOME_RANK_OPTIONS}
+          />
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 
@@ -439,6 +453,7 @@ function EditDestinationDialog({
       parentId: destination.parentId ? String(destination.parentId) : '',
       keySearch: destination.keySearch ?? '',
       isPopular: destination.isPopular,
+      mobileHomeRank: destination.mobileHomeRank ? String(destination.mobileHomeRank) : '',
       isActive: destination.isActive,
       title: destination.title ?? '',
       titleVi: destination.titleVi ?? '',
@@ -474,6 +489,8 @@ function EditDestinationDialog({
           ...(avatarUrl && { avatarUrl }),
           keySearch: value.keySearch || undefined,
           isPopular: value.isPopular,
+          // Always sent, so choosing "Không" takes it off the phone.
+          mobileHomeRank: value.mobileHomeRank ? Number(value.mobileHomeRank) : null,
           isActive: value.isActive,
           title: value.title || undefined,
           titleVi: value.titleVi || undefined,
@@ -497,7 +514,7 @@ function EditDestinationDialog({
     }
   });
 
-  const { FormTextField, FormSwitchField, FormTextareaField } =
+  const { FormTextField, FormSwitchField, FormTextareaField, FormSelectField } =
     useFormFields<UpdateDestinationFormValues>();
 
   const isPending = updateMutation.isPending || uploading;
@@ -581,6 +598,12 @@ function EditDestinationDialog({
             <FormSwitchField name='isPopular' label='Nổi bật' />
             <FormSwitchField name='isActive' label='Hoạt động' />
           </div>
+          {/* The five a phone shows on the home page (vande-1411 #021). */}
+          <FormSelectField
+            name='mobileHomeRank'
+            label='Vị trí trên mobile (trang chủ)'
+            options={MOBILE_HOME_RANK_OPTIONS}
+          />
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 

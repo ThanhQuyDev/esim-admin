@@ -9,6 +9,8 @@ export type Destination = {
   avatarUrl: string | null;
   keySearch: string | null;
   isPopular: boolean;
+  /** Place among the five on the home page on a phone (vande-1411 #021). */
+  mobileHomeRank?: number | null;
   isActive: boolean;
   /** eSIMs sold for it, all plans together (doitac-1410 #077). */
   soldCount?: number;
@@ -48,6 +50,7 @@ export type CreateDestinationPayload = {
   avatarUrl?: string | null;
   keySearch?: string | null;
   isPopular?: boolean;
+  mobileHomeRank?: number | null;
   isActive?: boolean;
   title?: string | null;
   titleVi?: string | null;
@@ -68,6 +71,7 @@ export type UpdateDestinationPayload = {
   avatarUrl?: string | null;
   keySearch?: string | null;
   isPopular?: boolean;
+  mobileHomeRank?: number | null;
   isActive?: boolean;
   title?: string | null;
   titleVi?: string | null;
