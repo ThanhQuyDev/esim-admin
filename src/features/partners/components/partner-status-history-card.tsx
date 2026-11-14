@@ -33,6 +33,7 @@ export function PartnerStatusHistoryCard({ partnerId }: { partnerId: number }) {
         <CardTitle>Lịch sử thao tác trạng thái</CardTitle>
         <CardDescription>
           Các lần duyệt, tạm khóa, khóa và mở khóa tài khoản cùng lý do admin đã nhập.
+          {data.length > 0 && ` (${data.length} lần)`}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -41,7 +42,11 @@ export function PartnerStatusHistoryCard({ partnerId }: { partnerId: number }) {
         ) : data.length === 0 ? (
           <p className='text-muted-foreground text-sm'>Chưa có thao tác nào.</p>
         ) : (
-          <ol className='divide-y'>
+          // A fixed height that scrolls once the history grows (vande-1411 #045).
+          <ol
+            className='max-h-96 divide-y overflow-y-auto pr-2'
+            data-testid='partner-status-history-list'
+          >
             {data.map((entry) => (
               <li key={entry.id} className='flex flex-col gap-1 py-3 text-sm'>
                 <div className='flex flex-wrap items-center justify-between gap-2'>

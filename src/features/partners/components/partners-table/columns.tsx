@@ -61,6 +61,9 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
           aria-label='Chọn dòng'
         />
       ),
+      // The first columns stay put while scrolling sideways; pinned columns
+      // need a fixed width to sit side by side (vande-1411 #045).
+      size: 40,
       enableSorting: false,
       enableHiding: false
     },
@@ -73,6 +76,7 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
       cell: ({ row }) => (
         <span className='text-muted-foreground font-mono text-xs'>#{row.original.id}</span>
       ),
+      size: 64,
       enableSorting: false
     },
     {
@@ -81,8 +85,9 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
       header: ({ column }: { column: Column<Partner, unknown> }) => (
         <DataTableColumnHeader column={column} title='Đối tác' />
       ),
+      size: 240,
       cell: ({ row }) => (
-        <div className='flex flex-col'>
+        <div className='flex min-w-0 flex-col break-words whitespace-normal'>
           <span className='text-sm font-medium'>
             {row.original.companyName || row.original.contactName}
           </span>
@@ -105,6 +110,7 @@ function buildColumns(tierCodes: string[]): ColumnDef<Partner>[] {
       id: 'partnerType',
       accessorKey: 'partnerType',
       header: 'Loại',
+      size: 130,
       cell: ({ row }) => (
         <Badge variant='outline'>
           {PARTNER_TYPE_LABEL[row.original.partnerType] ?? row.original.partnerType}

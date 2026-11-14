@@ -23,6 +23,10 @@ export function getCommonPinningStyles<TData>({
     position: isPinned ? 'sticky' : 'relative',
     background: isPinned ? 'var(--background)' : undefined,
     width: column.getSize(),
+    // A left-pinned column sits at the sum of the sizes before it, so it must
+    // be exactly its size: the browser shrank cells below it and the scrolled
+    // columns showed through the gaps (vande-1411 #045).
+    ...(isPinned === 'left' && { minWidth: column.getSize(), maxWidth: column.getSize() }),
     zIndex: isPinned ? 1 : 0
   };
 }

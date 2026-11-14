@@ -60,7 +60,9 @@ export function PartnersTable() {
     shallow: true,
     debounceMs: 500,
     initialState: {
-      columnPinning: { right: ['actions'] }
+      // ID, Đối tác and Loại stay in view while scrolling sideways
+      // (vande-1411 #045).
+      columnPinning: { left: ['select', 'partnerId', 'name', 'partnerType'], right: ['actions'] }
     }
   });
 
