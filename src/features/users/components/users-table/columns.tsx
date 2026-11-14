@@ -5,7 +5,7 @@ import type { User } from '../../api/types';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
 import { CellAction } from './cell-action';
-import { formatDateVn, formatVnd } from '@/lib/format';
+import { formatDateTimeVn, formatDateVn, formatVnd } from '@/lib/format';
 
 import { TierBadge } from '@/features/membership-tiers/hooks/use-tier-labels';
 import { USER_STATUS_OPTIONS } from './options';
@@ -264,6 +264,42 @@ export const columns: ColumnDef<User>[] = [
         </div>
       );
     },
+    enableColumnFilter: false
+  },
+  {
+    // The customer's own latest act, like the partner list (vande-1411 #043).
+    id: 'lastActivityAt',
+    enableSorting: false,
+    header: ({ column }: { column: Column<User, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Hoạt động gần nhất' />
+    ),
+    cell: ({ row }) => {
+      const at = row.original.lastActivityAt;
+      return (
+        <div className='flex flex-col' data-testid='user-last-activity'>
+          <span className='text-xs whitespace-nowrap'>
+            {at ? formatDateTimeVn(at) : 'Chưa có hoạt động'}
+          </span>
+          {at && row.original.lastActivityLabel && (
+            <span className='text-muted-foreground text-xs'>{row.original.lastActivityLabel}</span>
+          )}
+        </div>
+      );
+    },
+    enableColumnFilter: false
+  },
+  {
+    // When the account was made (vande-1411 #043); sorts on the server.
+    id: 'createdAt',
+    accessorKey: 'createdAt',
+    header: ({ column }: { column: Column<User, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Ngày đăng ký' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-xs whitespace-nowrap' data-testid='user-created-at'>
+        {formatDateTimeVn(row.original.createdAt)}
+      </span>
+    ),
     enableColumnFilter: false
   },
   {

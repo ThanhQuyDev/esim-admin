@@ -33,6 +33,9 @@ export type User = {
   exuExpiresAt?: string | null;
   /** `active` unless an admin locked the wallet (#038). */
   exuWalletStatus?: string | null;
+  /** The customer's latest act and what it was (vande-1411 #043). */
+  lastActivityAt?: string | null;
+  lastActivityLabel?: string | null;
   automaticTier: MembershipTier;
   membershipTier: MembershipTier;
   tierOverride: MembershipTier | null;
