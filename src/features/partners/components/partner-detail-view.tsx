@@ -26,6 +26,7 @@ import { PartnerStatsSection } from './partner-stats-section';
 import { PartnerWalletSheet } from './partner-wallet-sheet';
 import { RejectPartnerModal } from './reject-partner-modal';
 import { PartnerCreditLimitCard } from './partner-credit-limit-card';
+import { PartnerStatementCard } from './partner-statement-card';
 import { PartnerStatusHistoryCard } from './partner-status-history-card';
 import {
   Select,
@@ -491,6 +492,10 @@ export function PartnerDetailView({ partnerId }: { partnerId: number }) {
                 data-testid='partner-reconciliation-email'
               />
             </div>
+
+            {/* The statement of a month the admin picks, either kind of partner
+                (vande-1411 #047). */}
+            <PartnerStatementCard partner={partner} />
 
             {!isKol && (
               <div className='mt-4 flex items-start justify-between gap-4 border-t pt-4'>

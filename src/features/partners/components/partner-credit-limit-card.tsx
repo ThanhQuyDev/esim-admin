@@ -6,12 +6,12 @@
  * A partner the admin trusts buys on credit: their wallet is filled to the
  * limit instead of from deposits, refilled at 0h on the 1st of each month, and
  * what they spent in month n is emailed to them in month n+1 with the
- * "Chi tiết giao dịch" file, to pay. The statement can also be checked,
- * downloaded or sent again from here.
+ * "Chi tiết giao dịch" file, to pay. The statement is checked, downloaded
+ * or sent again from "Đối soát" (`partner-statement-card.tsx`).
  */
 
 import { useEffect, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -20,20 +20,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { formatVnd } from '@/lib/format';
 
-import {
-  getPartnerCreditStatement,
-  sendPartnerCreditStatement,
-  setPartnerCreditLimit
-} from '../api/service';
+import { setPartnerCreditLimit } from '../api/service';
 import type { Partner } from '../api/types';
-
-/** `YYYY-MM` of last month on this device — the statement usually asked for. */
-function lastMonth(): string {
-  const d = new Date();
-  d.setDate(1);
-  d.setMonth(d.getMonth() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
 
 const digits = (text: string) => text.replace(/\D/g, '');
 
@@ -49,7 +37,6 @@ export function PartnerCreditLimitCard({
 
   const [enabled, setEnabled] = useState(savedOn);
   const [limitText, setLimitText] = useState(savedLimit ? String(savedLimit) : '');
-  const [period, setPeriod] = useState(lastMonth);
 
   useEffect(() => {
     setEnabled(savedOn);
@@ -74,21 +61,6 @@ export function PartnerCreditLimitCard({
       onSaved();
     },
     onError: (e: Error) => toast.error(e.message || 'Không lưu được hạn mức.')
-  });
-
-  const statement = useQuery({
-    queryKey: ['partner-credit-statement', partner.id, period],
-    queryFn: () => getPartnerCreditStatement(partner.id, period),
-    enabled: savedOn && /^\d{4}-\d{2}$/.test(period)
-  });
-
-  const send = useMutation({
-    mutationFn: () => sendPartnerCreditStatement(partner.id, period),
-    onSuccess: (r) =>
-      r.sent > 0
-        ? toast.success(`Đã gửi email đối soát tới ${partner.contactEmail}.`)
-        : toast.error('Chưa gửi được: đối tác chưa có email liên hệ.'),
-    onError: (e: Error) => toast.error(e.message || 'Không gửi được email đối soát.')
   });
 
   return (
@@ -150,55 +122,8 @@ export function PartnerCreditLimitCard({
         </div>
       )}
 
-      {savedOn && (
-        <div className='space-y-2 rounded-lg border p-3'>
-          <div className='flex flex-wrap items-end justify-between gap-2'>
-            <div className='space-y-1'>
-              <Label htmlFor='creditPeriod' className='text-xs'>
-                Đối soát tháng
-              </Label>
-              <Input
-                id='creditPeriod'
-                type='month'
-                className='w-44'
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-              />
-            </div>
-            <div className='flex flex-wrap gap-2'>
-              <Button size='sm' variant='outline' asChild>
-                <a
-                  href={`/api/partners/${partner.id}/credit-statement/export-excel?period=${period}`}
-                >
-                  Tải file chi tiết
-                </a>
-              </Button>
-              <Button size='sm' onClick={() => send.mutate()} disabled={send.isPending}>
-                Gửi email đối soát
-              </Button>
-            </div>
-          </div>
-          {statement.data && (
-            <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4'>
-              {(
-                [
-                  ['Số đơn', statement.data.orderCount.toLocaleString('vi-VN')],
-                  ['Tiền hàng đã mua', formatVnd(statement.data.purchasedVnd)],
-                  ['Đã hoàn lại', formatVnd(statement.data.refundedVnd)],
-                  ['Cần thanh toán', formatVnd(statement.data.amountDueVnd)]
-                ] as [string, string][]
-              ).map(([label, value]) => (
-                <div key={label}>
-                  <dt className='text-muted-foreground'>{label}</dt>
-                  <dd className='font-medium tabular-nums' data-testid={`credit-${label}`}>
-                    {value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </div>
-      )}
+      {/* The month's statement moved to "Đối soát" below, for every
+          distribution partner (vande-1411 #047). */}
     </div>
   );
 }

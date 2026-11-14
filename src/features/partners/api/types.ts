@@ -911,14 +911,34 @@ export type DepositPromotionPayload = {
 };
 
 /** What a no-deposit partner owes for one month (vande #056). */
+/** A marketing partner's month, as the statement email gives it (vande-1411 #047). */
+export type PartnerCommissionStatement = {
+  period: string;
+  periodLabel: string;
+  validOrders: number;
+  esimsSold: number;
+  viaCouponPercent: number;
+  newCustomerPercent: number;
+  refundPercent: number;
+  revenueVnd: number;
+  commissionVnd: number;
+  status: string | null;
+};
+
 export type PartnerCreditStatement = {
   period: string;
   periodLabel: string;
   creditLimitVnd: number;
   orderCount: number;
   esimCount: number;
+  /** "Tỷ lệ hoàn tiền", % (doitac-0911 #009). */
+  refundPercent?: number;
   purchasedVnd: number;
   refundedVnd: number;
+  /** "Tổng doanh số bán ra": purchases less refunds. */
+  revenueVnd?: number;
+  /** Paid out of a deposit. */
+  paidVnd?: number;
   amountDueVnd: number;
   lines: {
     orderNumber: string;

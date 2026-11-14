@@ -51,7 +51,8 @@ import type {
   AdminLinkFilters,
   AdminLinkList,
   AdminLinkDetail,
-  PartnerCreditStatement
+  PartnerCreditStatement,
+  PartnerCommissionStatement
 } from './types';
 
 function toQuery(params: Record<string, unknown>): string {
@@ -117,6 +118,27 @@ export async function getPartnerCreditStatement(
 ): Promise<PartnerCreditStatement> {
   return apiClient<PartnerCreditStatement>(
     `/partners/${id}/credit-statement?period=${encodeURIComponent(period)}`
+  );
+}
+
+/** A marketing partner's statement for a month (vande-1411 #047). */
+export async function getPartnerCommissionStatement(
+  id: number,
+  period: string
+): Promise<PartnerCommissionStatement> {
+  return apiClient<PartnerCommissionStatement>(
+    `/partners/${id}/commission-statement?period=${encodeURIComponent(period)}`
+  );
+}
+
+/** Email it to the partner now (vande-1411 #047). */
+export async function sendPartnerCommissionStatement(
+  id: number,
+  period: string
+): Promise<{ sent: number }> {
+  return apiClient(
+    `/partners/${id}/commission-statement/send?period=${encodeURIComponent(period)}`,
+    { method: 'POST' }
   );
 }
 
