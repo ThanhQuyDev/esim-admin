@@ -678,6 +678,9 @@ export async function purchaseCart(payload: {
   bulkMode?: 'email' | 'file';
   bulkBatch?: string;
   emailIntervalSec?: number;
+  /** Seconds between two eSIMs, random in the range (vande-1411 #003). */
+  pacingMinSec?: number;
+  pacingMaxSec?: number;
 }): Promise<CartPurchaseResult> {
   return apiClient<CartPurchaseResult>('/partner-portal/purchases/cart', {
     method: 'POST',

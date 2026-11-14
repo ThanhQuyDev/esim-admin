@@ -18,6 +18,13 @@ import {
   type ManualOrderLine
 } from './manual-order-lines';
 import { ManualOrderFileImport } from './manual-order-file-import';
+import {
+  PACING_EMAIL_DEFAULT,
+  PacingRangeField,
+  pacingPayload,
+  provisionEtaText,
+  type PacingText
+} from './pacing-range-field';
 
 interface SubmitManualOrderDialogProps {
   open: boolean;
@@ -28,12 +35,19 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
   const router = useRouter();
   const [lines, setLines] = useState<ManualOrderLine[]>(() => [emptyManualOrderLine()]);
   const [triedSubmit, setTriedSubmit] = useState(false);
+  // From the second kind of eSIM on, each eSIM is asked for on its own
+  // (vande-1411 #003).
+  const [pacing, setPacing] = useState<PacingText>({ min: '', max: '' });
+  const paced = lines.length >= 2;
+  const esimCount = lines.reduce((sum, line) => sum + Math.max(0, Number(line.quantity) || 0), 0);
 
   const mutation = useMutation({
     ...submitManualOrderMutation,
     onSuccess: (order) => {
       toast.success(`Đã đặt đơn hộ thành công: ${order.orderNumber}`, {
-        description: 'Hãy mở chi tiết đơn để xác nhận eSIM đã được provision.',
+        description:
+          provisionEtaText(order.provisionEta) ??
+          'Hãy mở chi tiết đơn để xác nhận eSIM đã được provision.',
         action: {
           label: 'Mở chi tiết',
           onClick: () => router.push(`/dashboard/orders/${order.id}`)
@@ -75,7 +89,8 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
           slug: line.plan!.slug,
           quantity: Number(line.quantity),
           ...(manualLineDays(line) ? { periodNum: manualLineDays(line) } : {})
-        }))
+        })),
+        ...(lines.length >= 2 ? pacingPayload(pacing) : {})
       };
       await mutation.mutateAsync(payload);
     }
@@ -86,6 +101,7 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
       form.reset();
       setLines([emptyManualOrderLine()]);
       setTriedSubmit(false);
+      setPacing({ min: '', max: '' });
     }
   }, [open, form]);
 
@@ -148,6 +164,17 @@ export function SubmitManualOrderDialog({ open, onOpenChange }: SubmitManualOrde
           <ManualOrderFileImport lines={lines} onChange={setLines} />
           {/* One row per kind of eSIM, each with its filters and quantity (#031). */}
           <ManualOrderLines lines={lines} onChange={setLines} showErrors={triedSubmit} />
+          {paced && (
+            <PacingRangeField
+              id='manual-pacing'
+              label='Khoảng giây giữa các lần gọi API lấy eSIM'
+              value={pacing}
+              onChange={setPacing}
+              fallback={PACING_EMAIL_DEFAULT}
+              esimCount={esimCount}
+              emails={false}
+            />
+          )}
         </form.Form>
       </form.AppForm>
     </FormDialog>

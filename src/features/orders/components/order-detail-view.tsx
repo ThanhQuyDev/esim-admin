@@ -32,6 +32,7 @@ import { OrderNotesSection } from './order-notes-section';
 import { ResendEsimEmailButton } from './resend-esim-email-button';
 import { RetryProvisioningDialog } from './retry-provisioning-dialog';
 import { ProvisionQueueCard } from './provision-queue-card';
+import { provisionEtaText } from './pacing-range-field';
 import { CreateInvoiceDialog } from './create-invoice-dialog';
 import { InvoiceViewDialog } from './invoice-view-dialog';
 import { canIssueInvoice } from '../utils/invoice-filter';
@@ -1188,6 +1189,20 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             {order.bulkMode === 'file'
               ? 'Không gửi email cho khách. Thông tin gói cước và mã QR của từng eSIM nằm trong file "Tải file danh sách eSIM" ở Thao tác quản trị.'
               : `Email mã QR của đơn này được gửi lần lượt cùng các đơn khác trong cùng file, cách nhau ${order.bulkEmailIntervalSec ?? 30} giây.`}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* eSIMs still being asked for one by one (vande-1411 #003). */}
+      {order.pacedProvision && (
+        <Alert data-testid='paced-provision'>
+          <Icons.clock className='h-4 w-4' />
+          <AlertTitle>
+            Đang lấy eSIM lần lượt — còn {order.pacedProvision.remaining} eSIM
+          </AlertTitle>
+          <AlertDescription>
+            {provisionEtaText(order.pacedProvision.endsAt)}
+            {order.bulkMode === 'file' && ' Chờ lấy xong rồi mới tải file danh sách eSIM.'}
           </AlertDescription>
         </Alert>
       )}

@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +35,7 @@ import { formatDateTimeVn, formatVnd } from '@/lib/format';
 import { retryOrderProvisioning } from '@/features/orders/api/service';
 import { ResendEsimEmailButton } from '@/features/orders/components/resend-esim-email-button';
 import { ProvisionQueueCard } from '@/features/orders/components/provision-queue-card';
+import { provisionEtaText } from '@/features/orders/components/pacing-range-field';
 import { adminPartnerOrderDetailQueryOptions } from '@/features/partners/api/queries';
 import type { AdminOrderPartner } from '@/features/partners/api/types';
 import { PartnerPurchaseRefundDialog } from '@/features/partners/components/partner-purchase-refund-dialog';
@@ -366,6 +368,19 @@ export function PortalPurchaseDetailView({
             />
           </CardContent>
         </Card>
+      )}
+
+      {/* eSIMs still being asked for one by one (vande-1411 #003). */}
+      {order.pacedProvision && (
+        <Alert data-testid='paced-provision'>
+          <Icons.clock className='h-4 w-4' />
+          <AlertTitle>
+            Đang lấy eSIM lần lượt — còn {order.pacedProvision.remaining} eSIM
+          </AlertTitle>
+          <AlertDescription>
+            {provisionEtaText(order.pacedProvision.endsAt)} Chờ lấy xong rồi mới tải danh sách eSIM.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* The eSIMs not given yet, one row each (vande-1411 #002). */}

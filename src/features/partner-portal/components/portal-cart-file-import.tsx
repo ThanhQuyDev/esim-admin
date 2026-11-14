@@ -33,6 +33,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  PACING_EMAIL_DEFAULT,
+  PACING_FILE_DEFAULT,
+  PacingRangeField,
+  pacingPayload,
+  provisionEtaText,
+  type PacingText
+} from '@/features/orders/components/pacing-range-field';
 import { Icons } from '@/components/icons';
 import { formatVnd } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -43,9 +51,6 @@ import type { CartFilePreview } from '../api/types';
 import { addToCart } from '../lib/partner-cart';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Seconds between two QR emails unless the partner sets otherwise (vande #057). */
-const DEFAULT_INTERVAL = 30;
 
 /** One id for every checkout of an upload, so their emails queue together. */
 function newBatchId(): string {
@@ -65,8 +70,9 @@ function BulkOrderDialog({
   const [fileName, setFileName] = useState('');
   const [email, setEmail] = useState('');
   const [mode, setMode] = useState<'email' | 'file'>('email');
-  const [intervalText, setIntervalText] = useState(String(DEFAULT_INTERVAL));
-  const interval = Math.min(600, Math.max(0, Number(intervalText || 0)));
+  // Seconds between two eSIMs, random in the range (vande-1411 #003).
+  const [pacing, setPacing] = useState<PacingText>({ min: '', max: '' });
+  const esimCount = preview?.lines.reduce((sum, l) => sum + (l.planId ? l.quantity : 0), 0) ?? 0;
   const emailValid = mode === 'file' || !email.trim() || EMAIL.test(email.trim());
   const hasRowEmail = preview?.lines.some((l) => l.email) ?? false;
   const blocked = !preview || Boolean(preview.rejection);
@@ -90,8 +96,9 @@ function BulkOrderDialog({
   // One order after the other: a failure stops the rest, so nothing is
   // charged that the partner was not told about.
   const pay = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<{ orders: string[]; eta: string | null }> => {
       const done: string[] = [];
+      let eta: string | null = null;
       // As a file: one order for every row, nothing mailed (vande #057).
       if (mode === 'file') {
         const result = await purchaseCart({
@@ -103,9 +110,10 @@ function BulkOrderDialog({
               ...(l.days && l.days > 1 ? { periodNum: l.days } : {})
             })),
           bulkMode: 'file',
-          bulkBatch: newBatchId()
+          bulkBatch: newBatchId(),
+          ...pacingPayload(pacing)
         });
-        return [result.orderNumber];
+        return { orders: [result.orderNumber], eta: result.provisionEta ?? null };
       }
       const batch = newBatchId();
       for (const order of preview!.orders) {
@@ -123,9 +131,10 @@ function BulkOrderDialog({
             ...(recipientEmail ? { recipientEmail } : {}),
             bulkMode: 'email',
             bulkBatch: batch,
-            emailIntervalSec: interval
+            ...pacingPayload(pacing)
           });
           done.push(result.orderNumber);
+          eta = result.provisionEta ?? eta;
         } catch (e) {
           const message = e instanceof Error ? e.message : 'Thanh toán thất bại.';
           throw new Error(
@@ -136,13 +145,15 @@ function BulkOrderDialog({
           );
         }
       }
-      return done;
+      return { orders: done, eta };
     },
-    onSuccess: (orders) => {
+    onSuccess: ({ orders, eta }) => {
+      // When the last eSIM comes, so the list is not downloaded half full (#003).
       toast.success(
         mode === 'file'
-          ? `Đã đặt đơn ${orders[0]} — tải danh sách eSIM ở trang Đơn hàng.`
-          : `Đã đặt ${orders.length} đơn: ${orders.join(', ')}. Email mã QR đang được gửi lần lượt.`
+          ? `Đã đặt đơn ${orders[0]} — tải danh sách eSIM ở trang Đơn hàng khi lấy xong.`
+          : `Đã đặt ${orders.length} đơn: ${orders.join(', ')}. Mỗi eSIM lấy xong là gửi email ngay.`,
+        { description: provisionEtaText(eta) ?? undefined, duration: 15000 }
       );
       reset();
       onOpenChange(false);
@@ -179,7 +190,7 @@ function BulkOrderDialog({
                 [
                   'email',
                   'Gửi email mã QR cho từng khách',
-                  'Mỗi email trong file một đơn; email gửi lần lượt, cách nhau số giây bên dưới.'
+                  'Mỗi email trong file một đơn; mỗi eSIM lấy xong là gửi email ngay, cách nhau số giây bên dưới.'
                 ],
                 [
                   'file',
@@ -205,24 +216,19 @@ function BulkOrderDialog({
             ))}
           </div>
 
-          {mode === 'email' && (
-            <div className='space-y-1'>
-              <Label htmlFor='cart-file-interval'>Số giây giữa hai email</Label>
-              <Input
-                id='cart-file-interval'
-                type='number'
-                min={0}
-                max={600}
-                className='w-32'
-                value={intervalText}
-                onChange={(e) => setIntervalText(e.target.value)}
-              />
-              <p className='text-muted-foreground text-xs'>
-                Mặc định 30 giây. Ít dòng có thể gửi nhanh hơn, nhiều dòng nên để lâu hơn để email
-                không bị tính là spam.
-              </p>
-            </div>
-          )}
+          <PacingRangeField
+            id='cart-file-pacing'
+            label={
+              mode === 'email'
+                ? 'Khoảng giây giữa các lần lấy eSIM và gửi email'
+                : 'Khoảng giây giữa các lần gọi API lấy eSIM'
+            }
+            value={pacing}
+            onChange={setPacing}
+            fallback={mode === 'email' ? PACING_EMAIL_DEFAULT : PACING_FILE_DEFAULT}
+            esimCount={esimCount}
+            emails={mode === 'email'}
+          />
 
           <div className='flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-3'>
             <span className='mr-auto min-w-0 text-sm font-medium'>

@@ -693,6 +693,8 @@ export type MyPurchase = {
 export type MyPurchaseDetail = {
   /** The admin's buttons work by id (vande-0411 #011). */
   orderId?: number;
+  /** eSIMs still to be asked for one by one, and when the last is due (vande-1411 #003). */
+  pacedProvision?: { remaining: number; endsAt: string } | null;
   orderNumber: string;
   status: string | null;
   orderType: string | null;
@@ -861,6 +863,8 @@ export type CartPurchaseResult = {
   pendingEsims: number;
   /** eSIMs the supplier has not taken yet; the system asks again (doitac-0911 #001). */
   notReceivedEsims?: number;
+  /** When the last eSIM of a bulk upload is asked for (vande-1411 #003). */
+  provisionEta?: string | null;
 };
 
 /** An order file read for the cart, priced, one order per QR email (doitac-1410 #084). */

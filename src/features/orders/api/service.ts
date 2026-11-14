@@ -91,6 +91,9 @@ export async function previewBulkOrderFile(file: File): Promise<ManualOrderFileP
 export async function submitBulkOrder(data: {
   mode: 'email' | 'file';
   emailIntervalSec?: number;
+  /** Seconds between two eSIMs, random in the range (vande-1411 #003). */
+  pacingMinSec?: number;
+  pacingMaxSec?: number;
   rows: { slug: string; quantity: number; days?: number; email?: string | null }[];
 }): Promise<BulkOrderResult> {
   return apiClient<BulkOrderResult>('/admin/orders/bulk', {

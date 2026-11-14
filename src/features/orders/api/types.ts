@@ -70,6 +70,10 @@ export type Order = {
   /** Ordered in bulk from a file: mailed spaced out, or as a list (vande #057). */
   bulkMode?: 'email' | 'file' | null;
   bulkEmailIntervalSec?: number | null;
+  /** eSIMs still to be asked for one by one, and when the last is due (vande-1411 #003). */
+  pacedProvision?: { remaining: number; endsAt: string } | null;
+  /** On a placed order: when its last eSIM is asked for (vande-1411 #003). */
+  provisionEta?: string | null;
   user: OrderUser;
   userEmail?: string;
   orderNumber: string;
@@ -433,6 +437,9 @@ export type SubmitManualOrderPayload = {
   quantity?: number;
   /** Several plans at once, each with its quantity (#031). */
   items?: { packageCode: string; slug: string; quantity: number; periodNum?: number }[];
+  /** Seconds between two eSIMs from the second kind on (vande-1411 #003). */
+  pacingMinSec?: number;
+  pacingMaxSec?: number;
 };
 
 /** An order file read for "Đặt đơn hộ khách", each row with its plan (doitac-1410 #084). */
@@ -456,6 +463,9 @@ export type BulkOrderResult = {
   batch: string;
   mode: 'email' | 'file';
   orders: { id: number; orderNumber: string; email: string; esims: number }[];
+  /** Seconds between two eSIMs, and when the last is asked for (vande-1411 #003). */
+  pacing: { minSec: number; maxSec: number };
+  provisionEta: string | null;
 };
 
 /** "Ghi chú" an admin keeps on an order (doitac-1410 #067). */

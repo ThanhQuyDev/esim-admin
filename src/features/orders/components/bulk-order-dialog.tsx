@@ -26,23 +26,19 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 import { BULK_ORDER_TEMPLATE_URL, previewBulkOrderFile, submitBulkOrder } from '../api/service';
 import type { BulkOrderResult, ManualOrderFilePreview } from '../api/types';
-
-const DEFAULT_INTERVAL = 30;
-
-/** "12 phút 30 giây" — how long the last email waits. */
-function duration(seconds: number): string {
-  if (seconds < 60) return `${seconds} giây`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s ? `${m} phút ${s} giây` : `${m} phút`;
-}
+import {
+  PACING_EMAIL_DEFAULT,
+  PACING_FILE_DEFAULT,
+  PacingRangeField,
+  pacingPayload,
+  provisionEtaText,
+  type PacingText
+} from './pacing-range-field';
 
 export function BulkOrderDialog({
   open,
@@ -53,11 +49,11 @@ export function BulkOrderDialog({
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<'email' | 'file'>('email');
-  const [intervalText, setIntervalText] = useState(String(DEFAULT_INTERVAL));
+  // Seconds between two eSIMs, random in the range (vande-1411 #003).
+  const [pacing, setPacing] = useState<PacingText>({ min: '', max: '' });
   const [preview, setPreview] = useState<ManualOrderFilePreview | null>(null);
   const [result, setResult] = useState<BulkOrderResult | null>(null);
 
-  const interval = Math.min(600, Math.max(0, Number(intervalText || 0)));
   const lines = preview?.lines ?? [];
   const bad = lines.filter((l) => l.error || (mode === 'email' && !l.email));
   const esimCount = lines.reduce((sum, l) => sum + l.quantity, 0);
@@ -83,7 +79,7 @@ export function BulkOrderDialog({
     mutationFn: () =>
       submitBulkOrder({
         mode,
-        ...(mode === 'email' ? { emailIntervalSec: interval } : {}),
+        ...pacingPayload(pacing),
         rows: lines.map((l) => ({
           slug: l.slug,
           quantity: l.quantity,
@@ -95,8 +91,8 @@ export function BulkOrderDialog({
       setResult(r);
       toast.success(
         r.mode === 'email'
-          ? `Đã tạo ${r.orders.length} đơn, email mã QR đang được gửi lần lượt.`
-          : `Đã tạo đơn ${r.orders[0]?.orderNumber} — tải danh sách eSIM ở trang chi tiết đơn.`
+          ? `Đã tạo ${r.orders.length} đơn, eSIM đang được lấy và gửi email lần lượt.`
+          : `Đã tạo đơn ${r.orders[0]?.orderNumber} — eSIM đang được lấy lần lượt.`
       );
     },
     onError: (e: Error) => toast.error(e.message || 'Không đặt được eSIM hàng loạt.')
@@ -126,9 +122,21 @@ export function BulkOrderDialog({
           <div className='space-y-3' data-testid='bulk-order-result'>
             <p className='text-sm'>
               {result.mode === 'email'
-                ? `Đã tạo ${result.orders.length} đơn. Email mã QR được gửi lần lượt, cách nhau ${interval} giây.`
-                : 'Đã tạo 1 đơn, không gửi email. Bấm vào mã đơn để tải file danh sách eSIM.'}
+                ? `Đã tạo ${result.orders.length} đơn. Mỗi eSIM được lấy cách nhau ${result.pacing.minSec}–${result.pacing.maxSec} giây và gửi email ngay khi lấy được.`
+                : `Đã tạo 1 đơn, không gửi email. Mỗi eSIM được lấy cách nhau ${result.pacing.minSec}–${result.pacing.maxSec} giây.`}
             </p>
+            {/* So nobody downloads the list before it is full (#003). */}
+            {result.provisionEta && (
+              <Alert data-testid='bulk-order-eta'>
+                <Icons.clock className='h-4 w-4' />
+                <AlertTitle>Thời gian dự kiến lấy xong eSIM</AlertTitle>
+                <AlertDescription>
+                  {provisionEtaText(result.provisionEta)}
+                  {result.mode === 'file' &&
+                    ' Chờ tới lúc đó rồi mới tải file danh sách eSIM, tải sớm sẽ thiếu eSIM.'}
+                </AlertDescription>
+              </Alert>
+            )}
             <ul className='divide-y rounded-lg border text-sm'>
               {result.orders.map((o) => (
                 <li key={o.orderNumber} className='flex flex-wrap justify-between gap-2 px-3 py-2'>
@@ -153,7 +161,7 @@ export function BulkOrderDialog({
                   [
                     'email',
                     'Gửi email mã QR cho từng khách',
-                    'Mỗi email trong file một đơn; email gửi lần lượt, cách nhau số giây bên dưới.'
+                    'Mỗi email trong file một đơn; mỗi eSIM lấy xong là gửi email ngay, cách nhau số giây bên dưới.'
                   ],
                   [
                     'file',
@@ -179,26 +187,19 @@ export function BulkOrderDialog({
               ))}
             </div>
 
-            {mode === 'email' && (
-              <div className='space-y-1'>
-                <Label htmlFor='bulkInterval'>Số giây giữa hai email</Label>
-                <Input
-                  id='bulkInterval'
-                  type='number'
-                  min={0}
-                  max={600}
-                  className='w-32'
-                  value={intervalText}
-                  onChange={(e) => setIntervalText(e.target.value)}
-                />
-                <p className='text-muted-foreground text-xs'>
-                  Mặc định 30 giây. Ít dòng có thể gửi nhanh hơn, nhiều dòng nên để lâu hơn để email
-                  không bị tính là spam.
-                  {esimCount > 1 &&
-                    ` ${esimCount} email sẽ gửi xong trong khoảng ${duration(interval * (esimCount - 1))}.`}
-                </p>
-              </div>
-            )}
+            <PacingRangeField
+              id='bulk-pacing'
+              label={
+                mode === 'email'
+                  ? 'Khoảng giây giữa các lần lấy eSIM và gửi email'
+                  : 'Khoảng giây giữa các lần gọi API lấy eSIM'
+              }
+              value={pacing}
+              onChange={setPacing}
+              fallback={mode === 'email' ? PACING_EMAIL_DEFAULT : PACING_FILE_DEFAULT}
+              esimCount={esimCount}
+              emails={mode === 'email'}
+            />
 
             <div className='flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-3'>
               <span className='mr-auto text-sm font-medium'>File danh sách</span>
