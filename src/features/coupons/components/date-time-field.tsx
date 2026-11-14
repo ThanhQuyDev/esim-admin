@@ -9,12 +9,13 @@ import {
   SelectValue
 } from '@/components/ui/select';
 
-import { HOURS, MINUTES, joinDateTime, splitDateTime } from '../utils/datetime';
+import { HOURS, MINUTES, SECONDS, joinDateTime, splitDateTime } from '../utils/datetime';
 
 /**
- * A date with 24-hour hour and minute pickers (#039), shared by the admin's
- * coupon form and the partner's "Tạo mã giảm giá" (doitac-3010 #016). The
- * value is `YYYY-MM-DDTHH:mm`, empty until a date is chosen.
+ * A date with 24-hour hour, minute and second pickers (#039, seconds since
+ * vande-1411 #041), shared by the admin's coupon form and the partner's "Tạo
+ * mã giảm giá" (doitac-3010 #016). The value is `YYYY-MM-DDTHH:mm:ss`, empty
+ * until a date is chosen.
  */
 export function DateTimeField({
   label,
@@ -40,7 +41,7 @@ export function DateTimeField({
         {label}
         {required && <span className='text-destructive'> *</span>}
       </label>
-      {/* In a narrow box the time drops below the date, hour and minute together. */}
+      {/* In a narrow box the time drops below the date, hour, minute and second together. */}
       <div className='flex flex-wrap items-center gap-2'>
         <Input
           id={id}
@@ -83,9 +84,28 @@ export function DateTimeField({
               ))}
             </SelectContent>
           </Select>
+          <span className='text-muted-foreground'>:</span>
+          <Select value={parts.second} onValueChange={(second) => update({ second })}>
+            <SelectTrigger
+              className='w-[72px]'
+              aria-label='Giây'
+              data-testid='coupon-expiry-second'
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className='max-h-64'>
+              {SECONDS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
-      <p className='text-muted-foreground text-xs'>Giờ theo định dạng 24h (00:00 – 23:59).</p>
+      <p className='text-muted-foreground text-xs'>
+        Giờ : phút : giây, định dạng 24h (00:00:00 – 23:59:59).
+      </p>
     </div>
   );
 }

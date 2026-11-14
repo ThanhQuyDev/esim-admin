@@ -20,6 +20,7 @@ import { partnersQueryOptions } from '@/features/partners/api/queries';
 import { Badge } from '@/components/ui/badge';
 import { couponUsage } from '../utils/usage';
 import { DateTimeField } from './date-time-field';
+import { toPickerValue } from '../utils/datetime';
 
 /** Radix Select has no empty-string value, so "no owner" needs a sentinel. */
 const NO_PARTNER = 'none';
@@ -352,13 +353,8 @@ function EditCouponDialog({
     onError: (error) => toast.error(error.message || 'Cập nhật coupon thất bại')
   });
 
-  const expiresAtLocal = coupon.expiresAt
-    ? (() => {
-        const d = new Date(coupon.expiresAt);
-        const pad = (n: number) => String(n).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      })()
-    : '';
+  // With its seconds (vande-1411 #041).
+  const expiresAtLocal = toPickerValue(coupon.expiresAt);
 
   const form = useAppForm({
     defaultValues: {
