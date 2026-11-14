@@ -31,6 +31,7 @@ import { RefundOrderModal } from './refund-order-modal';
 import { OrderNotesSection } from './order-notes-section';
 import { ResendEsimEmailButton } from './resend-esim-email-button';
 import { RetryProvisioningDialog } from './retry-provisioning-dialog';
+import { ProvisionQueueCard } from './provision-queue-card';
 import { CreateInvoiceDialog } from './create-invoice-dialog';
 import { InvoiceViewDialog } from './invoice-view-dialog';
 import { canIssueInvoice } from '../utils/invoice-filter';
@@ -1189,6 +1190,39 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
               : `Email mã QR của đơn này được gửi lần lượt cùng các đơn khác trong cùng file, cách nhau ${order.bulkEmailIntervalSec ?? 30} giây.`}
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* The products are not listed on a bulk "file" order, so the eSIMs the
+          supplier has not given yet are, with their own retry (vande-1411 #002). */}
+      {order.bulkMode === 'file' && (
+        <ProvisionQueueCard
+          rows={(order.items ?? [])
+            .filter(
+              (item) =>
+                !!item.provisioning?.lastError &&
+                !item.orderRequestId &&
+                !(item.esims?.length > 0) &&
+                !['failed', 'refunded', 'cancelled'].includes(String(item.status))
+            )
+            .map((item) => ({
+              id: item.id,
+              planName:
+                item.plan?.standardName ||
+                planDisplayName(item.plan, `Plan #${item.planId}`, item.periodNum),
+              attempts: item.provisioning?.attempts ?? 0,
+              lastAttemptAt: item.provisioning?.lastAttemptAt ?? null,
+              nextRetryAt: item.provisioning?.nextAutoRetryAt ?? null,
+              lastError: item.provisioning?.lastError ?? null,
+              canRetry: order.status === 'paid'
+            }))}
+          onRetry={(id) => retryMutation.mutate({ orderId: order.id, itemIds: [id] })}
+          busy={retryMutation.isPending}
+          retryingId={
+            retryMutation.isPending && retryMutation.variables?.itemIds?.length === 1
+              ? retryMutation.variables.itemIds[0]
+              : null
+          }
+        />
       )}
 
       {/* Order Items — left out of a bulk "file" order, too many to show (vande #057). */}

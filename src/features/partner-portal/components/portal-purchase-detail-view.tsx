@@ -33,6 +33,7 @@ import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { retryOrderProvisioning } from '@/features/orders/api/service';
 import { ResendEsimEmailButton } from '@/features/orders/components/resend-esim-email-button';
+import { ProvisionQueueCard } from '@/features/orders/components/provision-queue-card';
 import { adminPartnerOrderDetailQueryOptions } from '@/features/partners/api/queries';
 import type { AdminOrderPartner } from '@/features/partners/api/types';
 import { PartnerPurchaseRefundDialog } from '@/features/partners/components/partner-purchase-refund-dialog';
@@ -78,7 +79,7 @@ export function missingEsimHint(product: MyPurchaseDetail['products'][number]): 
   }
   const tries = Math.max(1, product.provisionAttempts ?? 1);
   const auto = product.nextRetryAt
-    ? ` Hệ thống sẽ tự động gọi lại lần ${tries + 1} trong vòng 3–5 phút nữa.`
+    ? ` Hệ thống sẽ tự động gọi lại lần ${tries + 1} trong vòng 1–5 phút nữa.`
     : '';
   return (
     `Nhà cung cấp chưa nhận đơn — đã thử ${tries} lần.${auto}` +
@@ -127,11 +128,14 @@ export function PortalPurchaseDetailView({
   const queryClient = useQueryClient();
   // "Gọi lại API lấy eSIM": the partner's, or the admin's on their behalf
   // (vande-0411 #011).
+  // A row of "Hàng đợi eSIM lỗi" passes its line (vande-1411 #002).
   const retry = useMutation({
-    mutationFn: async (): Promise<string> =>
-      admin
-        ? (await retryOrderProvisioning(order!.orderId!)).message
-        : (await retryPurchase(orderNumber)).message,
+    mutationFn: async (itemId?: number): Promise<string> => {
+      const only = itemId ? [itemId] : undefined;
+      return admin
+        ? (await retryOrderProvisioning(order!.orderId!, only)).message
+        : (await retryPurchase(orderNumber, only)).message;
+    },
     onSuccess: (message) => {
       toast.success(message);
       queryClient.invalidateQueries();
@@ -206,7 +210,7 @@ export function PortalPurchaseDetailView({
                   size='sm'
                   disabled={!canRetry || retry.isPending}
                   title={canRetry ? undefined : 'Không có sản phẩm cần gọi lại'}
-                  onClick={() => retry.mutate()}
+                  onClick={() => retry.mutate(undefined)}
                   data-testid='admin-purchase-retry'
                 >
                   <Icons.send className='size-4' />
@@ -364,6 +368,28 @@ export function PortalPurchaseDetailView({
         </Card>
       )}
 
+      {/* The eSIMs not given yet, one row each (vande-1411 #002). */}
+      {!isTopup && (
+        <ProvisionQueueCard
+          rows={order.products
+            .filter(
+              (p) => (p.missingEsims ?? 0) > 0 && !p.supplierAccepted && !p.lineSettled && p.itemId
+            )
+            .map((p) => ({
+              id: p.itemId!,
+              planName: p.planName || 'Sản phẩm',
+              missing: p.missingEsims,
+              attempts: p.provisionAttempts ?? 0,
+              lastAttemptAt: p.lastAttemptAt ?? null,
+              nextRetryAt: p.nextRetryAt ?? null,
+              canRetry: admin ? !closed : !!p.canRetryEsims
+            }))}
+          onRetry={(id) => retry.mutate(id)}
+          busy={retry.isPending}
+          retryingId={retry.isPending ? (retry.variables ?? null) : null}
+        />
+      )}
+
       {order.products.map((product, index) => (
         <Card key={`${product.planName}-${index}`} className='min-w-0'>
           <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-2 space-y-0'>
@@ -384,7 +410,7 @@ export function PortalPurchaseDetailView({
                 variant='outline'
                 className='shrink-0'
                 disabled={retry.isPending}
-                onClick={() => retry.mutate()}
+                onClick={() => retry.mutate(undefined)}
                 data-testid={`purchase-retry-${product.itemId}`}
               >
                 <Icons.send className='size-4' />

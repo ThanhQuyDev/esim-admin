@@ -475,11 +475,13 @@ export async function resendPurchaseEmail(orderNumber: string): Promise<{ sent: 
 
 /** "Gọi lại API lấy eSIM" for what has not come (vande-0411 #011). */
 export async function retryPurchase(
-  orderNumber: string
+  orderNumber: string,
+  /** One row of "Hàng đợi eSIM lỗi" (vande-1411 #002); omitted = all. */
+  itemIds?: number[]
 ): Promise<{ retried: number; message: string }> {
   return apiClient(
     `/partner-portal/purchases/${encodeURIComponent(orderNumber)}/retry-provisioning`,
-    { method: 'POST' }
+    { method: 'POST', body: JSON.stringify(itemIds?.length ? { itemIds } : {}) }
   );
 }
 

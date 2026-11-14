@@ -725,6 +725,10 @@ export type MyPurchaseDetail = {
     /** Tries so far, and when the system asks again (doitac-0911 #001). */
     provisionAttempts?: number;
     nextRetryAt?: string | null;
+    /** The last try (vande-1411 #002). */
+    lastAttemptAt?: string | null;
+    /** Refunded or cancelled: left out of "Hàng đợi eSIM lỗi". */
+    lineSettled?: boolean;
     planName: string | null;
     quantity: number;
     agentTotalVnd: number;
