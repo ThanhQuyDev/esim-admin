@@ -7,6 +7,7 @@ import { AttributionTraceCard } from './attribution-trace';
 import { esimQrLogoSettings } from '@/features/esims/lib/esim-qr';
 import { esimStatusLabel, esimStatusVariant } from '@/features/esims/lib/esim-status';
 import {
+  withChosenDays,
   callSmsSummary,
   dailyResetText,
   hasCallOrSms,
@@ -1222,7 +1223,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
             .map((item) => ({
               id: item.id,
               planName:
-                item.plan?.standardName ||
+                withChosenDays(item.plan?.standardName, item.periodNum) ||
                 planDisplayName(item.plan, `Plan #${item.planId}`, item.periodNum),
               attempts: item.provisioning?.attempts ?? 0,
               lastAttemptAt: item.provisioning?.lastAttemptAt ?? null,
@@ -1253,7 +1254,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   <div className='mb-3 flex flex-wrap items-center justify-between gap-2'>
                     <div className='flex flex-wrap items-center gap-2'>
                       <h4 className='text-sm font-semibold' data-testid='order-item-name'>
-                        {item.plan?.standardName ||
+                        {withChosenDays(item.plan?.standardName, item.periodNum) ||
                           planDisplayName(item.plan, `Plan #${item.planId}`, item.periodNum)}
                       </h4>
                       {/* Kind of plan, in a thin frame beside the name (vande #024). */}
@@ -1334,7 +1335,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                       <InfoRow
                         label='Tên gói cước'
                         value={
-                          item.plan?.standardName ||
+                          withChosenDays(item.plan?.standardName, item.periodNum) ||
                           planDisplayName(item.plan, `Plan #${item.planId}`, item.periodNum)
                         }
                       />

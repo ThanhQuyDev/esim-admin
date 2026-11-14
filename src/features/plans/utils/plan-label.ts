@@ -126,3 +126,14 @@ export function dailyResetText(
   }
   return null;
 }
+
+/**
+ * A day pass's standard name as bought (vande-1411 #011): the plan is named
+ * "… - 1 day", the customer chose 30, so it reads "… - 30 days".
+ */
+export function withChosenDays(name: string | null | undefined, days: number | null | undefined) {
+  const text = String(name ?? '');
+  const n = Math.round(Number(days ?? 0));
+  if (!(n > 1) || !/ - 1 day$/.test(text)) return text;
+  return text.replace(/ - 1 day$/, ` - ${n} days`);
+}

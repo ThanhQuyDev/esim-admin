@@ -23,6 +23,7 @@ import { VALIDITY_START_TITLE, validityStartLabel } from '@/lib/plan-validity-st
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
+  withChosenDays,
   callSmsSummary,
   dailyResetText,
   isDailyPlanType,
@@ -273,7 +274,9 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   // roam, local ones do not (doitac-1410 #080).
   const isRoaming = esim.isRoaming ?? plan?.isRefundable ?? false;
   // The standard name when the plan has one (vande #020).
-  const planName = plan?.standardName || planDisplayName(plan, '—', esim.chosenDays);
+  const planName =
+    withChosenDays(plan?.standardName, esim.chosenDays) ||
+    planDisplayName(plan, '—', esim.chosenDays);
   const usd = plan ? planUsd(plan) : null;
   const days = daysProgress(esim);
   const data = dataProgress(esim);
