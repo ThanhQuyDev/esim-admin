@@ -45,7 +45,10 @@ export const columns: ColumnDef<Blog>[] = [
       label: 'Tiêu đề',
       placeholder: 'Tìm kiếm bài viết...',
       variant: 'text' as const,
-      icon: Icons.text
+      icon: Icons.text,
+      // Twice the default box: posts are searched by a phrase of their
+      // content (vande-1411 #044).
+      inputClassName: 'h-8 w-80 lg:w-[28rem]'
     },
     enableColumnFilter: true
   },

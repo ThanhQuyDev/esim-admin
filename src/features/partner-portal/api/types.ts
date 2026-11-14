@@ -968,6 +968,8 @@ export type MyEsimDetail = {
   updatedAt: string | null;
   dataUsed: number | null;
   dataTotal: number | null;
+  /** "unlimited…" reads "100 MB / ∞" (vande-1411 #044). */
+  planType?: string | null;
   /** doitac-3010 #006, as on the admin's eSIM page. */
   throttleSpeed?: string | null;
   kycRequired?: boolean;

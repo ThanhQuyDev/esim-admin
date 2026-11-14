@@ -1,6 +1,7 @@
 import PageContainer from '@/components/layout/page-container';
 import EsimListingPage from '@/features/esims/components/esim-listing';
 import { esimsInfoContent } from '@/features/esims/info-content';
+import { EsimsHeaderActions } from '@/features/esims/components/esims-header-actions';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 
@@ -22,6 +23,7 @@ export default async function EsimsPage(props: PageProps) {
       pageTitle='Quản lý eSIM'
       pageDescription='Danh sách các eSIM trong hệ thống.'
       infoContent={esimsInfoContent}
+      pageHeaderAction={<EsimsHeaderActions />}
     >
       <EsimListingPage />
     </PageContainer>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useState, useCallback, useSyncExternalStore } from 'react';
+import { Suspense, useMemo, useSyncExternalStore } from 'react';
 import type { Plan } from '../../api/types';
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
@@ -12,22 +12,15 @@ import {
   noSubscribe,
   onServerSnapshot
 } from '@/components/ui/table/list-load-state';
-import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
-import { getSortingStateParser } from '@/lib/parsers';
-import { Button } from '@/components/ui/button';
-import { Icons } from '@/components/icons';
 import { planApnOptionsQueryOptions, plansQueryOptions } from '../../api/queries';
 import { destinationsQueryOptions } from '@/features/destinations/api/queries';
 import { regionsQueryOptions } from '@/features/regions/api/queries';
-import { exportPlansExcel } from '../../api/service';
-import { buildPlanApiFilters } from '../../utils/plan-filters';
-import { buildColumns, columns } from './columns';
+import { buildColumns } from './columns';
+import { usePlanListFilters } from './use-plan-list-filters';
 import { BatchDiscountDialog } from '../batch-discount-dialog';
 import { BulkDeletePlansButton } from '../bulk-delete-plans-button';
 import { ApnFilterCounts } from '../apn-filter-counts';
 import { locationKeywords, locationLabel } from '../../utils/location-options';
-
-const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
 
 /** Enough to cover the whole catalogue; both lists are small and cached. */
 const OPTIONS_LIMIT = 500;
@@ -50,43 +43,7 @@ export function PlansTable() {
 }
 
 function PlansTableContent() {
-  const [params] = useQueryStates({
-    page: parseAsInteger.withDefault(1),
-    perPage: parseAsInteger.withDefault(10),
-    name: parseAsString,
-    providerName: parseAsString,
-    provider: parseAsArrayOf(parseAsString, ','),
-    isCheapest: parseAsArrayOf(parseAsString, ','),
-    isActive: parseAsArrayOf(parseAsString, ','),
-    type: parseAsArrayOf(parseAsString, ','),
-    tags: parseAsArrayOf(parseAsString, ','),
-    duration: parseAsString,
-    data: parseAsString,
-    // Now a list of `d:<id>` / `r:<id>` picked from a select box (#010).
-    country: parseAsArrayOf(parseAsString, ','),
-    hasCallSms: parseAsArrayOf(parseAsString, ','),
-    apn: parseAsArrayOf(parseAsString, ','),
-    isNonHkIp: parseAsArrayOf(parseAsString, ','),
-    topUp: parseAsArrayOf(parseAsString, ','),
-    sort: getSortingStateParser(columnIds).withDefault([])
-  });
-
-  // Same mapping the server used to prefetch, so the query keys match.
-  const apiFilters = buildPlanApiFilters(params);
-
-  const apiSort = params.sort.map((s) => ({
-    orderBy: s.id,
-    order: s.desc ? 'DESC' : 'ASC'
-  }));
-
-  const filters = {
-    page: params.page,
-    limit: params.perPage,
-    ...(Object.keys(apiFilters).length > 0 && {
-      filters: JSON.stringify(apiFilters)
-    }),
-    ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
-  };
+  const { params, apiFilters, filters } = usePlanListFilters();
 
   const {
     data: responseData,
@@ -140,29 +97,13 @@ function PlansTableContent() {
     shallow: true,
     debounceMs: 500,
     initialState: {
-      columnPinning: { right: ['actions'] },
-      // Only its search box shows; the name is already in the "Tên" column.
-      columnVisibility: { providerName: false }
+      columnPinning: { right: ['actions'] }
     }
   });
 
   const selectedIds = useMemo(() => {
     return table.getSelectedRowModel().rows.map((row) => row.original.id);
   }, [table.getSelectedRowModel().rows]);
-
-  const [exporting, setExporting] = useState(false);
-
-  const handleExport = useCallback(async () => {
-    setExporting(true);
-    try {
-      await exportPlansExcel(filters);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('Export failed:', err);
-    } finally {
-      setExporting(false);
-    }
-  }, [filters]);
 
   if (isPending) return <PlansTableSkeleton />;
 
@@ -171,10 +112,6 @@ function PlansTableContent() {
       <ListLoadState loading={isFetching} failed={isError} onRetry={() => refetch()} />
       <ApnFilterCounts filters={apiFilters} />
       <DataTableToolbar table={table}>
-        <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
-          {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
-          Export Excel
-        </Button>
         <BatchDiscountDialog
           selectedIds={selectedIds}
           onSuccess={() => table.resetRowSelection()}

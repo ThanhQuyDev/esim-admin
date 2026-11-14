@@ -15,8 +15,22 @@ type EsimData = {
   dataUsed?: string | number | null;
   dataTotal?: string | number | null;
   addedDataMb?: number | null;
-  plan?: { dataMb?: number | string | null } | null;
+  plan?: { dataMb?: number | string | null; type?: string | null } | null;
 };
+
+/** MB used, whichever way the supplier stored it. */
+export function esimUsedMb(esim: EsimData): number {
+  return storedMb(esim.dataUsed);
+}
+
+/**
+ * No cap on the data (vande-1411 #044): a plain unlimited plan, or a total of
+ * 0 — a capped plan always has its own size. An "unlimited-reduce" plan with a
+ * total keeps it: that is its high-speed allowance, worth showing.
+ */
+export function esimIsUnlimited(esim: EsimData): boolean {
+  return esim.plan?.type === 'unlimited' || esimTotalMb(esim) === 0;
+}
 
 /** The supplier's total, never below the plan and its top-ups; 0 = no limit. */
 export function esimTotalMb(esim: EsimData): number {
@@ -28,5 +42,5 @@ export function esimTotalMb(esim: EsimData): number {
 export function esimDataLabel(esim: EsimData): string {
   const total = esimTotalMb(esim);
   const used = roundedSize(storedMb(esim.dataUsed));
-  return total > 0 ? `${used} / ${roundedSize(total)}` : `${used} / Không giới hạn`;
+  return total > 0 ? `${used} / ${roundedSize(total)}` : `${used} / ∞`;
 }

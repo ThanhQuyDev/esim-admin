@@ -65,11 +65,11 @@ import {
   EsimRequestDialog,
   type EsimRequestTarget,
   type FaultKind,
-  esimStatusLabel,
-  formatData
+  esimStatusLabel
 } from './portal-esim-request-dialog';
 import { PortalListPagination, usePortalPagination } from './portal-list-pagination';
 import { Compared } from './portal-month-compare';
+import { DataUsageMeter, isUnlimitedPlanType } from '@/components/data-usage-meter';
 
 const statusFilters = [
   { value: 'all', label: 'Tất cả trạng thái' },
@@ -210,7 +210,15 @@ const ESIM_COLUMNS: EsimColumn[] = [
     key: 'data',
     label: 'Dữ liệu đã dùng',
     cellClassName: 'text-xs whitespace-nowrap',
-    cell: (esim) => `${formatData(esim.dataUsed)} / ${formatData(esim.dataTotal)}`
+    // With a bar, "100 MB / ∞" for an unlimited plan (vande-1411 #044).
+    cell: (esim) => (
+      <DataUsageMeter
+        usedMb={esim.dataUsed}
+        totalMb={esim.dataTotal}
+        unlimited={isUnlimitedPlanType(esim.planType, esim.dataTotal)}
+        testId='portal-esim-data-meter'
+      />
+    )
   },
   {
     key: 'callSms',

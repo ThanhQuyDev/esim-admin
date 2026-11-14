@@ -92,7 +92,10 @@ export function NoticeBanner({
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-lg border p-3', tone.box)}
+      // `shrink-0`: in a page whose column has a fixed height (the overview),
+      // flex shrank the strip to ~30px and cut its text top and bottom
+      // (vande-1411 #044).
+      className={cn('relative shrink-0 overflow-hidden rounded-lg border p-3', tone.box)}
       role='status'
       data-testid='notice-banner'
       data-priority={current.priority ?? 'normal'}

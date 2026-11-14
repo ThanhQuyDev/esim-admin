@@ -3,7 +3,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
 import { DataTable } from '@/components/ui/table/data-table';
-import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
+import { DataTableViewOptions } from '@/components/ui/table/data-table-view-options';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { TICKETS_VIEW_OPTIONS_SLOT } from '../tickets-filter-bar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDataTable } from '@/hooks/use-data-table';
 import { getSortingStateParser } from '@/lib/parsers';
@@ -52,9 +55,14 @@ export function TicketsTable() {
     }
   });
 
+  // "Hiển thị" on the search's row (vande-1411 #044); the table has no
+  // column filters of its own, so its toolbar row held only that button.
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => setSlot(document.getElementById(TICKETS_VIEW_OPTIONS_SLOT)), []);
+
   return (
     <DataTable table={table} totalRowCount={data.totalCount}>
-      <DataTableToolbar table={table} />
+      {slot && createPortal(<DataTableViewOptions table={table} />, slot)}
     </DataTable>
   );
 }

@@ -38,7 +38,7 @@ export function BulkDeletePlansButton({
         data-testid='plans-bulk-delete'
       >
         <Icons.trash className='mr-2 h-4 w-4' />
-        Xoá đã chọn ({selectedIds.length})
+        Xoá ({selectedIds.length})
       </Button>
       <AlertModal
         isOpen={open}

@@ -15,6 +15,9 @@ import { Icons } from '@/components/icons';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { TICKET_STATUS_OPTIONS } from '../constants/status';
 
+/** Where the tickets table shows its column picker (vande-1411 #044). */
+export const TICKETS_VIEW_OPTIONS_SLOT = 'tickets-view-options';
+
 const ALL_STATUS = '__all__';
 
 export function TicketsFilterBar() {
@@ -85,6 +88,9 @@ export function TicketsFilterBar() {
           Đặt lại
         </Button>
       )}
+      {/* The table puts its "Hiển thị" (columns) button here, on the search's
+          row instead of a row of its own (vande-1411 #044). */}
+      <div id={TICKETS_VIEW_OPTIONS_SLOT} className='ml-auto' />
     </div>
   );
 }

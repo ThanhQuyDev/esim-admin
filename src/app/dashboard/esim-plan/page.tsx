@@ -5,6 +5,7 @@ import type { SearchParams } from 'nuqs/server';
 import { PlanFormDialogTrigger } from '@/features/plans/components/plan-form-dialog';
 import { ImportGadgetKoreaExcelDialog } from '@/features/plans/components/import-gadget-korea-excel-dialog';
 import { ImportEsimAccessDialog } from '@/features/plans/components/import-esimaccess-dialog';
+import { ExportPlansExcelButton } from '@/features/plans/components/export-plans-excel-button';
 
 export const metadata = {
   title: 'Dashboard: Gói eSIM'
@@ -24,8 +25,10 @@ export default async function EsimPlanPage(props: PageProps) {
       pageTitle='Gói eSIM'
       pageDescription='Quản lý các gói eSIM của bạn.'
       pageHeaderAction={
-        // Three buttons wrap rather than run off a phone screen (vande-0411 #027).
-        <div className='flex max-w-[60vw] flex-wrap items-center justify-end gap-2'>
+        // The buttons wrap rather than run off a phone screen (vande-0411 #027).
+        // "Export Excel" joined the imports here (vande-1411 #044).
+        <div className='flex max-w-[70vw] flex-wrap items-center justify-end gap-2'>
+          <ExportPlansExcelButton />
           <ImportGadgetKoreaExcelDialog />
           <ImportEsimAccessDialog />
           <PlanFormDialogTrigger />

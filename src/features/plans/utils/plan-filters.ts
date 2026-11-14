@@ -33,8 +33,11 @@ function boolOf(values: string[] | null | undefined): boolean | undefined {
 export function buildPlanApiFilters(params: PlanFilterParams): Record<string, unknown> {
   const filters: Record<string, unknown> = {};
 
-  if (params.name) filters.search = params.name;
-  if (params.providerName?.trim()) filters.providerSearch = params.providerName.trim();
+  // One search box now (vande-1411 #044): `search` also matches the supplier's
+  // package name and code. A link still carrying the old `providerName` box
+  // searches the same way.
+  const search = params.name?.trim() || params.providerName?.trim();
+  if (search) filters.search = search;
   if (params.provider?.length) filters.provider = params.provider;
 
   const isCheapest = boolOf(params.isCheapest);

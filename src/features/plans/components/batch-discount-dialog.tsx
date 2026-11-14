@@ -53,7 +53,7 @@ export function BatchDiscountDialog({ selectedIds, onSuccess }: BatchDiscountDia
     <>
       <Button variant='outline' disabled={selectedIds.length === 0} onClick={() => setOpen(true)}>
         <Icons.adjustments className='mr-2 h-4 w-4' />
-        Batch Discount ({selectedIds.length})
+        Discount ({selectedIds.length})
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

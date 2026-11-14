@@ -33,6 +33,8 @@ import {
 import { providerLabel } from '@/features/overview/api/constants';
 import { formatUsd, planUsd } from '@/lib/plan-price';
 import type { EsimDetail, EsimPackage, EsimPlan, EsimTopup } from '../api/types';
+import { DataUsageMeter } from '@/components/data-usage-meter';
+import { esimIsUnlimited, esimUsedMb } from '../lib/esim-data';
 
 interface EsimDetailViewProps {
   esimId: number;
@@ -448,7 +450,7 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
             ) : (
               <p className='text-muted-foreground text-sm'>Thời gian sử dụng: —</p>
             )}
-            {data ? (
+            {data && !esimIsUnlimited({ ...esim, plan }) ? (
               <UsageBar
                 title='Data đã dùng'
                 used={data.used}
@@ -456,6 +458,17 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                 text={`${usedData(data.used)} / ${formatDataSize(data.total)}`}
                 testId='esim-data-progress'
               />
+            ) : esimIsUnlimited({ ...esim, plan }) ? (
+              // An unlimited plan has a bar too, "100 MB / ∞" (vande-1411 #044).
+              <div className='space-y-2' data-testid='esim-data-progress'>
+                <span className='text-sm font-medium'>Data đã dùng</span>
+                <DataUsageMeter
+                  usedMb={esimUsedMb(esim)}
+                  totalMb={null}
+                  unlimited
+                  className='[&>span]:text-sm'
+                />
+              </div>
             ) : (
               <p className='text-muted-foreground text-sm'>Data đã dùng: —</p>
             )}

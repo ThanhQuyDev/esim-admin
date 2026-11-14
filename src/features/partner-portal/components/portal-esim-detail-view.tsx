@@ -45,6 +45,7 @@ import {
   esimStatusLabel,
   formatData
 } from './portal-esim-request-dialog';
+import { DataUsageMeter, isUnlimitedPlanType } from '@/components/data-usage-meter';
 
 const TOPUP_STATUS_LABEL: Record<string, string> = {
   completed: 'Thành công',
@@ -298,9 +299,14 @@ export function PortalEsimDetailView({ iccid }: { iccid: string }) {
             <InfoRow
               label='Dữ liệu đã dùng'
               value={
-                <span data-testid='esim-data-used'>
-                  {formatData(esim.dataUsed)} / {formatData(esim.dataTotal)}
-                </span>
+                // A bar, and "100 MB / ∞" for an unlimited plan (vande-1411 #044).
+                <DataUsageMeter
+                  usedMb={esim.dataUsed}
+                  totalMb={esim.dataTotal}
+                  unlimited={isUnlimitedPlanType(esim.planType, esim.dataTotal)}
+                  className='w-48'
+                  testId='esim-data-used'
+                />
               }
             />
             <InfoRow label='Tốc độ sau khi hết data' value={esim.throttleSpeed || '—'} />

@@ -1,6 +1,7 @@
 'use client';
 
-import { esimDataLabel } from '../../lib/esim-data';
+import { esimIsUnlimited, esimTotalMb, esimUsedMb } from '../../lib/esim-data';
+import { DataUsageMeter } from '@/components/data-usage-meter';
 import { purchaseKindLabel, purchaseKindOf } from '@/lib/plan-purchase-kind';
 import Link from 'next/link';
 import { formatDateVn } from '@/lib/format';
@@ -83,7 +84,8 @@ export const columns: ColumnDef<Esim>[] = [
       placeholder: 'Tìm theo mã đơn hàng, email, ICCID hoặc tên gói...',
       variant: 'text' as const,
       icon: Icons.search,
-      inputClassName: 'h-8 w-full min-w-[16rem] md:w-[28rem]'
+      // Narrower, so all the filters fit on one line (vande-1411 #044).
+      inputClassName: 'h-8 w-full min-w-[16rem] md:w-[22rem]'
     },
     enableColumnFilter: true
   },
@@ -184,7 +186,15 @@ export const columns: ColumnDef<Esim>[] = [
     id: 'dataUsed',
     accessorKey: 'dataUsed',
     header: 'Dữ liệu đã dùng',
-    cell: ({ row }) => <span className='whitespace-nowrap'>{esimDataLabel(row.original)}</span>,
+    // With a bar, "100 MB / ∞" for an unlimited plan (vande-1411 #044).
+    cell: ({ row }) => (
+      <DataUsageMeter
+        usedMb={esimUsedMb(row.original)}
+        totalMb={esimTotalMb(row.original)}
+        unlimited={esimIsUnlimited(row.original)}
+        testId='esim-data-meter'
+      />
+    ),
     enableSorting: false
   },
   {

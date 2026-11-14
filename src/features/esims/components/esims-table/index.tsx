@@ -12,22 +12,15 @@ import {
   noSubscribe,
   onServerSnapshot
 } from '@/components/ui/table/list-load-state';
-import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
-import { getSortingStateParser } from '@/lib/parsers';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { esimsQueryOptions } from '../../api/queries';
-import { exportEsimsExcel } from '../../api/service';
 import { AlertModal } from '@/components/modal/alert-modal';
 import { toast } from 'sonner';
 import { bulkDeleteEsimsMutation } from '../../api/mutations';
-import { ImportEsimExcelDialog } from '../import-esim-excel-dialog';
-import { EsimFormDialog } from '../esim-form-dialog';
-import { buildEsimApiFilters } from '../../utils/esim-filters';
 import { DateRangeFilter } from '@/components/date-range-filter';
 import { columns } from './columns';
-
-const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
+import { useEsimListFilters } from './use-esim-list-filters';
 
 const NO_ESIMS: Esim[] = [];
 
@@ -41,41 +34,7 @@ export function EsimsTable() {
 }
 
 function EsimsTableContent() {
-  const [params, setParams] = useQueryStates({
-    page: parseAsInteger.withDefault(1),
-    perPage: parseAsInteger.withDefault(10),
-    name: parseAsString,
-    planName: parseAsString,
-    // #020
-    packageType: parseAsArrayOf(parseAsString, ','),
-    // Named after the column id — see the note on that column.
-    esimStatus: parseAsArrayOf(parseAsString, ','),
-    provider: parseAsArrayOf(parseAsString, ','),
-    hasCallSms: parseAsArrayOf(parseAsString, ','),
-    topUp: parseAsArrayOf(parseAsString, ','),
-    createdFrom: parseAsString,
-    createdTo: parseAsString,
-    expiresFrom: parseAsString,
-    expiresTo: parseAsString,
-    sort: getSortingStateParser(columnIds).withDefault([])
-  });
-
-  // Same mapping the server used to prefetch, so the query keys match.
-  const apiFilters = buildEsimApiFilters({ ...params, status: params.esimStatus });
-
-  const apiSort = params.sort.map((s) => ({
-    orderBy: s.id,
-    order: s.desc ? 'DESC' : 'ASC'
-  }));
-
-  const filters = {
-    page: params.page,
-    limit: params.perPage,
-    ...(Object.keys(apiFilters).length > 0 && {
-      filters: JSON.stringify(apiFilters)
-    }),
-    ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
-  };
+  const { params, setParams, filters } = useEsimListFilters();
 
   const { data, isFetching, isPending, isError, refetch } = useQuery({
     ...esimsQueryOptions(filters),
@@ -97,7 +56,6 @@ function EsimsTableContent() {
 
   const selectedIds = table.getSelectedRowModel().rows.map((row) => row.original.id);
 
-  const [exporting, setExporting] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const { mutate: bulkDelete, isPending: isBulkDeleting } = useMutation({
     ...bulkDeleteEsimsMutation,
@@ -110,18 +68,6 @@ function EsimsTableContent() {
       toast.error(error.message || 'Xoá eSIM thất bại');
     }
   });
-
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      await exportEsimsExcel(filters);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('Export failed:', err);
-    } finally {
-      setExporting(false);
-    }
-  };
 
   if (isPending) return <EsimsTableSkeleton />;
 
@@ -175,15 +121,6 @@ function EsimsTableContent() {
               Xoá {selectedIds.length} eSIM
             </Button>
           ) : null}
-          <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
-            {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
-            Export Excel
-          </Button>
-          <EsimFormDialog />
-          {/* Hai nút riêng cho hai loại eSIM của nhà mạng trong nước: eSIM nội
-              địa (tab riêng ở trang chủ) và eSIM du lịch (Quốc gia → Việt Nam). */}
-          <ImportEsimExcelDialog kind='domestic' />
-          <ImportEsimExcelDialog kind='travel' />
         </DataTableToolbar>
       </DataTable>
     </>

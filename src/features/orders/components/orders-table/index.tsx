@@ -5,12 +5,8 @@ import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableToolbar } from '@/components/ui/table/data-table-toolbar';
 import { useDataTable } from '@/hooks/use-data-table';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
-import { getSortingStateParser } from '@/lib/parsers';
 import { ordersQueryOptions } from '../../api/queries';
-import { exportOrdersExcel } from '../../api/service';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { columns } from './columns';
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
@@ -24,11 +20,13 @@ import {
 } from '@/components/ui/select';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { INVOICE_FILTER_OPTIONS } from '../../utils/invoice-filter';
-import { DEFAULT_ORDER_STATUS, buildOrderApiFilters } from '../../utils/order-filters';
 import { partnersQueryOptions } from '@/features/partners/api/queries';
 import { AffiliatePartnerFilter } from './affiliate-partner-filter';
-
-const columnIds = columns.map((c) => c.id).filter(Boolean) as string[];
+import {
+  CLEARED_ORDER_FILTERS,
+  hasOrderFilters,
+  useOrderListFilters
+} from './use-order-list-filters';
 
 const ORDER_KIND_OPTIONS = [
   { value: 'all', label: 'Loại đơn: Tất cả' },
@@ -57,28 +55,7 @@ export function OrdersTable() {
 
 function OrdersTableContent() {
   const [, startTransition] = useTransition();
-
-  const [params, setParams] = useQueryStates({
-    page: parseAsInteger.withDefault(1),
-    perPage: parseAsInteger.withDefault(10),
-    q: parseAsString,
-    orderNumber: parseAsString,
-    userEmail: parseAsString,
-    iccid: parseAsString,
-    planName: parseAsString,
-    // Paid by default (#017): an admin opening this page is looking at real
-    // sales, not at abandoned checkouts. `all` is an explicit choice, which is
-    // why the default is a real value rather than null.
-    status: parseAsString.withDefault(DEFAULT_ORDER_STATUS),
-    invoice: parseAsString,
-    kind: parseAsString,
-    partner: parseAsString,
-    usd: parseAsString,
-    esimError: parseAsString,
-    createdFrom: parseAsString,
-    createdTo: parseAsString,
-    sort: getSortingStateParser(columnIds).withDefault([])
-  });
+  const { params, setParams, apiFilters, filters } = useOrderListFilters();
 
   // One search box for order number, email, ICCID and plan name (vande #021);
   // it replaces the four inputs that each took one of them.
@@ -98,38 +75,6 @@ function OrdersTableContent() {
       });
     });
   }, 500);
-
-  // Same mapping the server used to prefetch, so the query keys match.
-  // Also applied to the Excel export, so the sheet matches the screen.
-  const apiFilters = buildOrderApiFilters(params);
-
-  const apiSort = params.sort.map((s) => ({
-    orderBy: s.id,
-    order: s.desc ? 'DESC' : 'ASC'
-  }));
-
-  const [exporting, setExporting] = useState(false);
-
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      // Same filters as the table, so the sheet matches the screen.
-      await exportOrdersExcel(filters);
-    } catch (err) {
-      toast.error((err as Error).message || 'Xuất Excel thất bại');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const filters = {
-    page: params.page,
-    limit: params.perPage,
-    ...(Object.keys(apiFilters).length > 0 && {
-      filters: JSON.stringify(apiFilters)
-    }),
-    ...(apiSort.length > 0 && { sort: JSON.stringify(apiSort) })
-  };
 
   const { data, isLoading } = useQuery({
     ...ordersQueryOptions(filters),
@@ -163,7 +108,8 @@ function OrdersTableContent() {
   return (
     <div className='flex flex-1 flex-col space-y-4'>
       <div className='flex flex-wrap items-center gap-3'>
-        <div className='relative w-full md:w-[30rem]'>
+        {/* As wide as its hint, no wider (vande-1411 #044). */}
+        <div className='relative w-full md:w-[27rem]'>
           <Icons.search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
           <Input
             placeholder='Tìm theo mã đơn hàng, email, ICCID hoặc tên gói cước...'
@@ -304,16 +250,31 @@ function OrdersTableContent() {
             <SelectItem value='error'>Đơn có eSIM lỗi</SelectItem>
           </SelectContent>
         </Select>
+        {/* "Clear filters" at the end of the row, as on the eSIM and plan
+            lists (vande-1411 #044). */}
+        {hasOrderFilters(params) && (
+          <Button
+            aria-label='Đặt lại bộ lọc'
+            variant='outline'
+            size='sm'
+            className='h-9 border-dashed'
+            data-testid='orders-reset-filters'
+            onClick={() => {
+              setLocalQuery('');
+              startTransition(() => {
+                setParams(CLEARED_ORDER_FILTERS);
+              });
+            }}
+          >
+            <Icons.close className='h-4 w-4' />
+            Đặt lại
+          </Button>
+        )}
       </div>
       {params.usd === '1' && <PaymentUsdStats filters={apiFilters} />}
 
       <DataTable table={table} totalRowCount={totalCount}>
-        <DataTableToolbar table={table}>
-          <Button variant='outline' size='sm' onClick={handleExport} disabled={exporting}>
-            {exporting ? <Icons.spinner className='animate-spin' /> : <Icons.download />}
-            Xuất Excel đối soát
-          </Button>
-        </DataTableToolbar>
+        <DataTableToolbar table={table} />
       </DataTable>
     </div>
   );
