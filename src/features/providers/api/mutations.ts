@@ -1,8 +1,30 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { setProviderSalesStatus } from './service';
+import { createProvider, deleteProvider, setProviderSalesStatus, updateProvider } from './service';
 import { providerKeys } from './queries';
-import type { SetProviderSalesStatusPayload } from './types';
+import type {
+  CreateProviderPayload,
+  SetProviderSalesStatusPayload,
+  UpdateProviderPayload
+} from './types';
+
+const refreshProviders = () => getQueryClient().invalidateQueries({ queryKey: providerKeys.all });
+
+export const createProviderMutation = mutationOptions({
+  mutationFn: (values: CreateProviderPayload) => createProvider(values),
+  onSettled: refreshProviders
+});
+
+export const updateProviderMutation = mutationOptions({
+  mutationFn: ({ provider, values }: { provider: string; values: UpdateProviderPayload }) =>
+    updateProvider(provider, values),
+  onSettled: refreshProviders
+});
+
+export const deleteProviderMutation = mutationOptions({
+  mutationFn: (provider: string) => deleteProvider(provider),
+  onSettled: refreshProviders
+});
 
 export const setProviderSalesStatusMutation = mutationOptions({
   mutationFn: ({ provider, values }: { provider: string; values: SetProviderSalesStatusPayload }) =>

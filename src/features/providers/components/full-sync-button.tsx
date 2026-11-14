@@ -111,7 +111,9 @@ export function FullSyncButton() {
           : 'Đang có một lượt cập nhật chạy, vui lòng chờ lượt đó xong.'
       );
       queryClient.setQueryData(['providers', 'full-sync'], result.status);
-      queryClient.invalidateQueries({ queryKey: ['providers', 'full-sync', 'history'] });
+      queryClient.invalidateQueries({
+        queryKey: ['providers', 'full-sync', 'history']
+      });
     },
     onError: (e: Error) => toast.error(e.message || 'Không bắt đầu được')
   });

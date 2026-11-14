@@ -17,7 +17,7 @@ import {
 import { formatNumber, formatPercent, formatVnd } from '@/lib/format';
 import { providerComparisonQueryOptions } from '../api/queries';
 import type { ProviderMetric, ProviderComparisonByProviderResponse } from '../api/types';
-import { providerCodeLabel } from '../api/constants';
+import { useProviderCodeLabel } from '../api/use-provider-code-label';
 
 const providerComparisonConfig = {
   orders: {
@@ -61,6 +61,7 @@ interface BarGraphProps {
 
 export function BarGraph({ filters }: BarGraphProps) {
   const metric: ProviderMetric = 'orders';
+  const providerCodeLabel = useProviderCodeLabel();
   const { data, isLoading, error } = useQuery(
     providerComparisonQueryOptions({ ...filters, metric, groupBy: 'provider' })
   );
@@ -73,7 +74,7 @@ export function BarGraph({ filters }: BarGraphProps) {
       // Masked supplier code — the overview screen never shows real names.
       providerLabel: providerCodeLabel(item.provider)
     }));
-  }, [data]);
+  }, [data, providerCodeLabel]);
 
   const total = chartData.reduce((sum, item) => sum + item[metric] + (item.topupOrders ?? 0), 0);
 

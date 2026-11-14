@@ -11,6 +11,8 @@ import {
   ProvidersHeaderAction,
   ProvidersTabs
 } from '@/features/providers/components/providers-tabs';
+import ProviderListListingPage from '@/features/providers/components/provider-list-listing';
+import { AddProviderButton } from '@/features/providers/components/provider-list-table';
 
 export const metadata = { title: 'Dashboard: Nhà cung cấp' };
 
@@ -23,10 +25,20 @@ export default function ProvidersPage() {
     <PageContainer
       scrollable={false}
       pageTitle='Nhà cung cấp'
-      pageDescription='Thuế phí, ký quỹ và bật/tắt bán của từng nhà cung cấp.'
-      pageHeaderAction={<ProvidersHeaderAction deposits={<ProviderDepositFormDialogTrigger />} />}
+      pageDescription='Danh sách, thuế phí, ký quỹ và bật/tắt bán của từng nhà cung cấp.'
+      pageHeaderAction={
+        <ProvidersHeaderAction
+          deposits={<ProviderDepositFormDialogTrigger />}
+          list={<AddProviderButton />}
+        />
+      }
     >
       <ProvidersTabs
+        list={
+          <Suspense fallback={<ProviderSalesStatusTableSkeleton />}>
+            <ProviderListListingPage />
+          </Suspense>
+        }
         surcharges={
           <Suspense fallback={<ProviderSurchargesTableSkeleton />}>
             <ProviderSurchargesListingPage />

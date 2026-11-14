@@ -19,7 +19,8 @@ import type {
   OverviewPreset,
   OverviewProvider
 } from '../api/types';
-import { OVERVIEW_PROVIDERS, providerCodeLabel } from '../api/constants';
+import { OVERVIEW_PROVIDERS } from '../api/constants';
+import { useProviderCodeLabel } from '../api/use-provider-code-label';
 
 const presets = ['today', 'yesterday', 'last7days', 'last30days'] as const;
 const groupings = ['day', 'week', 'month', 'year'] as const;
@@ -39,6 +40,7 @@ function vnDateBoundary(value: string, endOfDay: boolean) {
 }
 
 export function OverviewDashboard() {
+  const providerCodeLabel = useProviderCodeLabel();
   const [urlFilters, setUrlFilters] = useQueryStates(
     {
       // What happened today first (vande-0411 #023).

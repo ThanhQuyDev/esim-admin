@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { formatNumber, formatPercent, formatVnd } from '@/lib/format';
 import { financialComparisonQueryOptions } from '../api/queries';
 import type { FinancialComparisonGroupedResponse } from '../api/types';
-import { providerCodeLabel } from '../api/constants';
+import { useProviderCodeLabel } from '../api/use-provider-code-label';
 
 function isFinancialGrouped(data: unknown): data is FinancialComparisonGroupedResponse {
   return typeof data === 'object' && data !== null && 'data' in data;
@@ -17,6 +17,7 @@ interface RecentSalesProps {
 }
 
 export function RecentSales({ filters }: RecentSalesProps) {
+  const providerCodeLabel = useProviderCodeLabel();
   const { data, isLoading, error } = useQuery(
     financialComparisonQueryOptions({ ...filters, groupBy: 'provider' })
   );

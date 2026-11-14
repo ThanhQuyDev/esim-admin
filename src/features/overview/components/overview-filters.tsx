@@ -12,7 +12,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { type DatePreset, presetOfRange, resolveDatePreset } from '@/lib/date-presets';
 import type { OverviewGroupBy, OverviewPreset, OverviewProvider } from '../api/types';
-import { OVERVIEW_PROVIDERS, providerCodeLabel } from '../api/constants';
+import { OVERVIEW_PROVIDERS } from '../api/constants';
+import { useProviderCodeLabel } from '../api/use-provider-code-label';
 import { PeriodRangePicker, snapRangeToGroupBy } from './period-range-picker';
 
 export interface OverviewFiltersValue {
@@ -46,16 +47,16 @@ const groupByOptions: { value: OverviewGroupBy; label: string }[] = [
   { value: 'year', label: 'Năm' }
 ];
 
-const providerOptions: { value: OverviewProvider | 'all'; label: string }[] = [
-  { value: 'all', label: 'Tất cả provider' },
-  ...OVERVIEW_PROVIDERS.map((value) => ({
-    value,
-    // Masked on purpose — see providerCodeLabel.
-    label: providerCodeLabel(value)
-  }))
-];
-
 export function OverviewFilters({ value, onChange }: OverviewFiltersProps) {
+  // Masked on purpose — the codes set in "Danh sách Nhà cung cấp" (vande-1411 #024).
+  const providerCodeLabel = useProviderCodeLabel();
+  const providerOptions: { value: OverviewProvider | 'all'; label: string }[] = [
+    { value: 'all', label: 'Tất cả provider' },
+    ...OVERVIEW_PROVIDERS.map((value) => ({
+      value,
+      label: providerCodeLabel(value)
+    }))
+  ];
   return (
     <div className='flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between'>
       <Tabs

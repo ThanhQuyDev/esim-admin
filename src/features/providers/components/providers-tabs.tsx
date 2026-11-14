@@ -24,10 +24,12 @@ export function useProvidersTab() {
  * which one is on screen.
  */
 export function ProvidersTabs({
+  list,
   surcharges,
   deposits,
   salesStatus
 }: {
+  list: ReactNode;
   surcharges: ReactNode;
   deposits: ReactNode;
   salesStatus: ReactNode;
@@ -46,6 +48,7 @@ export function ProvidersTabs({
         </TabsList>
       </Tabs>
 
+      {tab === 'list' ? list : null}
       {tab === 'surcharges' ? surcharges : null}
       {tab === 'deposits' ? deposits : null}
       {tab === 'sales-status' ? salesStatus : null}
@@ -53,8 +56,19 @@ export function ProvidersTabs({
   );
 }
 
-/** The "Thêm ký quỹ" button belongs to the deposits tab only. */
-export function ProvidersHeaderAction({ deposits }: { deposits: ReactNode }) {
+/**
+ * "Thêm ký quỹ" belongs to the deposits tab, "+ Thêm nhà cung cấp" to the list
+ * (vande-1411 #024).
+ */
+export function ProvidersHeaderAction({
+  deposits,
+  list
+}: {
+  deposits: ReactNode;
+  list: ReactNode;
+}) {
   const [tab] = useProvidersTab();
-  return tab === 'deposits' ? <>{deposits}</> : null;
+  if (tab === 'deposits') return <>{deposits}</>;
+  if (tab === 'list') return <>{list}</>;
+  return null;
 }

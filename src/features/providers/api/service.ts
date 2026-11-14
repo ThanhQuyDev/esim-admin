@@ -1,8 +1,10 @@
 import { apiClient } from '@/lib/api-client';
 import type {
+  CreateProviderPayload,
   ProviderSalesStatus,
   ProviderSalesStatusesResponse,
-  SetProviderSalesStatusPayload
+  SetProviderSalesStatusPayload,
+  UpdateProviderPayload
 } from './types';
 
 const BASE = '/providers';
@@ -19,6 +21,34 @@ export async function setProviderSalesStatus(
     `${BASE}/${encodeURIComponent(provider)}/sales-status`,
     { method: 'PUT', body: JSON.stringify(data) }
   );
+}
+
+/** "+ Thêm nhà cung cấp" (vande-1411 #024). */
+export async function createProvider(
+  data: CreateProviderPayload
+): Promise<{ data: ProviderSalesStatus }> {
+  return apiClient<{ data: ProviderSalesStatus }>(BASE, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+/** "Cập nhật": the name and the overview code. */
+export async function updateProvider(
+  provider: string,
+  data: UpdateProviderPayload
+): Promise<{ data: ProviderSalesStatus }> {
+  return apiClient<{ data: ProviderSalesStatus }>(`${BASE}/${encodeURIComponent(provider)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+/** "Xoá": refused for a supplier with an API, plans or eSIMs. */
+export async function deleteProvider(provider: string): Promise<void> {
+  await apiClient(`${BASE}/${encodeURIComponent(provider)}`, {
+    method: 'DELETE'
+  });
 }
 
 /** Where the full catalogue sync stands (doitac-1410 #074). */
@@ -50,6 +80,9 @@ export async function getFullSyncHistory(): Promise<FullSyncRun[]> {
 }
 
 /** "Cập nhật lại toàn bộ sản phẩm": the 6-hourly sync, now. */
-export async function startFullSync(): Promise<{ started: boolean; status: FullSyncStatus }> {
+export async function startFullSync(): Promise<{
+  started: boolean;
+  status: FullSyncStatus;
+}> {
   return apiClient(`${BASE}/full-sync`, { method: 'POST' });
 }
