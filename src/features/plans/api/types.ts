@@ -22,6 +22,10 @@ export type Plan = {
   costPrice: string;
   /** A day pass sold for 1–365 days, e.g. eSIM Access (vande #014). */
   isAbleMultidate?: boolean;
+  /** Unsold eSIMs still sellable, Viettel / domestic plans only (vande-1411 #014). */
+  availableStock?: number | null;
+  /** Unsold eSIMs past their expiry (vande-1411 #014). */
+  expiredStock?: number | null;
   /** Dollar prices, also for plans quoted in đồng (vande #005). */
   usdPrice?: number | string | null;
   usdCostPrice?: number | string | null;

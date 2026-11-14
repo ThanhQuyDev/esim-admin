@@ -311,6 +311,17 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
               <CopyIdButton value={row.original.providerPlanId} />
             </div>
           )}
+          {/* Our own stock: the unsold eSIMs, "Chưa bán" (vande-1411 #014). */}
+          {row.original.availableStock != null && (
+            <span
+              className={`text-xs ${row.original.availableStock > 0 ? 'text-muted-foreground' : 'text-destructive'}`}
+              data-testid='plan-stock'
+            >
+              Số lượng hàng tồn: {row.original.availableStock} eSIM
+              {Number(row.original.expiredStock) > 0 &&
+                ` (+${row.original.expiredStock} đã hết hạn)`}
+            </span>
+          )}
         </div>
       ),
       meta: {
