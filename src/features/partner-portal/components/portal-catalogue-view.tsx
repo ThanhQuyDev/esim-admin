@@ -104,7 +104,17 @@ const CATALOGUE_COLUMNS: CatalogueColumn[] = [
     key: 'duration',
     label: 'Thời hạn',
     cellClassName: 'text-xs whitespace-nowrap tabular-nums',
-    cell: (plan) => `${plan.durationDays} ngày`
+    cell: (plan) => (
+      <div className='flex flex-col'>
+        <span>{plan.durationDays} ngày</span>
+        {/* A day pass: up to 365 days can be picked (vande-1411 #013). */}
+        {plan.isAbleMultidate && (
+          <span className='text-muted-foreground text-[11px]' data-testid='catalogue-multiday-max'>
+            Đến 365 ngày
+          </span>
+        )}
+      </div>
+    )
   },
   {
     key: 'data',

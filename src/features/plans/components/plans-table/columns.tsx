@@ -345,7 +345,17 @@ export function buildColumns(options: PlanColumnOptions = {}): ColumnDef<Plan>[]
       header: ({ column }: { column: Column<Plan, unknown> }) => (
         <DataTableColumnHeader column={column} title='Thời hạn' />
       ),
-      cell: ({ row }) => <span>{row.original.durationDays} ngày</span>,
+      cell: ({ row }) => (
+        <div className='flex flex-col'>
+          <span>{row.original.durationDays} ngày</span>
+          {/* A day pass: the buyer picks up to 365 days (vande-1411 #013). */}
+          {row.original.isAbleMultidate && (
+            <span className='text-muted-foreground text-xs' data-testid='plan-multiday-max'>
+              Đến 365 ngày
+            </span>
+          )}
+        </div>
+      ),
       enableColumnFilter: true,
       meta: {
         label: 'Thời hạn',

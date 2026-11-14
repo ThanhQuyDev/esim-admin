@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 
@@ -43,10 +44,34 @@ export function ListLoadState({
       </div>
     );
   }
+  return <LoadingNote loading={loading} />;
+}
+
+/**
+ * A small "Đang tải…" in a space kept for it, shown only when a load lasts
+ * (vande-1411 #013): the bar across the table that came and went with every
+ * search and filter looked like a flicker. Nothing moves around it.
+ */
+function LoadingNote({ loading }: { loading: boolean }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setShow(false);
+      return;
+    }
+    const timer = setTimeout(() => setShow(true), 400);
+    return () => clearTimeout(timer);
+  }, [loading]);
   return (
-    <div className='mb-1 h-0.5 overflow-hidden rounded' aria-hidden='true'>
-      {loading && (
-        <div className='bg-primary h-full w-full animate-pulse' data-testid='list-loading' />
+    <div className='mb-1 flex h-4 items-center justify-end' aria-live='polite'>
+      {show && (
+        <span
+          className='text-muted-foreground flex items-center gap-1 text-xs'
+          data-testid='list-loading'
+        >
+          <Icons.spinner className='size-3 animate-spin' />
+          Đang tải…
+        </span>
       )}
     </div>
   );
