@@ -88,5 +88,9 @@ export function buildCatalogApiFilters(params: CatalogFilterParams): Record<stri
 
   if (params.parentId?.length) filters.parentIds = params.parentId.map(Number);
 
+  // Travel and local alike: the API lists travel ones only unless asked
+  // (vande-1411 #025).
+  filters.esimType = 'all';
+
   return filters;
 }

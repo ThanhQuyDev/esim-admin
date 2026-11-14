@@ -49,6 +49,20 @@ export const columns: ColumnDef<Destination>[] = [
     enableColumnFilter: true
   },
   {
+    // Travel or Local (vande-1411 #025).
+    id: 'esimType',
+    accessorKey: 'esimType',
+    header: 'eSIM Type',
+    cell: ({ row }) =>
+      row.original.esimType === 'local' ? (
+        <Badge data-testid='esim-type'>Local</Badge>
+      ) : (
+        <Badge variant='outline' data-testid='esim-type'>
+          Travel
+        </Badge>
+      )
+  },
+  {
     id: 'countryCode',
     accessorKey: 'countryCode',
     header: ({ column }: { column: Column<Destination, unknown> }) => (

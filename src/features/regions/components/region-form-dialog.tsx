@@ -22,6 +22,12 @@ import { FormDialog } from '@/components/ui/form-dialog';
 import { DestinationSelector } from './destination-selector';
 import { ParentRegionSelect } from './parent-region-select';
 
+/** "eSIM Type" (vande-1411 #025). */
+const ESIM_TYPE_OPTIONS = [
+  { value: 'travel', label: 'Travel – eSIM du lịch' },
+  { value: 'local', label: 'Local – eSIM nội địa' }
+];
+
 /** "Vị trí trên mobile": the home page shows five per tab on a phone. */
 const MOBILE_HOME_RANK_OPTIONS = [
   { value: '', label: 'Không hiện trên mobile' },
@@ -126,6 +132,7 @@ function CreateDialog({
       slugVi: '',
       isPopular: false,
       mobileHomeRank: '',
+      esimType: 'travel',
       isActive: true,
       title: '',
       titleVi: '',
@@ -158,6 +165,7 @@ function CreateDialog({
           ...(iconUrl && { iconUrl }),
           isPopular: value.isPopular ?? false,
           mobileHomeRank: value.mobileHomeRank ? Number(value.mobileHomeRank) : null,
+          esimType: value.esimType || 'travel',
           isActive: value.isActive ?? true,
           ...(value.title && { title: value.title }),
           ...(value.titleVi && { titleVi: value.titleVi }),
@@ -166,7 +174,9 @@ function CreateDialog({
           ...(value.providers && { providers: value.providers }),
           isParent,
           ...(parentId && !isParent && { parentId }),
-          ...(selectedDestinationIds.length > 0 && { destinationIds: selectedDestinationIds })
+          ...(selectedDestinationIds.length > 0 && {
+            destinationIds: selectedDestinationIds
+          })
         };
 
         await createMutation.mutateAsync(payload);
@@ -241,6 +251,8 @@ function CreateDialog({
             label='Vị trí trên mobile (trang chủ)'
             options={MOBILE_HOME_RANK_OPTIONS}
           />
+          {/* vande-1411 #025 */}
+          <FormSelectField name='esimType' label='eSIM Type' options={ESIM_TYPE_OPTIONS} />
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 
@@ -350,6 +362,7 @@ function EditDialogForm({
       slugVi: region.slugVi ?? '',
       isPopular: region.isPopular,
       mobileHomeRank: region.mobileHomeRank ? String(region.mobileHomeRank) : '',
+      esimType: region.esimType || 'travel',
       isActive: region.isActive,
       title: region.title ?? '',
       titleVi: region.titleVi ?? '',
@@ -385,6 +398,7 @@ function EditDialogForm({
           isPopular: value.isPopular,
           // Always sent, so choosing "Không" takes it off the phone.
           mobileHomeRank: value.mobileHomeRank ? Number(value.mobileHomeRank) : null,
+          esimType: value.esimType || 'travel',
           isActive: value.isActive,
           title: value.title || null,
           titleVi: value.titleVi || null,
@@ -486,6 +500,8 @@ function EditDialogForm({
             label='Vị trí trên mobile (trang chủ)'
             options={MOBILE_HOME_RANK_OPTIONS}
           />
+          {/* vande-1411 #025 */}
+          <FormSelectField name='esimType' label='eSIM Type' options={ESIM_TYPE_OPTIONS} />
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 

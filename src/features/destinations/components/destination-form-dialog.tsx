@@ -21,6 +21,7 @@ import { createDestinationMutation, updateDestinationMutation } from '../api/mut
 import { uploadToCloudinary, getDestinations } from '../api/service';
 import type { Destination, CreateDestinationPayload, UpdateDestinationPayload } from '../api/types';
 import { toast } from 'sonner';
+import { providerSalesStatusesQueryOptions } from '@/features/providers/api/queries';
 import * as z from 'zod';
 import {
   createDestinationSchema,
@@ -28,6 +29,32 @@ import {
   type CreateDestinationFormValues,
   type UpdateDestinationFormValues
 } from '../schemas/destination';
+
+/** "eSIM Type" (vande-1411 #025). */
+const ESIM_TYPE_OPTIONS = [
+  { value: 'travel', label: 'Travel – eSIM du lịch' },
+  { value: 'local', label: 'Local – eSIM nội địa' }
+];
+
+/**
+ * The domestic suppliers of "Danh sách Nhà cung cấp", for a local destination
+ * (vande-1411 #025).
+ */
+function useLocalProviderOptions() {
+  const { data } = useQuery({
+    ...providerSalesStatusesQueryOptions(),
+    retry: false
+  });
+  return [
+    { value: '', label: '— Chọn nhà cung cấp —' },
+    ...(data?.data ?? [])
+      .filter((row) => row.provider.endsWith('-noidia'))
+      .map((row) => ({
+        value: row.provider,
+        label: `${row.displayName || row.provider} (${row.provider})`
+      }))
+  ];
+}
 
 /** "Vị trí trên mobile": the home page shows five per tab on a phone. */
 const MOBILE_HOME_RANK_OPTIONS = [
@@ -259,6 +286,8 @@ function CreateDestinationDialog({
       keySearch: '',
       isPopular: false,
       mobileHomeRank: '',
+      esimType: 'travel',
+      localProvider: '',
       isActive: true,
       title: '',
       titleVi: '',
@@ -293,6 +322,8 @@ function CreateDestinationDialog({
           ...(value.keySearch && { keySearch: value.keySearch }),
           isPopular: value.isPopular ?? false,
           mobileHomeRank: value.mobileHomeRank ? Number(value.mobileHomeRank) : null,
+          esimType: value.esimType || 'travel',
+          localProvider: value.esimType === 'local' ? value.localProvider || null : null,
           isActive: value.isActive ?? true,
           ...(value.title && { title: value.title }),
           ...(value.titleVi && { titleVi: value.titleVi }),
@@ -310,6 +341,7 @@ function CreateDestinationDialog({
     }
   });
 
+  const localProviderOptions = useLocalProviderOptions();
   const { FormTextField, FormSwitchField, FormTextareaField, FormSelectField } =
     useFormFields<CreateDestinationFormValues>();
 
@@ -394,6 +426,16 @@ function CreateDestinationDialog({
             label='Vị trí trên mobile (trang chủ)'
             options={MOBILE_HOME_RANK_OPTIONS}
           />
+          {/* Local: a domestic carrier's page, from this destination's title,
+              picture, icon and description (vande-1411 #025). */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormSelectField name='esimType' label='eSIM Type' options={ESIM_TYPE_OPTIONS} />
+            <FormSelectField
+              name='localProvider'
+              label='Nhà cung cấp eSIM nội địa (chỉ khi Local)'
+              options={localProviderOptions}
+            />
+          </div>
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 
@@ -454,6 +496,8 @@ function EditDestinationDialog({
       keySearch: destination.keySearch ?? '',
       isPopular: destination.isPopular,
       mobileHomeRank: destination.mobileHomeRank ? String(destination.mobileHomeRank) : '',
+      esimType: destination.esimType || 'travel',
+      localProvider: destination.localProvider ?? '',
       isActive: destination.isActive,
       title: destination.title ?? '',
       titleVi: destination.titleVi ?? '',
@@ -491,6 +535,8 @@ function EditDestinationDialog({
           isPopular: value.isPopular,
           // Always sent, so choosing "Không" takes it off the phone.
           mobileHomeRank: value.mobileHomeRank ? Number(value.mobileHomeRank) : null,
+          esimType: value.esimType || 'travel',
+          localProvider: value.esimType === 'local' ? value.localProvider || null : null,
           isActive: value.isActive,
           title: value.title || undefined,
           titleVi: value.titleVi || undefined,
@@ -514,6 +560,7 @@ function EditDestinationDialog({
     }
   });
 
+  const localProviderOptions = useLocalProviderOptions();
   const { FormTextField, FormSwitchField, FormTextareaField, FormSelectField } =
     useFormFields<UpdateDestinationFormValues>();
 
@@ -604,6 +651,16 @@ function EditDestinationDialog({
             label='Vị trí trên mobile (trang chủ)'
             options={MOBILE_HOME_RANK_OPTIONS}
           />
+          {/* Local: a domestic carrier's page, from this destination's title,
+              picture, icon and description (vande-1411 #025). */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <FormSelectField name='esimType' label='eSIM Type' options={ESIM_TYPE_OPTIONS} />
+            <FormSelectField
+              name='localProvider'
+              label='Nhà cung cấp eSIM nội địa (chỉ khi Local)'
+              options={localProviderOptions}
+            />
+          </div>
 
           <FormTextField name='providers' label='Providers' placeholder='Provider1, Provider2...' />
 

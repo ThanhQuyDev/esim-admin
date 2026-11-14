@@ -59,6 +59,20 @@ export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
     enableColumnFilter: true
   },
   {
+    // Travel or Local (vande-1411 #025).
+    id: 'esimType',
+    accessorKey: 'esimType',
+    header: 'eSIM Type',
+    cell: ({ row }) =>
+      row.original.esimType === 'local' ? (
+        <Badge data-testid='esim-type'>Local</Badge>
+      ) : (
+        <Badge variant='outline' data-testid='esim-type'>
+          Travel
+        </Badge>
+      )
+  },
+  {
     // After the name, to tell parents from packs (vande-0411 #073).
     id: 'regionType',
     accessorFn: (row) => (row.isParent ? 'parent' : row.parentId ? 'child' : 'standalone'),
@@ -100,7 +114,10 @@ export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
     meta: {
       label: 'Khu vực cha',
       variant: 'multiSelect' as const,
-      options: parents.map((p) => ({ value: String(p.id), label: p.titleVi || p.name }))
+      options: parents.map((p) => ({
+        value: String(p.id),
+        label: p.titleVi || p.name
+      }))
     }
   },
   {
