@@ -1241,10 +1241,40 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                       <p className='break-words'>Lỗi: {item.provisioning.lastError}</p>
                       <p className='text-muted-foreground'>
                         Lần thử gần nhất: {formatDate(item.provisioning.lastAttemptAt)}.{' '}
-                        {item.provisioning.nextAutoRetryAt
-                          ? `Hệ thống tự gọi lại lúc ${formatDate(item.provisioning.nextAutoRetryAt)}.`
-                          : 'Hệ thống đã ngừng tự gọi lại — bấm "Gọi lại API lấy eSIM" hoặc hoàn tiền cho khách.'}
+                        {['failed', 'refunded', 'cancelled'].includes(String(item.status))
+                          ? 'Sản phẩm này đã hoàn tiền hoặc đã huỷ — hệ thống không gọi lại nữa.'
+                          : item.provisioning.nextAutoRetryAt
+                            ? `Hệ thống tự gọi lại lúc ${formatDate(item.provisioning.nextAutoRetryAt)}.`
+                            : 'Hệ thống đã ngừng tự gọi lại — bấm "Gọi lại API" hoặc hoàn tiền cho khách.'}
                       </p>
+                      {/* Ask for this eSIM now, without waiting for the job
+                          (vande-1411 #001). The server still refuses a line
+                          that has an eSIM or that the supplier took. */}
+                      {order.status === 'paid' &&
+                        !item.orderRequestId &&
+                        !['failed', 'refunded', 'cancelled'].includes(String(item.status)) &&
+                        !(item.esims?.length > 0) && (
+                          <Button
+                            type='button'
+                            size='sm'
+                            variant='outline'
+                            className='mt-1'
+                            disabled={retryMutation.isPending}
+                            onClick={() =>
+                              retryMutation.mutate({ orderId: order.id, itemIds: [item.id] })
+                            }
+                            data-testid={`provision-retry-${item.id}`}
+                          >
+                            {retryMutation.isPending &&
+                            retryMutation.variables?.itemIds?.length === 1 &&
+                            retryMutation.variables.itemIds[0] === item.id ? (
+                              <Icons.spinner className='mr-2 h-4 w-4 animate-spin' />
+                            ) : (
+                              <Icons.send className='mr-2 h-4 w-4' />
+                            )}
+                            Gọi lại API
+                          </Button>
+                        )}
                     </div>
                   )}
                   {/* Product left, supplier and offer right (vande #024). The
