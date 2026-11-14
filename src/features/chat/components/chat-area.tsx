@@ -20,6 +20,7 @@ export function ChatArea() {
   const sendMessage = useChatStore((s) => s.sendMessage);
   const loadMoreMessages = useChatStore((s) => s.loadMoreMessages);
   const myUserId = useChatStore((s) => s.myUserId);
+  const react = useChatStore((s) => s.react);
   const userCache = useChatStore((s) => s.userCache);
   const replyTo = useChatStore((s) => s.replyTo);
   const setReplyTo = useChatStore((s) => s.setReplyTo);
@@ -166,6 +167,8 @@ export function ChatArea() {
                   quoteAuthorName={msg.replyTo ? senderLabel(msg.replyTo.senderId) : undefined}
                   onReply={setReplyTo}
                   onJumpToQuoted={handleJumpToQuoted}
+                  onReact={(emoji) => react(msg.id, emoji)}
+                  viewerId={myUserId}
                 />
               ])}
             </AnimatePresence>

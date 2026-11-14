@@ -8,6 +8,7 @@ import type { ChatMessage } from '../api/types';
 import { chatTime } from '../utils/format';
 import { ChatQuotePreview } from './chat-quote-preview';
 import { ChatLinkifiedText } from './chat-linkified-text';
+import { ReactionBar, ReactionPicker } from './chat-reactions';
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -19,6 +20,10 @@ interface ChatMessageBubbleProps {
   onReply?: (message: ChatMessage) => void;
   /** Scroll to the quoted original. */
   onJumpToQuoted?: (messageId: number) => void;
+  /** React to this message (vande-1411 #037). */
+  onReact?: (emoji: string) => void;
+  /** Who is looking, to highlight their own reaction. */
+  viewerId?: number | null;
 }
 
 const BOT_SENDER_ID = 0;
@@ -29,7 +34,9 @@ export function ChatMessageBubble({
   senderName,
   quoteAuthorName,
   onReply,
-  onJumpToQuoted
+  onJumpToQuoted,
+  onReact,
+  viewerId = null
 }: ChatMessageBubbleProps) {
   const shouldReduceMotion = useReducedMotion();
   // The time alone: the day is in the header above (vande-1411 #036).
@@ -92,6 +99,10 @@ export function ChatMessageBubble({
             >
               <Icons.reply className='h-3.5 w-3.5' />
             </button>
+          )}
+          {/* Thả cảm xúc (vande-1411 #037). */}
+          {!isBot && onReact && (
+            <ReactionPicker onReact={onReact} testId={`chat-react-${message.id}`} />
           )}
         </p>
 
@@ -203,6 +214,8 @@ export function ChatMessageBubble({
               a bare tick did not tell sent from received from seen. */}
           {isOwn && <MessageStatus message={message} />}
         </div>
+        {/* Reactions, one per person (vande-1411 #037). */}
+        <ReactionBar reactions={message.reactions} viewerId={viewerId} onReact={onReact} />
       </div>
     </motion.div>
   );

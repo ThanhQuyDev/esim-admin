@@ -25,6 +25,8 @@ export interface ChatMessage {
   isRead: boolean;
   /** Reached the customer: "Đã nhận" (vande-1411 #035). */
   deliveredAt?: string | null;
+  /** One reaction per person, `{ "<userId>": "❤️" }` (vande-1411 #037). */
+  reactions?: Record<string, string> | null;
   createdAt: string; // ISO 8601
   updatedAt: string;
   // Optional file attachment (image/* or video/*) uploaded via Cloudinary
@@ -59,6 +61,8 @@ export interface ClientToServerEvents {
   sendMessage: (data: SendMessagePayload) => void;
   getMessages: (data: { chatRoomId: number; page?: number; limit?: number }) => void;
   markAsRead: (data: { chatRoomId: number }) => void;
+  /** React to a message; the same again takes it back (vande-1411 #037). */
+  react: (data: { messageId: number; emoji: string | null }) => void;
   getRooms: () => void;
   subscribeAllRooms: () => void;
 }
@@ -72,6 +76,12 @@ export interface ServerToClientEvents {
   markedAsRead: (data: { chatRoomId: number }) => void;
   /** The customer received or saw the admin's messages (vande-1411 #035). */
   messagesStatus: (data: { chatRoomId: number; status: 'delivered' | 'read' }) => void;
+  /** Someone reacted to a message (vande-1411 #037). */
+  messageReaction: (data: {
+    chatRoomId: number;
+    messageId: number;
+    reactions: Record<string, string> | null;
+  }) => void;
   rooms: (data: ChatRoomWithMeta[]) => void;
   /** A customer opened a conversation — refetch the list (#032). */
   roomsChanged: () => void;

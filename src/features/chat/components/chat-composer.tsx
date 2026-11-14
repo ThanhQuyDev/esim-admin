@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { EmojiPicker } from './chat-reactions';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import {
@@ -300,6 +301,19 @@ export function ChatComposer({
               )}
             </Button>
           )}
+          {/* Emoji into the message, where the cursor is (vande-1411 #037). */}
+          <EmojiPicker
+            onPick={(emoji) => {
+              const box = textareaRef.current;
+              const start = box?.selectionStart ?? draft.length;
+              const end = box?.selectionEnd ?? draft.length;
+              onDraftChange(draft.slice(0, start) + emoji + draft.slice(end));
+              requestAnimationFrame(() => {
+                box?.focus({ preventScroll: true });
+                box?.setSelectionRange(start + emoji.length, start + emoji.length);
+              });
+            }}
+          />
           <input
             ref={fileInputRef}
             type='file'

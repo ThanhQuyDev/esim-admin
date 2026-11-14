@@ -62,6 +62,8 @@ interface ChatState {
   selectRoom: (roomId: number, userId: number) => void;
   clearSelection: () => void;
   sendMessage: (text: string, file?: ChatFileAttachment) => void;
+  /** React to a message (vande-1411 #037). */
+  react: (messageId: number, emoji: string) => void;
   /**
    * Send a ready-made message (e.g. a destination link, #050) without touching
    * what the admin is typing or the message they are replying to.
@@ -335,6 +337,13 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       });
     });
 
+    // Someone reacted to a message (vande-1411 #037).
+    socket.on('messageReaction', ({ messageId, reactions }) => {
+      set((s) => ({
+        messages: s.messages.map((m) => (m.id === messageId ? { ...m, reactions } : m))
+      }));
+    });
+
     // The customer received or saw our messages (vande-1411 #035).
     socket.on(
       'messagesStatus',
@@ -436,6 +445,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       draft: '',
       replyTo: null
     });
+  },
+
+  react: (messageId: number, emoji: string) => {
+    get()._socket?.emit('react', { messageId, emoji });
   },
 
   sendMessage: (text: string, file?: ChatFileAttachment) => {
