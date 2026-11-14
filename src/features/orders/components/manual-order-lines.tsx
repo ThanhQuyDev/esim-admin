@@ -26,6 +26,8 @@ import { regionsQueryOptions } from '@/features/regions/api/queries';
 import { locationKeywords, locationLabel } from '@/features/plans/utils/location-options';
 import { PlanPicker, type PickedPlan } from './plan-picker';
 import { PROVIDER_OPTIONS } from '@/lib/catalog-filters';
+import { formatVnd } from '@/lib/format';
+import { apiClient } from '@/lib/api-client';
 
 /**
  * The plans of an order placed on a customer's behalf (#031, test round 4):
@@ -386,6 +388,16 @@ export function ManualOrderLines({
               </div>
             </div>
           )}
+          {/* What the line costs and sells for, by the order's own rules,
+              once the plan, the days and the quantity are in (vande-1411 #015). */}
+          {line.plan && (
+            <LineQuote
+              planId={line.plan.id}
+              days={manualLineDays(line)}
+              quantity={Number(line.quantity) >= 1 ? Math.round(Number(line.quantity)) : 1}
+              testId={`manual-line-${index}-quote`}
+            />
+          )}
           {showErrors &&
             line.plan?.isAbleMultidate &&
             !(Number(line.days) >= 1 && Number(line.days) <= 365) && (
@@ -408,6 +420,72 @@ export function ManualOrderLines({
         <Icons.add className='mr-2 h-4 w-4' />
         Thêm loại eSIM
       </Button>
+    </div>
+  );
+}
+
+type LineQuoteResult = {
+  days: number | null;
+  quantity: number;
+  unitCostVnd: number;
+  unitPriceVnd: number;
+  totalCostVnd: number;
+  totalPriceVnd: number;
+};
+
+/**
+ * "Giá vốn … · Giá bán …" of one line (vande-1411 #015): for a day pass, for
+ * the days typed; for every plan, times the quantity. The price is the one the
+ * order is then placed at.
+ */
+function LineQuote({
+  planId,
+  days,
+  quantity,
+  testId
+}: {
+  planId: number;
+  days?: number;
+  quantity: number;
+  testId: string;
+}) {
+  const params = new URLSearchParams({ planId: String(planId), quantity: String(quantity) });
+  if (days) params.set('days', String(days));
+  const { data, isFetching, isError } = useQuery({
+    queryKey: ['manual-quote', planId, days ?? 1, quantity],
+    queryFn: () => apiClient<LineQuoteResult>(`/admin/orders/manual-quote?${params}`),
+    staleTime: 60_000
+  });
+  if (isError) return null;
+  const what = [data?.days ? `${data.days} ngày` : null, quantity > 1 ? `${quantity} eSIM` : null]
+    .filter(Boolean)
+    .join(' × ');
+  return (
+    <div
+      className='bg-muted/40 flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-md px-3 py-2 text-sm'
+      data-testid={testId}
+    >
+      {!data ? (
+        <span className='text-muted-foreground text-xs'>Đang tính giá…</span>
+      ) : (
+        <>
+          <span>
+            Giá vốn (gồm thuế phí):{' '}
+            <span className='font-medium tabular-nums'>{formatVnd(data.totalCostVnd)}</span>
+          </span>
+          <span>
+            Giá bán:{' '}
+            <span className='font-semibold tabular-nums'>{formatVnd(data.totalPriceVnd)}</span>
+          </span>
+          {what && (
+            <span className='text-muted-foreground text-xs'>
+              ({what}
+              {quantity > 1 ? ` · mỗi eSIM ${formatVnd(data.unitPriceVnd)}` : ''})
+            </span>
+          )}
+          {isFetching && <Icons.spinner className='text-muted-foreground size-3 animate-spin' />}
+        </>
+      )}
     </div>
   );
 }

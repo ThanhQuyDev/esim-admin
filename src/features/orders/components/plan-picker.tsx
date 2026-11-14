@@ -210,14 +210,16 @@ export function PlanPicker({
                         <span className='text-muted-foreground truncate text-xs'>
                           {planMeta(plan)}
                         </span>
-                        {/* Cost with fees: the amount alone, to the last digit
-                            (vande-0411 #050). */}
+                        {/* Cost with fees: the amount alone, to the đồng, as on
+                            the plan list (vande-1411 #015). */}
                         {plan.vndCostExact || plan.vndCostPrice ? (
                           <span
                             className='text-muted-foreground shrink-0 text-xs tabular-nums'
                             data-testid='plan-picker-cost'
                           >
-                            {exactVnd(Number(plan.vndCostExact) || Number(plan.vndCostPrice))}
+                            {formatVnd(
+                              Math.round(Number(plan.vndCostExact) || Number(plan.vndCostPrice))
+                            )}
                           </span>
                         ) : null}
                       </div>
@@ -244,13 +246,6 @@ export function PlanPicker({
 }
 
 /** "22.676,7775 ₫": the exact figure, not rounded for looks. */
-function exactVnd(value: number): string {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 4
-  }).format(value);
-}
 
 /** One line naming the plan, for the closed trigger. */
 function planSummary(plan: Plan): string {

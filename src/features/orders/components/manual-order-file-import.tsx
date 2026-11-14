@@ -47,7 +47,10 @@ export function ManualOrderFileImport({
           id: l.plan!.id,
           slug: l.plan!.slug,
           packageCode: l.plan!.packageCode,
-          label: l.plan!.label
+          label: l.plan!.label,
+          // The preview gives days only to a day pass. Without this the line
+          // lost its days box and was ordered for 1 day (vande-1411 #015).
+          isAbleMultidate: l.days != null
         },
         quantity: String(l.quantity),
         days: String(l.days ?? 1)
