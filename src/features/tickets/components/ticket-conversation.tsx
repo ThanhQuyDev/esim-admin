@@ -12,6 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
 import { formatDateTimeVn } from '@/lib/format';
 import { replyToTicketMutation } from '../api/mutations';
+import { uploadAttachment } from '@/features/partner-portal/api/service';
+
+/** Files one reply may carry (vande-1411 #034). */
+const MAX_REPLY_FILES = 5;
 import { ticketMessagesQueryOptions } from '../api/queries';
 
 /**
@@ -36,6 +40,8 @@ export function TicketConversation({
   fromPartner?: boolean;
 }) {
   const [body, setBody] = useState('');
+  const [files, setFiles] = useState<{ name: string; url: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const { data: messages, isLoading } = useQuery(ticketMessagesQueryOptions(ticketId));
 
@@ -44,6 +50,7 @@ export function TicketConversation({
     onSuccess: () => {
       toast.success(`Đã gửi phản hồi và email tới ${customerEmail}`);
       setBody('');
+      setFiles([]);
     },
     onError: (error) => {
       toast.error(error.message || 'Không gửi được phản hồi');
@@ -120,6 +127,70 @@ export function TicketConversation({
             rows={4}
             data-testid='ticket-reply-body'
           />
+          {/* Files with the reply: shown in the thread and attached to the
+              email to the customer or partner (vande-1411 #034). */}
+          <input
+            id={`ticket-reply-file-${ticketId}`}
+            type='file'
+            className='hidden'
+            accept='image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt'
+            data-testid='ticket-reply-file'
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (!file) return;
+              setUploading(true);
+              try {
+                const url = await uploadAttachment(file);
+                setFiles((current) => [...current, { name: file.name, url }]);
+              } catch (err) {
+                toast.error((err as Error).message || 'Không tải được tệp lên.');
+              } finally {
+                setUploading(false);
+              }
+            }}
+          />
+          <div className='flex flex-wrap items-center gap-2'>
+            <Button
+              type='button'
+              size='sm'
+              variant='outline'
+              asChild
+              disabled={uploading || files.length >= MAX_REPLY_FILES}
+            >
+              <label
+                htmlFor={`ticket-reply-file-${ticketId}`}
+                className='cursor-pointer'
+                data-testid='ticket-reply-attach'
+              >
+                <Icons.upload className='mr-2 h-4 w-4' />
+                {uploading ? 'Đang tải tệp…' : 'Đính kèm tệp'}
+              </label>
+            </Button>
+            <span className='text-muted-foreground text-xs'>
+              Ảnh, PDF, Word, Excel — tối đa {MAX_REPLY_FILES} tệp, gửi kèm email.
+            </span>
+          </div>
+          {files.length > 0 && (
+            <ul className='space-y-1' data-testid='ticket-reply-files'>
+              {files.map((f, i) => (
+                <li
+                  key={f.url}
+                  className='flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-xs'
+                >
+                  <span className='truncate'>{f.name}</span>
+                  <button
+                    type='button'
+                    className='text-muted-foreground hover:text-destructive shrink-0'
+                    aria-label={`Bỏ ${f.name}`}
+                    onClick={() => setFiles((cur) => cur.filter((_, j) => j !== i))}
+                  >
+                    <Icons.close className='size-3.5' />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className='flex flex-wrap items-center justify-between gap-2'>
             {/* Said plainly: this leaves the CMS and reaches the customer, which
                 is not obvious from a textarea (#059). */}
@@ -130,8 +201,14 @@ export function TicketConversation({
             <Button
               type='button'
               size='sm'
-              disabled={!trimmed || isPending}
-              onClick={() => sendReply({ id: ticketId, body: trimmed })}
+              disabled={(!trimmed && files.length === 0) || isPending || uploading}
+              onClick={() =>
+                sendReply({
+                  id: ticketId,
+                  body: trimmed,
+                  attachments: files.map((f) => f.url)
+                })
+              }
               data-testid='ticket-reply-send'
             >
               <Icons.send className='mr-2 h-4 w-4' />

@@ -64,10 +64,18 @@ export async function getTicketMessages(id: number): Promise<TicketMessage[]> {
  * Post an admin reply (#059). The backend also emails it to the customer, with
  * the ticket number in the subject.
  */
-export async function replyToTicket(id: number, body: string): Promise<TicketMessage> {
+export async function replyToTicket(
+  id: number,
+  body: string,
+  attachments: string[] = []
+): Promise<TicketMessage> {
   return apiClient<TicketMessage>(`${BASE}/${id}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ body })
+    // Files go in the thread and with the email (vande-1411 #034).
+    body: JSON.stringify({
+      body,
+      ...(attachments.length ? { attachments } : {})
+    })
   });
 }
 

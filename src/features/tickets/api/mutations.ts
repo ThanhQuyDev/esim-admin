@@ -24,6 +24,7 @@ export const deleteTicketMutation = mutationOptions({
  * the trigger for the email as well as for the thread.
  */
 export const replyToTicketMutation = mutationOptions({
-  mutationFn: ({ id, body }: { id: number; body: string }) => replyToTicket(id, body),
+  mutationFn: ({ id, body, attachments }: { id: number; body: string; attachments?: string[] }) =>
+    replyToTicket(id, body, attachments),
   onSettled: invalidate
 });

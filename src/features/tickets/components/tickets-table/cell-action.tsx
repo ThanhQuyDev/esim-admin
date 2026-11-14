@@ -71,7 +71,10 @@ export function CellAction({ data }: { data: Ticket }) {
                   key={opt.value}
                   disabled={opt.value === data.status || statusMutation.isPending}
                   onClick={() =>
-                    statusMutation.mutate({ id: data.id, values: { status: opt.value } })
+                    statusMutation.mutate({
+                      id: data.id,
+                      values: { status: opt.value }
+                    })
                   }
                 >
                   {opt.label}
