@@ -40,6 +40,7 @@ import { attributionWarningLabels } from '@/features/orders/components/order-det
 
 import { commissionsQueryOptions } from '../api/queries';
 import type { OrderPartnerCommission } from '../api/types';
+import { CommissionRowActions } from './commission-row-actions';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Chờ xác nhận (24h)',
@@ -225,12 +226,13 @@ export function CommissionsView() {
                 <TableHead className='text-right'>Hoa hồng</TableHead>
                 <TableHead>Thông tin từ hệ thống</TableHead>
                 <TableHead>Trạng thái</TableHead>
+                <TableHead className='w-12 text-right'>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody data-testid='commission-rows'>
               {commissions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className='text-muted-foreground h-24 text-center'>
+                  <TableCell colSpan={11} className='text-muted-foreground h-24 text-center'>
                     Chưa có hoa hồng nào.
                   </TableCell>
                 </TableRow>
@@ -295,6 +297,10 @@ export function CommissionsView() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={STATUS_VARIANT[c.status]}>{STATUS_LABEL[c.status]}</Badge>
+                    </TableCell>
+                    {/* "Duyệt / Xoá hoa hồng" for one stuck waiting (vande-1411 #048). */}
+                    <TableCell className='text-right'>
+                      <CommissionRowActions commission={c} />
                     </TableCell>
                   </TableRow>
                 );

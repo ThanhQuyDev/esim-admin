@@ -13,7 +13,9 @@ const REASONS: Record<string, string> = {
   self_email: `${SAME_AS_PARTNER}: email khách nhập trùng email đăng ký của đối tác.`,
   self_phone: `${SAME_AS_PARTNER}: số điện thoại khách nhập trùng số đăng ký của đối tác.`,
   self_tax_code: `${SAME_AS_PARTNER}: mã số thuế trên hoá đơn trùng mã số thuế của đối tác.`,
-  self_bank_account: `${SAME_AS_PARTNER}: trùng tài khoản ngân hàng nhận hoa hồng của đối tác.`
+  self_bank_account: `${SAME_AS_PARTNER}: trùng tài khoản ngân hàng nhận hoa hồng của đối tác.`,
+  // "Xoá hoa hồng" in the commission list (vande-1411 #048).
+  admin_rejected: 'Admin từ chối chi trả hoa hồng'
 };
 
 export function commissionRejectionText(reason?: string | null): string | null {

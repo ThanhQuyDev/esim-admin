@@ -48,7 +48,7 @@ import { formatDateTimeVn, formatVnd } from '@/lib/format';
 
 import { bulkPayoutDecisionMutation, markPayoutPaidMutation } from '../api/mutations';
 import { depositRequestsQueryOptions, partnerKeys, payoutsQueryOptions } from '../api/queries';
-import { confirmDepositRequest, rejectDepositRequest } from '../api/service';
+import { bulkPayoutDecision, confirmDepositRequest, rejectDepositRequest } from '../api/service';
 import type { AdminPayoutRow, PartnerDepositRequest } from '../api/types';
 import { ProofFiles } from '@/features/partner-portal/components/portal-manual-deposit';
 
@@ -58,14 +58,17 @@ const STATUS_LABEL: Record<string, string> = {
   approved: 'Đã duyệt',
   rejected: 'Từ chối',
   paid: 'Đã thanh toán',
-  cancelled: 'Đã huỷ'
+  cancelled: 'Đã huỷ',
+  // A card or SePay deposit, credited by the system itself (vande-1411 #048).
+  auto: 'Duyệt tự động'
 };
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   pending: 'secondary',
   approved: 'outline',
   rejected: 'destructive',
   paid: 'default',
-  cancelled: 'outline'
+  cancelled: 'outline',
+  auto: 'default'
 };
 
 const STATUS_FILTERS = [
@@ -195,7 +198,12 @@ function fromDeposit(row: PartnerDepositRequest): FinanceRow {
     bankName: row.bankName ?? null,
     bankAccountLast4: row.bankAccountLast4 ?? null,
     createdAt: row.createdAt,
-    status: DEPOSIT_STATUS[row.status] ?? row.status,
+    // Confirmed with no admin behind it: the card gateway or SePay credited
+    // it the moment the money arrived (vande-1411 #048).
+    status:
+      row.status === 'confirmed' && !row.confirmedByAdminId && row.method !== 'manual_transfer'
+        ? 'auto'
+        : (DEPOSIT_STATUS[row.status] ?? row.status),
     note: row.status === 'rejected' ? (row.rejectionReason ?? null) : null,
     deposit: row
   };
@@ -214,7 +222,8 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [period, setPeriod] = useState('all');
-  const [selected, setSelected] = useState<number[]>([]);
+  // Row keys, withdrawals and deposits alike (vande-1411 #048).
+  const [selected, setSelected] = useState<string[]>([]);
   const [detailOf, setDetailOf] = useState<FinanceRow | null>(null);
   const [bulkReject, setBulkReject] = useState(false);
 
@@ -261,7 +270,6 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
     );
   }, [wantWithdraw, wantDeposit, payoutsQuery.data, depositsQuery.data]);
 
-  const payoutRows = rows.filter((r) => r.kind === 'withdraw');
   // Paged like the admin's tables (doitac-3010 #038).
   const { pageRows, pagination } = usePortalPagination(rows, 20);
   const filtered = Boolean(
@@ -324,12 +332,75 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
     onError: (e: Error) => toast.error(e.message || 'Từ chối thất bại')
   });
 
-  // Only a withdrawal still waiting can be decided in bulk; a deposit credits
-  // a wallet, so it is looked at one by one in its popup.
-  const pendingSelected = selected.filter(
-    (id) => payoutRows.find((r) => r.payout?.id === id)?.status === 'pending'
-  );
-  const allTicked = payoutRows.length > 0 && selected.length === payoutRows.length;
+  // Ticked rows still waiting, withdrawals and deposits alike (vande-1411
+  // #048). An admin filters to one kind first; ticking both still works.
+  const selectedRows = rows.filter((r) => selected.includes(r.key));
+  const pendingPayoutIds = selectedRows
+    .filter((r) => r.kind === 'withdraw' && r.status === 'pending')
+    .map((r) => r.payout!.id);
+  const pendingDepositIds = selectedRows
+    .filter((r) => r.kind === 'deposit' && r.status === 'pending')
+    .map((r) => r.deposit!.id);
+  const pendingCount = pendingPayoutIds.length + pendingDepositIds.length;
+  const selectedKinds = new Set(selectedRows.map((r) => r.kind));
+  const mixed = selectedKinds.size > 1;
+  const onlyDeposits = selectedKinds.size === 1 && selectedKinds.has('deposit');
+  const approveLabel = mixed ? 'Duyệt yêu cầu' : onlyDeposits ? 'Duyệt tiền' : 'Duyệt chi';
+  const selectedNoun = mixed ? 'yêu cầu' : onlyDeposits ? 'yêu cầu nạp ký quỹ' : 'yêu cầu rút tiền';
+
+  // One run for both kinds; the buttons stay disabled until it ends, so a
+  // second click cannot pay twice. Withdrawals go in one call, deposits one
+  // by one (each credits a wallet and is logged on its own).
+  const bulk = useMutation({
+    mutationFn: async ({
+      decision,
+      reason
+    }: {
+      decision: 'approve' | 'reject';
+      reason?: string;
+    }) => {
+      let done = 0;
+      let skipped = 0;
+      const failed: string[] = [];
+      if (pendingPayoutIds.length > 0) {
+        const result = await bulkPayoutDecision({
+          ids: pendingPayoutIds,
+          decision,
+          ...(reason ? { adminNote: reason } : {})
+        });
+        done += result.updated;
+        skipped += result.skipped.length;
+      }
+      for (const id of pendingDepositIds) {
+        try {
+          if (decision === 'approve') await confirmDepositRequest(id);
+          else await rejectDepositRequest(id, reason ?? '');
+          done += 1;
+        } catch (e) {
+          failed.push((e as Error).message);
+        }
+      }
+      return { done, skipped, failed };
+    },
+    onSuccess: ({ done, skipped, failed }) => {
+      if (failed.length > 0) {
+        toast.error(`Đã xử lý ${done} yêu cầu; ${failed.length} yêu cầu lỗi: ${failed[0]}`);
+      } else {
+        toast.success(
+          skipped > 0
+            ? `Đã xử lý ${done} yêu cầu; ${skipped} yêu cầu đã được xử lý trước đó.`
+            : `Đã xử lý ${done} yêu cầu.`
+        );
+      }
+      setSelected([]);
+      setBulkReject(false);
+    },
+    onError: (e: Error) => toast.error(e.message || 'Không xử lý được yêu cầu'),
+    onSettled: () => queryClient.invalidateQueries()
+  });
+
+  const tickable = rows;
+  const allTicked = tickable.length > 0 && selected.length === tickable.length;
 
   return (
     <div className='grid min-w-0 grid-cols-1 gap-4'>
@@ -429,24 +500,28 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
       {selected.length > 0 && (
         <div className='bg-muted/50 space-y-2 rounded-lg border p-3'>
           <div className='flex flex-wrap items-center gap-2'>
-            <span className='text-sm font-medium'>Đã chọn {selected.length} yêu cầu rút tiền</span>
-            {pendingSelected.length !== selected.length && (
+            <span className='text-sm font-medium' data-testid='finance-selected'>
+              Đã chọn {selected.length} {selectedNoun}
+            </span>
+            {pendingCount !== selected.length && (
               <span className='text-muted-foreground text-xs'>
-                ({pendingSelected.length} yêu cầu còn chờ duyệt)
+                ({pendingCount} yêu cầu còn chờ duyệt)
               </span>
             )}
             <Button
               size='sm'
-              disabled={pendingSelected.length === 0 || decide.isPending}
-              onClick={() => decide.mutate({ ids: pendingSelected, decision: 'approve' })}
+              disabled={pendingCount === 0 || bulk.isPending}
+              onClick={() => bulk.mutate({ decision: 'approve' })}
+              data-testid='finance-bulk-approve'
             >
-              Duyệt chi
+              {approveLabel}
             </Button>
             <Button
               size='sm'
               variant='destructive'
-              disabled={pendingSelected.length === 0 || decide.isPending}
+              disabled={pendingCount === 0 || bulk.isPending}
               onClick={() => setBulkReject((open) => !open)}
+              data-testid='finance-bulk-reject'
             >
               Từ chối
             </Button>
@@ -456,10 +531,8 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
           </div>
           {bulkReject && (
             <BulkRejectBox
-              pending={decide.isPending}
-              onSubmit={(reason) =>
-                decide.mutate({ ids: pendingSelected, decision: 'reject', adminNote: reason })
-              }
+              pending={bulk.isPending}
+              onSubmit={(reason) => bulk.mutate({ decision: 'reject', reason })}
             />
           )}
         </div>
@@ -482,11 +555,9 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
                 <TableHead className='w-10'>
                   <Checkbox
                     checked={allTicked}
-                    disabled={payoutRows.length === 0}
-                    onCheckedChange={() =>
-                      setSelected(allTicked ? [] : payoutRows.map((r) => r.payout!.id))
-                    }
-                    aria-label='Chọn tất cả yêu cầu rút tiền'
+                    disabled={tickable.length === 0}
+                    onCheckedChange={() => setSelected(allTicked ? [] : tickable.map((r) => r.key))}
+                    aria-label='Chọn tất cả yêu cầu'
                   />
                 </TableHead>
                 <TableHead>Đối tác</TableHead>
@@ -506,18 +577,19 @@ export function PayoutsView({ initialKind }: { initialKind?: string }) {
               {pageRows.map((row) => (
                 <TableRow key={row.key} data-testid={`finance-row-${row.key}`}>
                   <TableCell>
-                    {row.payout && (
-                      <Checkbox
-                        checked={selected.includes(row.payout.id)}
-                        onCheckedChange={() => {
-                          const id = row.payout!.id;
-                          setSelected((prev) =>
-                            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-                          );
-                        }}
-                        aria-label={`Chọn yêu cầu ${row.code}`}
-                      />
-                    )}
+                    {/* Deposits too (vande-1411 #048). */}
+                    <Checkbox
+                      checked={selected.includes(row.key)}
+                      onCheckedChange={() =>
+                        setSelected((prev) =>
+                          prev.includes(row.key)
+                            ? prev.filter((x) => x !== row.key)
+                            : [...prev, row.key]
+                        )
+                      }
+                      aria-label={`Chọn yêu cầu ${row.code}`}
+                      data-testid={`finance-tick-${row.key}`}
+                    />
                   </TableCell>
                   <TableCell>
                     <Link
