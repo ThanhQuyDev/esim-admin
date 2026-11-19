@@ -15,6 +15,7 @@ import { Icons } from '@/components/icons';
 import { AlertModal } from '@/components/modal/alert-modal';
 import { esimStatusLabel, esimStatusVariant } from '../lib/esim-status';
 import { EsimRefundButton } from './esim-refund-button';
+import { EsimRefetchInfoButton } from './esim-refetch-info-button';
 import { formatDataSize, formatDateTimeVn, formatVnd } from '@/lib/format';
 import { esimQueryOptions } from '../api/queries';
 import { deleteEsimMutation } from '../api/mutations';
@@ -282,7 +283,12 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
   const usd = plan ? planUsd(plan) : null;
   const days = daysProgress(esim);
   const data = dataProgress(esim);
-  const lpa = esim.lpa || '';
+  // Built from the address and code when the LPA itself was lost (vande-2011 #004).
+  const lpa =
+    esim.lpa?.trim() ||
+    (esim.smdpAddress && esim.activationCode
+      ? `LPA:1$${esim.smdpAddress}$${esim.activationCode}`
+      : '');
   const iosLink = lpa ? `https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=${lpa}` : '';
   const androidLink = lpa
     ? `https://esimsetup.android.com/esim_qrcode_provisioning?carddata=${lpa}`
@@ -311,6 +317,8 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
               </Button>
             </span>
           )}
+          {/* The supplier delivered but the LPA / QR did not reach us (vande-2011 #004). */}
+          <EsimRefetchInfoButton esimId={esim.id} />
           {/* For an order that failed yet got its QR code, too (vande-1411 #009). */}
           <EsimRefundButton
             esimId={esim.id}
