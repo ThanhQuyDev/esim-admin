@@ -19,6 +19,17 @@ import {
 
 type Option = { value: string; label: string };
 
+/**
+ * An option meaning "none" ("Không hiện trên mobile", "— Chọn nhà cung cấp —")
+ * has the value ''. Radix refuses an item with an empty value and threw as the
+ * form opened, so "Thêm điểm đến", "Thêm khu vực" and "Cập nhật" crashed
+ * (vande-2011 #018). Inside the select that option carries this stand-in; the
+ * form still reads and stores ''.
+ */
+const EMPTY = '__none__';
+const toItem = (v: string | null | undefined) => (v === '' || v == null ? EMPTY : v);
+const fromItem = (v: string) => (v === EMPTY ? '' : v);
+
 interface SelectFieldProps {
   label: string;
   description?: string;
@@ -38,6 +49,9 @@ export function SelectField({
   const isTouched = useStore(field.store, (s) => s.meta.isTouched);
   const isValid = useStore(field.store, (s) => s.meta.isValid);
   const value = useStore(field.store, (s) => s.value) as string;
+  const hasEmptyOption = options.some((opt) => opt.value === '');
+  // With no "none" option, an empty value shows the placeholder as before.
+  const shown = hasEmptyOption ? toItem(value) : value;
 
   return (
     <FormFieldSet>
@@ -47,8 +61,8 @@ export function SelectField({
           {required && ' *'}
         </FieldLabel>
         <Select
-          value={value}
-          onValueChange={field.handleChange}
+          value={shown}
+          onValueChange={(next) => field.handleChange(fromItem(next))}
           onOpenChange={(open) => {
             if (!open) field.handleBlur();
           }}
@@ -65,7 +79,7 @@ export function SelectField({
           </SelectTrigger>
           <SelectContent>
             {options.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
+              <SelectItem key={toItem(opt.value)} value={toItem(opt.value)}>
                 {opt.label}
               </SelectItem>
             ))}
