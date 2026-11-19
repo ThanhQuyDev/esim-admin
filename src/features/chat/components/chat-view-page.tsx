@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useChatStore } from '../utils/store';
 import { ChatRoomList } from './chat-room-list';
 import { ChatArea } from './chat-area';
@@ -15,7 +16,11 @@ export default function ChatViewPage() {
   const fetchRooms = useChatStore((s) => s.fetchRooms);
   const connectionStatus = useChatStore((s) => s.connectionStatus);
   const selectedRoomId = useChatStore((s) => s.selectedRoomId);
+  const openUserChat = useChatStore((s) => s.openUserChat);
   const didConnect = useRef(false);
+  // ?userId=… opens that person's conversation (vande-2011 #021).
+  const wantedUserId = Number(useSearchParams().get('userId')) || null;
+  const openedFor = useRef<number | null>(null);
 
   useEffect(() => {
     if (didConnect.current) return;
@@ -54,6 +59,13 @@ export default function ChatViewPage() {
       fetchRooms();
     }
   }, [connectionStatus, fetchRooms]);
+
+  useEffect(() => {
+    if (connectionStatus !== 'connected' || !wantedUserId) return;
+    if (openedFor.current === wantedUserId) return;
+    openedFor.current = wantedUserId;
+    openUserChat(wantedUserId);
+  }, [connectionStatus, wantedUserId, openUserChat]);
 
   return (
     <div className='flex min-h-0 flex-1 px-4 py-2 md:px-6'>

@@ -60,6 +60,11 @@ interface ChatState {
   disconnect: () => void;
   joinRoom: (userId?: number) => void;
   selectRoom: (roomId: number, userId: number) => void;
+  /**
+   * Open the conversation with a user, made if they never chatted
+   * (vande-2011 #021): /dashboard/chat?userId=… from an order or an eSIM.
+   */
+  openUserChat: (userId: number) => void;
   clearSelection: () => void;
   sendMessage: (text: string, file?: ChatFileAttachment) => void;
   /** React to a message (vande-1411 #037). */
@@ -431,6 +436,13 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       replyTo: null
     });
 
+    socket.emit('joinRoom', { userId });
+  },
+
+  openUserChat: (userId: number) => {
+    const socket = get()._socket;
+    if (!socket?.connected || !userId) return;
+    // The server answers "joinedRoom", which selects the room.
     socket.emit('joinRoom', { userId });
   },
 

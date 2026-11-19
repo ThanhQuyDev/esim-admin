@@ -1,5 +1,7 @@
 'use client';
 
+import { UserEmail, UserPhone } from '@/features/chat/components/user-contact';
+
 import { purchaseKindLabel, purchaseKindOf } from '@/lib/plan-purchase-kind';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -647,10 +649,13 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                 label='Họ tên'
                 value={[esim.user.firstName, esim.user.lastName].filter(Boolean).join(' ')}
               />
-              <InfoRow label='Email' value={esim.user.email} />
+              <InfoRow
+                label='Email'
+                value={<UserEmail userId={esim.user.id} email={esim.user.email} />}
+              />
               {/* The person's own number; the eSIM's is under technical details
                   (vande-0411 #046). */}
-              <InfoRow label='Số điện thoại' value={esim.user.phoneNumber} />
+              <InfoRow label='Số điện thoại' value={<UserPhone phone={esim.user.phoneNumber} />} />
               <InfoRow
                 label='Trạng thái'
                 value={

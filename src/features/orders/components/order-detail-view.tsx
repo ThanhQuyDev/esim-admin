@@ -1,5 +1,7 @@
 'use client';
 
+import { UserEmail, UserPhone } from '@/features/chat/components/user-contact';
+
 import { useEsimArrivalWatch } from '@/lib/use-esim-arrival-watch';
 import { paymentMethodName } from '../utils/payment-method';
 import { esimDataLabel, esimTotalMb } from '@/features/esims/lib/esim-data';
@@ -1002,14 +1004,20 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           >
             {order.user && (
               <div className='space-y-3'>
-                <InfoRow label='Email' value={order.user.email} />
+                <InfoRow
+                  label='Email'
+                  value={<UserEmail userId={order.user.id} email={order.user.email} />}
+                />
                 <InfoRow
                   label='Họ và tên'
                   value={
                     [order.user.firstName, order.user.lastName].filter(Boolean).join(' ') || '—'
                   }
                 />
-                <InfoRow label='Số điện thoại' value={order.user.phoneNumber || '—'} />
+                <InfoRow
+                  label='Số điện thoại'
+                  value={<UserPhone phone={order.user.phoneNumber} />}
+                />
               </div>
             )}
             {hasWalletPayment && (
