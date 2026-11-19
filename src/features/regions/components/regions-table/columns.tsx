@@ -13,6 +13,11 @@ import {
 } from '@/lib/catalog-filters';
 
 /** Parents come from the API, so their column is built with its filter options. */
+/** Packs that sell plus the parent itself when it sells (vande-2011 #019). */
+function choicesOf(region: Region): number {
+  return (region.childCount ?? 0) + ((region.planCount ?? 0) > 0 ? 1 : 0);
+}
+
 export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
   {
     id: 'index',
@@ -48,17 +53,6 @@ export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
       <div className='relative flex flex-col pr-12'>
         <span className='font-medium'>{row.original.name}</span>
         <span className='text-muted-foreground text-xs'>{row.original.slug}</span>
-        {/* How many packs a parent has, top right (vande-1411 #030). */}
-        {row.original.isParent && row.original.childTotal ? (
-          <Badge
-            variant='secondary'
-            className='absolute top-0 right-0'
-            title={`Khu vực cha của ${row.original.childTotal} khu vực`}
-            data-testid='region-child-count'
-          >
-            {row.original.childTotal}
-          </Badge>
-        ) : null}
       </div>
     ),
     meta: {
@@ -90,7 +84,19 @@ export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
     header: 'Kiểu khu vực',
     cell: ({ row }) =>
       row.original.isParent ? (
-        <Badge data-testid='region-type'>Cha</Badge>
+        <span className='inline-flex items-center gap-1.5'>
+          <Badge data-testid='region-type'>Cha</Badge>
+          {/* The choices its page offers, as the storefront counts them: the
+              packs that sell, and the parent itself when it sells
+              (vande-2011 #019). Next to "Cha" rather than in the name. */}
+          <Badge
+            variant='secondary'
+            title={`${choicesOf(row.original)} lựa chọn đang bán ngoài web (${row.original.childTotal ?? 0} khu vực con)`}
+            data-testid='region-child-count'
+          >
+            {choicesOf(row.original)}
+          </Badge>
+        </span>
       ) : row.original.parentId ? (
         <Badge variant='outline' data-testid='region-type'>
           Con
@@ -144,7 +150,9 @@ export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
     // Plans on sale now: with none, the storefront leaves it out (vande-1411 #031).
     id: 'planCount',
     accessorFn: (row) => row.planCount ?? 0,
-    header: 'Số lượng gói',
+    header: ({ column }: { column: Column<Region, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Số lượng gói' />
+    ),
     cell: ({ row }) => {
       const n = Number(row.original.planCount ?? 0);
       return (
@@ -157,7 +165,8 @@ export const buildColumns = (parents: Region[]): ColumnDef<Region>[] => [
         </span>
       );
     },
-    enableSorting: false
+    // Ascending / descending, to find those with none or few (vande-2011 #019).
+    enableSorting: true
   },
   {
     // Which ones sell (doitac-1410 #077).

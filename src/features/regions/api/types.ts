@@ -22,6 +22,8 @@ export type Region = {
   planCount?: number;
   /** Every pack it is the parent of, on or off (vande-1411 #030). */
   childTotal?: number;
+  /** Its active packs that sell plans, as the storefront counts (vande-2011 #019). */
+  childCount?: number;
   /** Place among the five on the home page on a phone (vande-1411 #021). */
   mobileHomeRank?: number | null;
   /** "travel", or "local" for a domestic carrier (vande-1411 #025). */

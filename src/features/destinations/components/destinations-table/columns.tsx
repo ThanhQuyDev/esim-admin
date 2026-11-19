@@ -74,7 +74,9 @@ export const columns: ColumnDef<Destination>[] = [
     // Plans on sale now: with none, the storefront leaves it out (vande-1411 #031).
     id: 'planCount',
     accessorFn: (row) => row.planCount ?? 0,
-    header: 'Số lượng gói',
+    header: ({ column }: { column: Column<Destination, unknown> }) => (
+      <DataTableColumnHeader column={column} title='Số lượng gói' />
+    ),
     cell: ({ row }) => {
       const n = Number(row.original.planCount ?? 0);
       return (
@@ -87,7 +89,8 @@ export const columns: ColumnDef<Destination>[] = [
         </span>
       );
     },
-    enableSorting: false
+    // Ascending / descending, to find those with none or few (vande-2011 #019).
+    enableSorting: true
   },
   {
     // Which ones sell (doitac-1410 #077).
