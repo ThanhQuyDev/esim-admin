@@ -1,5 +1,6 @@
 'use client';
 
+import { useEsimArrivalWatch } from '@/lib/use-esim-arrival-watch';
 /**
  * "Chi tiết đơn hàng" of a distribution partner's own order (doitac-1410 #042).
  *
@@ -12,7 +13,7 @@
  */
 
 import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -104,6 +105,14 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
  * #058): the same page the partner reads, with who the partner is and a
  * "Hoàn tiền" that picks products or eSIMs instead of the partner's requests.
  */
+/** eSIMs this purchase is still waiting for (vande-2011 #006). */
+function missingOfPurchase(order: MyPurchaseDetail | undefined): number {
+  return (order?.products ?? []).reduce(
+    (sum, p) => (p.lineSettled ? sum : sum + Math.max(0, p.missingEsims ?? 0)),
+    0
+  );
+}
+
 export function PortalPurchaseDetailView({
   orderNumber,
   admin = false
@@ -111,15 +120,25 @@ export function PortalPurchaseDetailView({
   orderNumber: string;
   admin?: boolean;
 }) {
-  const mine = useQuery({ ...myPurchaseDetailQueryOptions(orderNumber), enabled: !admin });
+  // After "Gọi lại API lấy eSIM", ask again every few seconds until the eSIMs
+  // come (vande-2011 #006): no F5 to see them.
+  const watchInterval = useRef<(missing: number) => number | false>(() => false);
+  const mine = useQuery({
+    ...myPurchaseDetailQueryOptions(orderNumber),
+    enabled: !admin,
+    refetchInterval: (query) => watchInterval.current(missingOfPurchase(query.state.data))
+  });
   const asAdmin = useQuery({
     ...adminPartnerOrderDetailQueryOptions<MyPurchaseDetail & { partner: AdminOrderPartner }>(
       orderNumber,
       'distribution'
     ),
-    enabled: admin
+    enabled: admin,
+    refetchInterval: (query) => watchInterval.current(missingOfPurchase(query.state.data))
   });
   const { data: order, isLoading, error } = admin ? asAdmin : mine;
+  const esimWatch = useEsimArrivalWatch(missingOfPurchase(order));
+  watchInterval.current = esimWatch.interval;
   const partner = admin ? asAdmin.data?.partner : undefined;
   const listHref = admin
     ? '/dashboard/partners/orders?tab=distribution'
@@ -140,6 +159,7 @@ export function PortalPurchaseDetailView({
     },
     onSuccess: (message) => {
       toast.success(message);
+      esimWatch.start();
       queryClient.invalidateQueries();
     },
     onError: (err: Error) => toast.error(err.message)

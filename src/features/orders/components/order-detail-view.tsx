@@ -1,5 +1,6 @@
 'use client';
 
+import { useEsimArrivalWatch } from '@/lib/use-esim-arrival-watch';
 import { paymentMethodName } from '../utils/payment-method';
 import { esimDataLabel, esimTotalMb } from '@/features/esims/lib/esim-data';
 import { purchaseKindLabel } from '@/lib/plan-purchase-kind';
@@ -22,11 +23,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Order, OrderItemEsim, OrderItemPlan } from '../api/types';
+import type { Order, OrderDetail, OrderItemEsim, OrderItemPlan } from '../api/types';
 import { Icons } from '@/components/icons';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { RefundOrderModal } from './refund-order-modal';
 import { OrderNotesSection } from './order-notes-section';
@@ -495,8 +496,28 @@ function retryStopText(reason?: 'unsure' | 'duplicate' | 'attempts' | 'window' |
   }
 }
 
+/** eSIMs a paid order is still waiting for (vande-2011 #006). */
+function missingEsimsOf(order: OrderDetail | undefined): number {
+  if (!order || order.status !== 'paid') return 0;
+  return (order.items ?? []).reduce(
+    (sum, item) =>
+      ['failed', 'refunded', 'cancelled'].includes(String(item.status))
+        ? sum
+        : sum + Math.max(0, (item.quantity ?? 1) - (item.esims?.length ?? 0)),
+    0
+  );
+}
+
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
-  const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
+  // After "Gọi lại API", ask again every few seconds until the eSIMs come
+  // (vande-2011 #006): no F5 to see the QR.
+  const watchInterval = useRef<(missing: number) => number | false>(() => false);
+  const { data: order } = useSuspenseQuery({
+    ...orderQueryOptions(orderId),
+    refetchInterval: (query) => watchInterval.current(missingEsimsOf(query.state.data))
+  });
+  const esimWatch = useEsimArrivalWatch(missingEsimsOf(order));
+  watchInterval.current = esimWatch.interval;
   const [refundOpen, setRefundOpen] = useState(false);
   const [retryOpen, setRetryOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
@@ -514,6 +535,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         // The message already says whether the eSIM email went out, which
         // depends on whether the supplier answers synchronously (#014).
         toast.success(result.message);
+        esimWatch.start();
       }
     },
     onError: (e) => toast.error(e.message || 'Gọi lại nhà cung cấp thất bại')
