@@ -76,6 +76,14 @@ export function EsimRefundButton({
   // Only an order that took the customer's money: paid, or failed with the
   // eSIM delivered anyway. Never a pending one.
   const orderOk = !!order && ['paid', 'failed'].includes(String(order.status));
+  // A failed order that never had a payment (vande-2011 #008): nothing was
+  // taken, so there is nothing to give back. ORD-261111015428493-NFA7U8 was
+  // one of the 11/11 orders placed without payment through /orders/submit.
+  const neverPaid =
+    !!order &&
+    order.status === 'failed' &&
+    !order.paymentMethod &&
+    Number(order.walletSpentVndAmount ?? 0) === 0;
   const inOrder = !!order?.items?.some((item) => item.esims?.some((e) => e.id === esimId));
   const reason = refunded
     ? 'eSIM đã hoàn tiền'
@@ -87,9 +95,11 @@ export function EsimRefundButton({
           ? 'Đang tải đơn hàng…'
           : !orderOk
             ? `Đơn đang ở trạng thái ${order.status}, chưa hoàn tiền được`
-            : !inOrder
-              ? 'Không tìm thấy eSIM trong đơn hàng'
-              : null;
+            : neverPaid
+              ? 'Đơn lỗi này chưa từng được thanh toán (không có giao dịch tiền), nên không có tiền để hoàn'
+              : !inOrder
+                ? 'Không tìm thấy eSIM trong đơn hàng'
+                : null;
 
   return (
     <>

@@ -610,7 +610,14 @@ export function RefundOrderModal({
               onChange={(e) => setAmount(e.target.value)}
               max={cap}
             />
-            {!amountVnd ? (
+            {cap <= 0 && (!isPartial || selectedLineCount > 0) ? (
+              // Say why instead of "Số tiền không hợp lệ. Tối đa: 0 ₫" (vande-2011 #008).
+              <p className='text-destructive text-xs' data-testid='refund-nothing-to-give'>
+                {maxRefundable <= 0
+                  ? 'Đơn này không còn tiền để hoàn: chưa thu tiền của khách, hoặc đã hoàn hết.'
+                  : 'Phần đã chọn có giá trị 0 ₫ (không thu tiền), nên không có tiền để hoàn.'}
+              </p>
+            ) : !amountVnd ? (
               <p className='text-muted-foreground text-xs'>
                 Chọn eSIM cần hoàn ở trên, hoặc nhập số tiền. Tối đa: {formatVnd(cap)}
               </p>
