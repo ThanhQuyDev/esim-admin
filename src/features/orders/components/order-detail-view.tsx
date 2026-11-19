@@ -1228,28 +1228,35 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
         </Alert>
       )}
 
-      {/* The products are not listed on a bulk "file" order, so the eSIMs the
-          supplier has not given yet are, with their own retry (vande-1411 #002). */}
-      {order.bulkMode === 'file' && (
+      {/* The eSIMs the supplier has not given yet, with their own retry
+          (vande-1411 #002). Every order, and every line short of eSIMs — a line
+          of 5 with 4 delivered, or one the supplier took but has not filled,
+          used to drop out (vande-2011 #005). */}
+      {order.status === 'paid' && (
         <ProvisionQueueCard
           rows={(order.items ?? [])
+            .map((item) => ({
+              item,
+              missing: Math.max(0, (item.quantity ?? 1) - (item.esims?.length ?? 0))
+            }))
             .filter(
-              (item) =>
-                !!item.provisioning?.lastError &&
-                !item.orderRequestId &&
-                !(item.esims?.length > 0) &&
+              ({ item, missing }) =>
+                missing > 0 &&
+                (!!item.provisioning?.lastError || !!item.orderRequestId) &&
                 !['failed', 'refunded', 'cancelled'].includes(String(item.status))
             )
-            .map((item) => ({
+            .map(({ item, missing }) => ({
               id: item.id,
+              missing,
+              waitingSupplier: !!item.orderRequestId,
               planName:
                 withChosenDays(item.plan?.standardName, item.periodNum) ||
                 planDisplayName(item.plan, `Plan #${item.planId}`, item.periodNum),
               attempts: item.provisioning?.attempts ?? 0,
               lastAttemptAt: item.provisioning?.lastAttemptAt ?? null,
               nextRetryAt: item.provisioning?.nextAutoRetryAt ?? null,
-              lastError: item.provisioning?.lastError ?? null,
-              canRetry: order.status === 'paid'
+              lastError: item.orderRequestId ? null : (item.provisioning?.lastError ?? null),
+              canRetry: !item.orderRequestId
             }))}
           onRetry={(id) => retryMutation.mutate({ orderId: order.id, itemIds: [id] })}
           busy={retryMutation.isPending}

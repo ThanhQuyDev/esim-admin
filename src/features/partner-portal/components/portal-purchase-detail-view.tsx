@@ -388,7 +388,8 @@ export function PortalPurchaseDetailView({
         <ProvisionQueueCard
           rows={order.products
             .filter(
-              (p) => (p.missingEsims ?? 0) > 0 && !p.supplierAccepted && !p.lineSettled && p.itemId
+              // A line the supplier took but has not filled stays too (vande-2011 #005).
+              (p) => (p.missingEsims ?? 0) > 0 && !p.lineSettled && p.itemId
             )
             .map((p) => ({
               id: p.itemId!,
@@ -397,7 +398,8 @@ export function PortalPurchaseDetailView({
               attempts: p.provisionAttempts ?? 0,
               lastAttemptAt: p.lastAttemptAt ?? null,
               nextRetryAt: p.nextRetryAt ?? null,
-              canRetry: admin ? !closed : !!p.canRetryEsims
+              waitingSupplier: !!p.supplierAccepted,
+              canRetry: p.supplierAccepted ? false : admin ? !closed : !!p.canRetryEsims
             }))}
           onRetry={(id) => retry.mutate(id)}
           busy={retry.isPending}
