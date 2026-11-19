@@ -1,4 +1,5 @@
 import PageContainer from '@/components/layout/page-container';
+import { PortalHoldNotice } from '@/features/partner-portal/components/portal-hold-notice';
 import { PortalPayoutsView } from '@/features/partner-portal/components/portal-payouts-view';
 import { PortalFeatureGate } from '@/features/partner-portal/components/portal-feature-gate';
 
@@ -18,7 +19,11 @@ export default function PortalPayoutsPage() {
         title='Thanh toán chưa được bật'
         description='Chương trình tiếp thị chưa được bật cho tài khoản của bạn. Đối tác phân phối cần được esim.vn cấp quyền affiliate mới dùng được link tiếp thị, mã giảm giá, hoa hồng và rút tiền. Liên hệ esim.vn nếu bạn muốn tham gia.'
       >
-        <PortalPayoutsView />
+        {/* A held account says so here too (vande-2011 #024). */}
+        <div className='space-y-4'>
+          <PortalHoldNotice />
+          <PortalPayoutsView />
+        </div>
       </PortalFeatureGate>
     </PageContainer>
   );
