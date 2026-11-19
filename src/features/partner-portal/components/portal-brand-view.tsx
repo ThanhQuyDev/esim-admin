@@ -100,6 +100,8 @@ export function PortalBrandView() {
   const { data: partner, isLoading } = useQuery(myProfileQueryOptions());
   const [form, setForm] = useState<BrandForm>(EMPTY);
   const [uploading, setUploading] = useState(false);
+  /** The saved logo no longer loads (vande-2011 #026): say so, not the default. */
+  const [brokenLogo, setBrokenLogo] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   // Seed once: `partner` is refetched on window focus and after each save, and
@@ -190,7 +192,13 @@ export function PortalBrandView() {
                 </div>
                 <div className='brand-logo-thumb'>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img id='brandLogoThumb' src={logo} alt='Xem trước logo' />
+                  <img
+                    id='brandLogoThumb'
+                    src={logo}
+                    alt='Xem trước logo'
+                    onError={() => form.logoUrl && setBrokenLogo(form.logoUrl)}
+                    onLoad={() => setBrokenLogo(null)}
+                  />
                   {form.logoUrl && (
                     <button
                       className='brand-logo-delete'
@@ -204,6 +212,16 @@ export function PortalBrandView() {
                 </div>
               </div>
             </div>
+            {brokenLogo && brokenLogo === form.logoUrl && (
+              <p
+                role='alert'
+                className='text-sm text-red-600'
+                style={{ margin: '-4px 0 12px' }}
+                data-testid='brand-logo-broken'
+              >
+                Không tải được logo đã lưu. Vui lòng chọn lại tệp logo rồi bấm Lưu.
+              </p>
+            )}
 
             <div className='brand-form-row'>
               <label className='brand-form-label'>Vị trí logo:</label>
