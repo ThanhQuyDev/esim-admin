@@ -782,6 +782,8 @@ export type AdminDistributionOrderRow = {
   esimCount: number;
   createdAt: string;
   items: PartnerOrderItem[];
+  /** The partner reported an eSIM of it and waits (vande-2011 #010). */
+  openReport?: 'fault' | 'refund' | null;
 };
 
 export type PartnerOption = { id: number; name: string; email: string | null };

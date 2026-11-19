@@ -77,7 +77,22 @@ export const columns: ColumnDef<Esim>[] = [
     header: ({ column }: { column: Column<Esim, unknown> }) => (
       <DataTableColumnHeader column={column} title='ICCID' />
     ),
-    cell: ({ row }) => <span className='font-mono text-xs'>{row.original.iccid}</span>,
+    cell: ({ row }) => (
+      <div>
+        <span className='font-mono text-xs'>{row.original.iccid}</span>
+        {/* The partner is waiting on the admin (vande-2011 #010). */}
+        {row.original.partnerReport && (
+          <div
+            className='text-destructive text-xs font-medium'
+            data-testid={`esim-partner-report-${row.original.id}`}
+          >
+            {row.original.partnerReport === 'refund'
+              ? 'Đối tác yêu cầu hoàn tiền'
+              : 'Đối tác đang báo lỗi'}
+          </div>
+        )}
+      </div>
+    ),
     meta: {
       // One box for order number, email, ICCID and plan name (vande #021).
       label: 'Tìm kiếm',

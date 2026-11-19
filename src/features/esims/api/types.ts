@@ -22,6 +22,8 @@ export type Esim = {
    * the API from activation and expiry (#024, test round 4).
    */
   lifecycleStatus?: string;
+  /** A partner's report still open on it (vande-2011 #010). */
+  partnerReport?: 'fault' | 'refund' | null;
   dataUsed: string;
   dataTotal: string;
   expiresAt: string | null;

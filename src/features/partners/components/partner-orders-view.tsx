@@ -623,6 +623,17 @@ function DistributionTable({
               >
                 {row.orderNumber}
               </Link>
+              {/* The partner is waiting on the admin (vande-2011 #010). */}
+              {row.openReport && (
+                <div
+                  className='text-destructive font-sans text-xs font-medium'
+                  data-testid={`order-partner-report-${row.orderNumber}`}
+                >
+                  {row.openReport === 'refund'
+                    ? 'Đối tác yêu cầu hoàn tiền'
+                    : 'Đối tác đang báo lỗi'}
+                </div>
+              )}
             </TableCell>
             {show('partner') && (
               <TableCell>
