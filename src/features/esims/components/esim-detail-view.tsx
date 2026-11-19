@@ -36,7 +36,7 @@ import {
 import { providerLabel } from '@/features/overview/api/constants';
 import { formatUsd, planUsd } from '@/lib/plan-price';
 import type { EsimDetail, EsimPackage, EsimPlan, EsimTopup } from '../api/types';
-import { DataUsageMeter } from '@/components/data-usage-meter';
+import { formatMb } from '@/components/data-usage-meter';
 import { esimIsUnlimited, esimUsedMb } from '../lib/esim-data';
 
 interface EsimDetailViewProps {
@@ -478,15 +478,26 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
                 testId='esim-data-progress'
               />
             ) : esimIsUnlimited({ ...esim, plan }) ? (
-              // An unlimited plan has a bar too, "100 MB / ∞" (vande-1411 #044).
+              // An unlimited plan has a bar too, "100 MB / ∞" (vande-1411 #044),
+              // laid out like the time bar beside it: the figure at the end of
+              // the title line, grey, on one line (vande-2011 #029).
               <div className='space-y-2' data-testid='esim-data-progress'>
-                <span className='text-sm font-medium'>Data đã dùng</span>
-                <DataUsageMeter
-                  usedMb={esimUsedMb(esim)}
-                  totalMb={null}
-                  unlimited
-                  className='[&>span]:text-sm'
-                />
+                <div className='flex items-center justify-between gap-3 text-sm'>
+                  <span className='font-medium'>Data đã dùng</span>
+                  <span
+                    className='text-muted-foreground whitespace-nowrap tabular-nums'
+                    data-testid='esim-data-progress-text'
+                  >
+                    {formatMb(esimUsedMb(esim))} / ∞
+                  </span>
+                </div>
+                <div
+                  className='h-2 w-full overflow-hidden rounded-full bg-indigo-100 dark:bg-indigo-950'
+                  role='progressbar'
+                  aria-label='Data đã dùng: không giới hạn'
+                >
+                  <div className='h-full w-full rounded-full bg-indigo-300' />
+                </div>
               </div>
             ) : (
               <p className='text-muted-foreground text-sm'>Data đã dùng: —</p>

@@ -20,8 +20,10 @@ import {
 } from '@/components/ui/select';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { INVOICE_FILTER_OPTIONS } from '../../utils/invoice-filter';
+import { DEFAULT_ORDER_STATUS } from '../../utils/order-filters';
 import { partnersQueryOptions } from '@/features/partners/api/queries';
 import { AffiliatePartnerFilter } from './affiliate-partner-filter';
+import { CLEAR_FILTER_VALUE, SelectClearItem } from '@/components/ui/table/select-clear-item';
 import {
   CLEARED_ORDER_FILTERS,
   hasOrderFilters,
@@ -124,11 +126,13 @@ function OrdersTableContent() {
         </div>
         <Select
           value={params.status}
-          onValueChange={(value) =>
+          onValueChange={(picked) => {
+            // "Clear filters" puts this filter back to all (vande-2011 #029).
+            const value = picked === CLEAR_FILTER_VALUE ? DEFAULT_ORDER_STATUS : picked;
             startTransition(() => {
               setParams({ status: value, page: 1 });
-            })
-          }
+            });
+          }}
         >
           <SelectTrigger className='w-40'>
             <SelectValue placeholder='Trạng thái' />
@@ -139,15 +143,18 @@ function OrdersTableContent() {
             <SelectItem value='paid'>Paid</SelectItem>
             <SelectItem value='failed'>Failed</SelectItem>
             <SelectItem value='refunded'>Refunded</SelectItem>
+            <SelectClearItem show={params.status !== DEFAULT_ORDER_STATUS} />
           </SelectContent>
         </Select>
         <Select
           value={params.kind ?? 'all'}
-          onValueChange={(value) =>
+          onValueChange={(picked) => {
+            // "Clear filters" puts this filter back to all (vande-2011 #029).
+            const value = picked === CLEAR_FILTER_VALUE ? 'all' : picked;
             startTransition(() => {
               setParams({ kind: value === 'all' ? null : value, page: 1 });
-            })
-          }
+            });
+          }}
         >
           <SelectTrigger className='w-48' aria-label='Lọc theo loại đơn'>
             <SelectValue placeholder='Loại đơn' />
@@ -158,6 +165,7 @@ function OrdersTableContent() {
                 {option.label}
               </SelectItem>
             ))}
+            <SelectClearItem show={Boolean(params.kind)} />
           </SelectContent>
         </Select>
         {/* One affiliate partner's orders (vande #023). */}
@@ -191,11 +199,13 @@ function OrdersTableContent() {
         />
         <Select
           value={params.invoice ?? 'all'}
-          onValueChange={(value) =>
+          onValueChange={(picked) => {
+            // "Clear filters" puts this filter back to all (vande-2011 #029).
+            const value = picked === CLEAR_FILTER_VALUE ? 'all' : picked;
             startTransition(() => {
               setParams({ invoice: value === 'all' ? null : value, page: 1 });
-            })
-          }
+            });
+          }}
         >
           <SelectTrigger className='w-56' aria-label='Lọc theo hóa đơn'>
             <SelectValue placeholder='Hóa đơn' />
@@ -206,16 +216,19 @@ function OrdersTableContent() {
                 {option.label}
               </SelectItem>
             ))}
+            <SelectClearItem show={Boolean(params.invoice)} />
           </SelectContent>
         </Select>
         {/* English checkouts, prices in $ (doitac-3010 #043). */}
         <Select
           value={params.usd === '1' ? 'usd' : 'all'}
-          onValueChange={(value) =>
+          onValueChange={(picked) => {
+            // "Clear filters" puts this filter back to all (vande-2011 #029).
+            const value = picked === CLEAR_FILTER_VALUE ? 'all' : picked;
             startTransition(() => {
               setParams({ usd: value === 'usd' ? '1' : null, page: 1 });
-            })
-          }
+            });
+          }}
         >
           <SelectTrigger
             className='w-52'
@@ -227,16 +240,19 @@ function OrdersTableContent() {
           <SelectContent>
             <SelectItem value='all'>Khách xem giá: Tất cả</SelectItem>
             <SelectItem value='usd'>Khách xem giá $ (bản tiếng Anh)</SelectItem>
+            <SelectClearItem show={params.usd === '1'} />
           </SelectContent>
         </Select>
         {/* Orders with eSIMs the supplier has not taken (vande-0411 #010). */}
         <Select
           value={params.esimError === '1' ? 'error' : 'all'}
-          onValueChange={(value) =>
+          onValueChange={(picked) => {
+            // "Clear filters" puts this filter back to all (vande-2011 #029).
+            const value = picked === CLEAR_FILTER_VALUE ? 'all' : picked;
             startTransition(() => {
               setParams({ esimError: value === 'error' ? '1' : null, page: 1 });
-            })
-          }
+            });
+          }}
         >
           <SelectTrigger
             className='w-44'
@@ -248,6 +264,7 @@ function OrdersTableContent() {
           <SelectContent>
             <SelectItem value='all'>eSIM: Tất cả</SelectItem>
             <SelectItem value='error'>Đơn có eSIM lỗi</SelectItem>
+            <SelectClearItem show={params.esimError === '1'} />
           </SelectContent>
         </Select>
         {/* "Clear filters" at the end of the row, as on the eSIM and plan

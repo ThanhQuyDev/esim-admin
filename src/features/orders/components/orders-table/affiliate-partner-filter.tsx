@@ -8,7 +8,8 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-  CommandList
+  CommandList,
+  CommandSeparator
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Icons } from '@/components/icons';
@@ -100,6 +101,22 @@ export function AffiliatePartnerFilter({
                 </CommandItem>
               ))}
             </CommandGroup>
+            {/* As on the other filters (vande-2011 #029). */}
+            {value && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    value='Clear filters'
+                    onSelect={() => pick(null)}
+                    className='justify-center text-center'
+                    data-testid='affiliate-clear-filter'
+                  >
+                    Clear filters
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
