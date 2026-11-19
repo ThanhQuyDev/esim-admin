@@ -1,4 +1,9 @@
-import { askSalesPassword, isSalesPasswordReason } from './sales-password-prompt';
+import {
+  askSalesPassword,
+  batchSalesPassword,
+  isSalesPasswordReason,
+  rememberBatchSalesPassword
+} from './sales-password-prompt';
 import { SALES_PASSWORD_HEADER } from './sales-password-header';
 
 function getBaseUrl() {
@@ -73,6 +78,15 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
       const reason: unknown = body?.errors?.salesPassword;
       if (isSalesPasswordReason(reason)) {
         const message = typeof body.message === 'string' ? body.message : '';
+        // Inside a bulk run, the password typed for its first order is sent
+        // again without asking — only to a request that wants one, and only
+        // once (vande-2011 #002). If it is now wrong it is forgotten.
+        const remembered = batchSalesPassword();
+        if (reason === 'required' && remembered && !salesPassword) {
+          salesPassword = remembered;
+          continue;
+        }
+        rememberBatchSalesPassword(null);
         const typed: string | null =
           reason === 'required' || reason === 'invalid'
             ? await askSalesPassword(reason, message)
@@ -90,6 +104,8 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
         );
       }
     }
+    // Accepted: the next orders of the same run reuse it (vande-2011 #002).
+    if (salesPassword && res.ok) rememberBatchSalesPassword(salesPassword);
     return readResponse<T>(res);
   }
 }

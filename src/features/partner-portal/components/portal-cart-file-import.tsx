@@ -1,5 +1,6 @@
 'use client';
 
+import { withOneSalesPassword } from '@/lib/sales-password-prompt';
 /**
  * "Đặt eSIM hàng loạt" beside the cart (doitac-1410 #084, doitac-3010 #025):
  * many eSIMs at once from a spreadsheet — the price list export with a "Số
@@ -96,57 +97,59 @@ function BulkOrderDialog({
   // One order after the other: a failure stops the rest, so nothing is
   // charged that the partner was not told about.
   const pay = useMutation({
-    mutationFn: async (): Promise<{ orders: string[]; eta: string | null }> => {
-      const done: string[] = [];
-      let eta: string | null = null;
-      // As a file: one order for every row, nothing mailed (vande #057).
-      if (mode === 'file') {
-        const result = await purchaseCart({
-          items: preview!.lines
-            .filter((l) => l.planId)
+    // One sales password for the whole run, not one per order (vande-2011 #002).
+    mutationFn: (): Promise<{ orders: string[]; eta: string | null }> =>
+      withOneSalesPassword(async () => {
+        const done: string[] = [];
+        let eta: string | null = null;
+        // As a file: one order for every row, nothing mailed (vande #057).
+        if (mode === 'file') {
+          const result = await purchaseCart({
+            items: preview!.lines
+              .filter((l) => l.planId)
+              .map((l) => ({
+                planId: l.planId!,
+                quantity: l.quantity,
+                ...(l.days && l.days > 1 ? { periodNum: l.days } : {})
+              })),
+            bulkMode: 'file',
+            bulkBatch: newBatchId(),
+            ...pacingPayload(pacing)
+          });
+          return { orders: [result.orderNumber], eta: result.provisionEta ?? null };
+        }
+        const batch = newBatchId();
+        for (const order of preview!.orders) {
+          const items = preview!.lines
+            .filter((l) => (l.email ?? null) === order.email && l.planId)
             .map((l) => ({
               planId: l.planId!,
               quantity: l.quantity,
               ...(l.days && l.days > 1 ? { periodNum: l.days } : {})
-            })),
-          bulkMode: 'file',
-          bulkBatch: newBatchId(),
-          ...pacingPayload(pacing)
-        });
-        return { orders: [result.orderNumber], eta: result.provisionEta ?? null };
-      }
-      const batch = newBatchId();
-      for (const order of preview!.orders) {
-        const items = preview!.lines
-          .filter((l) => (l.email ?? null) === order.email && l.planId)
-          .map((l) => ({
-            planId: l.planId!,
-            quantity: l.quantity,
-            ...(l.days && l.days > 1 ? { periodNum: l.days } : {})
-          }));
-        const recipientEmail = order.email ?? (email.trim() || undefined);
-        try {
-          const result = await purchaseCart({
-            items,
-            ...(recipientEmail ? { recipientEmail } : {}),
-            bulkMode: 'email',
-            bulkBatch: batch,
-            ...pacingPayload(pacing)
-          });
-          done.push(result.orderNumber);
-          eta = result.provisionEta ?? eta;
-        } catch (e) {
-          const message = e instanceof Error ? e.message : 'Thanh toán thất bại.';
-          throw new Error(
-            done.length
-              ? `Đã đặt ${done.join(', ')}; đơn ${order.email ?? 'không email'} lỗi: ${message}`
-              : message,
-            { cause: e }
-          );
+            }));
+          const recipientEmail = order.email ?? (email.trim() || undefined);
+          try {
+            const result = await purchaseCart({
+              items,
+              ...(recipientEmail ? { recipientEmail } : {}),
+              bulkMode: 'email',
+              bulkBatch: batch,
+              ...pacingPayload(pacing)
+            });
+            done.push(result.orderNumber);
+            eta = result.provisionEta ?? eta;
+          } catch (e) {
+            const message = e instanceof Error ? e.message : 'Thanh toán thất bại.';
+            throw new Error(
+              done.length
+                ? `Đã đặt ${done.join(', ')}; đơn ${order.email ?? 'không email'} lỗi: ${message}`
+                : message,
+              { cause: e }
+            );
+          }
         }
-      }
-      return { orders: done, eta };
-    },
+        return { orders: done, eta };
+      }),
     onSuccess: ({ orders, eta }) => {
       // When the last eSIM comes, so the list is not downloaded half full (#003).
       toast.success(
