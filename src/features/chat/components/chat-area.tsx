@@ -1,5 +1,6 @@
 'use client';
 
+import { guestName, isGuestId } from '../utils/guest';
 import { FormEvent, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useChatStore } from '../utils/store';
@@ -55,7 +56,11 @@ export function ChatArea() {
     if (!liveRegionRef.current || messages.length === 0) return;
     const lastMessage = messages[messages.length - 1];
     const senderInfo = userCache[lastMessage.senderId];
-    const senderName = senderInfo ? senderInfo.email : `Người dùng #${lastMessage.senderId}`;
+    const senderName = senderInfo
+      ? senderInfo.email
+      : isGuestId(lastMessage.senderId)
+        ? guestName(lastMessage.chatRoomId)
+        : `Người dùng #${lastMessage.senderId}`;
     liveRegionRef.current.textContent = `${senderName}: ${lastMessage.message}`;
   }, [messages, userCache]);
 
@@ -72,9 +77,10 @@ export function ChatArea() {
     (senderId: number | null) => {
       if (senderId === null) return 'Hệ thống';
       if (senderId === myUserId) return 'Bạn';
+      if (isGuestId(senderId)) return guestName(selectedRoomId);
       return userCache[senderId]?.email ?? `Người dùng #${senderId}`;
     },
-    [myUserId, userCache]
+    [myUserId, userCache, selectedRoomId]
   );
 
   /**

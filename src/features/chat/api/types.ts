@@ -57,7 +57,8 @@ export interface SendMessagePayload {
 }
 
 export interface ClientToServerEvents {
-  joinRoom: (data: { userId?: number }) => void;
+  /** roomId opens a visitor's conversation, which has no user (vande-2011 #023). */
+  joinRoom: (data: { userId?: number; roomId?: number }) => void;
   sendMessage: (data: SendMessagePayload) => void;
   getMessages: (data: { chatRoomId: number; page?: number; limit?: number }) => void;
   markAsRead: (data: { chatRoomId: number }) => void;

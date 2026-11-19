@@ -1,5 +1,6 @@
 'use client';
 
+import { guestName, isGuestId } from '../utils/guest';
 import { Icons } from '@/components/icons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -58,8 +59,14 @@ export function ChatRoomHeader() {
 
   const activeRoom = rooms.find((r) => r.id === selectedRoomId);
   const user = activeRoom ? userCache[activeRoom.userId] : undefined;
+  const guest = activeRoom ? isGuestId(activeRoom.userId) : false;
   const displayName =
-    user?.email ?? (activeRoom ? `Người dùng #${activeRoom.userId}` : `Phòng #${selectedRoomId}`);
+    user?.email ??
+    (guest
+      ? guestName(activeRoom?.id)
+      : activeRoom
+        ? `Người dùng #${activeRoom.userId}`
+        : `Phòng #${selectedRoomId}`);
   const subtitle = user
     ? `${user.firstName} ${user.lastName}`.trim() || `Phòng #${activeRoom?.id}`
     : activeRoom
@@ -67,9 +74,11 @@ export function ChatRoomHeader() {
       : 'Trò chuyện';
   const initials = user
     ? user.email.charAt(0).toUpperCase()
-    : activeRoom
-      ? `U${activeRoom.userId}`
-      : '?';
+    : guest
+      ? 'K'
+      : activeRoom
+        ? `U${activeRoom.userId}`
+        : '?';
 
   return (
     <header className='flex flex-wrap items-center justify-between gap-3 sm:gap-4'>

@@ -79,7 +79,8 @@ export function ChatOrderWidget() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!roomOwnerId || !selectedRoomId) {
+    // A visitor without an account has no orders (vande-2011 #023).
+    if (!roomOwnerId || roomOwnerId < 0 || !selectedRoomId) {
       setOrders([]);
       return;
     }

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { guestName, isGuestId } from './guest';
 import type { ChatMessage, ChatRoomWithMeta, SocketConnectionStatus } from '../api/types';
 import {
   getChatSocket,
@@ -291,7 +292,9 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         document.visibilityState === 'visible';
       if (state.desktopNotifyEnabled && fromCustomer && !isViewing) {
         const sender = state.userCache[msg.senderId];
-        const fallbackName = `Khách #${msg.senderId}`;
+        const fallbackName = isGuestId(msg.senderId)
+          ? guestName(msg.chatRoomId)
+          : `Khách #${msg.senderId}`;
         const name = sender
           ? [sender.firstName, sender.lastName].filter(Boolean).join(' ') ||
             sender.email ||
@@ -436,7 +439,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
       replyTo: null
     });
 
-    socket.emit('joinRoom', { userId });
+    // By room: a visitor's conversation has no user to find it by (#023).
+    socket.emit('joinRoom', { userId, roomId });
   },
 
   openUserChat: (userId: number) => {
@@ -544,8 +548,9 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 
   fetchUserInfo: (userId: number) => {
     const state = get();
-    // Skip if already cached or if it's the current admin user
-    if (state.userCache[userId]) return;
+    // Skip if already cached or if it's the current admin user; a visitor
+    // (vande-2011 #023) and the bot have no account to look up.
+    if (state.userCache[userId] || !(userId > 0)) return;
 
     fetch(`/api/users/${userId}`)
       .then((res) => {

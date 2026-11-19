@@ -1,5 +1,6 @@
 'use client';
 
+import { guestName, isGuestId } from '../utils/guest';
 import { useMemo, useState } from 'react';
 import { Icons } from '@/components/icons';
 import { motion } from 'motion/react';
@@ -58,7 +59,8 @@ export function ChatRoomList() {
     const byName = q
       ? rooms.filter((r) => {
           const user = userCache[r.userId];
-          const displayName = user?.email ?? `Người dùng #${r.userId}`;
+          const displayName =
+            user?.email ?? (isGuestId(r.userId) ? guestName(r.id) : `Người dùng #${r.userId}`);
           return displayName.toLowerCase().includes(q);
         })
       : rooms;
@@ -160,8 +162,10 @@ export function ChatRoomList() {
         {filtered.map((room) => {
           const isActive = room.id === selectedRoomId;
           const user = userCache[room.userId];
-          const displayName = user?.email ?? `Người dùng #${room.userId}`;
-          const initials = getRoomInitials(user?.email, room.userId);
+          const guest = isGuestId(room.userId);
+          const displayName =
+            user?.email ?? (guest ? guestName(room.id) : `Người dùng #${room.userId}`);
+          const initials = guest ? 'K' : getRoomInitials(user?.email, room.userId);
           const lastMsg = room.lastMessage;
 
           return (
