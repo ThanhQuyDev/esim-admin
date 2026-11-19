@@ -288,94 +288,107 @@ export function PartnerApprovalsView() {
               Không có hồ sơ nào khớp với bộ lọc này.
             </p>
           ) : (
-            // Header pinned while the list scrolls (doitac-3010 #033).
-            <div
-              className='max-h-[70vh] overflow-auto rounded-lg border'
-              data-testid='approvals-table-scroll'
-            >
-              <Table>
-                <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
-                  <TableRow>
-                    <TableHead>Tên</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Số điện thoại</TableHead>
-                    <TableHead>Loại đối tác</TableHead>
-                    <TableHead>Kênh bán chính</TableHead>
-                    <TableHead>Ngày gửi đăng ký</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead className='text-right'>Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {partners.map((partner) => {
-                    const badge = STATUS_LABEL[partner.status] ?? {
-                      label: partner.status,
-                      variant: 'outline' as const
-                    };
-                    // A rejected application can still be approved by hand;
-                    // one already approved has nothing left to decide (#056).
-                    const canApprove =
-                      partner.status === 'pending' || partner.status === 'rejected';
-                    const canReject = partner.status === 'pending';
+            // Header pinned while the list scrolls (doitac-3010 #033). The grid
+            // with a zero minimum keeps a wide table from widening the whole
+            // page: it scrolls sideways in here instead, and the buttons stay
+            // reachable (vande-2011 #028).
+            <div className='grid grid-cols-[minmax(0,1fr)]'>
+              <div
+                className='max-h-[70vh] overflow-auto rounded-lg border'
+                data-testid='approvals-table-scroll'
+              >
+                <Table>
+                  <TableHeader className='bg-muted sticky top-0 z-10 shadow-[0_1px_0_var(--border)] [&_th]:bg-muted'>
+                    <TableRow>
+                      <TableHead>Tên</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Số điện thoại</TableHead>
+                      <TableHead>Loại đối tác</TableHead>
+                      <TableHead>Kênh bán chính</TableHead>
+                      <TableHead>Ngày gửi đăng ký</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead className='text-right'>Thao tác</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {partners.map((partner) => {
+                      const badge = STATUS_LABEL[partner.status] ?? {
+                        label: partner.status,
+                        variant: 'outline' as const
+                      };
+                      // A rejected application can still be approved by hand;
+                      // one already approved has nothing left to decide (#056).
+                      const canApprove =
+                        partner.status === 'pending' || partner.status === 'rejected';
+                      const canReject = partner.status === 'pending';
 
-                    return (
-                      <TableRow key={partner.id}>
-                        <TableCell className='font-medium'>
-                          {partner.companyName || partner.contactName}
-                        </TableCell>
-                        <TableCell className='text-xs'>{partner.contactEmail}</TableCell>
-                        <TableCell className='text-xs'>{partner.contactPhone}</TableCell>
-                        <TableCell>
-                          <Badge variant='outline'>
-                            {/* What they applied as — "tích hợp API" runs as
+                      return (
+                        <TableRow key={partner.id}>
+                          {/* A long name — someone pasted markup into it — is cut
+                            short; the whole of it shows on hover (vande-2011 #028). */}
+                          <TableCell
+                            className='max-w-[240px] truncate font-medium'
+                            title={partner.companyName || partner.contactName}
+                            data-testid='approval-name'
+                          >
+                            {partner.companyName || partner.contactName}
+                          </TableCell>
+                          <TableCell className='text-xs'>{partner.contactEmail}</TableCell>
+                          <TableCell className='text-xs'>{partner.contactPhone}</TableCell>
+                          <TableCell>
+                            <Badge variant='outline'>
+                              {/* What they applied as — "tích hợp API" runs as
                                 distribution until its terms are set (#053). */}
-                            {PARTNER_TYPE_LABEL[partner.requestedType ?? partner.partnerType] ??
-                              partner.partnerType}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className='max-w-[220px] truncate text-xs'>
-                          {mainChannel(partner.channelInfo)}
-                          {/* Attachments to look at before deciding (doitac-1410 #013). */}
-                          {partner.documents?.length ? (
-                            <span className='text-primary block text-xs'>
-                              📎 {partner.documents.length} tài liệu đính kèm
-                            </span>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className='text-xs'>{formatDateVn(partner.createdAt)}</TableCell>
-                        <TableCell>
-                          <Badge variant={badge.variant}>{badge.label}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className='flex justify-end gap-2'>
-                            <Button asChild size='sm' variant='outline'>
-                              <Link href={`/dashboard/partners/${partner.id}`}>Xem</Link>
-                            </Button>
-                            {canApprove && (
-                              <Button
-                                size='sm'
-                                onClick={() => approveMutation.mutate(partner.id)}
-                                isLoading={approveMutation.isPending}
-                              >
-                                Duyệt
+                              {PARTNER_TYPE_LABEL[partner.requestedType ?? partner.partnerType] ??
+                                partner.partnerType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className='max-w-[220px] truncate text-xs'>
+                            {mainChannel(partner.channelInfo)}
+                            {/* Attachments to look at before deciding (doitac-1410 #013). */}
+                            {partner.documents?.length ? (
+                              <span className='text-primary block text-xs'>
+                                📎 {partner.documents.length} tài liệu đính kèm
+                              </span>
+                            ) : null}
+                          </TableCell>
+                          <TableCell className='text-xs'>
+                            {formatDateVn(partner.createdAt)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={badge.variant}>{badge.label}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className='flex justify-end gap-2'>
+                              <Button asChild size='sm' variant='outline'>
+                                <Link href={`/dashboard/partners/${partner.id}`}>Xem</Link>
                               </Button>
-                            )}
-                            {canReject && (
-                              <Button
-                                size='sm'
-                                variant='destructive'
-                                onClick={() => setRejectingId(partner.id)}
-                              >
-                                Từ chối
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                              {canApprove && (
+                                <Button
+                                  size='sm'
+                                  onClick={() => approveMutation.mutate(partner.id)}
+                                  isLoading={approveMutation.isPending}
+                                >
+                                  Duyệt
+                                </Button>
+                              )}
+                              {canReject && (
+                                <Button
+                                  size='sm'
+                                  variant='destructive'
+                                  onClick={() => setRejectingId(partner.id)}
+                                >
+                                  Từ chối
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
           {totalCount > 0 && (
