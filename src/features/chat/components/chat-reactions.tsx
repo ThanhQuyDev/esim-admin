@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icons } from '@/components/icons';
 
 /**
@@ -98,6 +98,40 @@ export function ReactionBar({
 }
 
 /** The smiley beside a message that opens the six reactions. */
+
+/**
+ * Keep a popup inside the box that clips it (vande-2011 #020): the six
+ * reactions on a message near the window's edge, and the emoji grid of the
+ * message box, were cut by the chat window. Once open, the popup is measured
+ * and slid sideways into the nearest clipping box (or the screen).
+ */
+function useKeepInView(open: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!open || !el) return;
+    el.style.transform = '';
+    const rect = el.getBoundingClientRect();
+    let left = 0;
+    let right = window.innerWidth;
+    for (let p = el.parentElement; p; p = p.parentElement) {
+      const o = getComputedStyle(p);
+      if (/(hidden|auto|scroll|clip)/.test(o.overflowX + o.overflow)) {
+        const box = p.getBoundingClientRect();
+        left = Math.max(left, box.left);
+        right = Math.min(right, box.right);
+        break;
+      }
+    }
+    const pad = 8;
+    let dx = 0;
+    if (rect.right > right - pad) dx = right - pad - rect.right;
+    if (rect.left + dx < left + pad) dx = left + pad - rect.left;
+    if (dx) el.style.transform = `translateX(${Math.round(dx)}px)`;
+  }, [open]);
+  return ref;
+}
+
 export function ReactionPicker({
   onReact,
   testId
@@ -107,6 +141,7 @@ export function ReactionPicker({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, () => setOpen(false));
+  const popup = useKeepInView(open);
   return (
     <div ref={ref} className='relative shrink-0'>
       <button
@@ -121,6 +156,7 @@ export function ReactionPicker({
       </button>
       {open && (
         <div
+          ref={popup}
           role='menu'
           className='absolute top-7 right-0 z-20 flex gap-0.5 rounded-full border border-gray-200 bg-white px-1.5 py-1 shadow-lg'
         >
@@ -155,6 +191,7 @@ export function EmojiPicker({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, () => setOpen(false));
+  const popup = useKeepInView(open);
   return (
     <div ref={ref} className='relative'>
       <button
@@ -172,6 +209,7 @@ export function EmojiPicker({
       </button>
       {open && (
         <div
+          ref={popup}
           role='menu'
           className='absolute bottom-11 left-0 z-20 grid w-[248px] grid-cols-8 gap-0.5 rounded-xl border border-gray-200 bg-white p-2 shadow-lg'
         >
