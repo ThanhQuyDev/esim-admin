@@ -24,6 +24,18 @@ export type Esim = {
   lifecycleStatus?: string;
   /** A partner's report still open on it (vande-2011 #010). */
   partnerReport?: 'fault' | 'refund' | null;
+  /**
+   * The distribution / API partner whose account bought it (vande-2011 #027),
+   * shown instead of the account's contact person. Only on the detail.
+   */
+  ownerPartner?: {
+    id: number;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    type: 'distribution' | 'api';
+    status: string;
+  } | null;
   dataUsed: string;
   dataTotal: string;
   expiresAt: string | null;

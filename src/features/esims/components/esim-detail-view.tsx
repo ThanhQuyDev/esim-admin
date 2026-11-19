@@ -43,6 +43,15 @@ interface EsimDetailViewProps {
   esimId: number;
 }
 
+/** A partner's status as the partner pages word it (vande-2011 #027). */
+const PARTNER_STATUS_LABELS: Record<string, string> = {
+  pending: 'Chờ duyệt',
+  active: 'Đang hoạt động',
+  hold: 'Tạm khóa tài khoản',
+  disabled: 'Khóa tài khoản',
+  rejected: 'Bị từ chối'
+};
+
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4'>
@@ -640,7 +649,48 @@ export function EsimDetailView({ esimId }: EsimDetailViewProps) {
           <CardTitle>Thông tin người dùng</CardTitle>
         </CardHeader>
         <CardContent className='space-y-3' data-testid='esim-user'>
-          {esim.user ? (
+          {esim.ownerPartner ? (
+            // Bought on a distribution / API partner's account: the partner,
+            // not the contact person behind the account (vande-2011 #027).
+            <>
+              <InfoRow
+                label='ID đối tác'
+                value={
+                  <Link
+                    href={`/dashboard/partners/${esim.ownerPartner.id}`}
+                    className='text-primary hover:underline'
+                    data-testid='esim-owner-partner-link'
+                  >
+                    {esim.ownerPartner.id}
+                  </Link>
+                }
+              />
+              <InfoRow label='Tên đối tác' value={esim.ownerPartner.name} />
+              <InfoRow
+                label='Email'
+                value={<UserEmail userId={esim.user?.id} email={esim.ownerPartner.email} />}
+              />
+              <InfoRow
+                label='Số điện thoại liên hệ'
+                value={<UserPhone phone={esim.ownerPartner.phone} />}
+              />
+              <InfoRow
+                label='Loại đối tác'
+                value={esim.ownerPartner.type === 'api' ? 'Đối tác API' : 'Đối tác phân phối'}
+              />
+              <InfoRow
+                label='Trạng thái'
+                value={
+                  <Badge
+                    variant={esim.ownerPartner.status === 'active' ? 'default' : 'secondary'}
+                    data-testid='esim-owner-partner-status'
+                  >
+                    {PARTNER_STATUS_LABELS[esim.ownerPartner.status] ?? esim.ownerPartner.status}
+                  </Badge>
+                }
+              />
+            </>
+          ) : esim.user ? (
             <>
               <InfoRow label='ID' value={esim.user.id} />
               {/* Template-stringing the two names printed "null null" for an
