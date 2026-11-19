@@ -475,6 +475,26 @@ function trafficEvidence(detail: Order['trafficDetail']): string {
 /** Commission that is being paid: in the 24h queue or in the wallet. */
 const COUNTED_COMMISSION = new Set(['pending', 'credited']);
 
+/**
+ * Why the job will not ask the supplier again (vande-2011 #001), so the admin
+ * knows whether "Gọi lại API" is safe or the supplier's portal must be checked
+ * first.
+ */
+function retryStopText(reason?: 'unsure' | 'duplicate' | 'attempts' | 'window' | null): string {
+  switch (reason) {
+    case 'unsure':
+      return 'Hệ thống không tự gọi lại vì lỗi này có thể nhà cung cấp đã nhận đơn (mất kết nối giữa chừng). Kiểm tra trên trang nhà cung cấp trước, chưa có đơn thì bấm "Gọi lại API".';
+    case 'duplicate':
+      return 'Nhà cung cấp báo đã có đơn này — tra eSIM trên trang nhà cung cấp, không bấm gọi lại.';
+    case 'attempts':
+      return 'Hệ thống đã thử hết số lần tự gọi lại — bấm "Gọi lại API" hoặc hoàn tiền cho khách.';
+    case 'window':
+      return 'Đơn đã quá 24 giờ nên hệ thống không tự gọi lại nữa — bấm "Gọi lại API" hoặc hoàn tiền cho khách.';
+    default:
+      return 'Hệ thống đã ngừng tự gọi lại — bấm "Gọi lại API" hoặc hoàn tiền cho khách.';
+  }
+}
+
 export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const { data: order } = useSuspenseQuery(orderQueryOptions(orderId));
   const [refundOpen, setRefundOpen] = useState(false);
@@ -1295,7 +1315,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                           ? 'Sản phẩm này đã hoàn tiền hoặc đã huỷ — hệ thống không gọi lại nữa.'
                           : item.provisioning.nextAutoRetryAt
                             ? `Hệ thống tự gọi lại lúc ${formatDate(item.provisioning.nextAutoRetryAt)}.`
-                            : 'Hệ thống đã ngừng tự gọi lại — bấm "Gọi lại API" hoặc hoàn tiền cho khách.'}
+                            : retryStopText(item.provisioning.stopReason)}
                       </p>
                       {/* Ask for this eSIM now, without waiting for the job
                           (vande-1411 #001). The server still refuses a line

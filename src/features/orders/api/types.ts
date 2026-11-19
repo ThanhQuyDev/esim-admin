@@ -242,6 +242,8 @@ export type OrderItem = {
     lastError: string | null;
     lastAttemptAt: string | null;
     nextAutoRetryAt: string | null;
+    /** Why no more automatic tries will happen (vande-2011 #001). */
+    stopReason?: 'unsure' | 'duplicate' | 'attempts' | 'window' | null;
   } | null;
   status: string;
   price: number;
