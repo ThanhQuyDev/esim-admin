@@ -1,6 +1,7 @@
 import PageContainer from '@/components/layout/page-container';
 import ProfitMarginTierListingPage from '@/features/profit-margins/components/profit-margin-tier-listing';
 import { ProfitMarginTierFormDialogTrigger } from '@/features/profit-margins/components/profit-margin-tier-form-dialog';
+import { PriceDisplayCard } from '@/features/profit-margins/components/price-display-card';
 import { searchParamsCache } from '@/lib/searchparams';
 import type { SearchParams } from 'nuqs/server';
 
@@ -18,7 +19,10 @@ export default async function ProfitMarginTiersPage(props: PageProps) {
       pageDescription='Manage tiered profit margin ranges for plan pricing.'
       pageHeaderAction={<ProfitMarginTierFormDialogTrigger />}
     >
-      <ProfitMarginTierListingPage />
+      <div className='flex flex-1 flex-col'>
+        <PriceDisplayCard />
+        <ProfitMarginTierListingPage />
+      </div>
     </PageContainer>
   );
 }
