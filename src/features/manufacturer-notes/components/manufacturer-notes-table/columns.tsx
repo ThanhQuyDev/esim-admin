@@ -1,5 +1,6 @@
 'use client';
 
+import { noteScopeLabel } from '../../schemas/manufacturer-note';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
 import type { ManufacturerNote } from '../../api/types';
@@ -18,7 +19,11 @@ export const columns: ColumnDef<ManufacturerNote>[] = [
     header: ({ column }: { column: Column<ManufacturerNote, unknown> }) => (
       <DataTableColumnHeader column={column} title='Hãng' />
     ),
-    cell: ({ row }) => <div className='font-medium'>{row.original.manufacturer}</div>,
+    cell: ({ row }) => (
+      <div className='font-medium'>
+        {noteScopeLabel(row.original.deviceType) ?? row.original.manufacturer}
+      </div>
+    ),
     meta: { label: 'Hãng', variant: 'text' as const }
   },
   {

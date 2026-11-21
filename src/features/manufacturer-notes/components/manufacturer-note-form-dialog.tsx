@@ -17,9 +17,11 @@ import type {
 } from '../api/types';
 import {
   NOTE_LANGUAGE_OPTIONS,
-  manufacturerNoteSchema,
+  NOTE_SCOPE_OPTIONS,
+  manufacturerNoteFormSchema,
   type ManufacturerNoteFormValues
 } from '../schemas/manufacturer-note';
+import { useFormContext } from '@/components/ui/form-context';
 
 interface Props {
   item?: ManufacturerNote;
@@ -32,7 +34,8 @@ export function ManufacturerNoteFormDialog({ item, open, onOpenChange }: Props) 
   return <CreateDialog open={open} onOpenChange={onOpenChange} />;
 }
 
-const DIALOG_NOTE = 'Ghi chú hiện dưới danh sách máy của hãng đó, ở trang "Thiết bị được hỗ trợ".';
+const DIALOG_NOTE =
+  'Ghi chú của một hãng hiện dưới danh sách máy của hãng đó; ghi chú của một danh mục hiện ngay dưới câu dẫn của tab đó, ở trang "Thiết bị được hỗ trợ".';
 
 /** Identical for create and edit, so the fields live in one place. */
 function NoteFields({ current }: { current?: string }) {
@@ -47,15 +50,23 @@ function NoteFields({ current }: { current?: string }) {
     (name) => ({ value: name, label: name })
   );
 
+  // The shared context is untyped; only the scope is read here.
+  const form = useFormContext() as unknown as {
+    Subscribe: (props: {
+      selector: (state: { values: ManufacturerNoteFormValues }) => string;
+      children: (scope: string) => React.ReactNode;
+    }) => React.ReactElement;
+  };
+
   return (
     <>
       <div className='grid grid-cols-2 gap-4'>
         <FormSelectField
-          name='manufacturer'
-          label='Hãng'
-          options={brandOptions}
-          placeholder='Chọn hãng'
-          description='Lấy từ danh sách "Thiết bị được hỗ trợ".'
+          name='scope'
+          label='Áp dụng cho'
+          options={NOTE_SCOPE_OPTIONS as unknown as { value: string; label: string }[]}
+          placeholder='Chọn'
+          description='Một hãng, hoặc cả một danh mục thiết bị (vd. ghi chú chung cho đồng hồ).'
         />
         <FormSelectField
           name='language'
@@ -64,6 +75,20 @@ function NoteFields({ current }: { current?: string }) {
           placeholder='Chọn ngôn ngữ'
         />
       </div>
+
+      <form.Subscribe selector={(state) => state.values.scope}>
+        {(scope: string) =>
+          scope === 'brand' ? (
+            <FormSelectField
+              name='manufacturer'
+              label='Hãng'
+              options={brandOptions}
+              placeholder='Chọn hãng'
+              description='Lấy từ danh sách "Thiết bị được hỗ trợ".'
+            />
+          ) : null
+        }
+      </form.Subscribe>
 
       <FormTextareaField
         name='note'
@@ -91,7 +116,8 @@ function NoteFields({ current }: { current?: string }) {
 
 function toPayload(value: ManufacturerNoteFormValues): CreateManufacturerNotePayload {
   return {
-    manufacturer: value.manufacturer.trim(),
+    manufacturer: value.scope === 'brand' ? value.manufacturer.trim() : '',
+    deviceType: value.scope === 'brand' ? null : value.scope,
     language: value.language,
     note: value.note,
     isActive: value.isActive ?? true,
@@ -118,13 +144,14 @@ function CreateDialog({
 
   const form = useAppForm({
     defaultValues: {
+      scope: 'brand',
       manufacturer: '',
       language: 'vi',
       note: '',
       isActive: true,
       sortOrder: '0'
     } as ManufacturerNoteFormValues,
-    validators: { onSubmit: manufacturerNoteSchema },
+    validators: { onSubmit: manufacturerNoteFormSchema },
     onSubmit: async ({ value }) => {
       await mutation.mutateAsync(toPayload(value));
     }
@@ -134,7 +161,7 @@ function CreateDialog({
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title='Thêm ghi chú theo hãng'
+      title='Thêm ghi chú theo hãng / danh mục'
       description={DIALOG_NOTE}
       formId='manufacturer-note-form-dialog'
       isLoading={mutation.isPending}
@@ -175,13 +202,14 @@ function EditDialog({
 
   const form = useAppForm({
     defaultValues: {
+      scope: item.deviceType || 'brand',
       manufacturer: item.manufacturer,
       language: item.language,
       note: item.note,
       isActive: item.isActive,
       sortOrder: String(item.sortOrder ?? 0)
     } as ManufacturerNoteFormValues,
-    validators: { onSubmit: manufacturerNoteSchema },
+    validators: { onSubmit: manufacturerNoteFormSchema },
     onSubmit: async ({ value }) => {
       const payload: UpdateManufacturerNotePayload = toPayload(value);
       await mutation.mutateAsync({ id: item.id, values: payload });
@@ -192,7 +220,7 @@ function EditDialog({
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title='Sửa ghi chú theo hãng'
+      title='Sửa ghi chú theo hãng / danh mục'
       description={DIALOG_NOTE}
       formId='manufacturer-note-form-dialog'
       isLoading={mutation.isPending}

@@ -7,6 +7,8 @@
 export type ManufacturerNote = {
   id: string;
   manufacturer: string;
+  /** Set on a whole category's note (vande-2011 #031); `manufacturer` is then empty. */
+  deviceType?: string | null;
   language: string;
   note: string;
   isActive: boolean;
@@ -31,6 +33,7 @@ export type ManufacturerNoteResponse = {
 
 export type CreateManufacturerNotePayload = {
   manufacturer: string;
+  deviceType?: string | null;
   language: string;
   note: string;
   isActive?: boolean;
